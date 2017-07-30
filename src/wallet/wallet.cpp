@@ -119,7 +119,7 @@ static void ReleaseWallet(CWallet* wallet)
     wallet->WalletLogPrintf("Releasing wallet\n");
     wallet->BlockUntilSyncedToCurrentChain();
     wallet->Flush();
-    UnregisterValidationInterface(wallet);
+    wallet->m_chain_notifications_handler.reset();
     delete wallet;
     // Wallet is now released, notify UnloadWallet, if any.
     {
@@ -1301,8 +1301,10 @@ void CWallet::TransactionAddedToMempool(const CTransactionRef& ptx) {
     SyncTransaction(ptx);
 }
 
-void CWallet::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex *pindex, const std::vector<CTransactionRef>& vtxConflicted) {
-    LOCK2(cs_main, cs_wallet);
+void CWallet::BlockConnected(const CBlock& block, const std::vector<CTransactionRef>& vtxConflicted) {
+    const uint256& block_hash = block.GetHash();
+    auto locked_chain = chain().lock();
+    LOCK(cs_wallet);
     // TODO: Temporarily ensure that mempool removals are notified before
     // connected transactions.  This shouldn't matter, but the abandoned
     // state of transactions in our wallet is currently cleared when we
@@ -1314,48 +1316,20 @@ void CWallet::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const 
     for (const CTransactionRef& ptx : vtxConflicted) {
         SyncTransaction(ptx);
     }
-    for (size_t i = 0; i < pblock->vtx.size(); i++) {
-        SyncTransaction(pblock->vtx[i], pindex, i);
+    for (size_t i = 0; i < block.vtx.size(); i++) {
+        SyncTransaction(block.vtx[i], block_hash, i);
+        TransactionRemovedFromMempool(block.vtx[i]);
     }
 
-    // The GUI expects a NotifyTransactionChanged when a coinbase tx
-    // which is in our wallet moves from in-the-best-block to
-    // 2-confirmations (as it only displays them at that time).
-    // We do that here.
-    if (hashPrevBestCoinbase.IsNull()) {
-        // Immediately after restart we have no idea what the coinbase
-        // transaction from the previous block is.
-        // For correctness we scan over the entire wallet, looking for
-        // the previous block's coinbase, just in case it is ours, so
-        // that we can notify the UI that it should now be displayed.
-        if (pindex->pprev) {
-            for (const std::pair<uint256, CWalletTx>& p : mapWallet) {
-                if (p.second.IsCoinBase() && p.second.hashBlock == pindex->pprev->GetBlockHash()) {
-                    NotifyTransactionChanged(this, p.first, CT_UPDATED);
-                    break;
-                }
-            }
-        }
-    } else {
-        std::map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(hashPrevBestCoinbase);
-        if (mi != mapWallet.end()) {
-            NotifyTransactionChanged(this, hashPrevBestCoinbase, CT_UPDATED);
-        }
-    }
-
-    hashPrevBestCoinbase = pblock->vtx[0]->GetHash();
-
-    // reset cache to make sure no longer immature coins are included
-    fAnonymizableTallyCached = false;
-    fAnonymizableTallyCachedNonDenom = false;
+    m_last_block_processed = block_hash;
 }
 
-void CWallet::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected) {
-    LOCK2(cs_main, cs_wallet);
+void CWallet::BlockDisconnected(const CBlock& block) {
+    auto locked_chain = chain().lock();
+    LOCK(cs_wallet);
 
-    for (const CTransactionRef& ptx : pblock->vtx) {
-        // NOTE: do NOT pass pindex here
-        SyncTransaction(ptx);
+    for (const CTransactionRef& ptx : block.vtx) {
+        SyncTransaction(ptx, {} /* block hash */, 0 /* position in block */);
     }
 
     // reset cache to make sure no longer mature coins are excluded
@@ -1369,7 +1343,7 @@ void CWallet::BlockUntilSyncedToCurrentChain() {
     // ::ChainActive().Tip(), otherwise put a callback in the validation interface queue and wait
     // for the queue to drain enough to execute it (indicating we are caught up
     // at least with the time we entered this function).
-    uint256 last_block_hash = WITH_LOCK(cs_wallet, return m_last_block_processed);
+    chain().waitForNotifications();
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
@@ -2337,7 +2311,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(interfaces::Chain::
     return result;
 }
 
-void CWallet::ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman)
+void CWallet::ResendWalletTransactions(interfaces::Chain::Lock& locked_chain, int64_t nBestBlockTime)
 {
     // Do this infrequently and randomly to avoid giving away
     // that these are our transactions.
@@ -2355,8 +2329,7 @@ void CWallet::ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman
 
     // Rebroadcast unconfirmed txes older than 5 minutes before the last
     // block was found:
-    auto locked_chain = chain().assumeLocked();  // Temporary. Removed in upcoming lock cleanup
-    std::vector<uint256> relayed = ResendWalletTransactionsBefore(*locked_chain, nBestBlockTime-5*60);
+    std::vector<uint256> relayed = ResendWalletTransactionsBefore(locked_chain, nBestBlockTime-5*60);
     if (!relayed.empty())
         WalletLogPrintf("%s: rebroadcast %u unconfirmed transactions\n", __func__, relayed.size());
 }
@@ -5455,8 +5428,8 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
 
     chain.loadWallet(interfaces::MakeWallet(walletInstance));
 
-    // Register with the validation interface. It's ok to do this after rescan since we're still holding cs_main.
-    RegisterValidationInterface(walletInstance.get());
+    // Register with the validation interface. It's ok to do this after rescan since we're still holding locked_chain.
+    walletInstance->m_chain_notifications_handler = chain.handleNotifications(*walletInstance);
 
     walletInstance->SetBroadcastTransactions(gArgs.GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
 
