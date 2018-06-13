@@ -20,6 +20,7 @@
 #include <fs.h>
 #include <logging.h>
 #include <sync.h>
+#include <util/threadnames.h>
 #include <tinyformat.h>
 #include <util/memory.h>
 #include <util/time.h>
@@ -374,8 +375,7 @@ void RenameThreadPool(ctpl::thread_pool& tp, const char* baseName);
  */
 template <typename Callable> void TraceThread(const char* name,  Callable func)
 {
-    std::string s = strprintf("zentoshi-%s", name);
-    RenameThread(s.c_str());
+    util::ThreadRename(name);
     try
     {
         LogPrintf("%s thread start\n", name);

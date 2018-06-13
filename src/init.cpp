@@ -44,6 +44,7 @@
 #include <script/ismine.h>
 #include <scheduler.h>
 #include <shutdown.h>
+#include <util/threadnames.h>
 #include <timedata.h>
 #include <txdb.h>
 #include <txmempool.h>
@@ -254,7 +255,7 @@ void Shutdown(InitInterfaces& interfaces)
     /// for example if the data directory was found to be locked.
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
-    RenameThread("zentoshi-shutoff");
+    util::ThreadRename("zentoshi-shutoff");
     mempool.AddTransactionsUpdated(1);
     StopHTTPRPC();
     StopREST();
@@ -754,7 +755,7 @@ static void CleanupBlockRevFiles()
 static void ThreadImport(std::vector<fs::path> vImportFiles)
 {
     const CChainParams& chainparams = Params();
-    RenameThread("zentoshi-loadblk");
+    util::ThreadRename("zentoshi-loadblk");
     ScheduleBatchPriority();
 
     {
@@ -1415,7 +1416,7 @@ bool AppInitMain(InitInterfaces& interfaces)
     LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     if (nScriptCheckThreads) {
         for (int i=0; i<nScriptCheckThreads-1; i++)
-            threadGroup.create_thread(&ThreadScriptCheck);
+            threadGroup.create_thread([i]() { return ThreadScriptCheck(i); });
     }
 
     std::vector<std::string> vSporkAddresses;
