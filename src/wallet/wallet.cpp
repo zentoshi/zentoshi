@@ -55,6 +55,14 @@ yo// Copyright (c) 2009-2010 Satoshi Nakamoto
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/thread.hpp>
 
+const std::map<uint64_t,std::string> WALLET_FLAG_CAVEATS{
+    {WALLET_FLAG_AVOID_REUSE,
+        "You need to rescan the blockchain in order to correctly mark used "
+        "destinations in the past. Until this is done, some destinations may "
+        "be considered unused, even if the opposite is the case."
+    },
+};
+
 static const size_t OUTPUT_GROUP_MAX_ENTRIES = 10;
 
 static CCriticalSection cs_wallets;
