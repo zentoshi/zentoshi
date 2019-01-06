@@ -142,6 +142,7 @@ BITCOIN_CORE_H = \
   evo/specialtx.h \
   dsnotificationinterface.h \
   fs.h \
+  flatfile.h \
   flat-database.h \
   governance/governance.h \
   governance/governance-classes.h \
@@ -309,6 +310,7 @@ libzentoshi_server_a_SOURCES = \
   evo/providertx.cpp \
   evo/simplifiedmns.cpp \
   evo/specialtx.cpp \
+  flatfile.cpp \
   httprpc.cpp \
   httpserver.cpp \
   index/base.cpp \
