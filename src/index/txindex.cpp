@@ -17,8 +17,94 @@ constexpr int64_t SYNC_LOCATOR_WRITE_INTERVAL = 30; // seconds
 
 std::unique_ptr<TxIndex> g_txindex;
 
-template<typename... Args>
-static void FatalError(const char* fmt, const Args&... args)
+struct CDiskTxPos : public FlatFilePos
+{
+    unsigned int nTxOffset; // after header
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITEAS(FlatFilePos, *this);
+        READWRITE(VARINT(nTxOffset));
+    }
+
+    CDiskTxPos(const FlatFilePos &blockIn, unsigned int nTxOffsetIn) : FlatFilePos(blockIn.nFile, blockIn.nPos), nTxOffset(nTxOffsetIn) {
+    }
+
+    CDiskTxPos() {
+        SetNull();
+    }
+
+    void SetNull() {
+        FlatFilePos::SetNull();
+        nTxOffset = 0;
+    }
+};
+
+/**
+ * Access to the txindex database (indexes/txindex/)
+ *
+ * The database stores a block locator of the chain the database is synced to
+ * so that the TxIndex can efficiently determine the point it last stopped at.
+ * A locator is used instead of a simple hash of the chain tip because blocks
+ * and block index entries may not be flushed to disk until after this database
+ * is updated.
+ */
+class TxIndex::DB : public BaseIndex::DB
+{
+public:
+    explicit DB(size_t n_cache_size, bool f_memory = false, bool f_wipe = false);
+
+    /// Read the disk location of the transaction data with the given hash. Returns false if the
+    /// transaction hash is not indexed.
+    bool ReadTxPos(const uint256& txid, CDiskTxPos& pos) const;
+
+    /// Write a batch of transaction positions to the DB.
+    bool WriteTxs(const std::vector<std::pair<uint256, CDiskTxPos>>& v_pos);
+
+    /// Migrate txindex data from the block tree DB, where it may be for older nodes that have not
+    /// been upgraded yet to the new database.
+    bool MigrateData(CBlockTreeDB& block_tree_db, const CBlockLocator& best_locator);
+};
+
+TxIndex::DB::DB(size_t n_cache_size, bool f_memory, bool f_wipe) :
+    BaseIndex::DB(GetDataDir() / "indexes" / "txindex", n_cache_size, f_memory, f_wipe)
+{}
+
+bool TxIndex::DB::ReadTxPos(const uint256 &txid, CDiskTxPos& pos) const
+{
+    return Read(std::make_pair(DB_TXINDEX, txid), pos);
+}
+
+bool TxIndex::DB::WriteTxs(const std::vector<std::pair<uint256, CDiskTxPos>>& v_pos)
+{
+    CDBBatch batch(*this);
+    for (const auto& tuple : v_pos) {
+        batch.Write(std::make_pair(DB_TXINDEX, tuple.first), tuple.second);
+    }
+    return WriteBatch(batch);
+}
+
+/*
+ * Safely persist a transfer of data from the old txindex database to the new one, and compact the
+ * range of keys updated. This is used internally by MigrateData.
+ */
+static void WriteTxIndexMigrationBatches(CDBWrapper& newdb, CDBWrapper& olddb,
+                                         CDBBatch& batch_newdb, CDBBatch& batch_olddb,
+                                         const std::pair<unsigned char, uint256>& begin_key,
+                                         const std::pair<unsigned char, uint256>& end_key)
+{
+    // Sync new DB changes to disk before deleting from old DB.
+    newdb.WriteBatch(batch_newdb, /*fSync=*/ true);
+    olddb.WriteBatch(batch_olddb);
+    olddb.CompactRange(begin_key, end_key);
+
+    batch_newdb.Clear();
+    batch_olddb.Clear();
+}
+
+bool TxIndex::DB::MigrateData(CBlockTreeDB& block_tree_db, const CBlockLocator& best_locator)
 {
     std::string strMessage = tfm::format(fmt, args...);
     SetMiscWarning(strMessage);
