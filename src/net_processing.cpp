@@ -309,7 +309,76 @@ struct CNodeState {
     //! Time of last new block announcement
     int64_t m_last_block_announcement;
 
-    CNodeState(CAddress addrIn, std::string addrNameIn) : address(addrIn), name(addrNameIn) {
+    /*
+     * State associated with transaction download.
+     *
+     * Tx download algorithm:
+     *
+     *   When inv comes in, queue up (process_time, txid) inside the peer's
+     *   CNodeState (m_tx_process_time) as long as m_tx_announced for the peer
+     *   isn't too big (MAX_PEER_TX_ANNOUNCEMENTS).
+     *
+     *   The process_time for a transaction is set to nNow for outbound peers,
+     *   nNow + 2 seconds for inbound peers. This is the time at which we'll
+     *   consider trying to request the transaction from the peer in
+     *   SendMessages(). The delay for inbound peers is to allow outbound peers
+     *   a chance to announce before we request from inbound peers, to prevent
+     *   an adversary from using inbound connections to blind us to a
+     *   transaction (InvBlock).
+     *
+     *   When we call SendMessages() for a given peer,
+     *   we will loop over the transactions in m_tx_process_time, looking
+     *   at the transactions whose process_time <= nNow. We'll request each
+     *   such transaction that we don't have already and that hasn't been
+     *   requested from another peer recently, up until we hit the
+     *   MAX_PEER_TX_IN_FLIGHT limit for the peer. Then we'll update
+     *   g_already_asked_for for each requested txid, storing the time of the
+     *   GETDATA request. We use g_already_asked_for to coordinate transaction
+     *   requests amongst our peers.
+     *
+     *   For transactions that we still need but we have already recently
+     *   requested from some other peer, we'll reinsert (process_time, txid)
+     *   back into the peer's m_tx_process_time at the point in the future at
+     *   which the most recent GETDATA request would time out (ie
+     *   GETDATA_TX_INTERVAL + the request time stored in g_already_asked_for).
+     *   We add an additional delay for inbound peers, again to prefer
+     *   attempting download from outbound peers first.
+     *   We also add an extra small random delay up to 2 seconds
+     *   to avoid biasing some peers over others. (e.g., due to fixed ordering
+     *   of peer processing in ThreadMessageHandler).
+     *
+     *   When we receive a transaction from a peer, we remove the txid from the
+     *   peer's m_tx_in_flight set and from their recently announced set
+     *   (m_tx_announced).  We also clear g_already_asked_for for that entry, so
+     *   that if somehow the transaction is not accepted but also not added to
+     *   the reject filter, then we will eventually redownload from other
+     *   peers.
+     */
+    struct TxDownloadState {
+        /* Track when to attempt download of announced transactions (process
+         * time in micros -> txid)
+         */
+        std::multimap<int64_t, uint256> m_tx_process_time;
+
+        //! Store all the transactions a peer has recently announced
+        std::set<uint256> m_tx_announced;
+
+        //! Store transactions which were requested by us
+        std::set<uint256> m_tx_in_flight;
+    };
+
+    TxDownloadState m_tx_download;
+
+    //! Whether this peer is an inbound connection
+    bool m_is_inbound;
+
+    //! Whether this peer is a manual connection
+    bool m_is_manual_connection;
+
+    CNodeState(CAddress addrIn, std::string addrNameIn, bool is_inbound, bool is_manual) :
+        address(addrIn), name(std::move(addrNameIn)), m_is_inbound(is_inbound),
+        m_is_manual_connection (is_manual)
+    {
         fCurrentlyConnected = false;
         nMisbehavior = 0;
         fShouldBan = false;
@@ -657,7 +726,7 @@ void PeerLogicValidation::InitializeNode(CNode *pnode) {
     NodeId nodeid = pnode->GetId();
     {
         LOCK(cs_main);
-        mapNodeState.emplace_hint(mapNodeState.end(), std::piecewise_construct, std::forward_as_tuple(nodeid), std::forward_as_tuple(addr, std::move(addrName)));
+        mapNodeState.emplace_hint(mapNodeState.end(), std::piecewise_construct, std::forward_as_tuple(nodeid), std::forward_as_tuple(addr, std::move(addrName), pnode->fInbound, pnode->m_manual_connection));
     }
     if(!pnode->fInbound)
         PushNodeVersion(pnode, connman, GetTime());
@@ -894,9 +963,22 @@ static bool MaybePunishNode(NodeId nodeid, const CValidationState& state, bool v
             return true;
         }
         break;
-    // Handled elsewhere for now
     case ValidationInvalidReason::CACHED_INVALID:
-        break;
+        {
+            LOCK(cs_main);
+            CNodeState *node_state = State(nodeid);
+            if (node_state == nullptr) {
+                break;
+            }
+
+            // Ban outbound (but not inbound) peers if on an invalid chain.
+            // Exempt HB compact block peers and manual connections.
+            if (!via_compact_block && !node_state->m_is_inbound && !node_state->m_is_manual_connection) {
+                Misbehaving(nodeid, 100, message);
+                return true;
+            }
+            break;
+        }
     case ValidationInvalidReason::BLOCK_INVALID_HEADER:
     case ValidationInvalidReason::BLOCK_CHECKPOINT:
     case ValidationInvalidReason::BLOCK_INVALID_PREV:
@@ -1628,7 +1710,7 @@ inline void static SendBlockTransactions(const CBlock& block, const BlockTransac
     connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::BLOCKTXN, resp));
 }
 
-bool static ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::vector<CBlockHeader>& headers, const CChainParams& chainparams, bool punish_duplicate_invalid)
+bool static ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::vector<CBlockHeader>& headers, const CChainParams& chainparams, bool via_compact_block)
 {
     const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
     size_t nCount = headers.size();
@@ -1691,40 +1773,7 @@ bool static ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::ve
     CBlockHeader first_invalid_header;
     if (!ProcessNewBlockHeaders(headers, state, chainparams, &pindexLast, &first_invalid_header)) {
         if (state.IsInvalid()) {
-            if (punish_duplicate_invalid && state.GetReason() == ValidationInvalidReason::CACHED_INVALID) {
-                // Goal: don't allow outbound peers to use up our outbound
-                // connection slots if they are on incompatible chains.
-                //
-                // We ask the caller to set punish_invalid appropriately based
-                // on the peer and the method of header delivery (compact
-                // blocks are allowed to be invalid in some circumstances,
-                // under BIP 152).
-                // Here, we try to detect the narrow situation that we have a
-                // valid block header (ie it was valid at the time the header
-                // was received, and hence stored in mapBlockIndex) but know the
-                // block is invalid, and that a peer has announced that same
-                // block as being on its active chain.
-                // Disconnect the peer in such a situation.
-                //
-                // Note: if the header that is invalid was not accepted to our
-                // mapBlockIndex at all, that may also be grounds for
-                // disconnecting the peer, as the chain they are on is likely
-                // to be incompatible. However, there is a circumstance where
-                // that does not hold: if the header's timestamp is more than
-                // 2 hours ahead of our current time. In that case, the header
-                // may become valid in the future, and we don't want to
-                // disconnect a peer merely for serving us one too-far-ahead
-                // block header, to prevent an attacker from splitting the
-                // network by mining a block right at the 2 hour boundary.
-                //
-                // TODO: update the DoS logic (or, rather, rewrite the
-                // DoS-interface between validation and net_processing) so that
-                // the interface is cleaner, and so that we disconnect on all the
-                // reasons that a peer's headers chain is incompatible
-                // with ours (eg block->nVersion softforks, MTP violations,
-                // etc), and not just the duplicate-invalid case.
-                pfrom->fDisconnect = true;
-            }
+            MaybePunishNode(pfrom->GetId(), state, via_compact_block, "invalid header received");
             return false;
         }
     }
@@ -3026,7 +3075,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // the peer if the header turns out to be for an invalid block.
             // Note that if a peer tries to build on an invalid chain, that
             // will be detected and the peer will be banned.
-            return ProcessHeadersMessage(pfrom, connman, {cmpctblock.header}, chainparams, /*punish_duplicate_invalid=*/false);
+            return ProcessHeadersMessage(pfrom, connman, {cmpctblock.header}, chainparams, /*via_compact_block=*/true);
         }
 
         if (fBlockReconstructed) {
@@ -3167,12 +3216,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
         }
 
-        // Headers received via a HEADERS message should be valid, and reflect
-        // the chain the peer is on. If we receive a known-invalid header,
-        // disconnect the peer if it is using one of our outbound connection
-        // slots.
-        bool should_punish = !pfrom->fInbound && !pfrom->m_manual_connection;
-        return ProcessHeadersMessage(pfrom, connman, headers, chainparams, should_punish);
+        return ProcessHeadersMessage(pfrom, connman, headers, chainparams, /*via_compact_block=*/false);
     }
 
     if (strCommand == NetMsgType::BLOCK)
