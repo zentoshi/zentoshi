@@ -862,11 +862,28 @@ void Misbehaving(NodeId pnode, int howmuch, const std::string& message) EXCLUSIV
 // Requires cs_main.
 bool IsBanned(NodeId pnode)
 {
-    CNodeState *state = State(pnode);
-    if (state == NULL)
-        return false;
-    if (state->fShouldBan) {
-        return true;
+    return (state.GetDoS() > 0);
+}
+
+/**
+ * Potentially ban a node based on the contents of a CValidationState object
+ * TODO: net_processing should make the punish decision based on the reason
+ * a tx/block was invalid, rather than just the nDoS score handed back by validation.
+ *
+ * @parameter via_compact_block: this bool is passed in because net_processing should
+ * punish peers differently depending on whether the data was provided in a compact
+ * block message or not. If the compact block had a valid header, but contained invalid
+ * txs, the peer should not be punished. See BIP 152.
+ */
+static bool MaybePunishNode(NodeId nodeid, const CValidationState& state, bool via_compact_block, const std::string& message = "") {
+    int nDoS = state.GetDoS();
+    if (nDoS > 0 && !via_compact_block) {
+         LOCK(cs_main);
+         Misbehaving(nodeid, nDoS, message);
+         return true;
+    }
+    if (message != "") {
+        LogPrint(BCLog::NET, "peer=%d: %s\n", nodeid, message);
     }
     return false;
 }
