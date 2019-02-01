@@ -2273,8 +2273,9 @@ bool CWalletTx::InMempool() const
 bool CWalletTx::IsTrusted(interfaces::Chain::Lock& locked_chain) const
 {
     // Quick answer in most cases
-    if (!locked_chain.checkFinalTx(*tx))
+    if (!locked_chain.checkFinalTx(*tx)) {
         return false;
+    }
     int nDepth = GetDepthInMainChain(locked_chain);
     if (nDepth >= 1)
         return true;
@@ -2329,8 +2330,9 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(interfaces::Chain::
     for (const std::pair<const unsigned int, CWalletTx*>& item : mapSorted)
     {
         CWalletTx& wtx = *item.second;
-        if (wtx.RelayWalletTransaction(locked_chain))
+        if (wtx.RelayWalletTransaction(locked_chain)) {
             result.push_back(wtx.GetHash());
+        }
     }
     return result;
 }
@@ -2667,8 +2669,9 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
         const uint256& wtxid = entry.first;
         const CWalletTx* pcoin = &entry.second;
 
-        if (!locked_chain.checkFinalTx(*pcoin->tx))
+        if (!locked_chain.checkFinalTx(*pcoin->tx)) {
             continue;
+        }
 
         if (pcoin->IsImmatureCoinBase(locked_chain))
             continue;
@@ -5404,11 +5407,11 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
         //We can't rescan beyond non-pruned blocks, stop and throw an error
         //this might happen if a user uses an old wallet within a pruned node
         // or if he ran -disablewallet for a longer time, then decided to re-enable
-        if (chain.getPruneMode())
-        {
-            CBlockIndex *block = chainActive.Tip();
-            while (block && block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA) && block->pprev->nTx > 0 && pindexRescan != block)
-                block = block->pprev;
+        if (chain.getPruneMode()) {
+            int block_height = *tip_height;
+            while (block_height > 0 && locked_chain->haveBlockOnDisk(block_height - 1) && rescan_height != block_height) {
+                --block_height;
+            }
 
             if (rescan_height != block_height) {
                 chain.initError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
