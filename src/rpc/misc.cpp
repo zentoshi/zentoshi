@@ -453,8 +453,8 @@ static UniValue verifymessage(const JSONRPCRequest& request)
     if (!addr.IsValid())
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
 
-    CKeyID keyID;
-    if (!addr.GetKeyID(keyID))
+    const PKHash *pkhash = boost::get<PKHash>(&destination);
+    if (!pkhash) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
 
     bool fInvalid = false;
@@ -472,7 +472,7 @@ static UniValue verifymessage(const JSONRPCRequest& request)
     if (!pubkey.RecoverCompact(ss.GetHash(), vchSig, inputScriptType))
         return false;
 
-    return (pubkey.GetID() == keyID);
+    return (pubkey.GetID() == *pkhash);
 }
 
 UniValue signmessagewithprivkey(const JSONRPCRequest& request)
