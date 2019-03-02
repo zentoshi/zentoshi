@@ -47,8 +47,6 @@ built using Qt 5.9.x, which doesn't support versions of macOS older than
 10.10. Additionally, Bitcoin Core does not yet change appearance when
 macOS "dark mode" is activated.
 
-Known issues
-============
 
 Wallet GUI
 ----------
@@ -58,14 +56,23 @@ For advanced users who have both (1) enabled coin control features, and
 input selection dialog can erroneously retain wrong-wallet state when
 switching wallets using the dropdown menu. For now, it is recommended
 not to use coin control features with multiple wallets loaded.
+=======
+In addition to previously-supported CPU platforms, this release's
+pre-compiled distribution also provides binaries for the RISC-V
+platform.
 
 Notable changes
 ===============
+
+Example item
+------------
 
 
 0.18.x change log
 =================
 
+Example item
+------------
 
 Credits
 =======
