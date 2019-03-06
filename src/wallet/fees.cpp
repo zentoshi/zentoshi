@@ -24,7 +24,7 @@ CAmount GetMinimumFee(const CWallet& wallet, unsigned int nTxBytes, const CCoinC
 
 CFeeRate GetRequiredFeeRate(const CWallet& wallet)
 {
-    return std::max(wallet.m_min_fee, ::minRelayTxFee);
+    return std::max(wallet.m_min_fee, wallet.chain().relayMinFee());
 }
 
 CFeeRate GetMinimumFeeRate(const CWallet& wallet, const CCoinControl& coin_control, FeeCalculation* feeCalc)
@@ -89,6 +89,6 @@ CFeeRate GetDiscardRate(const CWallet& wallet)
     // Don't let discard_rate be greater than longest possible fee estimate if we get a valid fee estimate
     discard_rate = (discard_rate == CFeeRate(0)) ? wallet.m_discard_rate : std::min(discard_rate, wallet.m_discard_rate);
     // Discard rate must be at least dustRelayFee
-    discard_rate = std::max(discard_rate, ::dustRelayFee);
+    discard_rate = std::max(discard_rate, wallet.chain().relayDustFee());
     return discard_rate;
 }
