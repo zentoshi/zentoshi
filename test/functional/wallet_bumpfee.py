@@ -326,6 +326,23 @@ def test_locked_wallet_fails(rbf_node, dest_address):
                             rbf_node.bumpfee, rbfid)
     rbf_node.walletpassphrase(WALLET_PASSPHRASE, WALLET_PASSPHRASE_TIMEOUT)
 
+def test_change_script_match(rbf_node, dest_address):
+    """Test that the same change addresses is used for the replacement transaction when possible."""
+    def get_change_address(tx):
+        tx_details = rbf_node.getrawtransaction(tx, 1)
+        txout_addresses = [txout['scriptPubKey']['addresses'][0] for txout in tx_details["vout"]]
+        return [address for address in txout_addresses if rbf_node.getaddressinfo(address)["ischange"]]
+
+    # Check that there is only one change output
+    rbfid = spend_one_input(rbf_node, dest_address)
+    change_addresses = get_change_address(rbfid)
+    assert_equal(len(change_addresses), 1)
+
+    # Now find that address in each subsequent tx, and no other change
+    bumped_total_tx = rbf_node.bumpfee(rbfid, {"totalFee": 2000})
+    assert_equal(change_addresses, get_change_address(bumped_total_tx['txid']))
+    bumped_rate_tx = rbf_node.bumpfee(bumped_total_tx["txid"])
+    assert_equal(change_addresses, get_change_address(bumped_rate_tx['txid']))
 
 def spend_one_input(node, dest_address, change_size=Decimal("0.00049000")):
     tx_input = dict(
