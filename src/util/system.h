@@ -124,6 +124,7 @@ fs::path GetMasternodeConfigFile();
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
+#if defined(HAVE_SYSTEM)
 void runCommand(const std::string& strCommand);
 void SetThreadPriority(int nPriority);
 
