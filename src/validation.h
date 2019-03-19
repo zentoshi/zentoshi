@@ -25,6 +25,7 @@
 #include <versionbits.h>
 
 #include <algorithm>
+#include <atomic>
 #include <exception>
 #include <map>
 #include <memory>
@@ -34,14 +35,9 @@
 #include <utility>
 #include <vector>
 
-#include <atomic>
-
-#include <boost/unordered_map.hpp>
-#include <boost/filesystem/path.hpp>
-
 class CBlockIndex;
 class CBlockTreeDB;
-class CBloomFilter;
+class CBlockUndo;
 class CChainParams;
 class CCoinsViewDB;
 class CInv;
@@ -422,6 +418,8 @@ bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::P
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
 bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, const CMessageHeader::MessageStartChars& message_start);
 bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex, const CMessageHeader::MessageStartChars& message_start);
+
+bool UndoReadFromDisk(CBlockUndo& blockundo, const CBlockIndex* pindex);
 
 /** Functions for validating blocks and updating the block tree */
 
