@@ -2990,8 +2990,42 @@ bool CChainState::InvalidateBlock(CValidationState& state, const CChainParams& c
         setBlockIndexCandidates.erase(pindexWalk);
         // ActivateBestChain considers blocks already in chainActive
         // unconditionally valid already, so force disconnect away from it.
-        if (!DisconnectTip(state, chainparams, &disconnectpool)) {
-            mempool.removeForReorg(pcoinsTip.get(), chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
+        DisconnectedBlockTransactions disconnectpool;
+        bool ret = DisconnectTip(state, chainparams, &disconnectpool);
+        // DisconnectTip will add transactions to disconnectpool.
+        // Adjust the mempool to be consistent with the new tip, adding
+        // transactions back to the mempool if disconnecting was successful,
+        // and we're not doing a very deep invalidation (in which case
+        // keeping the mempool up to date is probably futile anyway).
+        UpdateMempoolForReorg(disconnectpool, /* fAddToMempool = */ (++disconnected <= 10) && ret);
+        if (!ret) return false;
+        assert(invalid_walk_tip->pprev == chainActive.Tip());
+
+        // We immediately mark the disconnected blocks as invalid.
+        // This prevents a case where pruned nodes may fail to invalidateblock
+        // and be left unable to start as they have no tip candidates (as there
+        // are no blocks that meet the "have data and are not invalid per
+        // nStatus" criteria for inclusion in setBlockIndexCandidates).
+        invalid_walk_tip->nStatus |= BLOCK_FAILED_VALID;
+        setDirtyBlockIndex.insert(invalid_walk_tip);
+        setBlockIndexCandidates.erase(invalid_walk_tip);
+        setBlockIndexCandidates.insert(invalid_walk_tip->pprev);
+        if (invalid_walk_tip->pprev == to_mark_failed && (to_mark_failed->nStatus & BLOCK_FAILED_VALID)) {
+            // We only want to mark the last disconnected block as BLOCK_FAILED_VALID; its children
+            // need to be BLOCK_FAILED_CHILD instead.
+            to_mark_failed->nStatus = (to_mark_failed->nStatus ^ BLOCK_FAILED_VALID) | BLOCK_FAILED_CHILD;
+            setDirtyBlockIndex.insert(to_mark_failed);
+        }
+
+        // Track the last disconnected block, so we can correct its BLOCK_FAILED_CHILD status in future
+        // iterations, or, if it's the last one, call InvalidChainFound on it.
+        to_mark_failed = invalid_walk_tip;
+    }
+
+    {
+        LOCK(cs_main);
+        if (chainActive.Contains(to_mark_failed)) {
+            // If the to-be-marked invalid block is in the active chain, something is interfering and we can't proceed.
             return false;
         }
         if (pindexWalk == pindexBestHeader) {
