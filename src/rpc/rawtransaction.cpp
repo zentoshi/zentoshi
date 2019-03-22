@@ -1062,15 +1062,7 @@ static UniValue signrawtransactionwithkey(const JSONRPCRequest& request)
     return SignTransaction(*g_rpc_interfaces->chain, mtx, request.params[2], &keystore, true, request.params[3]);
 }
 
-UniValue signrawtransaction(const JSONRPCRequest& request)
-{
-    // This method should be removed entirely in V0.19, along with the entries in the
-    // CRPCCommand table and rpc/client.cpp.
-    throw JSONRPCError(RPC_METHOD_DEPRECATED, "signrawtransaction was removed in v0.18.\n"
-        "Clients should transition to using signrawtransactionwithkey and signrawtransactionwithwallet");
-}
-
-UniValue sendrawtransaction(const JSONRPCRequest& request)
+static UniValue sendrawtransaction(const JSONRPCRequest& request)
 {
     const RPCHelpMan help{"sendrawtransaction",
                 "\nSubmits raw transaction (serialized, hex-encoded) to local node and network.\n"
@@ -2130,7 +2122,6 @@ static const CRPCCommand commands[] =
     { "rawtransactions",    "decodescript",                 &decodescript,              {"hexstring"} },
     { "rawtransactions",    "sendrawtransaction",           &sendrawtransaction,        {"hexstring","allowhighfees|maxfeerate"} },
     { "rawtransactions",    "combinerawtransaction",        &combinerawtransaction,     {"txs"} },
-    { "hidden",             "signrawtransaction",           &signrawtransaction,        {"hexstring","prevtxs","privkeys","sighashtype"} },
     { "rawtransactions",    "signrawtransactionwithkey",    &signrawtransactionwithkey, {"hexstring","privkeys","prevtxs","sighashtype"} },
     { "rawtransactions",    "testmempoolaccept",            &testmempoolaccept,         {"rawtxs","allowhighfees|maxfeerate"} },
     { "rawtransactions",    "decodepsbt",                   &decodepsbt,                {"psbt"} },
