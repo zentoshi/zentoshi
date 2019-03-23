@@ -1866,7 +1866,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         ServiceFlags nServices;
         int nVersion;
         int nSendVersion;
-        std::string strSubVer;
         std::string cleanSubVer;
         int nStartingHeight = -1;
         bool fRelay = true;
