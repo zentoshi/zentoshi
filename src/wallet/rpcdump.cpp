@@ -1496,7 +1496,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
         }
     }
     if (fRescan && fRunScan && requests.size()) {
-        int64_t scannedTime = pwallet->RescanFromTime(nLowestTimestamp, true);
+        int64_t scannedTime = pwallet->RescanFromTime(nLowestTimestamp, reserver, true /* update */);
         {
             auto locked_chain = pwallet->chain().lock();
             LOCK(pwallet->cs_wallet);
