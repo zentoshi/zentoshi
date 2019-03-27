@@ -121,6 +121,16 @@ TxIndex::TxIndex(std::unique_ptr<TxIndexDB> db) :
 
 TxIndex::~TxIndex()
 {
+    LOCK(cs_main);
+
+    // Attempt to migrate txindex from the old database to the new one. Even if
+    // chain_tip is null, the node could be reindexing and we still want to
+    // delete txindex records in the old database.
+    if (!m_db->MigrateData(*pblocktree, ::ChainActive().GetLocator())) {
+        return false;
+    }
+
+    return BaseIndex::Init();
 }
 
 bool TxIndex::FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRef& tx) const
