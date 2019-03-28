@@ -149,7 +149,7 @@ protected:
     virtual bool UpdatedTransaction(const uint256 &hash) { return false;}
     virtual void Inventory(const uint256 &hash) {}
     /** Tells listeners to broadcast their data. */
-    virtual void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) {}
+    virtual void ResendWalletTransactions(CConnman* connman) {}
     /**
      * Notifies listeners of a block validation result.
      * If the provided CValidationState IsValid, the provided block
