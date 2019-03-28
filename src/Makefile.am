@@ -198,6 +198,7 @@ BITCOIN_CORE_H = \
   netfulfilledman.h \
   netmessagemaker.h \
   node/coin.h \
+  node/coinstats.h \
   node/psbt.h \
   node/transaction.h \
   noui.h \
@@ -371,6 +372,7 @@ libzentoshi_server_a_SOURCES = \
   netfulfilledman.cpp \
   net_processing.cpp \
   node/coin.cpp \
+  node/coinstats.cpp \
   node/psbt.cpp \
   node/transaction.cpp \
   noui.cpp \
