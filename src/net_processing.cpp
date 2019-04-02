@@ -36,6 +36,7 @@
 #include <util/moneystr.h>
 #include <util/strencodings.h>
 #include <validation.h>
+#include <util/validation.h>
 
 #include <spork.h>
 #include <governance/governance.h>

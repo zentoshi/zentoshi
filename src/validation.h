@@ -156,7 +156,7 @@ extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
 typedef std::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 typedef std::unordered_multimap<uint256, CBlockIndex*, BlockHasher> PrevBlockMap;
-extern BlockMap& mapBlockIndex;
+extern BlockMap& mapBlockIndex GUARDED_BY(cs_main);
 extern PrevBlockMap mapPrevBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockWeight;
@@ -327,9 +327,6 @@ void PruneBlockFilesManual(int nManualPruneHeight);
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fOverrideMempoolLimit=false,
                         const CAmount nAbsurdFee=0, bool fDryRun=false) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-
-/** Convert CValidationState to a human-readable message for logging */
-std::string FormatStateMessage(const CValidationState &state);
 
 /** Get the BIP9 state for a given deployment at the current tip. */
 ThresholdState VersionBitsTipState(const Consensus::Params& params, Consensus::DeploymentPos pos);

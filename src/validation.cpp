@@ -43,8 +43,10 @@
 #include <uint256.h>
 #include <undo.h>
 #include <util/moneystr.h>
+#include <util/rbf.h>
 #include <util/strencodings.h>
 #include <util/system.h>
+#include <util/validation.h>
 #include <validationinterface.h>
 #include <warnings.h>
 
@@ -557,15 +559,6 @@ static void LimitMempoolSize(CTxMemPool& pool, size_t limit, unsigned long age) 
     pool.TrimToSize(limit, &vNoSpendsRemaining);
     for (const COutPoint& removed : vNoSpendsRemaining)
         pcoinsTip->Uncache(removed);
-}
-
-/** Convert CValidationState to a human-readable message for logging */
-std::string FormatStateMessage(const CValidationState &state)
-{
-    return strprintf("%s%s (code %i)",
-        state.GetRejectReason(),
-        state.GetDebugMessage().empty() ? "" : ", "+state.GetDebugMessage(),
-        state.GetRejectCode());
 }
 
 static bool IsCurrentForFeeEstimation() EXCLUSIVE_LOCKS_REQUIRED(cs_main)
