@@ -205,6 +205,7 @@ BITCOIN_CORE_H = \
   policy/fees.h \
   policy/policy.h \
   policy/rbf.h \
+  policy/settings.h \
   pow.h \
   protocol.h \
   psbt.h \
@@ -361,8 +362,8 @@ libzentoshi_server_a_SOURCES = \
   privatesend/privatesend-server.cpp \
   privatesend/privatesend-util.cpp \
   policy/fees.cpp \
-  policy/policy.cpp \
   policy/rbf.cpp \
+  policy/settings.cpp \
   pow.cpp \
   rest.cpp \
   rpc/blockchain.cpp \
@@ -540,6 +541,7 @@ libzentoshi_common_a_SOURCES = \
   netaddress.cpp \
   netbase.cpp \
   policy/feerate.cpp \
+  policy/policy.cpp \
   protocol.cpp \
   saltedhasher.cpp \
   psbt.cpp \
