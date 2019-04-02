@@ -221,7 +221,7 @@ BITCOIN_CORE_H = \
   rpc/mining.h \
   rpc/protocol.h \
   rpc/server.h \
-  rpc/rawtransaction.h \
+  rpc/rawtransaction_util.h \
   rpc/register.h \
   rpc/util.h \
   saltedhasher.h \
@@ -544,6 +544,7 @@ libzentoshi_common_a_SOURCES = \
   protocol.cpp \
   saltedhasher.cpp \
   psbt.cpp \
+  rpc/rawtransaction_util.cpp \
   rpc/util.cpp \
   scheduler.cpp \
   script/descriptor.cpp \
