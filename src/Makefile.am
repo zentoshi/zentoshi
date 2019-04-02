@@ -295,11 +295,16 @@ obj/build.h: FORCE
 	  "$(abs_top_srcdir)"
 libzentoshi_util_a-clientversion.$(OBJEXT): obj/build.h
 
+
 # server: shared between zentoshid and zentoshi-qt
+# Contains code accessing mempool and chain state that is meant to be separated
+# from wallet and gui code (see node/README.md). Shared code should go in
+# libbitcoin_common or libbitcoin_util libraries, instead.
 libzentoshi_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libzentoshi_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_server_a_SOURCES = \
   activemasternode.cpp \
+  addrdb.cpp \
   addrman.cpp \
   addrdb.cpp \
   alert.cpp \
