@@ -376,7 +376,6 @@ libzentoshi_server_a_SOURCES = \
   rpc/rpcevo.cpp \
   rpc/rpcquorums.cpp \
   rpc/server.cpp \
-  rpc/util.cpp \
   script/sigcache.cpp \
   script/ismine.cpp \
   shutdown.cpp \
@@ -545,6 +544,7 @@ libzentoshi_common_a_SOURCES = \
   protocol.cpp \
   saltedhasher.cpp \
   psbt.cpp \
+  rpc/util.cpp \
   scheduler.cpp \
   script/descriptor.cpp \
   script/ismine.cpp \
