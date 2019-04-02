@@ -319,7 +319,6 @@ libzentoshi_server_a_SOURCES = \
   index/blockfilterindex.cpp \
   index/txindex.cpp \
   interfaces/chain.cpp \
-  interfaces/handler.cpp \
   interfaces/node.cpp \
   init.cpp \
   kernel.cpp \
@@ -529,6 +528,7 @@ libzentoshi_common_a_SOURCES = \
   amount.cpp \
   base58.cpp \
   bech32.cpp \
+  bloom.cpp \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
@@ -537,8 +537,10 @@ libzentoshi_common_a_SOURCES = \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
+  merkleblock.cpp \
   netaddress.cpp \
   netbase.cpp \
+  outputtype.cpp \
   policy/feerate.cpp \
   policy/policy.cpp \
   protocol.cpp \
@@ -575,6 +577,7 @@ libzentoshi_util_a_SOURCES = \
   compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
   fs.cpp \
+  interfaces/handler.cpp \
   logging.cpp \
   random.cpp \
   rpc/protocol.cpp \
