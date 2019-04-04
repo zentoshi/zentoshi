@@ -25,9 +25,10 @@
 #include <warnings.h>
 
 #include <stdint.h>
-
-#include <boost/assign/list_of.hpp>
-#include <boost/algorithm/string.hpp>
+#include <tuple>
+#ifdef HAVE_MALLOC_INFO
+#include <malloc.h>
+#endif
 
 #include <univalue.h>
 
@@ -301,7 +302,125 @@ static UniValue createmultisig(const JSONRPCRequest& request)
     return result;
 }
 
-UniValue verifymessage(const JSONRPCRequest& request)
+UniValue getdescriptorinfo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1) {
+        throw std::runtime_error(
+            RPCHelpMan{"getdescriptorinfo",
+            {"\nAnalyses a descriptor.\n"},
+            {
+                {"descriptor", RPCArg::Type::STR, RPCArg::Optional::NO, "The descriptor."},
+            },
+            RPCResult{
+            "{\n"
+            "  \"descriptor\" : \"desc\",         (string) The descriptor in canonical form, without private keys\n"
+            "  \"isrange\" : true|false,        (boolean) Whether the descriptor is ranged\n"
+            "  \"issolvable\" : true|false,     (boolean) Whether the descriptor is solvable\n"
+            "  \"hasprivatekeys\" : true|false, (boolean) Whether the input descriptor contained at least one private key\n"
+            "}\n"
+            },
+            RPCExamples{
+                "Analyse a descriptor\n" +
+                HelpExampleCli("getdescriptorinfo", "\"wpkh([d34db33f/84h/0h/0h]0279be667ef9dcbbac55a06295Ce870b07029Bfcdb2dce28d959f2815b16f81798)\"")
+            }}.ToString()
+        );
+    }
+
+    RPCTypeCheck(request.params, {UniValue::VSTR});
+
+    FlatSigningProvider provider;
+    auto desc = Parse(request.params[0].get_str(), provider);
+    if (!desc) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Invalid descriptor"));
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("descriptor", desc->ToString());
+    result.pushKV("isrange", desc->IsRange());
+    result.pushKV("issolvable", desc->IsSolvable());
+    result.pushKV("hasprivatekeys", provider.keys.size() > 0);
+    return result;
+}
+
+UniValue deriveaddresses(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.empty() || request.params.size() > 2) {
+        throw std::runtime_error(
+            RPCHelpMan{"deriveaddresses",
+            {"\nDerives one or more addresses corresponding to an output descriptor.\n"
+            "Examples of output descriptors are:\n"
+            "    pkh(<pubkey>)                        P2PKH outputs for the given pubkey\n"
+            "    wpkh(<pubkey>)                       Native segwit P2PKH outputs for the given pubkey\n"
+            "    sh(multi(<n>,<pubkey>,<pubkey>,...)) P2SH-multisig outputs for the given threshold and pubkeys\n"
+            "    raw(<hex script>)                    Outputs whose scriptPubKey equals the specified hex scripts\n"
+            "\nIn the above, <pubkey> either refers to a fixed public key in hexadecimal notation, or to an xpub/xprv optionally followed by one\n"
+            "or more path elements separated by \"/\", where \"h\" represents a hardened child key.\n"
+            "For more information on output descriptors, see the documentation in the doc/descriptors.md file.\n"},
+            {
+                {"descriptor", RPCArg::Type::STR, RPCArg::Optional::NO, "The descriptor."},
+                {"range", RPCArg::Type::RANGE, RPCArg::Optional::OMITTED_NAMED_ARG, "If a ranged descriptor is used, this specifies the end or the range (in [begin,end] notation) to derive."},
+            },
+            RPCResult{
+                "[ address ] (array) the derived addresses\n"
+            },
+            RPCExamples{
+                "First three native segwit receive addresses\n" +
+                HelpExampleCli("deriveaddresses", "\"wpkh([d34db33f/84h/0h/0h]xpub6DJ2dNUysrn5Vt36jH2KLBT2i1auw1tTSSomg8PhqNiUtx8QX2SvC9nrHu81fT41fvDUnhMjEzQgXnQjKEu3oaqMSzhSrHMxyyoEAmUHQbY/0/*)#trd0mf0l\" \"[0,2]\"")
+            }}.ToString()
+        );
+    }
+
+    RPCTypeCheck(request.params, {UniValue::VSTR, UniValueType()}); // Range argument is checked later
+    const std::string desc_str = request.params[0].get_str();
+
+    int64_t range_begin = 0;
+    int64_t range_end = 0;
+
+    if (request.params.size() >= 2 && !request.params[1].isNull()) {
+        std::tie(range_begin, range_end) = ParseDescriptorRange(request.params[1]);
+    }
+
+    FlatSigningProvider provider;
+    auto desc = Parse(desc_str, provider, /* require_checksum = */ true);
+    if (!desc) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Invalid descriptor"));
+    }
+
+    if (!desc->IsRange() && request.params.size() > 1) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Range should not be specified for an un-ranged descriptor");
+    }
+
+    if (desc->IsRange() && request.params.size() == 1) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Range must be specified for a ranged descriptor");
+    }
+
+    UniValue addresses(UniValue::VARR);
+
+    for (int i = range_begin; i <= range_end; ++i) {
+        std::vector<CScript> scripts;
+        if (!desc->Expand(i, provider, scripts, provider)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Cannot derive script without private keys"));
+        }
+
+        for (const CScript &script : scripts) {
+            CTxDestination dest;
+            if (!ExtractDestination(script, dest)) {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Descriptor does not have a corresponding address"));
+            }
+
+            addresses.push_back(EncodeDestination(dest));
+        }
+    }
+
+    // This should not be possible, but an assert seems overkill:
+    if (addresses.empty()) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Unexpected empty result");
+    }
+
+    return addresses;
+}
+
+static UniValue verifymessage(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 3)
         throw std::runtime_error(
