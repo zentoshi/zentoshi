@@ -99,6 +99,23 @@ static constexpr int STALE_RELAY_AGE_LIMIT = 30 * 24 * 60 * 60;
 /// Age after which a block is considered historical for purposes of rate
 /// limiting block relay. Set to one week, denominated in seconds.
 static constexpr int HISTORICAL_BLOCK_AGE = 7 * 24 * 60 * 60;
+/** Maximum number of in-flight transactions from a peer */
+static constexpr int32_t MAX_PEER_TX_IN_FLIGHT = 100;
+/** Maximum number of announced transactions from a peer */
+static constexpr int32_t MAX_PEER_TX_ANNOUNCEMENTS = 2 * MAX_INV_SZ;
+/** How many microseconds to delay requesting transactions from inbound peers */
+static constexpr int64_t INBOUND_PEER_TX_DELAY = 2 * 1000000; // 2 seconds
+/** How long to wait (in microseconds) before downloading a transaction from an additional peer */
+static constexpr int64_t GETDATA_TX_INTERVAL = 60 * 1000000; // 1 minute
+/** Maximum delay (in microseconds) for transaction requests to avoid biasing some peers over others. */
+static constexpr int64_t MAX_GETDATA_RANDOM_DELAY = 2 * 1000000; // 2 seconds
+/** How long to wait (in microseconds) before expiring an in-flight getdata request to a peer */
+static constexpr int64_t TX_EXPIRY_INTERVAL = 10 * GETDATA_TX_INTERVAL;
+static_assert(INBOUND_PEER_TX_DELAY >= MAX_GETDATA_RANDOM_DELAY,
+"To preserve security, MAX_GETDATA_RANDOM_DELAY should not exceed INBOUND_PEER_DELAY");
+/** Limit to avoid sending big packets. Not used in processing incoming GETDATA for compatibility */
+static const unsigned int MAX_GETDATA_SZ = 1000;
+
 
 struct COrphanTx {
     // When modifying, adapt the copy of this definition in tests/DoS_tests.
@@ -363,8 +380,11 @@ struct CNodeState {
         //! Store all the transactions a peer has recently announced
         std::set<uint256> m_tx_announced;
 
-        //! Store transactions which were requested by us
-        std::set<uint256> m_tx_in_flight;
+        //! Store transactions which were requested by us, with timestamp
+        std::map<uint256, int64_t> m_tx_in_flight;
+
+        //! Periodically check for stuck getdata requests
+        int64_t m_check_expiry_timer{0};
     };
 
     TxDownloadState m_tx_download;
@@ -4364,24 +4384,50 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
         //
         // Message: getdata (non-blocks)
         //
-        while (!pto->queueAskFor.empty() && pto->queueAskFor.top().first <= nNow)
-        {
-            const CInv& inv = pto->queueAskFor.top().second;
-            auto jt = pto->setAskForInQueue.find(inv.hash);
-            if (jt == pto->setAskForInQueue.end()) {
-                pto->queueAskFor.pop();
-                continue;
-            }
 
-            if (!AlreadyHave(inv))
-            {
-                LogPrint(BCLog::NET, "SendMessages -- GETDATA -- requesting inv = %s peer=%d\n", inv.ToString(), pto->GetId());
-                vGetData.push_back(inv);
-                if (vGetData.size() >= 1000)
-                {
-                    connman->PushMessage(pto, msgMaker.Make(NetMsgType::GETDATA, vGetData));
-                    LogPrint(BCLog::NET, "SendMessages -- GETDATA -- pushed size = %lu peer=%d\n", vGetData.size(), pto->GetId());
-                    vGetData.clear();
+        // For robustness, expire old requests after a long timeout, so that
+        // we can resume downloading transactions from a peer even if they
+        // were unresponsive in the past.
+        // Eventually we should consider disconnecting peers, but this is
+        // conservative.
+        if (state.m_tx_download.m_check_expiry_timer <= nNow) {
+            for (auto it=state.m_tx_download.m_tx_in_flight.begin(); it != state.m_tx_download.m_tx_in_flight.end();) {
+                if (it->second <= nNow - TX_EXPIRY_INTERVAL) {
+                    LogPrint(BCLog::NET, "timeout of inflight tx %s from peer=%d\n", it->first.ToString(), pto->GetId());
+                    state.m_tx_download.m_tx_announced.erase(it->first);
+                    state.m_tx_download.m_tx_in_flight.erase(it++);
+                } else {
+                    ++it;
+                }
+            }
+            // On average, we do this check every TX_EXPIRY_INTERVAL. Randomize
+            // so that we're not doing this for all peers at the same time.
+            state.m_tx_download.m_check_expiry_timer = nNow + TX_EXPIRY_INTERVAL/2 + GetRand(TX_EXPIRY_INTERVAL);
+        }
+
+        auto& tx_process_time = state.m_tx_download.m_tx_process_time;
+        while (!tx_process_time.empty() && tx_process_time.begin()->first <= nNow && state.m_tx_download.m_tx_in_flight.size() < MAX_PEER_TX_IN_FLIGHT) {
+            const uint256& txid = tx_process_time.begin()->second;
+            CInv inv(MSG_TX | GetFetchFlags(pto), txid);
+            if (!AlreadyHave(inv)) {
+                // If this transaction was last requested more than 1 minute ago,
+                // then request.
+                int64_t last_request_time = GetTxRequestTime(inv.hash);
+                if (last_request_time <= nNow - GETDATA_TX_INTERVAL) {
+                    LogPrint(BCLog::NET, "Requesting %s peer=%d\n", inv.ToString(), pto->GetId());
+                    vGetData.push_back(inv);
+                    if (vGetData.size() >= MAX_GETDATA_SZ) {
+                        connman->PushMessage(pto, msgMaker.Make(NetMsgType::GETDATA, vGetData));
+                        vGetData.clear();
+                    }
+                    UpdateTxRequestTime(inv.hash, nNow);
+                    state.m_tx_download.m_tx_in_flight.emplace(inv.hash, nNow);
+                } else {
+                    // This transaction is in flight from someone else; queue
+                    // up processing to happen after the download times out
+                    // (with a slight delay for inbound peers, to prefer
+                    // requests to outbound peers).
+                    RequestTx(&state, txid, nNow);
                 }
             } else {
                 //If we're not going to ask, don't expect a response.
