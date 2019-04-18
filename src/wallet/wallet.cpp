@@ -1346,7 +1346,8 @@ void CWallet::BlockUntilSyncedToCurrentChain() {
     // ::ChainActive().Tip(), otherwise put a callback in the validation interface queue and wait
     // for the queue to drain enough to execute it (indicating we are caught up
     // at least with the time we entered this function).
-    chain().waitForNotifications();
+    uint256 last_block_hash = WITH_LOCK(cs_wallet, return m_last_block_processed);
+    chain().waitForNotificationsIfNewBlocksConnected(last_block_hash);
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
