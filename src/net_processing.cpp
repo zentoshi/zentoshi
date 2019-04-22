@@ -722,6 +722,68 @@ static void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vec
     }
 }
 
+void EraseTxRequest(const uint256& txid) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    g_already_asked_for.erase(txid);
+}
+
+int64_t GetTxRequestTime(const uint256& txid) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    auto it = g_already_asked_for.find(txid);
+    if (it != g_already_asked_for.end()) {
+        return it->second;
+    }
+    return 0;
+}
+
+void UpdateTxRequestTime(const uint256& txid, int64_t request_time) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    auto it = g_already_asked_for.find(txid);
+    if (it == g_already_asked_for.end()) {
+        g_already_asked_for.insert(std::make_pair(txid, request_time));
+    } else {
+        g_already_asked_for.update(it, request_time);
+    }
+}
+
+int64_t CalculateTxGetDataTime(const uint256& txid, int64_t current_time, bool use_inbound_delay) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    int64_t process_time;
+    int64_t last_request_time = GetTxRequestTime(txid);
+    // First time requesting this tx
+    if (last_request_time == 0) {
+        process_time = current_time;
+    } else {
+        // Randomize the delay to avoid biasing some peers over others (such as due to
+        // fixed ordering of peer processing in ThreadMessageHandler)
+        process_time = last_request_time + GETDATA_TX_INTERVAL + GetRand(MAX_GETDATA_RANDOM_DELAY);
+    }
+
+    // We delay processing announcements from inbound peers
+    if (use_inbound_delay) process_time += INBOUND_PEER_TX_DELAY;
+
+    return process_time;
+}
+
+void RequestTx(CNodeState* state, const uint256& txid, int64_t nNow) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+{
+    CNodeState::TxDownloadState& peer_download_state = state->m_tx_download;
+    if (peer_download_state.m_tx_announced.size() >= MAX_PEER_TX_ANNOUNCEMENTS ||
+            peer_download_state.m_tx_process_time.size() >= MAX_PEER_TX_ANNOUNCEMENTS ||
+            peer_download_state.m_tx_announced.count(txid)) {
+        // Too many queued announcements from this peer, or we already have
+        // this announcement
+        return;
+    }
+    peer_download_state.m_tx_announced.insert(txid);
+
+    // Calculate the time to try requesting this transaction. Use
+    // fPreferredDownload as a proxy for outbound peers.
+    int64_t process_time = CalculateTxGetDataTime(txid, nNow, !state->fPreferredDownload);
+
+    peer_download_state.m_tx_process_time.emplace(process_time, txid);
+}
+
 } // namespace
 
 // This function is used for testing the stale tip eviction logic, see
@@ -4407,7 +4469,10 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
 
         auto& tx_process_time = state.m_tx_download.m_tx_process_time;
         while (!tx_process_time.empty() && tx_process_time.begin()->first <= nNow && state.m_tx_download.m_tx_in_flight.size() < MAX_PEER_TX_IN_FLIGHT) {
-            const uint256& txid = tx_process_time.begin()->second;
+            const uint256 txid = tx_process_time.begin()->second;
+            // Erase this entry from tx_process_time (it may be added back for
+            // processing at a later time, see below)
+            tx_process_time.erase(tx_process_time.begin());
             CInv inv(MSG_TX | GetFetchFlags(pto), txid);
             if (!AlreadyHave(inv)) {
                 // If this transaction was last requested more than 1 minute ago,
@@ -4427,14 +4492,14 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
                     // up processing to happen after the download times out
                     // (with a slight delay for inbound peers, to prefer
                     // requests to outbound peers).
-                    RequestTx(&state, txid, nNow);
+                    int64_t next_process_time = CalculateTxGetDataTime(txid, nNow, !state.fPreferredDownload);
+                    tx_process_time.emplace(next_process_time, txid);
                 }
             } else {
                 //If we're not going to ask, don't expect a response.
                 LogPrint(BCLog::NET, "SendMessages -- GETDATA -- already have inv = %s peer=%d\n", inv.ToString(), pto->GetId());
                 pto->setAskFor.erase(inv.hash);
             }
-            pto->mapAskFor.erase(pto->mapAskFor.begin());
         }
         if (!vGetData.empty())
             connman->PushMessage(pto, msgMaker.Make(NetMsgType::GETDATA, vGetData));
