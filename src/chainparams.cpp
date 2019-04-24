@@ -319,6 +319,7 @@ public:
         nMinSporkKeys = 1;
         fBIP9CheckMasternodesUpgraded = true;
         consensus.fLLMQAllowDummyCommitments = false;
+        m_is_test_chain = false;
 
         checkpointData = {
             { { 0, consensus.hashGenesisBlock }, }
@@ -477,6 +478,9 @@ public:
         vSporkAddresses = {"ZXoR9MgySWXAkoWvso96pcog5J7VXiGPHm"};
         nMinSporkKeys = 1;
         fBIP9CheckMasternodesUpgraded = true;
+        fDefaultConsistencyChecks = true;
+        fRequireStandard = true;
+        m_is_test_chain = true;
 
         checkpointData = {
         };
