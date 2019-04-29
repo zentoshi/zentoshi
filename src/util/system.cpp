@@ -1294,6 +1294,9 @@ int64_t GetStartupTime()
 
 fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
 {
+    if (path.is_absolute()) {
+        return path;
+    }
     return fs::absolute(path, GetDataDir(net_specific));
 }
 
