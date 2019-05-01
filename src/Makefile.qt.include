@@ -184,6 +184,7 @@ QT_MOC_CPP = \
   qt/moc_paymentserver.cpp \
   qt/moc_privatesendpage.cpp \
   qt/moc_governancedialog.cpp \
+  qt/moc_qrimagewidget.cpp \
   qt/moc_qvalidatedlineedit.cpp \
   qt/moc_qvalidatedtextedit.cpp \
   qt/moc_qvaluecombobox.cpp \
@@ -277,6 +278,7 @@ BITCOIN_QT_H = \
   qt/platformstyle.h \
   qt/privatesendpage.h \
   qt/governancedialog.h \
+  qt/qrimagewidget.h \
   qt/qvalidatedlineedit.h \
   qt/qvalidatedtextedit.h \
   qt/qvaluecombobox.h \
@@ -416,6 +418,7 @@ BITCOIN_QT_WALLET_CPP = \
   qt/paymentserver.cpp \
   qt/privatesendpage.cpp \
   qt/governancedialog.cpp \
+  qt/qrimagewidget.cpp \
   qt/receivecoinsdialog.cpp \
   qt/receiverequestdialog.cpp \
   qt/recentrequeststablemodel.cpp \
