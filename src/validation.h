@@ -117,12 +117,12 @@ static const int64_t MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 /** Default for -permitbaremultisig */
 static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
-static const bool DEFAULT_TXINDEX = false;
+static const bool DEFAULT_TXINDEX = true;
 static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
 /** Default for -persistmempool */
 static const bool DEFAULT_PERSIST_MEMPOOL = true;
 /** Default for -mempoolreplacement */
-static const bool DEFAULT_ENABLE_REPLACEMENT = true;
+static const bool DEFAULT_ENABLE_REPLACEMENT = false;
 /** Default for using fee filter */
 static const bool DEFAULT_FEEFILTER = true;
 
@@ -139,10 +139,7 @@ static const int DEFAULT_STOPATHEIGHT = 0;
 
 struct BlockHasher
 {
-    // this used to call `GetCheapHash()` in uint256, which was later moved; the
-    // cheap hash function simply calls ReadLE64() however, so the end result is
-    // identical
-    size_t operator()(const uint256& hash) const { return ReadLE64(hash.begin()); }
+    size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
 };
 
 extern CScript COINBASE_FLAGS;
@@ -151,7 +148,9 @@ extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
 extern std::atomic_bool g_is_mempool_loaded;
 typedef std::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
-extern BlockMap& mapBlockIndex GUARDED_BY(cs_main);
+extern BlockMap& mapBlockIndex;
+extern uint64_t nLastBlockTx;
+extern uint64_t nLastBlockWeight;
 extern const std::string strMessageMagic;
 extern Mutex g_best_block_mutex;
 extern std::condition_variable g_best_block_cv;
@@ -159,6 +158,7 @@ extern uint256 g_best_block;
 extern std::atomic_bool fImporting;
 extern std::atomic_bool fReindex;
 extern int nScriptCheckThreads;
+extern bool fTxIndex;
 extern bool fIsBareMultisigStd;
 extern bool fRequireStandard;
 extern bool fCheckBlockIndex;
@@ -275,7 +275,8 @@ bool GetTransaction(const uint256& hash, CTransactionRef& tx, const Consensus::P
  * validationinterface callback.
  */
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
-CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
+CAmount GetBlockSubsidy(int nPrevHeight, const Consensus::Params& consensusParams, bool fSuperblockPartOnly = false);
+CAmount GetMasternodePayment(int nHeight, CAmount blockValue);
 
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
 double GuessVerificationProgress(const ChainTxData& data, const CBlockIndex* pindex);
@@ -389,6 +390,7 @@ public:
 /** Initializes the script-execution cache */
 void InitScriptExecutionCache();
 
+void ReprocessBlocks(int nBlocks);
 
 /** Functions for disk access for blocks */
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
