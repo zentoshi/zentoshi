@@ -58,10 +58,13 @@ public:
     virtual bool lock() = 0;
 
     //! Unlock wallet.
-    virtual bool unlock(const SecureString& wallet_passphrase) = 0;
+    virtual bool unlock(const SecureString& wallet_passphrase, bool stakingOnly = false) = 0;
 
     //! Return whether wallet is locked.
     virtual bool isLocked() = 0;
+
+    //! Return whether wallet is locked for Staking only.
+    virtual bool isLockedForStaking() = 0;
 
     //! Change wallet passphrase.
     virtual bool changeWalletPassphrase(const SecureString& old_wallet_passphrase,
@@ -175,6 +178,9 @@ public:
     //! Get list of all wallet transactions.
     virtual std::vector<WalletTx> getWalletTxs() = 0;
 
+    //! Get minimum limit where stake gets split between vouts.
+    virtual CAmount getStakeSplitThreshold() const = 0;
+
     //! Try to get updated status for a particular transaction, if possible without blocking.
     virtual bool tryGetTxStatus(const uint256& txid,
         WalletTxStatus& tx_status,
@@ -205,6 +211,9 @@ public:
 
     //! Return whether transaction output belongs to wallet.
     virtual isminetype txoutIsMine(const CTxOut& txout) = 0;
+
+    //! Return whether transaction output has been spent.
+    virtual bool txoutIsSpent(const uint256 &hash, unsigned int outputIndex) = 0;
 
     //! Return debit amount if transaction input belongs to wallet.
     virtual CAmount getDebit(const CTxIn& txin, isminefilter filter) = 0;

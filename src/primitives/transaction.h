@@ -54,6 +54,7 @@ public:
     }
 
     std::string ToString() const;
+    std::string ToStringShort() const;
 };
 
 /** An input of a transaction.  It contains the location of the previous
@@ -124,6 +125,11 @@ public:
         return !(a == b);
     }
 
+    friend bool operator<(const CTxIn& a, const CTxIn& b)
+    {
+        return a.prevout < b.prevout;
+    }
+
     std::string ToString() const;
 };
 
@@ -160,6 +166,17 @@ public:
     bool IsNull() const
     {
         return (nValue == -1);
+    }
+
+    void SetEmpty()
+    {
+        nValue = 0;
+        scriptPubKey.clear();
+    }
+
+    bool IsEmpty() const
+    {
+        return (nValue == 0 && scriptPubKey.empty());
     }
 
     friend bool operator==(const CTxOut& a, const CTxOut& b)
@@ -339,6 +356,12 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
+    bool IsCoinStake() const
+    {
+        // ppcoin: the coin stake transaction is marked with the first output empty
+        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+    }
+
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
         return a.hash == b.hash;
@@ -393,6 +416,13 @@ struct CMutableTransaction
      * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
     uint256 GetHash() const;
+
+    std::string ToString() const;
+
+    friend bool operator==(const CMutableTransaction& a, const CMutableTransaction& b)
+    {
+        return a.GetHash() == b.GetHash();
+    }
 
     bool HasWitness() const
     {

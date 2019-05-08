@@ -20,6 +20,7 @@
 #include <rpc/server.h>
 #include <rpc/util.h>
 #include <shutdown.h>
+#include <spork.h>
 #include <txmempool.h>
 #include <util/strencodings.h>
 #include <util/system.h>
@@ -121,7 +122,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
             LOCK(cs_main);
             IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
         }
-        while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && !CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
+        while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && !CheckProofOfWork(pblock->GetHash(), pblock->nBits, true, Params().GetConsensus())) {
             ++pblock->nNonce;
             --nMaxTries;
         }
@@ -197,7 +198,7 @@ static UniValue getmininginfo(const JSONRPCRequest& request)
                     "  \"blocks\": nnn,             (numeric) The current block\n"
                     "  \"currentblockweight\": nnn, (numeric, optional) The block weight of the last assembled block (only present if a block was ever assembled)\n"
                     "  \"currentblocktx\": nnn,     (numeric, optional) The number of block transactions of the last assembled block (only present if a block was ever assembled)\n"
-                    "  \"difficulty\": xxx.xxxxx    (numeric) The current difficulty\n"
+                    "  \"difficulty\": xxx.xxxxx    (numeric) The current proof-of-stake/proof-of-work difficulty\n"
                     "  \"networkhashps\": nnn,      (numeric) The network hashes per second\n"
                     "  \"pooledtx\": n              (numeric) The size of the mempool\n"
                     "  \"chain\": \"xxxx\",           (string) current network name as defined in BIP70 (main, test, regtest)\n"
@@ -213,11 +214,18 @@ static UniValue getmininginfo(const JSONRPCRequest& request)
 
     LOCK(cs_main);
 
+    CBlockIndex* tip = chainActive.Tip();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("blocks",           (int)chainActive.Height());
     if (BlockAssembler::m_last_block_weight) obj.pushKV("currentblockweight", *BlockAssembler::m_last_block_weight);
     if (BlockAssembler::m_last_block_num_txs) obj.pushKV("currentblocktx", *BlockAssembler::m_last_block_num_txs);
-    obj.pushKV("difficulty",       (double)GetDifficulty(chainActive.Tip()));
+    UniValue diff(UniValue::VOBJ);
+    diff.push_back(Pair("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8)));
+    diff.push_back(Pair("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8)));
+    obj.push_back(Pair("difficulty", diff));
+    obj.pushKV("difficulty", diff);
     obj.pushKV("networkhashps",    getnetworkhashps(request));
     obj.pushKV("pooledtx",         (uint64_t)mempool.size());
     obj.pushKV("chain",            Params().NetworkIDString());
@@ -671,8 +679,35 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("curtime", pblock->GetBlockTime());
     result.pushKV("bits", strprintf("%08x", pblock->nBits));
     result.pushKV("height", (int64_t)(pindexPrev->nHeight+1));
-
-    if (!pblocktemplate->vchCoinbaseCommitment.empty()) {
+    UniValue masternodeObj(UniValue::VOBJ);
+    if(pblock->txoutMasternode != CTxOut()) {
+        CTxDestination address1;
+        ExtractDestination(pblock->txoutMasternode.scriptPubKey, address1);
+        CBitcoinAddress address2(address1);
+        masternodeObj.push_back(Pair("payee", address2.ToString().c_str()));
+        masternodeObj.push_back(Pair("script", HexStr(pblock->txoutMasternode.scriptPubKey)));
+        masternodeObj.push_back(Pair("amount", pblock->txoutMasternode.nValue));
+    }
+    result.push_back(Pair("masternode", masternodeObj));
+    result.push_back(Pair("masternode_payments_started", pindexPrev->nHeight + 1 > consensusParams.nFirstPoSBlock));
+    result.push_back(Pair("masternode_payments_enforced", sporkManager.IsSporkActive(Spork::SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)));
+    UniValue superblockObjArray(UniValue::VARR);
+    if(pblock->voutSuperblock.size()) {
+        for (const auto& txout : pblock->voutSuperblock) {
+            UniValue entry(UniValue::VOBJ);
+            CTxDestination address1;
+            ExtractDestination(txout.scriptPubKey, address1);
+            CBitcoinAddress address2(address1);
+            entry.push_back(Pair("payee", address2.ToString().c_str()));
+            entry.push_back(Pair("script", HexStr(txout.scriptPubKey)));
+            entry.push_back(Pair("amount", txout.nValue));
+            superblockObjArray.push_back(entry);
+        }
+    }
+    result.push_back(Pair("superblock", superblockObjArray));
+    result.push_back(Pair("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock));
+    result.push_back(Pair("superblocks_enabled", sporkManager.IsSporkActive(Spork::SPORK_9_SUPERBLOCKS_ENABLED)));
+    if (!pblocktemplate->vchCoinbaseCommitment.empty() && fSupportsSegwit) {
         result.pushKV("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment.begin(), pblocktemplate->vchCoinbaseCommitment.end()));
     }
 
@@ -972,7 +1007,49 @@ static UniValue estimaterawfee(const JSONRPCRequest& request)
     return result;
 }
 
-// clang-format off
+static UniValue setgenerate(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 4)
+        throw std::runtime_error(
+                "setgenerate generate ( genproclimit )\n"
+                "\nSet 'generate' true or false to turn generation on or off.\n"
+                "Generation is limited to 'genproclimit' processors, -1 is unlimited.\n"
+                "See the getgenerate call for the current setting.\n"
+                "\nArguments:\n"
+                "1. generate         (boolean, required) Set to true to turn on generation, false to turn off.\n"
+                "2. genproclimit     (numeric, optional) Set the processor limit for when generation is on. Can be -1 for unlimited.\n"
+                "\nExamples:\n"
+                "\nSet the generation on with a limit of one processor\n"
+                + HelpExampleCli("setgenerate", "true 1") +
+                "\nCheck the setting\n"
+                + HelpExampleCli("getgenerate", "") +
+                "\nTurn off generation\n"
+                + HelpExampleCli("setgenerate", "false") +
+                "\nUsing json rpc\n"
+                + HelpExampleRpc("setgenerate", "true, 1")
+                );
+
+    if (Params().MineBlocksOnDemand())
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Use the generate method instead of setgenerate on this network");
+
+    const auto& params = request.params;
+    bool fGenerate = true;
+    if (params.size() > 0)
+        fGenerate = params[0].get_bool();
+
+    int nGenProcLimit = 1;
+    if (params.size() > 1)
+    {
+        nGenProcLimit = params[1].get_int();
+        if (nGenProcLimit == 0)
+            fGenerate = false;
+    }
+
+    GenerateBitcoins(fGenerate, nGenProcLimit, Params(), *g_connman);
+
+    return fGenerate ? std::string("Mining started") : std::string("Mining stopped");
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         argNames
   //  --------------------- ------------------------  -----------------------  ----------
@@ -982,6 +1059,7 @@ static const CRPCCommand commands[] =
     { "mining",             "getblocktemplate",       &getblocktemplate,       {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
     { "mining",             "submitheader",           &submitheader,           {"hexdata"} },
+    { "mining",             "setgenerate",            &setgenerate,            {"generate", "genproclimit", "staking"} },
 
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
@@ -990,7 +1068,6 @@ static const CRPCCommand commands[] =
 
     { "hidden",             "estimaterawfee",         &estimaterawfee,         {"conf_target", "threshold"} },
 };
-// clang-format on
 
 void RegisterMiningRPCCommands(CRPCTable &t)
 {

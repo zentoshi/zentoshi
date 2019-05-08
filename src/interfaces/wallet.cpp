@@ -317,6 +317,10 @@ public:
         }
         return result;
     }
+    CAmount getStakeSplitThreshold() const override
+    {
+        return m_wallet.nStakeSplitThreshold;
+    }
     bool tryGetTxStatus(const uint256& txid,
         interfaces::WalletTxStatus& tx_status,
         int& num_blocks,

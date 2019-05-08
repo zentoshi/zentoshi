@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <climits>
 #include <limits>
+#include <pubkey.h>
 #include <stdexcept>
 #include <stdint.h>
 #include <string.h>
@@ -186,6 +187,12 @@ enum opcodetype
     OP_NOP8 = 0xb7,
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
+
+    // template matching params
+    OP_SMALLINTEGER = 0xfa,
+    OP_PUBKEYS = 0xfb,
+    OP_PUBKEYHASH = 0xfd,
+    OP_PUBKEY = 0xfe,
 
     OP_INVALIDOPCODE = 0xff,
 };
@@ -493,6 +500,11 @@ public:
         return *this;
     }
 
+    CScript& operator<<(const CPubKey& key)
+    {
+        std::vector<unsigned char> vchKey = key.Raw();
+        return (*this) << vchKey;
+    }
 
     bool GetOp(const_iterator& pc, opcodetype& opcodeRet, std::vector<unsigned char>& vchRet) const
     {
@@ -537,6 +549,7 @@ public:
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
     bool IsPayToScriptHash() const;
+    bool IsPayToPublicKeyHash() const;
     bool IsPayToWitnessScriptHash() const;
     bool IsWitnessProgram(int& version, std::vector<unsigned char>& program) const;
 
@@ -556,6 +569,8 @@ public:
     {
         return (size() > 0 && *begin() == OP_RETURN) || (size() > MAX_SCRIPT_SIZE);
     }
+
+    std::string ToString() const;
 
     void clear()
     {

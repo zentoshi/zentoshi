@@ -30,6 +30,7 @@
 #include <util/system.h>
 #include <validation.h>
 #include <warnings.h>
+#include <masternodeman.h>
 
 #if defined(HAVE_CONFIG_H)
 #include <config/bitcoin-config.h>
@@ -179,6 +180,11 @@ public:
         LOCK(::cs_main);
         return ::chainActive.Height();
     }
+    MasternodeCountInfo getNumMasternodes() override
+    {
+        MasternodeCountInfo mnCount(mnodeman.size(), mnodeman.CountEnabled(PROTOCOL_VERSION), mnodeman.CountEnabled());
+        return mnCount;
+    }
     int64_t getLastBlockTime() override
     {
         LOCK(::cs_main);
@@ -307,6 +313,10 @@ public:
                 fn(initial_download, block->nHeight, block->GetBlockTime(),
                     GuessVerificationProgress(Params().TxData(), block));
             }));
+    }
+    std::unique_ptr<Handler> handleNotifyAdditionalDataSyncProgressChanged(NotifyAdditionalDataSyncProgressChangedFn fn)
+    {
+        return MakeHandler(::uiInterface.NotifyAdditionalDataSyncProgressChanged.connect(fn));
     }
     InitInterfaces m_interfaces;
 };

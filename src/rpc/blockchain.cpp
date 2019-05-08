@@ -55,15 +55,13 @@ static Mutex cs_blockchange;
 static std::condition_variable cond_blockchange;
 static CUpdatedBlock latestblock;
 
-/* Calculate the difficulty for a given block index.
+/* Returns the difficulty for a given nBits
  */
-double GetDifficulty(const CBlockIndex* blockindex)
+double GetDifficulty(unsigned int nBits)
 {
-    assert(blockindex);
-
-    int nShift = (blockindex->nBits >> 24) & 0xff;
+    int nShift = (nBits >> 24) & 0xff;
     double dDiff =
-        (double)0x0000ffff / (double)(blockindex->nBits & 0x00ffffff);
+        (double)0x0000ffff / (double)(nBits & 0x00ffffff);
 
     while (nShift < 29)
     {
@@ -104,7 +102,7 @@ UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex
     result.pushKV("mediantime", (int64_t)blockindex->GetMedianTimePast());
     result.pushKV("nonce", (uint64_t)blockindex->nNonce);
     result.pushKV("bits", strprintf("%08x", blockindex->nBits));
-    result.pushKV("difficulty", GetDifficulty(blockindex));
+    result.pushKV("difficulty", GetDifficulty(blockindex->nBits));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
     result.pushKV("nTx", (uint64_t)blockindex->nTx);
 
@@ -146,7 +144,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
     result.pushKV("mediantime", (int64_t)blockindex->GetMedianTimePast());
     result.pushKV("nonce", (uint64_t)block.nNonce);
     result.pushKV("bits", strprintf("%08x", block.nBits));
-    result.pushKV("difficulty", GetDifficulty(blockindex));
+    result.pushKV("difficulty", GetDifficulty(block.nBits));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
     result.pushKV("nTx", (uint64_t)blockindex->nTx);
 
@@ -361,7 +359,7 @@ static UniValue getdifficulty(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() != 0)
         throw std::runtime_error(
             RPCHelpMan{"getdifficulty",
-                "\nReturns the proof-of-work difficulty as a multiple of the minimum difficulty.\n",
+                "\nReturns the proof-of-work/proof-of-stake difficulty as a multiple of the minimum difficulty.\n",
                 {},
                 RPCResult{
             "n.nnn       (numeric) the proof-of-work difficulty as a multiple of the minimum difficulty.\n"
@@ -373,7 +371,14 @@ static UniValue getdifficulty(const JSONRPCRequest& request)
             }.ToString());
 
     LOCK(cs_main);
-    return GetDifficulty(chainActive.Tip());
+
+    CBlockIndex* tip = chainActive.Tip();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8)));
+    obj.push_back(Pair("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8)));
+    return obj;
 }
 
 static std::string EntryDescriptionString()
@@ -1277,7 +1282,7 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
             "  \"blocks\": xxxxxx,             (numeric) the current number of blocks processed in the server\n"
             "  \"headers\": xxxxxx,            (numeric) the current number of headers we have validated\n"
             "  \"bestblockhash\": \"...\",       (string) the hash of the currently best block\n"
-            "  \"difficulty\": xxxxxx,         (numeric) the current difficulty\n"
+            "  \"difficulty\": xxxxxx,         (numeric) the current difficulty (proof-of-work/proof-of-stake)\n"
             "  \"mediantime\": xxxxxx,         (numeric) median time for the current best block\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
             "  \"initialblockdownload\": xxxx, (bool) (debug information) estimate of whether this node is in Initial Block Download mode.\n"
@@ -1329,7 +1334,11 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     obj.pushKV("blocks",                (int)chainActive.Height());
     obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
     obj.pushKV("bestblockhash",         tip->GetBlockHash().GetHex());
-    obj.pushKV("difficulty",            (double)GetDifficulty(tip));
+    UniValue diff(UniValue::VOBJ);
+    diff.push_back(Pair("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8)));
+    diff.push_back(Pair("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8)));
+    obj.push_back(Pair("difficulty", diff));
+    obj.pushKV("difficulty", diff);
     obj.pushKV("mediantime",            (int64_t)tip->GetMedianTimePast());
     obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), tip));
     obj.pushKV("initialblockdownload",  IsInitialBlockDownload());
