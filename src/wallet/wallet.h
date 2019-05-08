@@ -125,6 +125,15 @@ enum WalletFeature
     FEATURE_LATEST = FEATURE_PRE_SPLIT_KEYPOOL
 };
 
+enum AvailableCoinsType
+{
+    ALL_COINS,
+    ONLY_DENOMINATED,
+    ONLY_NONDENOMINATED,
+    ONLY_MASTERNODE_COLLATERAL,
+    ONLY_PRIVATESEND_COLLATERAL
+};
+
 //! Default for -addresstype
 constexpr OutputType DEFAULT_ADDRESS_TYPE{OutputType::P2SH_SEGWIT};
 
@@ -325,6 +334,7 @@ public:
 
     const uint256& GetHash() const { return tx->GetHash(); }
     bool IsCoinBase() const { return tx->IsCoinBase(); }
+    bool IsCoinStake() const { return tx->IsCoinStake(); }
     bool IsImmatureCoinBase(interfaces::Chain::Lock& locked_chain) const;
 };
 
@@ -659,6 +669,11 @@ private:
     int64_t nLastResend = 0;
     bool fBroadcastTransactions = false;
 
+    // Stake Settings
+    unsigned int nHashDrift = 45;
+    unsigned int nHashInterval = 22;
+    int nStakeSetUpdateTime = 300;
+
     /**
      * Used to keep track of spent outpoints, and
      * detect and report conflicts (double-spends or
@@ -701,6 +716,15 @@ private:
 
     /* HD derive new child key (on internal or external chain) */
     void DeriveNewChildKey(WalletBatch &batch, CKeyMetadata& metadata, CKey& secret, bool internal = false) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+
+    /* Staking functions */
+    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript,
+                               unsigned int nBits, const CBlock& blockFrom,
+                               unsigned int nTxPrevOffset, const CTransactionRef &txPrev,
+                               const COutPoint& prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const;
+    void FillCoinStakePayments(CMutableTransaction &transaction,
+                               const CScript &kernelScript,
+                               const COutPoint &stakePrevout, CAmount blockReward) const;
 
     std::set<int64_t> setInternalKeyPool;
     std::set<int64_t> setExternalKeyPool GUARDED_BY(cs_wallet);
@@ -763,6 +787,12 @@ public:
      */
     bool SelectCoins(const std::vector<COutput>& vAvailableCoins, const CAmount& nTargetValue, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet,
                     const CCoinControl& coin_control, CoinSelectionParams& coin_selection_params, bool& bnb_used) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+
+    bool GetOutpointAndKeysFromOutput(const COutput& out, COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet);
+    bool GetMasternodeOutpointAndKeys(COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet, std::string strTxHash, std::string strOutputIndex);
+
+    uint64_t nStakeSplitThreshold = 2000;
+    bool fWalletUnlockStakingOnly = false;
 
     const WalletLocation& GetLocation() const { return m_location; }
 
@@ -842,6 +872,10 @@ public:
     bool SelectCoinsMinConf(const CAmount& nTargetValue, const CoinEligibilityFilter& eligibility_filter, std::vector<OutputGroup> groups,
         std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CoinSelectionParams& coin_selection_params, bool& bnb_used) const;
 
+    // Coin selection
+    using StakeCoinsSet = std::set<std::pair<const CWalletTx*, unsigned int>>;
+    bool MintableCoins();
+    bool SelectStakeCoins(StakeCoinsSet& setCoins, CAmount nTargetAmount, bool fSelectWitness, const CScript &scriptFilterPubKey = CScript()) const;
     bool IsSpent(interfaces::Chain::Lock& locked_chain, const uint256& hash, unsigned int n) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     std::vector<OutputGroup> GroupOutputs(const std::vector<COutput>& outputs, bool single_coin) const;
 
@@ -957,6 +991,9 @@ public:
 
     OutputType TransactionChangeType(OutputType change_type, const std::vector<CRecipient>& vecSend);
 
+    bool GetBudgetSystemCollateralTX(CWalletTx& tx, uint256 hash, CAmount amount, bool fUseInstantSend);
+
+
     /**
      * Insert additional inputs into the transaction by
      * calling CreateTransaction();
@@ -971,6 +1008,10 @@ public:
      */
     bool CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosInOut,
                            std::string& strFailReason, const CCoinControl& coin_control, bool sign = true);
+    bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, CAmount blockReward,
+                         CMutableTransaction& txNew, unsigned int& nTxNewTime,
+                         std::vector<const CWalletTx *> &vwtxPrev,
+                         bool fGenerateSegwit);
     bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, CReserveKey& reservekey, CConnman* connman, CValidationState& state);
 
     bool DummySignTx(CMutableTransaction &txNew, const std::set<CTxOut> &txouts, bool use_max_sig = false) const

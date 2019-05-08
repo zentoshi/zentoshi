@@ -493,6 +493,11 @@ bool CWallet::LoadWatchOnly(const CScript &dest)
 
 bool CWallet::Unlock(const SecureString& strWalletPassphrase, bool accept_no_keys)
 {
+    if (!IsLocked()) {
+        fWalletUnlockStakingOnly = stakingOnly;
+        return true;
+    }
+
     CCrypter crypter;
     CKeyingMaterial _vMasterKey;
 
@@ -1252,6 +1257,10 @@ void CWallet::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const 
     // notification of a connected conflict might cause an outside process
     // to abandon a transaction and then have it inadvertently cleared by
     // the notification that the conflicted transaction was evicted.
+
+    // NOTE: For reference - do not attempt to stake on these types of address.
+    // if(witnessEnabled && m_default_address_type != OutputType::P2SH_SEGWIT)
+    //    m_default_address_type = OutputType::P2SH_SEGWIT;
 
     for (const CTransactionRef& ptx : vtxConflicted) {
         SyncTransaction(ptx, {} /* block hash */, 0 /* position in block */);
@@ -2310,6 +2319,35 @@ CAmount CWallet::GetAvailableBalance(const CCoinControl* coinControl) const
     return balance;
 }
 
+static bool IsCorrectType(CAmount nAmount, AvailableCoinsType nCoinType)
+{
+    bool found = false;
+    if(nCoinType == ONLY_DENOMINATED) {
+#if 0
+        found = CPrivateSend::IsDenominatedAmount(nAmount);
+#endif
+    } else if(nCoinType == ONLY_NONDENOMINATED) {
+#if 0
+        if (!CPrivateSend::IsCollateralAmount(nAmount))
+            found = !CPrivateSend::IsDenominatedAmount(nAmount);
+#endif
+    } else if(nCoinType == ONLY_MASTERNODE_COLLATERAL) {
+        for(int i=0; i<Params().CollateralLevels(); i++) {
+            if(nAmount == (Params().ValidCollateralAmounts()[i] * COIN)) {
+                found = true;
+                break;
+            }
+        }
+    } else if(nCoinType == ONLY_PRIVATESEND_COLLATERAL) {
+#if 0
+        found = CPrivateSend::IsCollateralAmount(nAmount);
+#endif
+    } else {
+        found = true;
+    }
+    return found;
+}
+
 void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<COutput> &vCoins, bool fOnlySafe, const CCoinControl *coinControl, const CAmount &nMinimumAmount, const CAmount &nMaximumAmount, const CAmount &nMinimumSumAmount, const uint64_t nMaximumCount, const int nMinDepth, const int nMaxDepth) const
 {
     AssertLockHeld(cs_main);
@@ -2317,6 +2355,8 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
 
     vCoins.clear();
     CAmount nTotal = 0;
+
+    auto nCoinType = coinControl ? coinControl->nCoinType : ALL_COINS;
 
     for (const auto& entry : mapWallet)
     {
@@ -2336,6 +2376,10 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
         // We should not consider coins which aren't at least in our mempool
         // It's possible for these to be conflicted via ancestors which we may never be able to detect
         if (nDepth == 0 && !pcoin->InMempool())
+            continue;
+
+        // do not use IX for inputs that have less then INSTANTSEND_CONFIRMATIONS_REQUIRED blockchain confirmations
+        if (fUseInstantSend && nDepth < INSTANTSEND_CONFIRMATIONS_REQUIRED)
             continue;
 
         bool safeTx = pcoin->IsTrusted(locked_chain);
@@ -2379,13 +2423,16 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
             continue;
 
         for (unsigned int i = 0; i < pcoin->tx->vout.size(); i++) {
+            if(!IsCorrectType(pcoin->tx->vout[i].nValue, nCoinType))
+                continue;
+
             if (pcoin->tx->vout[i].nValue < nMinimumAmount || pcoin->tx->vout[i].nValue > nMaximumAmount)
                 continue;
 
             if (coinControl && coinControl->HasSelected() && !coinControl->fAllowOtherInputs && !coinControl->IsSelected(COutPoint(entry.first, i)))
                 continue;
 
-            if (IsLockedCoin(entry.first, i))
+            if (IsLockedCoin(entry.first, i) && nCoinType != ONLY_MASTERNODE_COLLATERAL)
                 continue;
 
             if (IsSpent(locked_chain, wtxid, i))
@@ -2526,6 +2573,81 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, const CoinEligibil
         bnb_used = false;
         return KnapsackSolver(nTargetValue, utxo_pool, setCoinsRet, nValueRet);
     }
+}
+
+bool CWallet::MintableCoins()
+{
+    //    CAmount nBalance = GetBalance();
+    //    if (mapArgs.count("-reservebalance") && !ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
+    //        return error("MintableCoins() : invalid reserve balance amount");
+    //    if (nBalance <= nReserveBalance)
+    //        return false;
+
+    std::vector<COutput> vCoins;
+    LOCK2(cs_main, cs_wallet);
+    AvailableCoins(vCoins, true);
+
+    for (const COutput& out : vCoins)
+    {
+        if (GetTime() - out.tx->GetTxTime() > Params().GetConsensus().nStakeMinAge)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CWallet::SelectStakeCoins(StakeCoinsSet &setCoins, CAmount nTargetAmount, bool fSelectWitness, const CScript &scriptFilterPubKey) const
+{
+    std::vector<COutput> vCoins;
+    CCoinControl coinControl;
+    coinControl.fAllowWatchOnly = !scriptFilterPubKey.empty();
+    {
+        LOCK2(cs_main, cs_wallet);
+        AvailableCoins(vCoins, !scriptFilterPubKey.empty(), &coinControl);
+    }
+    CAmount nAmountSelected = 0;
+
+    std::set<CScript> rejectCache;
+
+    for (const COutput& out : vCoins) {
+
+        CScript scriptPubKeyKernel;
+        scriptPubKeyKernel = out.tx->tx->vout[out.i].scriptPubKey;
+
+        if(!coinControl.fAllowWatchOnly && !out.fSpendable)
+            continue;
+
+        CTxDestination dest;
+        if(!ExtractDestination(scriptPubKeyKernel, dest))
+            continue;
+
+        if(!boost::get<CKeyID>(&dest) && !boost::get<WitnessV0KeyHash>(&dest) &&
+                !boost::get<CScriptID>(&dest))
+            continue;
+
+        if(!fSelectWitness && !boost::get<CKeyID>(&dest))
+            continue;
+
+        if (GetTime() - out.tx->GetTxTime() < Params().GetConsensus().nStakeMinAge)
+            continue;
+
+        if (out.nDepth < (out.tx->tx->IsCoinStake() ? COINBASE_MATURITY : 10))
+            continue;
+
+        auto scriptPubKeyCoin = out.tx->tx->vout[out.i].scriptPubKey;
+        if(!scriptFilterPubKey.empty() && scriptPubKeyCoin != scriptFilterPubKey)
+            continue;
+
+        if(rejectCache.count(scriptPubKeyCoin))
+            continue;
+
+        nAmountSelected += out.tx->tx->vout[out.i].nValue;
+        setCoins.emplace(out.tx, out.i);
+
+    }
+    return true;
 }
 
 bool CWallet::SelectCoins(const std::vector<COutput>& vAvailableCoins, const CAmount& nTargetValue, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CCoinControl& coin_control, CoinSelectionParams& coin_selection_params, bool& bnb_used) const
@@ -2779,6 +2901,29 @@ OutputType CWallet::TransactionChangeType(OutputType change_type, const std::vec
 
     // else use m_default_address_type for change
     return m_default_address_type;
+}
+
+bool CWallet::GetBudgetSystemCollateralTX(CWalletTx& tx, uint256 hash, CAmount amount, bool fUseInstantSend)
+{
+    // make our change address
+    CReserveKey reservekey(this);
+
+    CScript scriptChange;
+    scriptChange << OP_RETURN << ToByteVector(hash);
+
+    CAmount nFeeRet = 0;
+    int nChangePosRet = -1;
+    std::string strFail = "";
+    std::vector< CRecipient > vecSend;
+    vecSend.push_back({scriptChange, amount, false});
+
+    bool success = CreateTransaction(vecSend, tx.tx, reservekey, nFeeRet, nChangePosRet, strFail, {}, true);
+    if(!success){
+        LogPrintf("CWallet::GetBudgetSystemCollateralTX -- Error: %s\n", strFail);
+        return false;
+    }
+
+    return true;
 }
 
 bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CReserveKey& reservekey, CAmount& nFeeRet,
@@ -3156,6 +3301,179 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
               feeCalc.est.fail.start, feeCalc.est.fail.end,
               100 * feeCalc.est.fail.withinTarget / (feeCalc.est.fail.totalConfirmed + feeCalc.est.fail.inMempool + feeCalc.est.fail.leftMempool),
               feeCalc.est.fail.withinTarget, feeCalc.est.fail.totalConfirmed, feeCalc.est.fail.inMempool, feeCalc.est.fail.leftMempool);
+    return true;
+}
+
+bool CWallet::CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript,
+                                    unsigned int nBits, const CBlock &blockFrom,
+                                    unsigned int nTxPrevOffset, const CTransactionRef &txPrev,
+                                    const COutPoint &prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const
+{
+    unsigned int nTryTime = 0;
+    uint256 hashProofOfStake;
+
+    if (blockFrom.GetBlockTime() + Params().GetConsensus().nStakeMinAge + nHashDrift > nTimeTx) // Min age requirement
+        return false;
+    for(unsigned int i = 0; i < nHashDrift; ++i)
+    {
+        nTryTime = nTimeTx - i;
+        if (CheckStakeKernelHash(nBits, blockFrom, nTxPrevOffset, txPrev, prevout, nTryTime, hashProofOfStake, true, false))
+        {
+            //Double check that this will pass time requirements
+            if (nTryTime <= chainActive.Tip()->GetMedianTimePast()) {
+                LogPrintf("CreateCoinStakeKernel() : kernel found, but it is too far in the past \n");
+                continue;
+            }
+            // Found a kernel
+            LogPrintf("CreateCoinStakeKernel : kernel found\n");
+            kernelScript.clear();
+            kernelScript = stakeScript;
+            nTimeTx = nTryTime;
+            return true;
+        }
+    }
+    return false;
+}
+
+void CWallet::FillCoinStakePayments(CMutableTransaction &transaction,
+                                    const CScript &scriptPubKeyOut,
+                                    const COutPoint &stakePrevout,
+                                    CAmount blockReward) const
+{
+    const CWalletTx *walletTx = GetWalletTx(stakePrevout.hash);
+    CTxOut prevTxOut = walletTx->tx->vout[stakePrevout.n];
+    auto nCredit = prevTxOut.nValue;
+    unsigned int percentage = 100;
+
+    auto nCoinStakeReward = nCredit + GetStakeReward(blockReward, percentage);
+    transaction.vin.emplace_back(CTxIn(stakePrevout));
+    //presstab HyperStake - calculate the total size of our new output including the stake reward so that we can use it to decide whether to split the stake outputs
+    // adding output which will pay to coin stake
+    transaction.vout.emplace_back(nCoinStakeReward, scriptPubKeyOut);
+    {
+        CTxOut &lastTx = transaction.vout.back();
+        if(lastTx.nValue / 2 > nStakeSplitThreshold * COIN)
+        {
+            lastTx.nValue /= 2;
+            transaction.vout.emplace_back(lastTx.nValue, lastTx.scriptPubKey);
+        }
+    }
+}
+
+bool CWallet::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const
+{
+    LOCK(cs_wallet);
+    std::map<CKeyID, CHDPubKey>::const_iterator mi = mapHdPubKeys.find(address);
+    if (mi != mapHdPubKeys.end())
+    {
+        const CHDPubKey &hdPubKey = (*mi).second;
+        vchPubKeyOut = hdPubKey.extPubKey.pubkey;
+        return true;
+    }
+    else
+        return CCryptoKeyStore::GetPubKey(address, vchPubKeyOut);
+}
+
+bool CWallet::GetKey(const CKeyID &address, CKey& keyOut) const
+{
+    LOCK(cs_wallet);
+    return CCryptoKeyStore::GetKey(address, keyOut);
+}
+
+typedef std::vector<unsigned char> valtype;
+bool CWallet::CreateCoinStake(const CKeyStore& keystore,
+                              unsigned int nBits,
+                              CAmount blockReward,
+                              CMutableTransaction &txNew,
+                              unsigned int &nTxNewTime,
+                              std::vector<const CWalletTx*> &vwtxPrev,
+                              bool fGenerateSegwit)
+{
+    // The following split & combine thresholds are important to security
+    // Should not be adjusted if you don't understand the consequences
+    //int64_t nCombineThreshold = 0;
+    txNew.vin.clear();
+    txNew.vout.clear();
+
+    // Mark coin stake transaction
+    CScript scriptEmpty;
+    scriptEmpty.clear();
+    txNew.vout.push_back(CTxOut(0, scriptEmpty));
+
+    // Choose coins to use
+    CAmount nBalance = GetBalance();
+
+    // presstab HyperStake - Initialize as static and don't update the set on every run of CreateCoinStake() in order to lighten resource use
+    static StakeCoinsSet setStakeCoins;
+    static int nLastStakeSetUpdate = 0;
+
+    if (GetTime() - nLastStakeSetUpdate > nStakeSetUpdateTime) {
+        setStakeCoins.clear();
+
+        CScript scriptPubKey;
+
+        if (!SelectStakeCoins(setStakeCoins, nBalance /*- nReserveBalance*/, fGenerateSegwit, scriptPubKey)) {
+            return error("Failed to select coins for staking");
+        }
+
+        LogPrintf("Selected %d coins for staking\n", setStakeCoins.size());
+
+        nLastStakeSetUpdate = GetTime();
+    }
+
+    if (setStakeCoins.empty())
+        return error("CreateCoinStake() : No Coins to stake");
+
+    CScript scriptPubKeyKernel;
+
+    //prevent staking a time that won't be accepted
+    if (GetAdjustedTime() <= chainActive.Tip()->nTime)
+        MilliSleep(10000);
+
+    bool fKernelFound = false;
+    for(const std::pair<const CWalletTx*, unsigned int> &pcoin : setStakeCoins)
+    {
+        //make sure that enough time has elapsed between
+        CBlockIndex* pindex = NULL;
+        BlockMap::iterator it = mapBlockIndex.find(pcoin.first->hashBlock);
+        if (it != mapBlockIndex.end())
+            pindex = it->second;
+        else {
+            LogPrintf("failed to find block index ");
+            continue;
+        }
+        // Read block header
+        CBlockHeader block = pindex->GetBlockHeader();
+        COutPoint prevoutStake = COutPoint(pcoin.first->GetHash(), pcoin.second);
+        nTxNewTime = GetAdjustedTime();
+        //iterates each utxo inside of CheckStakeKernelHash()
+        CScript kernelScript;
+        auto stakeScript = pcoin.first->tx->vout[pcoin.second].scriptPubKey;
+        fKernelFound = CreateCoinStakeKernel(kernelScript, stakeScript, nBits,
+                                             block, sizeof(CBlock), pcoin.first->tx,
+                                             prevoutStake, nTxNewTime, false);
+        if(fKernelFound)
+        {
+            FillCoinStakePayments(txNew, kernelScript, prevoutStake, blockReward);
+            break;
+        }
+    }
+    if(!fKernelFound)
+    {
+        LogPrintf("Failed to find coinstake kernel");
+        return false;
+    }
+
+    // Update coinbase transaction with additional info about masternode and governance payments,
+    // get some info back to pass to getblocktemplate
+    CTxOut txoutMasternode;
+    std::vector<CTxOut> voutSuperblock;
+    int nHeight = chainActive.Tip()->nHeight + 1;
+    FillBlockPayments(txNew, nHeight, blockReward, txoutMasternode, voutSuperblock);
+    AdjustMasternodePayment(txNew, txoutMasternode);
+    LogPrintf("CreateCoinStake -- nBlockHeight %d blockReward %lld txoutMasternode %s txNew %s",
+              nHeight, blockReward, txoutMasternode.ToString(), txNew.ToString());
+    nLastStakeSetUpdate = 0; //this will trigger stake set to repopulate next round
     return true;
 }
 
@@ -4588,4 +4906,70 @@ bool CWallet::AddKeyOrigin(const CPubKey& pubkey, const KeyOriginInfo& info)
     mapKeyMetadata[pubkey.GetID()].has_key_origin = true;
     mapKeyMetadata[pubkey.GetID()].hdKeypath = WriteHDKeypath(info.path);
     return WriteKeyMetadata(mapKeyMetadata[pubkey.GetID()], pubkey, true);
+}
+
+bool CWallet::GetOutpointAndKeysFromOutput(const COutput& out, COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet)
+{
+    // wait for reindex and/or import to finish
+    if (fImporting || fReindex) return false;
+
+    CScript pubScript;
+
+    outpointRet = COutPoint(out.tx->GetHash(), out.i);
+    pubScript = out.tx->tx->vout[out.i].scriptPubKey; // the inputs PubKey
+
+    CTxDestination address1;
+    ExtractDestination(pubScript, address1);
+    CBitcoinAddress address2(address1);
+
+    CKeyID keyID;
+    if (!address2.GetKeyID(keyID)) {
+        LogPrintf("CWallet::GetOutpointAndKeysFromOutput -- Address does not refer to a key\n");
+        return false;
+    }
+
+    if (!GetKey(keyID, keyRet)) {
+        LogPrintf ("CWallet::GetOutpointAndKeysFromOutput -- Private key for address is not known\n");
+        return false;
+    }
+
+    pubKeyRet = keyRet.GetPubKey();
+    return true;
+}
+
+bool CWallet::GetMasternodeOutpointAndKeys(COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet, std::string strTxHash, std::string strOutputIndex)
+{
+    // wait for reindex and/or import to finish
+    if (fImporting || fReindex) return false;
+
+    // Find possible candidates
+    std::vector<COutput> vPossibleCoins;
+    CCoinControl coinControl;
+    coinControl.nCoinType = ONLY_MASTERNODE_COLLATERAL;
+    AvailableCoins(vPossibleCoins, true, &coinControl, 1, MAX_MONEY, MAX_MONEY, 0, 0, 9999999);
+    if(vPossibleCoins.empty()) {
+        LogPrintf("CWallet::GetMasternodeOutpointAndKeys -- Could not locate any valid masternode vin\n");
+        return false;
+    }
+
+    if(strTxHash.empty()) // No output specified, select the first one
+        return GetOutpointAndKeysFromOutput(vPossibleCoins[0], outpointRet, pubKeyRet, keyRet);
+
+    // Find specific vin
+    uint256 txHash = uint256S(strTxHash);
+    int nOutputIndex = atoi(strOutputIndex.c_str());
+
+    for(COutput& out : vPossibleCoins)
+    {
+        if(out.tx->GetHash() == txHash && out.i == nOutputIndex) // found it!
+            return GetOutpointAndKeysFromOutput(out, outpointRet, pubKeyRet, keyRet);
+    }
+
+    LogPrintf("CWallet::GetMasternodeOutpointAndKeys -- Could not locate specified masternode vin\n");
+    return false;
+}
+
+CAmount GetStakeReward(CAmount blockReward, unsigned int percentage)
+{
+    return (blockReward / 100) * percentage;
 }

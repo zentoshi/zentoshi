@@ -615,6 +615,13 @@ UniValue importwallet(const JSONRPCRequest& request)
                 continue;
             CKey key = DecodeSecret(vstr[0]);
             if (key.IsValid()) {
+                CPubKey pubkey = key.GetPubKey();
+                assert(key.VerifyPubKey(pubkey));
+                CKeyID keyid = pubkey.GetID();
+                if (pwallet->HaveKey(keyid)) {
+                    LogPrintf("Skipping import of %s (key already present)\n", EncodeDestination(keyid));
+                    continue;
+                }
                 int64_t nTime = DecodeDumpTime(vstr[1]);
                 std::string strLabel;
                 bool fLabel = true;

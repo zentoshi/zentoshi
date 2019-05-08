@@ -36,6 +36,10 @@ public:
     bool m_avoid_partial_spends;
     //! Fee estimation mode to control arguments to estimateSmartFee
     FeeEstimateMode m_fee_mode;
+    //! Specific to InstantSend
+    bool fUseInstantSend;
+
+    AvailableCoinsType nCoinType;
 
     CCoinControl()
     {
