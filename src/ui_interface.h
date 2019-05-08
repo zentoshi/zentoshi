@@ -116,6 +116,9 @@ public:
     /** Best header has changed */
     ADD_SIGNALS_DECL_WRAPPER(NotifyHeaderTip, void, bool, const CBlockIndex*);
 
+    /** Syncing activity has changed */
+    ADD_SIGNALS_DECL_WRAPPER(double nSyncProgress)> NotifyAdditionalDataSyncProgressChanged);
+
     /** Banlist did change. */
     ADD_SIGNALS_DECL_WRAPPER(BannedListChanged, void, void);
 };

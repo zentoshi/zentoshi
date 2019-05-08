@@ -195,6 +195,7 @@ public:
     bool GetUseAddrmanOutgoing() const { return m_use_addrman_outgoing; };
     void SetNetworkActive(bool active);
     void OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant *grantOutbound = nullptr, const char *strDest = nullptr, bool fOneShot = false, bool fFeeler = false, bool manual_connection = false);
+    CNode *OpenMasternodeConnection(const CAddress &addrConnect);    
     bool CheckIncomingNonce(uint64_t nonce);
 
     bool ForNode(NodeId id, std::function<bool(CNode* pnode)> func);
@@ -315,7 +316,8 @@ public:
         Variable intervals will result in privacy decrease.
     */
     int64_t PoissonNextSendInbound(int64_t now, int average_interval_seconds);
-
+    std::vector<CNode*> CopyNodeVector();
+    void ReleaseNodeVector(const std::vector<CNode*>& vecNodes);
 private:
     struct ListenSocket {
         SOCKET socket;
@@ -323,7 +325,14 @@ private:
 
         ListenSocket(SOCKET socket_, bool whitelisted_) : socket(socket_), whitelisted(whitelisted_) {}
     };
-
+    CNode *OpenNetworkConnectionImpl(const CAddress& addrConnect,
+                                     bool fCountFailure,
+                                     CSemaphoreGrant *grantOutbound = nullptr,
+                                     const char *strDest = nullptr,
+                                     bool fOneShot = false,
+                                     bool fFeeler = false,
+                                     bool manual_connection = false,
+                                     bool fAllowLocal = false);
     bool BindListenPort(const CService &bindAddr, std::string& strError, bool fWhitelisted = false);
     bool Bind(const CService &addr, unsigned int flags);
     bool InitBinds(const std::vector<CService>& binds, const std::vector<CService>& whiteBinds);
@@ -680,7 +689,9 @@ public:
     //    unless it loads a bloom filter.
     bool fRelayTxes GUARDED_BY(cs_filter){false};
     bool fSentAddr{false};
+    bool fMasternode;
     CSemaphoreGrant grantOutbound;
+    CSemaphoreGrant grantMasternodeOutbound;
     mutable CCriticalSection cs_filter;
     std::unique_ptr<CBloomFilter> pfilter PT_GUARDED_BY(cs_filter);
     std::atomic<int> nRefCount{0};
@@ -856,6 +867,11 @@ public:
             }
         } else if (inv.type == MSG_BLOCK) {
             vInventoryBlockToSend.push_back(inv.hash);
+        }
+        else
+        {
+            LogPrint(BCLog::NET, "PushInventory --  inv: %s peer=%d\n", inv.ToString(), id);
+            vInventoryToSend.push_back(inv);
         }
     }
 

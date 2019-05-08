@@ -125,6 +125,12 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::COINDB, "coindb"},
     {BCLog::QT, "qt"},
     {BCLog::LEVELDB, "leveldb"},
+    {BCLog::KERNEL, "kernel"},
+    {BCLog::SPORK, "spork"},
+    {BCLog::MNSYNC, "mnsync"},
+    {BCLog::MASTERNODE, "masternode"},
+    {BCLog::GOBJECT, "gobject"},
+    {BCLog::MNPAYMENTS, "mnpayments"},
     {BCLog::ALL, "1"},
     {BCLog::ALL, "all"},
 };
@@ -204,6 +210,50 @@ std::string BCLog::Logger::LogTimestampStr(const std::string &str)
     return strStamped;
 }
 
+bool BCLog::Logger::OpenDebugLogHelper()
+{
+    assert(m_fileout == nullptr);
+    assert(!m_file_path.empty());
+
+    m_fileout = fsbridge::fopen(m_file_path, "a");
+    if (!m_fileout) {
+        return false;
+    }
+
+    setbuf(m_fileout, nullptr); // unbuffered
+    // dump buffered messages from before we opened the log
+    while (!m_msgs_before_open.empty()) {
+        FileWriteStr(m_msgs_before_open.front(), m_fileout);
+        m_msgs_before_open.pop_front();
+    }
+
+    return true;
+}
+
+void BCLog::Logger::RotateLogs()
+{
+    static constexpr size_t MAX_LOG_SIZE = 1024 * 1024 * 500; // 500  MB
+    boost::system::error_code ec;
+    auto fileSize = fs::file_size(m_file_path, ec);
+    if(fileSize > MAX_LOG_SIZE)
+    {
+        if(m_fileout)
+        {
+            fclose(m_fileout);
+            m_fileout = nullptr;
+            auto rotatedPath = m_file_path;
+            rotatedPath += ".old";
+            if(fs::exists(rotatedPath)) // if we already have rotated log
+            {
+                fs::remove(rotatedPath, ec);
+            }
+            fs::rename(m_file_path, rotatedPath, ec);
+
+            OpenDebugLogHelper();
+        }
+    }
+}
+
 void BCLog::Logger::LogPrintStr(const std::string &str)
 {
     std::string strTimestamped = LogTimestampStr(str);
@@ -222,15 +272,17 @@ void BCLog::Logger::LogPrintStr(const std::string &str)
         }
         else
         {
+
+            RotateLogs();
+
             // reopen the log file, if requested
             if (m_reopen_file) {
                 m_reopen_file = false;
-                FILE* new_fileout = fsbridge::fopen(m_file_path, "a");
-                if (new_fileout) {
-                    setbuf(new_fileout, nullptr); // unbuffered
-                    fclose(m_fileout);
-                    m_fileout = new_fileout;
+                m_fileout = fsbridge::freopen(m_file_path, "a", m_fileout);
+                if (!m_fileout) {
+                    return;
                 }
+                setbuf(m_fileout, nullptr); // unbuffered
             }
             FileWriteStr(strTimestamped, m_fileout);
         }
@@ -251,7 +303,7 @@ void BCLog::Logger::ShrinkDebugFile()
     size_t log_size = 0;
     try {
         log_size = fs::file_size(m_file_path);
-    } catch (const fs::filesystem_error&) {}
+    } catch (boost::filesystem::filesystem_error &) {}
 
     // If debug.log file is more than 10% bigger the RECENT_DEBUG_HISTORY_SIZE
     // trim it down by saving only the last RECENT_DEBUG_HISTORY_SIZE bytes
@@ -259,11 +311,7 @@ void BCLog::Logger::ShrinkDebugFile()
     {
         // Restart the file with some of the end
         std::vector<char> vch(RECENT_DEBUG_HISTORY_SIZE, 0);
-        if (fseek(file, -((long)vch.size()), SEEK_END)) {
-            LogPrintf("Failed to shrink debug log file: fseek(...) failed\n");
-            fclose(file);
-            return;
-        }
+        fseek(file, -((long)vch.size()), SEEK_END);
         int nBytes = fread(vch.data(), 1, vch.size(), file);
         fclose(file);
 

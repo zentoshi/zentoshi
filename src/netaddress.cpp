@@ -284,6 +284,11 @@ std::string CNetAddr::ToStringIP() const
                          GetByte(3) << 8 | GetByte(2), GetByte(1) << 8 | GetByte(0));
 }
 
+std::string CNetAddr::ToStringIP() const
+{
+    return ToStringIP(false);
+}
+
 std::string CNetAddr::ToString() const
 {
     return ToStringIP();
@@ -571,18 +576,18 @@ std::string CService::ToStringPort() const
     return strprintf("%u", port);
 }
 
-std::string CService::ToStringIPPort() const
+std::string CService::ToStringIPPort(bool fUseGetnameinfo) const
 {
     if (IsIPv4() || IsTor() || IsInternal()) {
-        return ToStringIP() + ":" + ToStringPort();
+        return ToStringIP(fUseGetnameinfo) + ":" + ToStringPort();
     } else {
-        return "[" + ToStringIP() + "]:" + ToStringPort();
+        return "[" + ToStringIP(fUseGetnameinfo) + "]:" + ToStringPort();
     }
 }
 
-std::string CService::ToString() const
+std::string CService::ToString(bool fUseGetnameinfo) const
 {
-    return ToStringIPPort();
+    return ToStringIPPort(fUseGetnameinfo);
 }
 
 CSubNet::CSubNet():

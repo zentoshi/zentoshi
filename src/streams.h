@@ -64,6 +64,12 @@ public:
     size_t size() const { return stream->size(); }
 };
 
+template<typename S>
+OverrideStream<S> WithOrVersion(S* s, int nVersionFlag)
+{
+    return OverrideStream<S>(s, s->GetType(), s->GetVersion() | nVersionFlag);
+}
+
 /* Minimal stream for overwriting and/or appending to an existing byte vector
  *
  * The referenced vector will grow as necessary
@@ -119,6 +125,16 @@ class CVectorWriter
     int GetType() const
     {
         return nType;
+    }
+    size_t size() const
+    {
+        return vchData.size();
+    }
+    void seek(size_t nSize)
+    {
+        nPos += nSize;
+        if(nPos > vchData.size())
+            vchData.resize(nPos);
     }
 private:
     const int nType;

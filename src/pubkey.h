@@ -30,6 +30,14 @@ typedef uint256 ChainCode;
 class CPubKey
 {
 public:
+
+    enum class InputScriptType {
+        SPENDP2SHWITNESS,
+        SPENDWITNESS,
+        SPENDP2PKH,
+        SPENDUNKNOWN
+    };
+
     /**
      * secp256k1:
      */
@@ -182,6 +190,11 @@ public:
         return size() == COMPRESSED_PUBLIC_KEY_SIZE;
     }
 
+    std::vector<unsigned char> Raw() const
+    {
+        return std::vector<unsigned char>(vch, vch + size());
+    }
+
     /**
      * Verify a DER signature (~72 bytes).
      * If this public key is not fully valid, the return value will be false.
@@ -194,7 +207,7 @@ public:
     static bool CheckLowS(const std::vector<unsigned char>& vchSig);
 
     //! Recover a public key from a compact signature.
-    bool RecoverCompact(const uint256& hash, const std::vector<unsigned char>& vchSig);
+    bool RecoverCompact(const uint256& hash, const std::vector<unsigned char>& vchSig, InputScriptType &inputScriptType);
 
     //! Turn this public key into an uncompressed public key.
     bool Decompress();

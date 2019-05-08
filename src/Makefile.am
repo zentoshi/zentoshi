@@ -100,6 +100,7 @@ endif
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
+  activemasternode.h \
   addrdb.h \
   addrman.h \
   attributes.h \
@@ -107,8 +108,11 @@ BITCOIN_CORE_H = \
   base58.h \
   bech32.h \
   bloom.h \
+  blocksigner.h \
   blockencodings.h \
   blockfilter.h \
+  cachemap.h \
+  cachemultimap.h \
   chain.h \
   chainparams.h \
   chainparamsbase.h \
@@ -128,13 +132,23 @@ BITCOIN_CORE_H = \
   core_io.h \
   core_memusage.h \
   cuckoocache.h \
+  dsnotificationinterface.h \
   fs.h \
+  flat-database.h \
+  governance/governance.h \
+  governance/governance-classes.h \
+  governance/governance-exceptions.h \
+  governance/governance-object.h \
+  governance/governance-validators.h \
+  governance/governance-vote.h \
+  governance/governance-votedb.h \
   httprpc.h \
   httpserver.h \
   index/base.h \
   index/txindex.h \
   indirectmap.h \
   init.h \
+  instantx.h \
   interfaces/chain.h \
   interfaces/handler.h \
   interfaces/node.h \
@@ -142,14 +156,22 @@ BITCOIN_CORE_H = \
   key.h \
   key_io.h \
   keystore.h \
+  kernel.h \
   dbwrapper.h \
   limitedmap.h \
   logging.h \
+  masternode.h \
+  masternode-payments.h \
+  masternode-sync.h \
+  masternodeman.h \
+  masternodeconfig.h \
+  messagesigner.h \
   memusage.h \
   merkleblock.h \
   miner.h \
   net.h \
   net_processing.h \
+  netfulfilledman.h \
   netaddress.h \
   netbase.h \
   netmessagemaker.h \
@@ -189,6 +211,7 @@ BITCOIN_CORE_H = \
   support/events.h \
   support/lockedpool.h \
   sync.h \
+  spork.h \
   threadsafety.h \
   threadinterrupt.h \
   timedata.h \
@@ -238,15 +261,18 @@ libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_server_a_SOURCES = \
+  activemasternode.cpp \
   addrdb.cpp \
   addrman.cpp \
   banman.cpp \
   bloom.cpp \
+  blocksigner.cpp \
   blockencodings.cpp \
   blockfilter.cpp \
   chain.cpp \
   checkpoints.cpp \
   consensus/tx_verify.cpp \
+  dsnotificationinterface.cpp \
   httprpc.cpp \
   httpserver.cpp \
   index/base.cpp \
@@ -255,11 +281,26 @@ libbitcoin_server_a_SOURCES = \
   interfaces/handler.cpp \
   interfaces/node.cpp \
   init.cpp \
+  instantx.cpp \
+  kernel.cpp \
   dbwrapper.cpp \
+  governance/governance.cpp \
+  governance/governance-classes.cpp \
+  governance/governance-object.cpp \
+  governance/governance-validators.cpp \
+  governance/governance-vote.cpp \
+  governance/governance-votedb.cpp \
+  masternode.cpp \
+  masternode-payments.cpp \
+  masternode-sync.cpp \
+  masternodeconfig.cpp \
+  masternodeman.cpp \
   merkleblock.cpp \
+  messagesigner.cpp \
   miner.cpp \
   net.cpp \
   net_processing.cpp \
+  netfulfilledman.cpp \
   node/transaction.cpp \
   noui.cpp \
   outputtype.cpp \
@@ -268,15 +309,19 @@ libbitcoin_server_a_SOURCES = \
   policy/rbf.cpp \
   pow.cpp \
   rest.cpp \
+  rpc/bitcoinmisc.cpp \
   rpc/blockchain.cpp \
+  rpc/governance.cpp\
   rpc/mining.cpp \
   rpc/misc.cpp \
   rpc/net.cpp \
+  rpc/masternode.cpp \
   rpc/rawtransaction.cpp \
   rpc/server.cpp \
   rpc/util.cpp \
   script/sigcache.cpp \
   shutdown.cpp \
+  spork.cpp \
   timedata.cpp \
   torcontrol.cpp \
   txdb.cpp \
@@ -307,6 +352,7 @@ endif
 libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_wallet_a_SOURCES = \
+  outputtype.cpp \
   interfaces/wallet.cpp \
   wallet/coincontrol.cpp \
   wallet/crypter.cpp \
@@ -344,6 +390,9 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/hmac_sha512.h \
   crypto/ripemd160.cpp \
   crypto/ripemd160.h \
+  crypto/scrypt.cpp \
+  crypto/scrypt-sse2.cpp \
+  crypto/scrypt.h \
   crypto/sha1.cpp \
   crypto/sha1.h \
   crypto/sha256.cpp \
@@ -657,18 +706,10 @@ if EMBEDDED_LEVELDB
 include Makefile.leveldb.include
 endif
 
-if ENABLE_TESTS
-include Makefile.test.include
-endif
-
 if ENABLE_BENCH
 include Makefile.bench.include
 endif
 
 if ENABLE_QT
 include Makefile.qt.include
-endif
-
-if ENABLE_QT_TESTS
-include Makefile.qttest.include
 endif

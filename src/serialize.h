@@ -20,6 +20,7 @@
 #include <string.h>
 #include <utility>
 #include <vector>
+#include <list>
 
 #include <prevector.h>
 #include <span.h>
@@ -569,6 +570,12 @@ template<typename Stream, typename K, typename Pred, typename A> void Serialize(
 template<typename Stream, typename K, typename Pred, typename A> void Unserialize(Stream& is, std::set<K, Pred, A>& m);
 
 /**
+ * list
+ */
+template<typename Stream, typename T, typename A> inline void Serialize(Stream& os, const std::list<T, A>& l);
+template<typename Stream, typename T, typename A> inline void Unserialize(Stream& is, std::list<T, A>& l);
+
+/**
  * shared_ptr
  */
 template<typename Stream, typename T> void Serialize(Stream& os, const std::shared_ptr<const T>& p);
@@ -830,6 +837,30 @@ void Unserialize(Stream& is, std::set<K, Pred, A>& m)
     }
 }
 
+/**
+ * list
+ */
+template<typename Stream, typename T, typename A>
+void Serialize(Stream& os, const std::list<T, A>& l)
+{
+    WriteCompactSize(os, l.size());
+    for (typename std::list<T, A>::const_iterator li = l.begin(); li != l.end(); ++li)
+        ::Serialize(os, (*li));
+}
+
+template<typename Stream, typename T, typename A>
+void Unserialize(Stream& is, std::list<T, A>& l)
+{
+    l.clear();
+    unsigned int nSize = ReadCompactSize(is);
+    for (unsigned int i = 0; i < nSize; i++)
+    {
+        T value;
+        Unserialize(is, value);
+        l.push_back(value);
+    }
+}
+
 
 
 /**
@@ -901,9 +932,10 @@ class CSizeComputer
 protected:
     size_t nSize;
 
+    const int nType;
     const int nVersion;
 public:
-    explicit CSizeComputer(int nVersionIn) : nSize(0), nVersion(nVersionIn) {}
+    CSizeComputer(int nTypeIn, int nVersionIn) : nSize(0), nType(nTypeIn), nVersion(nVersionIn) {}
 
     void write(const char *psz, size_t _nSize)
     {
@@ -928,6 +960,7 @@ public:
     }
 
     int GetVersion() const { return nVersion; }
+    int GetType() const { return nType; }
 };
 
 template<typename Stream>
@@ -978,17 +1011,15 @@ inline void WriteCompactSize(CSizeComputer &s, uint64_t nSize)
 }
 
 template <typename T>
-size_t GetSerializeSize(const T& t, int nVersion = 0)
+size_t GetSerializeSize(const T& t, int nType, int nVersion = 0)
 {
-    return (CSizeComputer(nVersion) << t).size();
+    return (CSizeComputer(nType, nVersion) << t).size();
 }
 
-template <typename... T>
-size_t GetSerializeSizeMany(int nVersion, const T&... t)
+template <typename S, typename T>
+size_t GetSerializeSize(const S& s, const T& t)
 {
-    CSizeComputer sc(nVersion);
-    SerializeMany(sc, t...);
-    return sc.size();
+    return (CSizeComputer(s.GetType(), s.GetVersion()) << t).size();
 }
 
 #endif // BITCOIN_SERIALIZE_H
