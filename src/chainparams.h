@@ -60,8 +60,11 @@ public:
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
+    int MaxReorganizationDepth() const { return nMaxReorganizationDepth; }
 
     const CBlock& GenesisBlock() const { return genesis; }
+    /** Make miner wait to have peers to avoid wasting work */
+    bool MiningRequiresPeers() const { return fMiningRequiresPeers; }
     /** Default value for -checkmempool and -checkblockindex argument */
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** Policy: Filter transactions that do not match well-defined patterns */
@@ -84,6 +87,12 @@ public:
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     const ChainTxData& TxData() const { return chainTxData; }
+    void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+    int PoolMaxTransactions() const { return nPoolMaxTransactions; }
+    int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
+    std::string SporkPubKey() const { return strSporkPubKey; }
+    int CollateralLevels() const { return nCollateralLevels.size(); }
+    const std::vector<CAmount> ValidCollateralAmounts() const { return nCollateralLevels; }
 protected:
     CChainParams() {}
 
@@ -99,12 +108,18 @@ protected:
     std::string strNetworkID;
     CBlock genesis;
     std::vector<SeedSpec6> vFixedSeeds;
+    bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
     bool fMineBlocksOnDemand;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
     bool m_fallback_fee_enabled;
+    int nPoolMaxTransactions;
+    int nFulfilledRequestExpireTime;
+    std::string strSporkPubKey;
+    int nMaxReorganizationDepth;
+    std::vector<CAmount> nCollateralLevels;
 };
 
 /**
@@ -125,5 +140,10 @@ const CChainParams &Params();
  * @throws std::runtime_error when the chain is not supported.
  */
 void SelectParams(const std::string& chain);
+
+/**
+ * Allows modifying the Version Bits regtest parameters.
+ */
+void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
 
 #endif // BITCOIN_CHAINPARAMS_H
