@@ -39,7 +39,14 @@
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
 
+extern bool fMasterNode;
+extern bool fLiteMode;
+
 extern const char * const BITCOIN_CONF_FILENAME;
+extern const char * const BITCOIN_PID_FILENAME;
+
+const char * const MASTERNODE_CONF_FILENAME_ARG = "-mnconf";
+const char * const MASTERNODE_CONF_FILENAME = "masternode.conf";
 
 /** Translate a message to the native language of the user. */
 const extern std::function<std::string(const char*)> G_TRANSLATION_FUN;
@@ -80,15 +87,21 @@ void ReleaseDirectoryLocks();
 
 bool TryCreateDirectories(const fs::path& p);
 fs::path GetDefaultDataDir();
-// The blocks directory is always net specific.
-const fs::path &GetBlocksDir();
+const fs::path &GetBlocksDir(bool fNetSpecific = true);
 const fs::path &GetDataDir(bool fNetSpecific = true);
+const fs::path &GetBackupsDir(bool fNetSpecific = true);
 void ClearDatadirCache();
 fs::path GetConfigFile(const std::string& confPath);
+fs::path GetMasternodeConfigFile();
+#ifndef WIN32
+fs::path GetPidFile();
+void CreatePidFile(const fs::path &path, pid_t pid);
+#endif
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
 void runCommand(const std::string& strCommand);
+void SetThreadPriority(int nPriority);
 
 /**
  * Most paths passed as configuration arguments are treated as relative to
@@ -123,6 +136,7 @@ enum class OptionsCategory {
     GUI,
     COMMANDS,
     REGISTER_COMMANDS,
+    MASTERNODE,
 
     HIDDEN // Always the last option to avoid printing these in the help
 };
@@ -357,6 +371,8 @@ std::string CopyrightHolders(const std::string& strPrefix);
  * sched_setschedule().
  */
 int ScheduleBatchPriority();
+
+double nround(double value, int to);
 
 namespace util {
 

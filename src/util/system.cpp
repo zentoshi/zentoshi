@@ -607,6 +607,9 @@ std::string ArgsManager::GetHelpMessage() const
             case OptionsCategory::REGISTER_COMMANDS:
                 usage += HelpMessageGroup("Register Commands:");
                 break;
+            case OptionsCategory::MASTERNODE:
+                usage += HelpMessageGroup("Masternodes options:");
+                break;
             default:
                 break;
         }
@@ -704,17 +707,20 @@ fs::path GetDefaultDataDir()
 #endif
 }
 
+static fs::path g_blocks_path_cached;
 static fs::path g_blocks_path_cache_net_specific;
 static fs::path pathCached;
 static fs::path pathCachedNetSpecific;
 static CCriticalSection csPathCached;
 
-const fs::path &GetBlocksDir()
-{
+static fs::path backupsDirCached;
+static CCriticalSection csBackupsDirCached;
 
+const fs::path &GetBlocksDir(bool fNetSpecific)
+{
     LOCK(csPathCached);
 
-    fs::path &path = g_blocks_path_cache_net_specific;
+    fs::path &path = fNetSpecific ? g_blocks_path_cache_net_specific : g_blocks_path_cached;
 
     // This can be called during exceptions by LogPrintf(), so we cache the
     // value so we don't have to do memory allocations after that.
@@ -730,8 +736,9 @@ const fs::path &GetBlocksDir()
     } else {
         path = GetDataDir(false);
     }
+    if (fNetSpecific)
+        path /= BaseParams().DataDir();
 
-    path /= BaseParams().DataDir();
     path /= "blocks";
     fs::create_directories(path);
     return path;
@@ -739,7 +746,6 @@ const fs::path &GetBlocksDir()
 
 const fs::path &GetDataDir(bool fNetSpecific)
 {
-
     LOCK(csPathCached);
 
     fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
@@ -769,12 +775,44 @@ const fs::path &GetDataDir(bool fNetSpecific)
     return path;
 }
 
+const fs::path &GetBackupsDir(bool fNetSpecific)
+{
+    LOCK(csBackupsDirCached);
+
+    fs::path &path = backupsDirCached;
+
+    if (!path.empty())
+        return path;
+
+    if (gArgs.IsArgSet("-walletbackupsdir")) {
+        path = fs::system_complete(gArgs.GetArg("-walletbackupsdir", ""));
+        if (!fs::is_directory(path)) {
+            path = "";
+            return path;
+        }
+    } else {
+        path = GetDefaultDataDir();
+    }
+
+    if (fNetSpecific)
+        path /= BaseParams().DataDir();
+
+    if (fs::create_directories(path)) {
+        // This is the first run, create wallets subdirectory too
+        fs::create_directories(path / "backups");
+    }
+
+    return path;
+
+}
+
 void ClearDatadirCache()
 {
     LOCK(csPathCached);
 
     pathCached = fs::path();
     pathCachedNetSpecific = fs::path();
+    g_blocks_path_cached = fs::path();
     g_blocks_path_cache_net_specific = fs::path();
 }
 
@@ -836,6 +874,15 @@ static bool GetConfigOptions(std::istream& stream, std::string& error, std::vect
         ++linenr;
     }
     return true;
+}
+
+fs::path GetMasternodeConfigFile()
+{
+    boost::filesystem::path pathConfigFile(gArgs.GetArg("-mnconf", "masternode.conf"));
+    if (!pathConfigFile.is_complete())
+        return fs::absolute(pathConfigFile, GetDataDir());
+
+    return pathConfigFile;
 }
 
 bool ArgsManager::ReadConfigStream(std::istream& stream, std::string& error, bool ignore_invalid_keys)
@@ -1223,6 +1270,12 @@ int64_t GetStartupTime()
 fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
 {
     return fs::absolute(path, GetDataDir(net_specific));
+}
+
+double nround(double value, int to)
+{
+    double places = pow(10.0, to);
+    return round(value * places) / places;
 }
 
 int ScheduleBatchPriority()
