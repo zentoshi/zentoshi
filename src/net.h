@@ -632,8 +632,6 @@ extern bool fDiscover;
 extern bool fListen;
 extern bool g_relay_txes;
 
-extern unordered_limitedmap<uint256, int64_t, StaticSaltedHasher> mapAlreadyAskedFor;
-
 /** Subversion as sent to the P2P network in `version` messages */
 extern std::string strSubVersion;
 
