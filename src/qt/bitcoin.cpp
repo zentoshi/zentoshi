@@ -35,8 +35,8 @@
 #include <uint256.h>
 #include <util/system.h>
 #include <warnings.h>
-
 #include <walletinitinterface.h>
+#include <masternodeconfig.h>
 
 #include <memory>
 #include <stdint.h>
@@ -52,9 +52,14 @@
 #include <QThread>
 #include <QTimer>
 #include <QTranslator>
+#include <QSslConfiguration>
+#include <QProcess>
 
 #if defined(QT_STATICPLUGIN)
 #include <QtPlugin>
+#if QT_VERSION < 0x050400
+Q_IMPORT_PLUGIN(AccessibleFactory)
+#endif
 #if defined(QT_QPA_PLATFORM_XCB)
 Q_IMPORT_PLUGIN(QXcbIntegrationPlugin);
 #elif defined(QT_QPA_PLATFORM_WINDOWS)
@@ -537,6 +542,14 @@ int GuiMain(int argc, char* argv[])
     initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
 #ifdef ENABLE_WALLET
+    /// 7a. parse masternode.conf
+    std::string strErr;
+    if(!masternodeConfig.read(strErr)) {
+        QMessageBox::critical(0, QObject::tr("Dash Core"),
+                              QObject::tr("Error reading masternode configuration file: %1").arg(strErr.c_str()));
+        return EXIT_FAILURE;
+    }
+
     /// 8. URI IPC sending
     // - Do this early as we don't want to bother initializing if we are just calling IPC
     // - Do this *after* setting up the data directory, as the data directory hash is used in the name

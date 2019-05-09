@@ -19,6 +19,10 @@
 #include <txdb.h> // for -dbcache defaults
 #include <qt/intro.h>
 
+#ifdef ENABLE_WALLET
+#include <masternodeconfig.h>
+#endif // ENABLE_WALLET
+
 #include <QNetworkProxy>
 #include <QSettings>
 #include <QStringList>
@@ -79,6 +83,12 @@ void OptionsModel::Init(bool resetSettings)
     if (!settings.contains("fCoinControlFeatures"))
         settings.setValue("fCoinControlFeatures", false);
     fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
+
+#ifdef ENABLE_WALLET
+    if (!settings.contains("fShowMasternodesTab"))
+    settings.setValue("fShowMasternodesTab", masternodeConfig.getCount());
+#endif // ENABLE_WALLET
+    //
 
     // These are shared with the core or have a command-line parameter
     // and we want command-line parameters to overwrite the GUI settings.
@@ -283,6 +293,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
 #ifdef ENABLE_WALLET
         case SpendZeroConfChange:
             return settings.value("bSpendZeroConfChange");
+        case ShowMasternodesTab:
+            return settings.value("fShowMasternodesTab");
 #endif
         case DisplayUnit:
             return nDisplayUnit;
@@ -395,6 +407,12 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case SpendZeroConfChange:
             if (settings.value("bSpendZeroConfChange") != value) {
                 settings.setValue("bSpendZeroConfChange", value);
+                setRestartRequired(true);
+            }
+            break;
+        case ShowMasternodesTab:
+            if (settings.value("fShowMasternodesTab") != value) {
+                settings.setValue("fShowMasternodesTab", value);
                 setRestartRequired(true);
             }
             break;

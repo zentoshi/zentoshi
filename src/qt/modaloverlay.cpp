@@ -159,6 +159,9 @@ void ModalOverlay::showHide(bool hide, bool userRequested)
     if ( (layerIsVisible && !hide) || (!layerIsVisible && hide) || (!hide && userClosed && !userRequested))
         return;
 
+    if (!hide && foreverHidden)
+        return;
+
     if (!isVisible() && !hide)
         setVisible(true);
 
@@ -177,4 +180,9 @@ void ModalOverlay::closeClicked()
 {
     showHide(true);
     userClosed = true;
+}
+
+void ModalOverlay::hideForever()
+{
+    foreverHidden = true;
 }

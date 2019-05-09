@@ -184,7 +184,7 @@ void SendCoinsDialog::setModel(WalletModel *_model)
         updateSmartFeeLabel();
 
         // set default rbf checkbox state
-        ui->optInRBF->setCheckState(Qt::Checked);
+        // ui->optInRBF->setCheckState(Qt::Checked);
 
         // set the smartfee-sliders default value (wallets default conf.target or last stored value)
         QSettings settings;
@@ -242,6 +242,8 @@ void SendCoinsDialog::on_sendButton_clicked()
         return;
     }
 
+    recipients[0].inputType = ALL_COINS;
+    recipients[0].fUseInstantSend = false;
     fNewRecipientAllowed = false;
     WalletModel::UnlockContext ctx(model->requestUnlock());
     if(!ctx.isValid())
@@ -341,6 +343,7 @@ void SendCoinsDialog::on_sendButton_clicked()
         questionString.append("</span><br />");
 
         // append RBF message according to transaction's signalling
+        /*
         questionString.append("<span style='font-size:10pt; font-weight:normal;'>");
         if (ui->optInRBF->isChecked()) {
             questionString.append(tr("You can increase the fee later (signals Replace-By-Fee, BIP-125)."));
@@ -348,6 +351,7 @@ void SendCoinsDialog::on_sendButton_clicked()
             questionString.append(tr("Not signalling Replace-By-Fee, BIP-125."));
         }
         questionString.append("</span>");
+        */
     }
 
     // add total amount in all subdivision units
@@ -673,7 +677,7 @@ void SendCoinsDialog::updateCoinControlState(CCoinControl& ctrl)
     // Avoid using global defaults when sending money from the GUI
     // Either custom fee will be used or if not selected, the confirmation target from dropdown box
     ctrl.m_confirm_target = getConfTargetForIndex(ui->confTargetSelector->currentIndex());
-    ctrl.m_signal_bip125_rbf = ui->optInRBF->isChecked();
+    // ctrl.m_signal_bip125_rbf = ui->optInRBF->isChecked();
 }
 
 void SendCoinsDialog::updateSmartFeeLabel()

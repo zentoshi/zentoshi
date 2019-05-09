@@ -68,6 +68,11 @@ public Q_SLOTS:
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
     void gotoHistoryPage();
+
+    /** Switch to masternode page */
+    void gotoMasternodePage();
+    /** Switch to governance page */
+    void gotoGovernancePage();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
@@ -84,6 +89,8 @@ public Q_SLOTS:
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
+    /** Lock wallet */
+    void lockWallet();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
 

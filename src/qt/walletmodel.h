@@ -65,6 +65,11 @@ public:
     // Todo: This is a hack, should be replaced with a cleaner solution!
     QString address;
     QString label;
+#ifdef ENABLE_WALLET
+    AvailableCoinsType inputType;
+#endif // ENABLE_WALLET
+    bool fUseInstantSend;
+    //
     CAmount amount;
     // If from a payment request, this is used for storing the memo
     QString message;
@@ -141,13 +146,15 @@ public:
         TransactionCreationFailed, // Error returned when wallet is still locked
         TransactionCommitFailed,
         AbsurdFee,
-        PaymentRequestExpired
+        PaymentRequestExpired,
+        StakingOnlyUnlocked
     };
 
     enum EncryptionStatus
     {
         Unencrypted,  // !wallet->IsCrypted()
         Locked,       // wallet->IsCrypted() && wallet->IsLocked()
+        UnlockedForStakingOnly, // wallet->IsCrypted() && !wallet->IsLocked() && wallet->fWalletUnlockStakingOnly
         Unlocked      // wallet->IsCrypted() && !wallet->IsLocked()
     };
 
@@ -182,8 +189,11 @@ public:
     // Wallet encryption
     bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
     // Passphrase only needed when unlocking
-    bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString());
+    bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString(), bool fMixing=false);
     bool changePassphrase(const SecureString &oldPass, const SecureString &newPass);
+
+    // Is wallet unlocked for staking only?
+    bool isStakingOnlyUnlocked();
 
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext
@@ -268,7 +278,7 @@ Q_SIGNALS:
     // Signal emitted when wallet needs to be unlocked
     // It is valid behaviour for listeners to keep the wallet locked after this signal;
     // this means that the unlocking failed or was cancelled.
-    void requireUnlock();
+    void requireUnlock(bool fForMixingOnly=false);
 
     // Fired when a message should be reported to the user
     void message(const QString &title, const QString &message, unsigned int style);

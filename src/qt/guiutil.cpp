@@ -404,6 +404,31 @@ bool openBitcoinConf()
     return res;
 }
 
+void openConfigfile()
+{
+    boost::filesystem::path pathConfig = GetConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME));
+
+    if (boost::filesystem::exists(pathConfig))
+        QDesktopServices::openUrl(QUrl::fromLocalFile(boostPathToQString(pathConfig)));
+}
+
+void openMNConfigfile()
+{
+    boost::filesystem::path pathConfig = GetConfigFile(MASTERNODE_CONF_FILENAME);
+
+    /* Create the file */
+    boost::filesystem::ofstream configFile(pathConfig, std::ios_base::app);
+
+    if (!configFile.good())
+        return;
+
+    configFile.close();
+
+    /* Open masternode.conf with the associated application */
+    if (fs::exists(pathConfig))
+        QDesktopServices::openUrl(QUrl::fromLocalFile(boostPathToQString(pathConfig)));
+}
+
 ToolTipToRichTextFilter::ToolTipToRichTextFilter(int _size_threshold, QObject *parent) :
     QObject(parent),
     size_threshold(_size_threshold)
@@ -586,12 +611,24 @@ bool SetStartOnSystemStartup(bool fAutoStart)
             // Set -testnet /-regtest options
             strArgs += QString::fromStdString(strprintf(" -testnet=%d -regtest=%d", gArgs.GetBoolArg("-testnet", false), gArgs.GetBoolArg("-regtest", false)));
 
+#ifdef UNICODE
+            boost::scoped_array<TCHAR> args(new TCHAR[strArgs.length() + 1]);
+            // Convert the QString to TCHAR*
+            strArgs.toWCharArray(args.get());
+            // Add missing '\0'-termination to string
+            args[strArgs.length()] = '\0';
+#endif
+
             // Set the path to the shortcut target
             psl->SetPath(pszExePath);
             PathRemoveFileSpecW(pszExePath);
             psl->SetWorkingDirectory(pszExePath);
             psl->SetShowCmd(SW_SHOWMINNOACTIVE);
-            psl->SetArguments(strArgs.toStdWString().c_str());
+#ifndef UNICODE
+            psl->SetArguments(strArgs.toStdString().c_str());
+#else
+            psl->SetArguments(args.get());
+#endif
 
             // Query IShellLink for the IPersistFile interface for
             // saving the shortcut in persistent storage.
@@ -599,6 +636,9 @@ bool SetStartOnSystemStartup(bool fAutoStart)
             hres = psl->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&ppf));
             if (SUCCEEDED(hres))
             {
+                WCHAR pwsz[MAX_PATH];
+                // Ensure that the string is ANSI.
+                MultiByteToWideChar(CP_ACP, 0, StartupShortcutPath().string().c_str(), -1, pwsz, MAX_PATH);
                 // Save the link by calling IPersistFile::Save.
                 hres = ppf->Save(StartupShortcutPath().wstring().c_str(), TRUE);
                 ppf->Release();

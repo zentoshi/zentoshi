@@ -80,6 +80,8 @@ private:
         COLUMN_ADDRESS,
         COLUMN_DATE,
         COLUMN_CONFIRMATIONS,
+        COLUMN_TXHASH,
+        COLUMN_VOUT_INDEX,
     };
 
     enum
