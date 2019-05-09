@@ -2521,6 +2521,20 @@ const CTxOut& CWallet::FindNonChangeParentOutput(const CTransaction& tx, int out
     return ptx->vout[n];
 }
 
+bool CWallet::UpdatedTransaction(const uint256 &hashTx)
+{
+    {
+        LOCK(cs_wallet);
+        // Only notify UI if this transaction is in this wallet
+        map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(hashTx);
+        if (mi != mapWallet.end()){
+            NotifyTransactionChanged(this, hashTx, CT_UPDATED);
+            return true;
+        }
+    }
+    return false;
+}
+
 bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, const CoinEligibilityFilter& eligibility_filter, std::vector<OutputGroup> groups,
                                  std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CoinSelectionParams& coin_selection_params, bool& bnb_used) const
 {
@@ -2574,6 +2588,15 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, const CoinEligibil
         return KnapsackSolver(nTargetValue, utxo_pool, setCoinsRet, nValueRet);
     }
 }
+
+struct CompareByAmount
+{
+    bool operator()(const CompactTallyItem& t1,
+                    const CompactTallyItem& t2) const
+    {
+        return t1.nAmount > t2.nAmount;
+    }
+};
 
 bool CWallet::MintableCoins()
 {

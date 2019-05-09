@@ -318,6 +318,7 @@ public:
     int64_t PoissonNextSendInbound(int64_t now, int average_interval_seconds);
     std::vector<CNode*> CopyNodeVector();
     void ReleaseNodeVector(const std::vector<CNode*>& vecNodes);
+    void RelayTransaction(const CTransaction& tx);
 private:
     struct ListenSocket {
         SOCKET socket;
@@ -718,6 +719,7 @@ public:
 
     // inventory based relay
     CRollingBloomFilter filterInventoryKnown GUARDED_BY(cs_inventory);
+    std::vector<CInv> vInventoryToSend;
     // Set of transaction ids we still have to announce.
     // They are sorted by the mempool before relay, so the order is not important.
     std::set<uint256> setInventoryTxToSend;

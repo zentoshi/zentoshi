@@ -117,7 +117,7 @@ public:
     ADD_SIGNALS_DECL_WRAPPER(NotifyHeaderTip, void, bool, const CBlockIndex*);
 
     /** Syncing activity has changed */
-    ADD_SIGNALS_DECL_WRAPPER(double nSyncProgress)> NotifyAdditionalDataSyncProgressChanged);
+    ADD_SIGNALS_DECL_WRAPPER(NotifyAdditionalDataSyncProgressChanged, void, double);
 
     /** Banlist did change. */
     ADD_SIGNALS_DECL_WRAPPER(BannedListChanged, void, void);

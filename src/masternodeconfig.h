@@ -5,6 +5,8 @@
 #ifndef SRC_MASTERNODECONFIG_H_
 #define SRC_MASTERNODECONFIG_H_
 
+#include <validation.h>
+
 class CMasternodeConfig;
 extern CMasternodeConfig masternodeConfig;
 

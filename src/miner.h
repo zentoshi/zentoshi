@@ -20,6 +20,7 @@
 class CBlockIndex;
 class CChainParams;
 class CScript;
+class CWallet;
 
 namespace Consensus { struct Params; };
 
@@ -212,6 +213,6 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
 
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, int nThreads, const CChainParams& chainparams, CConnman &connman);
-void ThreadStakeMinter(const CChainParams& chainparams, CConnman &connman, CWallet *pwallet);
+void ThreadStakeMinter(const CChainParams& chainparams, CConnman &connman);
 
 #endif // BITCOIN_MINER_H

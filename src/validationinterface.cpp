@@ -32,6 +32,7 @@ struct ValidationInterfaceConnections {
     boost::signals2::scoped_connection NotifyTransactionLock;
     boost::signals2::scoped_connection NotifyHeaderTip;
     boost::signals2::scoped_connection AcceptedBlockHeader;
+    boost::signals2::scoped_connection UpdatedTransaction;
 };
 
 struct MainSignalsInstance {
@@ -48,6 +49,7 @@ struct MainSignalsInstance {
     boost::signals2::signal<void (const CTransactionRef &)> NotifyTransactionLock;
     boost::signals2::signal<void (const CBlockIndex *, bool fInitialDownload)> NotifyHeaderTip;
     boost::signals2::signal<void (const CBlockIndex *)> AcceptedBlockHeader;
+    boost::signals2::signal<void (const uint256 &)> UpdatedTransaction;
 
     // We are not allowed to assume the scheduler only runs in one thread,
     // but must ensure all callbacks happen in-order, so we end up creating
@@ -115,6 +117,7 @@ void RegisterValidationInterface(CValidationInterface* pwalletIn) {
     conns.NotifyTransactionLock = g_signals.m_internals->NotifyTransactionLock.connect(boost::bind(&CValidationInterface::NotifyTransactionLock, pwalletIn, std::placeholders::_1));
     conns.NotifyHeaderTip = g_signals.m_internals->NotifyHeaderTip.connect(boost::bind(&CValidationInterface::NotifyHeaderTip, pwalletIn, std::placeholders::_1, std::placeholders::_2));
     conns.AcceptedBlockHeader = g_signals.m_internals->AcceptedBlockHeader.connect(boost::bind(&CValidationInterface::AcceptedBlockHeader, pwalletIn, std::placeholders::_1));
+    conns.UpdatedTransaction = g_signals.m_internals->UpdatedTransaction.connect(boost::bind(&CValidationInterface::UpdatedTransaction, pwalletIn, std::placeholders::_1));
 }
 
 void UnregisterValidationInterface(CValidationInterface* pwalletIn) {

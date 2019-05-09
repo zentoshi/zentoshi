@@ -43,7 +43,6 @@
 #include <warnings.h>
 #include <kernel.h>
 #include <masternode-payments.h>
-#include <blocksigner.h>
 
 #include <future>
 #include <sstream>
@@ -2178,6 +2177,11 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
     int64_t nTime5 = GetTimeMicros(); nTimeIndex += nTime5 - nTime4;
     LogPrint(BCLog::BENCH, "    - Index writing: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime5 - nTime4), nTimeIndex * MICRO, nTimeIndex * MILLI / nBlocksTotal);
+
+    // Watch for changes to the previous coinbase transaction.
+    static uint256 hashPrevBestCoinBase;
+    GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
+    hashPrevBestCoinBase = block.vtx[0]->GetHash();
 
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
     LogPrint(BCLog::BENCH, "    - Callbacks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime6 - nTime5), nTimeCallbacks * MICRO, nTimeCallbacks * MILLI / nBlocksTotal);

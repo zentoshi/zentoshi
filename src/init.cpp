@@ -23,6 +23,7 @@
 #include <httprpc.h>
 #include <interfaces/chain.h>
 #include <index/txindex.h>
+#include <instantx.h>
 #include <key.h>
 #include <validation.h>
 #include <miner.h>
@@ -101,33 +102,6 @@ static constexpr int DUMP_BANS_INTERVAL = 60 * 15;
 std::unique_ptr<CConnman> g_connman;
 std::unique_ptr<PeerLogicValidation> peerLogic;
 std::unique_ptr<BanMan> g_banman;
-
-#if !(ENABLE_WALLET)
-class DummyWalletInit : public WalletInitInterface {
-public:
-
-    void AddWalletOptions() const override;
-    bool ParameterInteraction() const override {return true;}
-    void RegisterRPC(CRPCTable &) const override {}
-    bool Verify() const override {return true;}
-    bool Open() const override {LogPrintf("No wallet support compiled in!\n"); return true;}
-    void Start(CScheduler& scheduler) const override {}
-    void Flush() const override {}
-    void Stop() const override {}
-    void Close() const override {}
-};
-
-void DummyWalletInit::AddWalletOptions() const
-{
-    std::vector<std::string> opts = {"-addresstype", "-changetype", "-disablewallet", "-discardfee=<amt>", "-fallbackfee=<amt>",
-        "-keypool=<n>", "-mintxfee=<amt>", "-paytxfee=<amt>", "-rescan", "-salvagewallet", "-spendzeroconfchange",  "-txconfirmtarget=<n>",
-        "-upgradewallet", "-wallet=<path>", "-walletbroadcast", "-walletdir=<dir>", "-walletnotify=<cmd>", "-walletrbf", "-zapwallettxes=<mode>",
-        "-dblogsize=<n>", "-flushwallet", "-privdb", "-walletrejectlongchains"};
-    gArgs.AddHiddenArgs(opts);
-}
-
-const WalletInitInterface& g_wallet_init_interface = DummyWalletInit();
-#endif
 
 static CDSNotificationInterface* pdsNotificationInterface = NULL;
 
@@ -323,7 +297,9 @@ void Shutdown(InitInterfaces& interfaces)
     // using the other before destroying them.
     if (peerLogic) UnregisterValidationInterface(peerLogic.get());
     if (g_connman) g_connman->Stop();
-    if (g_txindex) g_txindex->Stop();
+    if (g_txindex) {
+        g_txindex.reset();
+    }
 
     StoreExtensionsDataCaches();
 
@@ -1553,6 +1529,7 @@ bool AppInitMain(InitInterfaces& interfaces)
     g_banman = MakeUnique<BanMan>(GetDataDir() / "banlist.dat", &uiInterface, gArgs.GetArg("-bantime", DEFAULT_MISBEHAVING_BANTIME));
     assert(!g_connman);
     g_connman = std::unique_ptr<CConnman>(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()), GetRand(std::numeric_limits<uint64_t>::max())));
+    CConnman& connman = *g_connman;
 
     peerLogic.reset(new PeerLogicValidation(g_connman.get(), g_banman.get(), scheduler, gArgs.GetBoolArg("-enablebip61", DEFAULT_ENABLE_BIP61)));
     RegisterValidationInterface(peerLogic.get());
@@ -2054,12 +2031,11 @@ bool AppInitMain(InitInterfaces& interfaces)
         g_banman->DumpBanlist();
     }, DUMP_BANS_INTERVAL * 1000);
 
-#ifdef ENABLE_WALLET
-    if(gArgs.GetBoolArg("-staking", true))
-    {
-        threadGroup.create_thread(std::bind(&ThreadStakeMinter, boost::ref(chainparams), boost::ref(connman), GetWallets().front()));
+    #ifdef ENABLE_WALLET
+    if(gArgs.GetBoolArg("-staking", true)) {
+        threadGroup.create_thread(std::bind(&ThreadStakeMinter, boost::ref(chainparams), boost::ref(connman)));
     }
-#endif
+    #endif
 
     return true;
 }

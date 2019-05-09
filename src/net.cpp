@@ -1944,12 +1944,6 @@ void CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFai
     }
 }
 
-// if successful, this moves the passed grant to the constructed node
-void CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant *grantOutbound, const char *pszDest, bool fOneShot, bool fFeeler, bool manual_connection)
-{
-    OpenNetworkConnectionImpl(addrConnect, fCountFailure, grantOutbound, pszDest, fOneShot, fFeeler, manual_connection);
-}
-
 CNode *CConnman::OpenMasternodeConnection(const CAddress &addrConnect)
 {
     if(auto pNode = OpenNetworkConnectionImpl(addrConnect, true, nullptr, nullptr, false, false, false, true))

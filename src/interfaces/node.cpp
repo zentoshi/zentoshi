@@ -316,7 +316,7 @@ public:
     }
     std::unique_ptr<Handler> handleNotifyAdditionalDataSyncProgressChanged(NotifyAdditionalDataSyncProgressChangedFn fn)
     {
-        return MakeHandler(::uiInterface.NotifyAdditionalDataSyncProgressChanged.connect(fn));
+        return MakeHandler(::uiInterface.NotifyAdditionalDataSyncProgressChanged_connect(fn));
     }
     InitInterfaces m_interfaces;
 };

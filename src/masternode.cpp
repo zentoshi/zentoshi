@@ -281,7 +281,7 @@ bool CMasternode::IsInputAssociatedWithPubkey() const
     payee = GetScriptForDestination(pubKeyCollateralAddress.GetID());
     CTransactionRef tx;
     uint256 hash;
-    if(GetTransaction(vin.prevout.hash, tx, Params().GetConsensus(), hash, true)) {
+    if(GetTransaction(vin.prevout.hash, tx, Params().GetConsensus(), hash)) {
         for(const CTxOut &out : tx->vout) {
             for(int i=0; i<Params().CollateralLevels(); i++) {
                 if(out.nValue == (Params().ValidCollateralAmounts()[i] * COIN) && out.scriptPubKey == payee) {
@@ -628,7 +628,7 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
     // should be at least not earlier than block when collateral has nMasternodeMinimumConfirmations
     uint256 hashBlock = uint256();
     CTransactionRef tx2;
-    GetTransaction(vin.prevout.hash, tx2, Params().GetConsensus(), hashBlock, true);
+    GetTransaction(vin.prevout.hash, tx2, Params().GetConsensus(), hashBlock);
     {
         LOCK(cs_main);
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);

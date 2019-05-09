@@ -43,7 +43,6 @@ extern bool fMasterNode;
 extern bool fLiteMode;
 
 extern const char * const BITCOIN_CONF_FILENAME;
-extern const char * const BITCOIN_PID_FILENAME;
 
 const char * const MASTERNODE_CONF_FILENAME_ARG = "-mnconf";
 const char * const MASTERNODE_CONF_FILENAME = "masternode.conf";
@@ -93,10 +92,6 @@ const fs::path &GetBackupsDir(bool fNetSpecific = true);
 void ClearDatadirCache();
 fs::path GetConfigFile(const std::string& confPath);
 fs::path GetMasternodeConfigFile();
-#ifndef WIN32
-fs::path GetPidFile();
-void CreatePidFile(const fs::path &path, pid_t pid);
-#endif
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif

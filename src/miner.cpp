@@ -76,7 +76,7 @@ BlockAssembler::BlockAssembler(const CChainParams& params, const Options& option
     nBlockMaxWeight = std::max<size_t>(4000, std::min<size_t>(MAX_BLOCK_WEIGHT - 4000, options.nBlockMaxWeight));
 }
 
-static BlockAssembler::Options DefaultOptions()
+static BlockAssembler::Options DefaultOptions(const CChainParams& params)
 {
     // Block resource limits
     // If -blockmaxweight is not given, limit to DEFAULT_BLOCK_MAX_WEIGHT
@@ -246,13 +246,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(CWallet *wallet, 
 		LogPrintf("CreateNewBlock::FillBlockPayee -- Masternode payment %lld to %s\n",
 			  masternodePayment, EncodeDestination(address1));
          }
-    }
-
-    int nPackagesSelected = 0;
-    int nDescendantsUpdated = 0;
-    {
-        LOCK(mempool.cs);
-        addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     }
 
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
@@ -572,14 +565,19 @@ static bool ProcessBlockFound(const std::shared_ptr<const CBlock> &pblock, const
     return true;
 }
 
-void static BitcoinMiner(const CChainParams& chainparams, CConnman& connman, CWallet* pwallet, bool fProofOfStake)
+void static BitcoinMiner(const CChainParams& chainparams, CConnman& connman, bool fProofOfStake)
 {
     LogPrintf("bitcoinminer -- started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("bitcoin-miner");
 
-    unsigned int nExtraNonce = 0;
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
 
+    if (!pwallet)
+        return;
+
+    unsigned int nExtraNonce = 0;
     std::shared_ptr<CReserveScript> coinbaseScript;
     pwallet->GetScriptForMining(coinbaseScript);
 
@@ -717,7 +715,6 @@ void static BitcoinMiner(const CChainParams& chainparams, CConnman& connman, CWa
         catch (const std::runtime_error &e)
         {
             LogPrintf("bitcoinminer -- runtime error: %s\n", e.what());
-            //            return;
         }
     }
 }
@@ -744,15 +741,15 @@ void GenerateBitcoins(bool fGenerate,
 
     minerThreads = new boost::thread_group();
     for (int i = 0; i < nThreads; i++)
-        minerThreads->create_thread(boost::bind(&BitcoinMiner, boost::cref(chainparams), boost::ref(connman), GetWallets().front(), false));
+        minerThreads->create_thread(boost::bind(&BitcoinMiner, boost::cref(chainparams), boost::ref(connman), false));
 }
 
-void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman, CWallet *pwallet)
+void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman)
 {
     boost::this_thread::interruption_point();
     LogPrintf("ThreadStakeMinter started\n");
     try {
-        BitcoinMiner(chainparams, connman, pwallet, true);
+        BitcoinMiner(chainparams, connman, true);
         boost::this_thread::interruption_point();
     } catch (std::exception& e) {
         LogPrintf("ThreadStakeMinter() exception %s\n", e.what());
@@ -760,5 +757,4 @@ void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman, CWall
         LogPrintf("ThreadStakeMinter() error \n");
     }
     LogPrintf("ThreadStakeMinter exiting,\n");
-
 }

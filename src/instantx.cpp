@@ -26,13 +26,6 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/thread.hpp>
 
-#ifdef ENABLE_WALLET
-static CWallet *GetMainWallet()
-{
-    std::vector<CWallet*> wallets = GetWallets();
-    return wallets.size() > 0 ? wallets[0] : nullptr;
-}
-#endif // ENABLE_WALLET
 extern CTxMemPool mempool;
 
 bool fEnableInstantSend = true;
@@ -93,8 +86,10 @@ void CInstantSend::ProcessMessage(CNode* pfrom, const std::string& strCommand, C
 
         LOCK(cs_main);
 #ifdef ENABLE_WALLET
-        if (GetMainWallet())
-            LOCK(GetMainWallet()->cs_wallet);
+        std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+        CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+        if (pwallet)
+            LOCK(pwallet->cs_wallet);
 #endif
         LOCK(cs_instantsend);
 
@@ -310,8 +305,10 @@ bool CInstantSend::ProcessTxLockVote(CNode* pfrom, CTxLockVote& vote, CConnman& 
     // cs_main, cs_wallet and cs_instantsend should be already locked
     AssertLockHeld(cs_main);
 #ifdef ENABLE_WALLET
-    if (auto pwalletMain = GetMainWallet())
-        AssertLockHeld(pwalletMain->cs_wallet);
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if (pwallet)
+        AssertLockHeld(pwallet->cs_wallet);
 #endif
     AssertLockHeld(cs_instantsend);
 
@@ -439,8 +436,10 @@ void CInstantSend::ProcessOrphanTxLockVotes(CConnman& connman)
 {
     LOCK(cs_main);
 #ifdef ENABLE_WALLET
-    if (auto pwalletMain = GetMainWallet())
-        LOCK(pwalletMain->cs_wallet);
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if (pwallet)
+        LOCK(pwallet->cs_wallet);
 #endif
     LOCK(cs_instantsend);
 
@@ -491,8 +490,10 @@ void CInstantSend::TryToFinalizeLockCandidate(const CTxLockCandidate& txLockCand
 
     LOCK(cs_main);
 #ifdef ENABLE_WALLET
-    if (auto pwalletMain = GetMainWallet())
-        LOCK(pwalletMain->cs_wallet);
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if (pwallet)
+        LOCK(pwallet->cs_wallet);
 #endif
     LOCK(cs_instantsend);
 
@@ -511,8 +512,10 @@ void CInstantSend::UpdateLockedTransaction(const CTxLockCandidate& txLockCandida
 {
     // cs_wallet and cs_instantsend should be already locked
 #ifdef ENABLE_WALLET
-    if (auto pwalletMain = GetMainWallet())
-        AssertLockHeld(pwalletMain->cs_wallet);
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if (pwallet)
+        AssertLockHeld(pwallet->cs_wallet);
 #endif
     AssertLockHeld(cs_instantsend);
 
@@ -521,18 +524,14 @@ void CInstantSend::UpdateLockedTransaction(const CTxLockCandidate& txLockCandida
     if(!IsLockedInstantSendTransaction(txHash)) return; // not a locked tx, do not update/notify
 
 #ifdef ENABLE_WALLET
-    if(auto pwalletMain = GetMainWallet())
-    {
-        if(pwalletMain->UpdatedTransaction(txHash))
-        {
-            // bumping this to update UI
-            nCompleteTXLocks++;
-            // notify an external script once threshold is reached
-            std::string strCmd = gArgs.GetArg("-instantsendnotify", "");
-            if(!strCmd.empty()) {
-                boost::replace_all(strCmd, "%s", txHash.GetHex());
-                boost::thread t(runCommand, strCmd); // thread runs free, this is dangerous, TODO check later.
-            }
+    if(pwallet && pwallet->UpdatedTransaction(txHash)) {
+        // bumping this to update UI
+        nCompleteTXLocks++;
+        // notify an external script once threshold is reached
+        std::string strCmd = gArgs.GetArg("-instantsendnotify", "");
+        if(!strCmd.empty()) {
+            boost::replace_all(strCmd, "%s", txHash.GetHex());
+            boost::thread t(runCommand, strCmd); // thread runs free
         }
     }
 #endif
@@ -627,7 +626,7 @@ bool CInstantSend::ResolveConflicts(const CTxLockCandidate& txLockCandidate)
     // No conflicts were found so far, check to see if it was already included in block
     CTransactionRef txTmp;
     uint256 hashBlock;
-    if(GetTransaction(txHash, txTmp, Params().GetConsensus(), hashBlock, true) && hashBlock != uint256()) {
+    if(GetTransaction(txHash, txTmp, Params().GetConsensus(), hashBlock) && hashBlock != uint256()) {
         LogPrint(BCLog::INSTANTSEND, "CInstantSend::ResolveConflicts -- Done, %s is included in block %s\n", txHash.ToString(), hashBlock.ToString());
         return true;
     }
@@ -791,7 +790,7 @@ bool CInstantSend::GetTxLockVote(const uint256& hash, CTxLockVote& txLockVoteRet
 
 bool CInstantSend::IsInstantSendReadyToLock(const uint256& txHash)
 {
-    if(!fEnableInstantSend || GetfLargeWorkForkFound() || GetfLargeWorkInvalidChainFound() ||
+    if(!fEnableInstantSend || fLargeWorkForkFound || fLargeWorkInvalidChainFound ||
         !sporkManager.IsSporkActive(Spork::SPORK_2_INSTANTSEND_ENABLED)) return false;
 
     LOCK(cs_instantsend);
@@ -803,7 +802,7 @@ bool CInstantSend::IsInstantSendReadyToLock(const uint256& txHash)
 
 bool CInstantSend::IsLockedInstantSendTransaction(const uint256& txHash)
 {
-    if(!fEnableInstantSend || GetfLargeWorkForkFound() || GetfLargeWorkInvalidChainFound() ||
+    if(!fEnableInstantSend || fLargeWorkForkFound || fLargeWorkInvalidChainFound ||
         !sporkManager.IsSporkActive(Spork::SPORK_3_INSTANTSEND_BLOCK_FILTERING)) return false;
 
     LOCK(cs_instantsend);
@@ -829,7 +828,7 @@ bool CInstantSend::IsLockedInstantSendTransaction(const uint256& txHash)
 int CInstantSend::GetTransactionLockSignatures(const uint256& txHash)
 {
     if(!fEnableInstantSend) return -1;
-    if(GetfLargeWorkForkFound() || GetfLargeWorkInvalidChainFound()) return -2;
+    if(fLargeWorkForkFound || fLargeWorkInvalidChainFound) return -2;
     if(!sporkManager.IsSporkActive(Spork::SPORK_2_INSTANTSEND_ENABLED)) return -3;
 
     LOCK(cs_instantsend);

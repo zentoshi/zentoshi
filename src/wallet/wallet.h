@@ -140,6 +140,17 @@ constexpr OutputType DEFAULT_ADDRESS_TYPE{OutputType::P2SH_SEGWIT};
 //! Default for -changetype
 constexpr OutputType DEFAULT_CHANGE_TYPE{OutputType::CHANGE_AUTO};
 
+struct CompactTallyItem
+{
+    CTxDestination txdest;
+    CAmount nAmount;
+    std::vector<CTxIn> vecTxIn;
+    CompactTallyItem()
+    {
+        nAmount = 0;
+    }
+};
+
 enum WalletFlags : uint64_t {
     // wallet flags in the upper section (> 1 << 31) will lead to not opening the wallet if flag is unknown
     // unknown wallet flags in the lower section <= (1 << 31) will be tolerated
@@ -791,9 +802,6 @@ public:
     bool GetOutpointAndKeysFromOutput(const COutput& out, COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet);
     bool GetMasternodeOutpointAndKeys(COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet, std::string strTxHash, std::string strOutputIndex);
 
-    uint64_t nStakeSplitThreshold = 2000;
-    bool fWalletUnlockStakingOnly = false;
-
     const WalletLocation& GetLocation() const { return m_location; }
 
     /** Get a name for this wallet for logging/debugging purposes.
@@ -872,8 +880,13 @@ public:
     bool SelectCoinsMinConf(const CAmount& nTargetValue, const CoinEligibilityFilter& eligibility_filter, std::vector<OutputGroup> groups,
         std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, const CoinSelectionParams& coin_selection_params, bool& bnb_used) const;
 
-    // Coin selection
+    // Staking related methods
     using StakeCoinsSet = std::set<std::pair<const CWalletTx*, unsigned int>>;
+
+    uint64_t nStakeSplitThreshold = 2000;
+    bool fWalletUnlockStakingOnly = false;
+    std::shared_ptr<CWallet> GetMainWallet();
+
     bool MintableCoins();
     bool SelectStakeCoins(StakeCoinsSet& setCoins, CAmount nTargetAmount, bool fSelectWitness, const CScript &scriptFilterPubKey = CScript()) const;
     bool IsSpent(interfaces::Chain::Lock& locked_chain, const uint256& hash, unsigned int n) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
@@ -1103,6 +1116,8 @@ public:
     bool SetAddressBook(const CTxDestination& address, const std::string& strName, const std::string& purpose);
 
     bool DelAddressBook(const CTxDestination& address);
+
+    bool UpdatedTransaction(const uint256 &hashTx);
 
     const std::string& GetLabelName(const CScript& scriptPubKey) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
