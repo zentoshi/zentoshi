@@ -1,38 +1,3 @@
-Bitcoin Core version 0.18.x is now available from:
-
-  <https://bitcoincore.org/bin/bitcoin-core-0.18.x/>
-
-This is a new minor version release, including new features, various bug
-fixes and performance improvements, as well as updated translations.
-
-Please report bugs using the issue tracker at GitHub:
-
-  <https://github.com/bitcoin/bitcoin/issues>
-
-To receive security and update notifications, please subscribe to:
-
-  <https://bitcoincore.org/en/list/announcements/join/>
-
-How to Upgrade
-
-If you are running an older version, shut it down. Wait until it has
-completely shut down (which might take a few minutes for older
-versions), then run the installer (on Windows) or just copy over
-`/Applications/Bitcoin-Qt` (on Mac) or `bitcoind`/`bitcoin-qt` (on
-Linux).
-
-The first time you run version 0.15.0 or newer, your chainstate database
-will be converted to a new format, which will take anywhere from a few
-minutes to half an hour, depending on the speed of your machine.
-
-Note that the block database format also changed in version 0.8.0 and
-there is no automatic upgrade code from before version 0.8 to version
-0.15.0 or later. Upgrading directly from 0.7.x and earlier without
-redownloading the blockchain is not supported.  However, as usual, old
-wallet versions are still supported.
-
-Compatibility
-==============
 
 Bitcoin Core is supported and extensively tested on operating systems
 using the Linux kernel, macOS 10.10+, and Windows 7 and newer. It is not
@@ -83,6 +48,23 @@ As well as everyone that helped translating on [Transifex](https://www.transifex
 =======
 (note: this is a temporary file, to be added-to by anybody, and moved to
 release-notes at release time)
+=======
+*After branching off for a major version release of Bitcoin Core, use this
+template to create the initial release notes draft.*
+
+*The release notes draft is a temporary file that can be added to by anyone. See
+[/doc/developer-notes.md#release-notes](/doc/developer-notes.md#release-notes)
+for the process.*
+
+*Create the draft, named* "*version* Release Notes Draft"
+*(e.g. "0.20.0 Release Notes Draft"), as a collaborative wiki in:*
+
+https://github.com/bitcoin-core/bitcoin-devwiki/wiki/
+
+*Before the final release, move the notes back to this git repository.*
+
+*version* Release Notes Draft
+===============================
 
 Bitcoin Core version *version* is now available from:
 
