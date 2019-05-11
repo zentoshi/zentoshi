@@ -5,6 +5,7 @@
 
 #include <validationinterface.h>
 
+#include <init.h>
 #include <primitives/block.h>
 #include <scheduler.h>
 #include <sync.h>
@@ -15,7 +16,6 @@
 #include <list>
 #include <atomic>
 #include <future>
-#include <utility>
 
 #include <boost/signals2/signal.hpp>
 
@@ -32,7 +32,6 @@ struct ValidationInterfaceConnections {
     boost::signals2::scoped_connection NotifyTransactionLock;
     boost::signals2::scoped_connection NotifyHeaderTip;
     boost::signals2::scoped_connection AcceptedBlockHeader;
-    boost::signals2::scoped_connection UpdatedTransaction;
 };
 
 struct MainSignalsInstance {
@@ -46,10 +45,9 @@ struct MainSignalsInstance {
     boost::signals2::signal<void (int64_t nBestBlockTime, CConnman* connman)> Broadcast;
     boost::signals2::signal<void (const CBlock&, const CValidationState&)> BlockChecked;
     boost::signals2::signal<void (const CBlockIndex *, const std::shared_ptr<const CBlock>&)> NewPoWValidBlock;
-    boost::signals2::signal<void (const CTransactionRef &)> NotifyTransactionLock;
+    boost::signals2::signal<void (const CTransaction &)> NotifyTransactionLock;
     boost::signals2::signal<void (const CBlockIndex *, bool fInitialDownload)> NotifyHeaderTip;
     boost::signals2::signal<void (const CBlockIndex *)> AcceptedBlockHeader;
-    boost::signals2::signal<void (const uint256 &)> UpdatedTransaction;
 
     // We are not allowed to assume the scheduler only runs in one thread,
     // but must ensure all callbacks happen in-order, so we end up creating
@@ -114,10 +112,9 @@ void RegisterValidationInterface(CValidationInterface* pwalletIn) {
     conns.Broadcast = g_signals.m_internals->Broadcast.connect(std::bind(&CValidationInterface::ResendWalletTransactions, pwalletIn, std::placeholders::_1, std::placeholders::_2));
     conns.BlockChecked = g_signals.m_internals->BlockChecked.connect(std::bind(&CValidationInterface::BlockChecked, pwalletIn, std::placeholders::_1, std::placeholders::_2));
     conns.NewPoWValidBlock = g_signals.m_internals->NewPoWValidBlock.connect(std::bind(&CValidationInterface::NewPoWValidBlock, pwalletIn, std::placeholders::_1, std::placeholders::_2));
-    conns.NotifyTransactionLock = g_signals.m_internals->NotifyTransactionLock.connect(boost::bind(&CValidationInterface::NotifyTransactionLock, pwalletIn, std::placeholders::_1));
-    conns.NotifyHeaderTip = g_signals.m_internals->NotifyHeaderTip.connect(boost::bind(&CValidationInterface::NotifyHeaderTip, pwalletIn, std::placeholders::_1, std::placeholders::_2));
-    conns.AcceptedBlockHeader = g_signals.m_internals->AcceptedBlockHeader.connect(boost::bind(&CValidationInterface::AcceptedBlockHeader, pwalletIn, std::placeholders::_1));
-    conns.UpdatedTransaction = g_signals.m_internals->UpdatedTransaction.connect(boost::bind(&CValidationInterface::UpdatedTransaction, pwalletIn, std::placeholders::_1));
+    conns.NotifyTransactionLock = g_signals.m_internals->NotifyTransactionLock.connect(std::bind(&CValidationInterface::NotifyTransactionLock, pwalletIn, std::placeholders::_1));
+    conns.NotifyHeaderTip = g_signals.m_internals->NotifyHeaderTip.connect(std::bind(&CValidationInterface::NotifyHeaderTip, pwalletIn, std::placeholders::_1, std::placeholders::_2));
+    conns.AcceptedBlockHeader = g_signals.m_internals->AcceptedBlockHeader.connect(std::bind(&CValidationInterface::AcceptedBlockHeader, pwalletIn, std::placeholders::_1));
 }
 
 void UnregisterValidationInterface(CValidationInterface* pwalletIn) {
@@ -207,7 +204,7 @@ void CMainSignals::NewPoWValidBlock(const CBlockIndex *pindex, const std::shared
     m_internals->NewPoWValidBlock(pindex, block);
 }
 
-void CMainSignals::NotifyTransactionLock(const CTransactionRef &tx)
+void CMainSignals::NotifyTransactionLock(const CTransaction &tx)
 {
     m_internals->NotifyTransactionLock(tx);
 }

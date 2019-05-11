@@ -186,6 +186,10 @@ BITCOIN_CORE_H = \
   pow.h \
   protocol.h \
   psbt.h \
+  privatesend/privatesend.h \
+  privatesend/privatesend-client.h \
+  privatesend/privatesend-server.h \
+  privatesend/privatesend-util.h \
   random.h \
   reverse_iterator.h \
   reverselock.h \
@@ -304,6 +308,8 @@ libbitcoin_server_a_SOURCES = \
   node/transaction.cpp \
   noui.cpp \
   outputtype.cpp \
+  privatesend/privatesend.cpp \
+  privatesend/privatesend-server.cpp \
   policy/fees.cpp \
   policy/policy.cpp \
   policy/rbf.cpp \

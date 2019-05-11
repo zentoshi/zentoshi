@@ -2823,18 +2823,14 @@ CNode *CConnman::OpenNetworkConnectionImpl(const CAddress &addrConnect, bool fCo
         return nullptr;
     }
     if (!pszDest) {
-        if ((IsLocal(addrConnect) && !fAllowLocal) || IsBanned(addrConnect))
+        if (IsLocal(addrConnect) ||
+            FindNode(static_cast<CNetAddr>(addrConnect)) || (m_banman && m_banman->IsBanned(addrConnect)) ||
+            FindNode(addrConnect.ToStringIPPort()))
             return nullptr;
+    } else if (FindNode(std::string(pszDest)))
+        return nullptr;
 
-        if(auto node = FindNode(static_cast<CNetAddr>(addrConnect)))
-            return node;
-        if(auto node = FindNode(addrConnect.ToStringIPPort()))
-            return node;
-    } else if (auto node = FindNode(std::string(pszDest)))
-        return node;
-
-
-    CNode* pnode = ConnectNode(addrConnect, pszDest, fCountFailure, manual_connection, fAllowLocal);
+    CNode* pnode = ConnectNode(addrConnect, pszDest, fCountFailure, manual_connection);
 
     if (!pnode)
         return nullptr;

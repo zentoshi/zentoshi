@@ -103,9 +103,9 @@ static bool SignStep(const SigningProvider& provider, const BaseSignatureCreator
     std::vector<unsigned char> sig;
 
     std::vector<valtype> vSolutions;
-    whichTypeRet = Solver(scriptPubKey, vSolutions);
+    if (!Solver(scriptPubKey, whichTypeRet, vSolutions))
+        return false;
 
-    CKeyID keyID;
     switch (whichTypeRet)
     {
     case TX_NONSTANDARD:
@@ -119,29 +119,17 @@ static bool SignStep(const SigningProvider& provider, const BaseSignatureCreator
     case TX_PUBKEYHASH: {
         CKeyID keyID = CKeyID(uint160(vSolutions[0]));
         CPubKey pubkey;
-        if (!GetPubKey(provider, sigdata, keyID, pubkey)) {
-            // Pubkey could not be found, add to missing
-            sigdata.missing_pubkeys.push_back(keyID);
-            return false;
-        else
-        {
-            CPubKey vch;
-            provider.GetPubKey(keyID, vch);
-            ret.push_back(ToByteVector(vch));
-        }
+        GetPubKey(provider, sigdata, keyID, pubkey);
         if (!CreateSig(creator, sigdata, provider, sig, pubkey, scriptPubKey, sigversion)) return false;
         ret.push_back(std::move(sig));
         ret.push_back(ToByteVector(pubkey));
         return true;
     }
     case TX_SCRIPTHASH:
-        h160 = uint160(vSolutions[0]);
-        if (GetCScript(provider, sigdata, h160, scriptRet)) {
+        if (GetCScript(provider, sigdata, uint160(vSolutions[0]), scriptRet)) {
             ret.push_back(std::vector<unsigned char>(scriptRet.begin(), scriptRet.end()));
             return true;
         }
-        // Could not find redeemScript, add to missing
-        sigdata.missing_redeem_script = h160;
         return false;
 
     case TX_MULTISIG: {
@@ -303,8 +291,9 @@ SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nI
     }
 
     // Get scripts
+    txnouttype script_type;
     std::vector<std::vector<unsigned char>> solutions;
-    txnouttype script_type = Solver(txout.scriptPubKey, solutions);
+    Solver(txout.scriptPubKey, script_type, solutions);
     SigVersion sigversion = SigVersion::BASE;
     CScript next_script = txout.scriptPubKey;
 
@@ -315,7 +304,7 @@ SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nI
         next_script = std::move(redeem_script);
 
         // Get redeemScript type
-        script_type = Solver(next_script, solutions);
+        Solver(next_script, script_type, solutions);
         stack.script.pop_back();
     }
     if (script_type == TX_WITNESS_V0_SCRIPTHASH && !stack.witness.empty() && !stack.witness.back().empty()) {
@@ -325,7 +314,7 @@ SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nI
         next_script = std::move(witness_script);
 
         // Get witnessScript type
-        script_type = Solver(next_script, solutions);
+        Solver(next_script, script_type, solutions);
         stack.witness.pop_back();
         stack.script = std::move(stack.witness);
         stack.witness.clear();

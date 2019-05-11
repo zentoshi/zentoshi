@@ -23,6 +23,7 @@
 #include <random.h>
 #include <reverse_iterator.h>
 #include <scheduler.h>
+#include <shutdown.h>
 #include <tinyformat.h>
 #include <txmempool.h>
 #include <ui_interface.h>
@@ -87,9 +88,6 @@ CCriticalSection g_cs_orphans;
 std::map<uint256, COrphanTx> mapOrphanTransactions GUARDED_BY(g_cs_orphans);
 
 void EraseOrphansFor(NodeId peer);
-
-/** Increase a node's misbehavior score. */
-void Misbehaving(NodeId nodeid, int howmuch, const std::string& message="") EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
 /** Average delay between local address broadcasts in seconds. */
 static constexpr unsigned int AVG_LOCAL_ADDRESS_BROADCAST_INTERVAL = 24 * 60 * 60;
@@ -1077,16 +1075,18 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 
             return recentRejects->contains(inv.hash) ||
                    mempool.exists(inv.hash) ||
-                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) || // Best effort: only try output 0 and 1
+                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) ||
                    pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1));
         }
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
         return LookupBlockIndex(inv.hash) != nullptr;
     }
-
     // process one of the extensions
     return net_processing_bitcoin::AlreadyHave(inv);
+    }
+    // Don't know what it is, just say we already got one
+    return true;
 }
 
 static void RelayTransaction(const CTransaction& tx, CConnman* connman)
@@ -1272,8 +1272,6 @@ void static ProcessGetBlockData(CNode* pfrom, const CChainParams& chainparams, c
                 } else {
                     connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::BLOCK, *pblock));
                 }
-            } else {
-                connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::BLOCK, *pblock));
             }
         }
 
@@ -1308,7 +1306,7 @@ void static ProcessGetData(CNode* pfrom, const CChainParams& chainparams, CConnm
             if (pfrom->fPauseSend)
                 break;
 
-            const CInv &inv = *it;
+            CInv &inv = *it;
             it++;
 
             net_processing_bitcoin::TransformInvForLegacyVersion(inv, pfrom, false);
@@ -1330,12 +1328,12 @@ void static ProcessGetData(CNode* pfrom, const CChainParams& chainparams, CConnm
                 }
             }
             else if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK || inv.type == MSG_CMPCT_BLOCK || inv.type == MSG_WITNESS_BLOCK) {
-                ProcessGetBlockData(pfrom, consensusParams, inv, connman, interruptMsgProc);
+                ProcessGetBlockData(pfrom, chainparams, inv, connman);
                 push = true;
             }
             else
             {
-                push = net_processing_bitcoin::ProcessGetData(pfrom, consensusParams, connman, inv);
+                push = net_processing_bitcoin::ProcessGetData(pfrom, chainparams.GetConsensus(), connman, inv);
             }
 
             if (!push) {
@@ -3850,7 +3848,7 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
         //
         while (!pto->mapAskFor.empty() && (*pto->mapAskFor.begin()).first <= nNow)
         {
-            const CInv& inv = (*pto->mapAskFor.begin()).second;
+            CInv& inv = (*pto->mapAskFor.begin()).second;
             if (!AlreadyHave(inv))
             {
                 LogPrint(BCLog::NET, "Requesting %s peer=%d s:%d r:%d\n", inv.ToString(), pto->GetId(),
@@ -3961,9 +3959,9 @@ static const MapSporkHandlers &GetMapGetDataHandlers()
                         return {};
                     });
         ADD_HANDLER(MSG_TXLOCK_REQUEST, {
-                        CTxLockRequestRef txLockRequest;
+                        CTxLockRequest txLockRequest;
                         if(instantsend.GetTxLockRequest(hash, txLockRequest)) {
-                            return msgMaker.Make(NetMsgType::TXLOCKREQUEST, *txLockRequest);
+                            return msgMaker.Make(NetMsgType::TXLOCKREQUEST, txLockRequest);
                         }
                         return {};
                     });

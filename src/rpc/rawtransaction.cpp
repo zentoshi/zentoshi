@@ -177,10 +177,12 @@ static UniValue getrawtransaction(const JSONRPCRequest& request)
         in_active_chain = chainActive.Contains(blockindex);
     }
 
-    bool f_txindex_ready = false;
-    if (g_txindex && !blockindex) {
-        f_txindex_ready = g_txindex->BlockUntilSyncedToCurrentChain();
-    }
+//  TODO - Adapt this locking mechanism properly
+//
+//  bool f_txindex_ready = false;
+//  if (g_txindex && !blockindex) {
+//      f_txindex_ready = g_txindex->BlockUntilSyncedToCurrentChain();
+//  }
 
     CTransactionRef tx;
     uint256 hash_block;
@@ -193,8 +195,10 @@ static UniValue getrawtransaction(const JSONRPCRequest& request)
             errmsg = "No such transaction found in the provided block";
         } else if (!g_txindex) {
             errmsg = "No such mempool transaction. Use -txindex to enable blockchain transaction queries";
-        } else if (!f_txindex_ready) {
-            errmsg = "No such mempool transaction. Blockchain transactions are still in the process of being indexed";
+//  TODO - Adapt this locking mechanism properly
+//
+//      } else if (!f_txindex_ready) {
+//          errmsg = "No such mempool transaction. Blockchain transactions are still in the process of being indexed";
         } else {
             errmsg = "No such mempool or blockchain transaction";
         }
@@ -270,11 +274,11 @@ static UniValue gettxoutproof(const JSONRPCRequest& request)
         }
     }
 
-
-    // Allow txindex to catch up if we need to query it and before we acquire cs_main.
-    if (g_txindex && !pblockindex) {
-        g_txindex->BlockUntilSyncedToCurrentChain();
-    }
+//  TODO - Adapt this locking mechanism properly
+//
+//  if (g_txindex && !pblockindex) {
+//      g_txindex->BlockUntilSyncedToCurrentChain();
+//  }
 
     LOCK(cs_main);
 
@@ -667,8 +671,9 @@ static UniValue decodescript(const JSONRPCRequest& request)
         // P2SH and witness programs cannot be wrapped in P2WSH, if this script
         // is a witness program, don't return addresses for a segwit programs.
         if (type.get_str() == "pubkey" || type.get_str() == "pubkeyhash" || type.get_str() == "multisig" || type.get_str() == "nonstandard") {
+            txnouttype which_type;
             std::vector<std::vector<unsigned char>> solutions_data;
-            txnouttype which_type = Solver(script, solutions_data);
+            Solver(script, which_type, solutions_data);
             // Uncompressed pubkeys cannot be used with segwit checksigs.
             // If the script contains an uncompressed pubkey, skip encoding of a segwit program.
             if ((which_type == TX_PUBKEY) || (which_type == TX_MULTISIG)) {
@@ -1781,7 +1786,8 @@ UniValue utxoupdatepsbt(const JSONRPCRequest& request)
         const Coin& coin = view.AccessCoin(psbtx.tx->vin[i].prevout);
 
         std::vector<std::vector<unsigned char>> solutions_data;
-        txnouttype which_type = Solver(coin.out.scriptPubKey, solutions_data);
+        txnouttype which_type;
+        Solver(coin.out.scriptPubKey, which_type, solutions_data);
         if (which_type == TX_WITNESS_V0_SCRIPTHASH || which_type == TX_WITNESS_V0_KEYHASH || which_type == TX_WITNESS_UNKNOWN) {
             input.witness_utxo = coin.out;
         }

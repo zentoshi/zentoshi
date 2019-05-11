@@ -10,6 +10,7 @@
 #include <interfaces/chain.h>
 #include <outputtype.h>
 #include <policy/feerate.h>
+#include <protocol.h>
 #include <streams.h>
 #include <tinyformat.h>
 #include <ui_interface.h>
@@ -859,7 +860,7 @@ public:
     /**
      * populate vCoins with vector of available COutputs.
      */
-    void AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<COutput>& vCoins, bool fOnlySafe=true, const CCoinControl *coinControl = nullptr, const CAmount& nMinimumAmount = 1, const CAmount& nMaximumAmount = MAX_MONEY, const CAmount& nMinimumSumAmount = MAX_MONEY, const uint64_t nMaximumCount = 0, const int nMinDepth = 0, const int nMaxDepth = 9999999) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    void AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<COutput>& vCoins, bool fOnlySafe=true, const CCoinControl *coinControl = nullptr, const CAmount& nMinimumAmount = 1, const CAmount& nMaximumAmount = MAX_MONEY, const CAmount& nMinimumSumAmount = MAX_MONEY, const uint64_t nMaximumCount = 0, const int nMinDepth = 0, const int nMaxDepth = 9999999, bool fUseInstantSend = false) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     /**
      * Return list of available coins and locked coins grouped by non-change output address.
@@ -951,7 +952,7 @@ public:
     //! Holds a timestamp at which point the wallet is scheduled (externally) to be relocked. Caller must arrange for actual relocking to occur via Lock().
     int64_t nRelockTime = 0;
 
-    bool Unlock(const SecureString& strWalletPassphrase, bool accept_no_keys = false);
+    bool Unlock(const SecureString& strWalletPassphrase, bool stakingOnly = false);
     bool ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase, const SecureString& strNewWalletPassphrase);
     bool EncryptWallet(const SecureString& strWalletPassphrase);
 
@@ -1004,7 +1005,7 @@ public:
 
     OutputType TransactionChangeType(OutputType change_type, const std::vector<CRecipient>& vecSend);
 
-    bool GetBudgetSystemCollateralTX(CWalletTx& tx, uint256 hash, CAmount amount, bool fUseInstantSend);
+    bool GetBudgetSystemCollateralTX(CTransactionRef& tx, uint256 hash, CAmount amount, bool fUseInstantSend);
 
 
     /**
@@ -1020,12 +1021,13 @@ public:
      * @note passing nChangePosInOut as -1 will result in setting a random position
      */
     bool CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosInOut,
-                           std::string& strFailReason, const CCoinControl& coin_control, bool sign = true);
+                           std::string& strFailReason, const CCoinControl& coin_control, bool sign = true, AvailableCoinsType nCoinType = ALL_COINS, bool fUseInstantSend = false);
     bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, CAmount blockReward,
                          CMutableTransaction& txNew, unsigned int& nTxNewTime,
                          std::vector<const CWalletTx *> &vwtxPrev,
                          bool fGenerateSegwit);
     bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, CReserveKey& reservekey, CConnman* connman, CValidationState& state);
+    bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, std::string fromAccount, CReserveKey& reservekey, CConnman* connman, CValidationState& state, std::string strCommand = NetMsgType::TX);
 
     bool DummySignTx(CMutableTransaction &txNew, const std::set<CTxOut> &txouts, bool use_max_sig = false) const
     {

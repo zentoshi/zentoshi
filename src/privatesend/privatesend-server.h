@@ -58,7 +58,7 @@ private:
     void SetState(PoolState nStateNew);
 
     /// Relay mixing Messages
-    void RelayFinalTransaction(const CTransaction& txFinal, CConnman& connman);
+    void RelayFinalTransaction(const CMutableTransaction& txFinal, CConnman& connman);
     void PushStatus(CNode* pnode, PoolStatusUpdate nStatusUpdate, PoolMessage nMessageID, CConnman& connman);
     void RelayStatus(PoolStatusUpdate nStatusUpdate, CConnman& connman, PoolMessage nMessageID = MSG_NOERR);
     void RelayCompletedTransaction(PoolMessage nMessageID, CConnman& connman);

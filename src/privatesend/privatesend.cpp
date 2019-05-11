@@ -13,6 +13,7 @@
 #include <masternodeman.h>
 #include <messagesigner.h>
 #include <script/sign.h>
+#include <shutdown.h>
 #include <txmempool.h>
 #include <util/system.h>
 #include <util/moneystr.h>

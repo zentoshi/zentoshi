@@ -40,9 +40,6 @@
 #include <univalue.h>
 
 class CWallet;
-fs::path GetWalletDir();
-std::vector<fs::path> ListWalletDir();
-std::vector<std::shared_ptr<CWallet>> GetWallets();
 std::shared_ptr<CWallet> LoadWallet(interfaces::Chain& chain, const std::string& name, std::string& error, std::string& warning);
 
 namespace interfaces {

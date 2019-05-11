@@ -608,7 +608,7 @@ static bool AcceptToMemoryPoolWorker(const CChainParams& chainparams, CTxMemPool
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
-    if (fRequireStandard && !IsStandardTx(tx, reason, witnessEnabled))
+    if (fRequireStandard && !IsStandardTx(tx, reason))
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
     // Do not work on transactions that are too small.
@@ -2091,7 +2091,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
-        pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
+        pos.nTxOffset += ::GetSerializeSize(tx, CLIENT_VERSION);
     }
 
     // ppcoin: track money supply and mint amount info
@@ -2177,11 +2177,6 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
     int64_t nTime5 = GetTimeMicros(); nTimeIndex += nTime5 - nTime4;
     LogPrint(BCLog::BENCH, "    - Index writing: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime5 - nTime4), nTimeIndex * MICRO, nTimeIndex * MILLI / nBlocksTotal);
-
-    // Watch for changes to the previous coinbase transaction.
-    static uint256 hashPrevBestCoinBase;
-    GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
-    hashPrevBestCoinBase = block.vtx[0]->GetHash();
 
     int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
     LogPrint(BCLog::BENCH, "    - Callbacks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime6 - nTime5), nTimeCallbacks * MICRO, nTimeCallbacks * MILLI / nBlocksTotal);
@@ -3875,8 +3870,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
             state.Error(strprintf("%s: Failed to find position to write new block to disk", __func__));
             return false;
         }
-        if (!ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
-            return error("AcceptBlock(): ReceivedBlockTransactions failed");
+        ReceivedBlockTransactions(block, pindex, blockPos, chainparams.GetConsensus());
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
     }
@@ -4743,8 +4737,7 @@ bool CChainState::LoadGenesisBlock(const CChainParams& chainparams)
         CBlockIndex *pindex = AddToBlockIndex(block);
         AcceptProofOfStakeBlock(block, pindex);
         CValidationState state;
-        if (!ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
-            return error("%s: genesis block not accepted (%s)", __func__, FormatStateMessage(state));
+        ReceivedBlockTransactions(block, pindex, blockPos, chainparams.GetConsensus());
     } catch (const std::runtime_error& e) {
         return error("%s: failed to write genesis block: %s", __func__, e.what());
     }

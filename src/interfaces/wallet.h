@@ -11,7 +11,9 @@
 #include <script/standard.h>           // For CTxDestination
 #include <support/allocators/secure.h> // For SecureString
 #include <ui_interface.h>              // For ChangeType
-
+#ifdef ENABLE_WALLET
+#include <wallet/wallet.h>
+#endif
 #include <functional>
 #include <map>
 #include <memory>
@@ -64,7 +66,8 @@ public:
     virtual bool isLocked() = 0;
 
     //! Return whether wallet is locked for Staking only.
-    virtual bool isLockedForStaking() = 0;
+    // TODO: FIX
+    // virtual bool isLockedForStaking() = 0;
 
     //! Change wallet passphrase.
     virtual bool changeWalletPassphrase(const SecureString& old_wallet_passphrase,
@@ -140,7 +143,9 @@ public:
         bool sign,
         int& change_pos,
         CAmount& fee,
-        std::string& fail_reason) = 0;
+        std::string& fail_reason,
+        AvailableCoinsType nCoinType = ALL_COINS,
+        bool fUseInstantSend = false) = 0;
 
     //! Return whether transaction can be abandoned.
     virtual bool transactionCanBeAbandoned(const uint256& txid) = 0;
@@ -179,7 +184,8 @@ public:
     virtual std::vector<WalletTx> getWalletTxs() = 0;
 
     //! Get minimum limit where stake gets split between vouts.
-    virtual CAmount getStakeSplitThreshold() const = 0;
+    // TODO: FIX
+    //virtual CAmount getStakeSplitThreshold() const = 0;
 
     //! Try to get updated status for a particular transaction, if possible without blocking.
     virtual bool tryGetTxStatus(const uint256& txid,
@@ -213,7 +219,7 @@ public:
     virtual isminetype txoutIsMine(const CTxOut& txout) = 0;
 
     //! Return whether transaction output has been spent.
-    virtual bool txoutIsSpent(const uint256 &hash, unsigned int outputIndex) = 0;
+    //virtual bool txoutIsSpent(const uint256 &hash, unsigned int outputIndex) = 0;
 
     //! Return debit amount if transaction input belongs to wallet.
     virtual CAmount getDebit(const CTxIn& txin, isminefilter filter) = 0;

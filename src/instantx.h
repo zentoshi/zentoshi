@@ -52,8 +52,8 @@ private:
     int nCachedBlockHeight;
 
     // maps for AlreadyHave
-    std::map<uint256, CTxLockRequestRef> mapLockRequestAccepted; // tx hash - tx
-    std::map<uint256, CTxLockRequestRef> mapLockRequestRejected; // tx hash - tx
+    std::map<uint256, CTxLockRequest> mapLockRequestAccepted; // tx hash - tx
+    std::map<uint256, CTxLockRequest> mapLockRequestRejected; // tx hash - tx
     std::map<uint256, CTxLockVote> mapTxLockVotes; // vote hash - vote
     std::map<uint256, CTxLockVote> mapTxLockVotesOrphan; // vote hash - vote
 
@@ -65,14 +65,14 @@ private:
     //track masternodes who voted with no txreq (for DOS protection)
     std::map<COutPoint, int64_t> mapMasternodeOrphanVotes; // mn outpoint - time
 
-    bool CreateTxLockCandidate(const CTxLockRequestRef& txLockRequest);
+    bool CreateTxLockCandidate(const CTxLockRequest& txLockRequest);
     void CreateEmptyTxLockCandidate(const uint256& txHash);
     void Vote(CTxLockCandidate& txLockCandidate, CConnman& connman);
 
     //process consensus vote message
     bool ProcessTxLockVote(CNode* pfrom, CTxLockVote& vote, CConnman& connman);
     void ProcessOrphanTxLockVotes(CConnman& connman);
-    bool IsEnoughOrphanVotesForTx(const CTxLockRequestRef& txLockRequest);
+    bool IsEnoughOrphanVotesForTx(const CTxLockRequest& txLockRequest);
     bool IsEnoughOrphanVotesForTxAndOutPoint(const uint256& txHash, const COutPoint& outpoint);
     int64_t GetAverageMasternodeOrphanVoteTime();
 
@@ -89,14 +89,15 @@ public:
 
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
-    bool ProcessTxLockRequest(const CTxLockRequestRef &txLockRequest, CConnman& connman);
+    bool ProcessTxLockRequest(const CTxLockRequest& txLockRequest, CConnman& connman);
+    void Vote(const uint256& txHash, CConnman& connman);
 
     bool AlreadyHave(const uint256& hash);
 
-    void AcceptLockRequest(const CTxLockRequestRef &txLockRequest);
-    void RejectLockRequest(const CTxLockRequestRef &txLockRequest);
+    void AcceptLockRequest(const CTxLockRequest& txLockRequest);
+    void RejectLockRequest(const CTxLockRequest& txLockRequest);
     bool HasTxLockRequest(const uint256& txHash);
-    bool GetTxLockRequest(const uint256& txHash, CTxLockRequestRef &txLockRequestRet);
+    bool GetTxLockRequest(const uint256& txHash, CTxLockRequest& txLockRequestRet);
 
     bool GetTxLockVote(const uint256& hash, CTxLockVote& txLockVoteRet);
 
@@ -117,7 +118,7 @@ public:
     void Relay(const uint256& txHash, CConnman& connman);
 
     void UpdatedBlockTip(const CBlockIndex *pindex);
-    void SyncTransaction(const CTransactionRef& tx, const CBlockIndex* pindex);
+    void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
 
     std::string ToString();
 };
@@ -236,17 +237,17 @@ private:
     int64_t nTimeCreated;
 
 public:
-    CTxLockCandidate(const CTxLockRequestRef& txLockRequestIn) :
+    CTxLockCandidate(const CTxLockRequest& txLockRequestIn) :
         nConfirmedHeight(-1),
         nTimeCreated(GetTime()),
         txLockRequest(txLockRequestIn),
         mapOutPointLocks()
         {}
 
-    CTxLockRequestRef txLockRequest;
+    CTxLockRequest txLockRequest;
     std::map<COutPoint, COutPointLock> mapOutPointLocks;
 
-    uint256 GetHash() const { return txLockRequest->GetHash(); }
+    uint256 GetHash() const { return txLockRequest.GetHash(); }
 
     void AddOutPointLock(const COutPoint& outpoint);
     void MarkOutpointAsAttacked(const COutPoint& outpoint);

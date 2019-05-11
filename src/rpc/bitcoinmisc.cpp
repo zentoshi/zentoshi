@@ -12,12 +12,15 @@
 #include <rpc/server.h>
 #include <rpc/util.h>
 #include <timedata.h>
-#include <util.h>
-#include <utilstrencodings.h>
+#include <util/system.h>
+#include <util/strencodings.h>
 #include <spork.h>
 #include <netmessagemaker.h>
+#include <masternode-sync.h>
 #ifdef ENABLE_WALLET
 #include <wallet/rpcwallet.h>
+#include <wallet/wallet.h>
+#include <wallet/walletdb.h>
 #endif
 
 /*
@@ -25,23 +28,18 @@
 */
 static UniValue spork(const JSONRPCRequest& request)
 {
-    if(request.params.size() == 1 && request.params[0].get_str() == "show"){
+    for(int nSporkID = Spork::SPORK_START; nSporkID < Spork::SPORK_END; nSporkID++){
         UniValue ret(UniValue::VOBJ);
-        for(int nSporkID = Spork::SPORK_START; nSporkID < Spork::SPORK_END; nSporkID++){
+        for(int nSporkID = Spork::SPORK_START; nSporkID <= Spork::SPORK_END; nSporkID++){
             if(sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
-                ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), sporkManager.GetSporkValue(nSporkID)));
-        }
-        return ret;
-    } else if(request.params.size() == 1 && request.params[0].get_str() == "active"){
-        UniValue ret(UniValue::VOBJ);
-        for(int nSporkID = Spork::SPORK_START; nSporkID < Spork::SPORK_END; nSporkID++){
-            if(sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
-                ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), sporkManager.IsSporkActive(nSporkID)));
+                ret.pushKV(sporkManager.GetSporkNameByID(nSporkID), sporkManager.GetSporkValue(nSporkID));
         }
         return ret;
     }
 #ifdef ENABLE_WALLET
-    else if (request.params.size() == 2) {
+    if (request.params.size() == 2){
+        RPCTypeCheck(request.params, {UniValue::VSTR, UniValue::VNUM});
+
         int nSporkID = sporkManager.GetSporkIDByName(request.params[0].get_str());
         if(nSporkID == -1){
             return "Invalid spork name";
@@ -54,7 +52,7 @@ static UniValue spork(const JSONRPCRequest& request)
         int64_t nValue = request.params[1].get_int64();
 
         //broadcast new spork
-        if(sporkManager.UpdateSpork(nSporkID, nValue, g_connman.get())) {
+        if(sporkManager.UpdateSpork(nSporkID, nValue, g_connman.get())){
             sporkManager.ExecuteSpork(nSporkID, nValue);
             return "success";
         } else {
@@ -62,16 +60,18 @@ static UniValue spork(const JSONRPCRequest& request)
         }
 
     }
-    CWallet * const pwallet = GetWalletForJSONRPCRequest(request);
+
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
     throw std::runtime_error(
-                "spork <name> [<value>]\n"
-                "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active\n"
-                "<value> is a epoch datetime to enable or disable spork\n"
-                + HelpRequiringPassphrase(pwallet));
+        "spork <name> [<value>]\n"
+        "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active\n"
+        "<value> is a epoch datetime to enable or disable spork\n"
+        + HelpRequiringPassphrase(pwallet));
 #else // ENABLE_WALLET
     throw std::runtime_error(
-                "spork <name>\n"
-                "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active\n");
+        "spork <name>\n"
+        "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active\n");
 #endif // ENABLE_WALLET
 
 }

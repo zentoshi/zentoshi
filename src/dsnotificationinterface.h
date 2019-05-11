@@ -21,9 +21,7 @@ protected:
     void AcceptedBlockHeader(const CBlockIndex *pindexNew) override;
     void NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload) override;
     void UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) override;
-    void TransactionAddedToMempool(const CTransactionRef &ptxn) override;
-    void BlockConnected(const std::shared_ptr<const CBlock> &block, const CBlockIndex *pindex, const std::vector<CTransactionRef> &txnConflicted) override;
-    void BlockDisconnected(const std::shared_ptr<const CBlock> &block) override;
+    void SyncTransaction(const CTransaction &tx, const CBlock *pblock) override;
 private:
     CConnman& connman;
 };

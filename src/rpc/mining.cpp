@@ -222,9 +222,8 @@ static UniValue getmininginfo(const JSONRPCRequest& request)
     if (BlockAssembler::m_last_block_weight) obj.pushKV("currentblockweight", *BlockAssembler::m_last_block_weight);
     if (BlockAssembler::m_last_block_num_txs) obj.pushKV("currentblocktx", *BlockAssembler::m_last_block_num_txs);
     UniValue diff(UniValue::VOBJ);
-    diff.push_back(Pair("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8)));
-    diff.push_back(Pair("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8)));
-    obj.push_back(Pair("difficulty", diff));
+    diff.pushKV("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8));
+    diff.pushKV("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8));
     obj.pushKV("difficulty", diff);
     obj.pushKV("networkhashps",    getnetworkhashps(request));
     obj.pushKV("pooledtx",         (uint64_t)mempool.size());
@@ -510,6 +509,7 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     if (setClientRules.count(segwit_info.name) != 1) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "getblocktemplate must be called with the segwit rule set (call with {\"rules\": [\"segwit\"]})");
     }
+    bool fSupportsSegwit = setClientRules.find(segwit_info.name) != setClientRules.end();
 
     // Update block
     static CBlockIndex* pindexPrev;
@@ -629,7 +629,7 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
             {
                 // Add to rules only
                 const struct VBDeploymentInfo& vbinfo = VersionBitsDeploymentInfo[pos];
-                aRules.push_back(gbt_vb_name(pos));
+                vbavailable.pushKV(gbt_vb_name(pos), consensusParams.vDeployments[pos].bit);
                 if (setClientRules.find(vbinfo.name) == setClientRules.end()) {
                     // Not supported by the client; make sure it's safe to proceed
                     if (!vbinfo.gbt_force) {
@@ -684,13 +684,13 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
         CTxDestination address1;
         ExtractDestination(pblock->txoutMasternode.scriptPubKey, address1);
         CBitcoinAddress address2(address1);
-        masternodeObj.push_back(Pair("payee", address2.ToString().c_str()));
-        masternodeObj.push_back(Pair("script", HexStr(pblock->txoutMasternode.scriptPubKey)));
-        masternodeObj.push_back(Pair("amount", pblock->txoutMasternode.nValue));
+        masternodeObj.pushKV("payee", address2.ToString().c_str());
+        masternodeObj.pushKV("script", HexStr(pblock->txoutMasternode.scriptPubKey));
+        masternodeObj.pushKV("amount", pblock->txoutMasternode.nValue);
     }
-    result.push_back(Pair("masternode", masternodeObj));
-    result.push_back(Pair("masternode_payments_started", pindexPrev->nHeight + 1 > consensusParams.nFirstPoSBlock));
-    result.push_back(Pair("masternode_payments_enforced", sporkManager.IsSporkActive(Spork::SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)));
+    result.pushKV("masternode", masternodeObj);
+    result.pushKV("masternode_payments_started", pindexPrev->nHeight + 1 > consensusParams.nFirstPoSBlock);
+    result.pushKV("masternode_payments_enforced", sporkManager.IsSporkActive(Spork::SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT));
     UniValue superblockObjArray(UniValue::VARR);
     if(pblock->voutSuperblock.size()) {
         for (const auto& txout : pblock->voutSuperblock) {
@@ -698,15 +698,16 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
             CTxDestination address1;
             ExtractDestination(txout.scriptPubKey, address1);
             CBitcoinAddress address2(address1);
-            entry.push_back(Pair("payee", address2.ToString().c_str()));
-            entry.push_back(Pair("script", HexStr(txout.scriptPubKey)));
-            entry.push_back(Pair("amount", txout.nValue));
+            entry.pushKV("payee", address2.ToString().c_str());
+            entry.pushKV("script", HexStr(txout.scriptPubKey));
+            entry.pushKV("amount", txout.nValue);
             superblockObjArray.push_back(entry);
         }
     }
-    result.push_back(Pair("superblock", superblockObjArray));
-    result.push_back(Pair("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock));
-    result.push_back(Pair("superblocks_enabled", sporkManager.IsSporkActive(Spork::SPORK_9_SUPERBLOCKS_ENABLED)));
+    result.pushKV("superblock", superblockObjArray);
+    result.pushKV("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock);
+    result.pushKV("superblocks_enabled", sporkManager.IsSporkActive(Spork::SPORK_9_SUPERBLOCKS_ENABLED));
+
     if (!pblocktemplate->vchCoinbaseCommitment.empty() && fSupportsSegwit) {
         result.pushKV("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment.begin(), pblocktemplate->vchCoinbaseCommitment.end()));
     }

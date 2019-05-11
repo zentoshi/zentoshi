@@ -376,8 +376,8 @@ static UniValue getdifficulty(const JSONRPCRequest& request)
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8)));
-    obj.push_back(Pair("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8)));
+    obj.pushKV("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8));
+    obj.pushKV("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8));
     return obj;
 }
 
@@ -1328,16 +1328,17 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
 
     LOCK(cs_main);
 
+    const Consensus::Params& consensusParams = Params().GetConsensus();
     const CBlockIndex* tip = chainActive.Tip();
+
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("chain",                 Params().NetworkIDString());
     obj.pushKV("blocks",                (int)chainActive.Height());
     obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
     obj.pushKV("bestblockhash",         tip->GetBlockHash().GetHex());
     UniValue diff(UniValue::VOBJ);
-    diff.push_back(Pair("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8)));
-    diff.push_back(Pair("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8)));
-    obj.push_back(Pair("difficulty", diff));
+    diff.pushKV("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8));
+    diff.pushKV("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8));
     obj.pushKV("difficulty", diff);
     obj.pushKV("mediantime",            (int64_t)tip->GetMedianTimePast());
     obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), tip));
@@ -1362,7 +1363,6 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
         }
     }
 
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     UniValue softforks(UniValue::VARR);
     UniValue bip9_softforks(UniValue::VOBJ);
     softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));

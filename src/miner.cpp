@@ -631,7 +631,7 @@ void static BitcoinMiner(const CChainParams& chainparams, CConnman& connman, boo
             IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
             LogPrintf("BitcoinMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-                      ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+                      ::GetSerializeSize(*pblock, PROTOCOL_VERSION));
 
             //Sign block
             if (fProofOfStake)

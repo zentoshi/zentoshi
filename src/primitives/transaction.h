@@ -318,6 +318,9 @@ public:
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
 
+    // Dash
+    CTransaction& operator=(const CTransaction& tx) { return *this; };
+
     /** Convert a CMutableTransaction into a CTransaction. */
     explicit CTransaction(const CMutableTransaction &tx);
     CTransaction(CMutableTransaction &&tx);

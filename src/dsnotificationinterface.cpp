@@ -9,6 +9,10 @@
 #include <masternodeman.h>
 #include <masternode-payments.h>
 #include <masternode-sync.h>
+#include <privatesend/privatesend.h>
+#ifdef ENABLE_WALLET
+#include <privatesend/privatesend-client.h>
+#endif // ENABLE_WALLET
 
 void CDSNotificationInterface::InitializeCurrentBlockTip()
 {
@@ -37,33 +41,17 @@ void CDSNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindexNew, con
         return;
 
     mnodeman.UpdatedBlockTip(pindexNew);
+    CPrivateSend::UpdatedBlockTip(pindexNew);
+#ifdef ENABLE_WALLET
+    privateSendClient.UpdatedBlockTip(pindexNew);
+#endif // ENABLE_WALLET
     instantsend.UpdatedBlockTip(pindexNew);
     mnpayments.UpdatedBlockTip(pindexNew, connman);
     governance.UpdatedBlockTip(pindexNew, connman);
 }
 
-void CDSNotificationInterface::TransactionAddedToMempool(const CTransactionRef &ptxn)
+void CDSNotificationInterface::SyncTransaction(const CTransaction &tx, const CBlock *pblock)
 {
-    instantsend.SyncTransaction(ptxn, nullptr);
-}
-
-void CDSNotificationInterface::BlockConnected(const std::shared_ptr<const CBlock> &block, const CBlockIndex *pindex, const std::vector<CTransactionRef> &txnConflicted)
-{
-    for(const auto &tx : block->vtx)
-    {
-        instantsend.SyncTransaction(tx, pindex);
-    }
-
-    for(const auto &tx : txnConflicted)
-    {
-        instantsend.SyncTransaction(tx, nullptr);
-    }
-}
-
-void CDSNotificationInterface::BlockDisconnected(const std::shared_ptr<const CBlock> &block)
-{
-    for(const auto &tx : block->vtx)
-    {
-        instantsend.SyncTransaction(tx, nullptr);
-    }
+    instantsend.SyncTransaction(tx, pblock);
+    CPrivateSend::SyncTransaction(tx, pblock);
 }

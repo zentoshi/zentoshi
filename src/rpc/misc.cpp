@@ -330,7 +330,8 @@ static UniValue verifymessage(const JSONRPCRequest& request)
     ss << strMessage;
 
     CPubKey pubkey;
-    if (!pubkey.RecoverCompact(ss.GetHash(), vchSig))
+    CPubKey::InputScriptType inputScriptType;
+    if (!pubkey.RecoverCompact(ss.GetHash(), vchSig, inputScriptType))
         return false;
 
     return (pubkey.GetID() == *keyID);
@@ -619,24 +620,24 @@ UniValue getstakingstatus(const JSONRPCRequest& request)
             "\nExamples:\n" +
             HelpExampleCli("getstakingstatus", "") + HelpExampleRpc("getstakingstatus", ""));
 
-    CWallet * const pwalletMain = GetWalletForJSONRPCRequest(request);
+    std::shared_ptr<CWallet> const pwallet = GetWalletForJSONRPCRequest(request);
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("validtime", chainActive.Tip()->nTime > 1471482000));
-    obj.push_back(Pair("haveconnections", g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) > 0));
-    if (pwalletMain) {
-        obj.push_back(Pair("walletunlocked", !pwalletMain->IsLocked()));
-        obj.push_back(Pair("mintablecoins", pwalletMain->MintableCoins()));
-        obj.push_back(Pair("enoughcoins", pwalletMain->GetBalance() > 0));
+    obj.pushKV("validtime", true);
+    obj.pushKV("haveconnections", g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) > 0);
+    if (pwallet) {
+        obj.pushKV("walletunlocked", !pwallet->IsLocked());
+        obj.pushKV("mintablecoins", pwallet->MintableCoins());
+        obj.pushKV("enoughcoins", pwallet->GetBalance() > 0);
     }
-    obj.push_back(Pair("mnsync", masternodeSync.IsSynced()));
+    obj.pushKV("mnsync", masternodeSync.IsSynced());
 
     bool nStaking = false;
 
     if (nLastCoinStakeSearchInterval > 0)
         nStaking = true;
 
-    obj.push_back(Pair("staking status", nStaking));
+    obj.pushKV("staking status", nStaking);
 
     return obj;
 }
