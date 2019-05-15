@@ -104,18 +104,18 @@ class CDarkSendEntry
 public:
     std::vector<CTxDSIn> vecTxDSIn;
     std::vector<CTxOut> vecTxOut;
-    CTransactionRef txCollateral;
+    CMutableTransaction txCollateral;
     // memory only
     CService addr;
 
     CDarkSendEntry() :
         vecTxDSIn(std::vector<CTxDSIn>()),
         vecTxOut(std::vector<CTxOut>()),
-        txCollateral(MakeTransactionRef()),
+        txCollateral(CMutableTransaction()),
         addr(CService())
         {}
 
-    CDarkSendEntry(const std::vector<CTxDSIn>& vecTxDSIn, const std::vector<CTxOut>& vecTxOut, const CTransactionRef& txCollateral) :
+    CDarkSendEntry(const std::vector<CTxDSIn>& vecTxDSIn, const std::vector<CTxOut>& vecTxOut, const CMutableTransaction& txCollateral) :
         vecTxDSIn(vecTxDSIn),
         vecTxOut(vecTxOut),
         txCollateral(txCollateral),
@@ -197,7 +197,7 @@ public:
     std::string ToString()
     {
         return strprintf("nDenom=%d, nTime=%lld, fReady=%s, fTried=%s, masternode=%s",
-                        nDenom, nTime, fReady ? "true" : "false", fTried ? "true" : "false", vin.prevout.ToString());
+                        nDenom, nTime, fReady ? "true" : "false", fTried ? "true" : "false", vin.prevout.ToStringShort());
     }
 
     friend bool operator==(const CDarksendQueue& a, const CDarksendQueue& b)
@@ -343,7 +343,7 @@ public:
     static CAmount GetMaxPoolAmount() { return vecStandardDenominations.empty() ? 0 : PRIVATESEND_ENTRY_MAX_SIZE * vecStandardDenominations.front(); }
 
     /// If the collateral is valid given by a client
-    static bool IsCollateralValid(const CTransactionRef &txCollateral);
+    static bool IsCollateralValid(const CTransaction& txCollateral);
     static CAmount GetCollateralAmount() { return COLLATERAL; }
     static CAmount GetMaxCollateralAmount() { return COLLATERAL*4; }
 

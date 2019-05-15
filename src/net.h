@@ -57,6 +57,8 @@ static const unsigned int MAX_PROTOCOL_MESSAGE_LENGTH = 4 * 1000 * 1000;
 static const unsigned int MAX_SUBVERSION_LENGTH = 256;
 /** Maximum number of automatic outgoing nodes */
 static const int MAX_OUTBOUND_CONNECTIONS = 8;
+/** Maximum number if outgoing masternodes */
+static const int MAX_OUTBOUND_MASTERNODE_CONNECTIONS = 20;
 /** Maximum number of addnode outgoing nodes */
 static const int MAX_ADDNODE_CONNECTIONS = 8;
 /** -listen default */
@@ -111,7 +113,6 @@ struct CSerializedNetMsg
     std::vector<unsigned char> data;
     std::string command;
 };
-
 
 class NetEventsInterface;
 class CConnman
@@ -194,11 +195,12 @@ public:
     bool GetNetworkActive() const { return fNetworkActive; };
     bool GetUseAddrmanOutgoing() const { return m_use_addrman_outgoing; };
     void SetNetworkActive(bool active);
-    void OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant *grantOutbound = nullptr, const char *strDest = nullptr, bool fOneShot = false, bool fFeeler = false, bool manual_connection = false);
-    CNode *OpenMasternodeConnection(const CAddress &addrConnect);    
+    CNode *OpenMasternodeConnection(const CAddress &addrConnect);
+    CNode* OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant *grantOutbound = nullptr, const char *strDest = nullptr, bool fOneShot = false, bool fFeeler = false, bool manual_connection = false, bool fConnectToMasternode = false);
     bool CheckIncomingNonce(uint64_t nonce);
 
     bool ForNode(NodeId id, std::function<bool(CNode* pnode)> func);
+    bool ForNode(const CService& addr, std::function<bool(CNode* pnode)> func);
 
     void PushMessage(CNode* pnode, CSerializedNetMsg&& msg);
 
@@ -243,6 +245,14 @@ public:
         }
         post();
     };
+
+    // Dash functions
+    std::vector<CNode*> CopyNodeVector();
+    void ReleaseNodeVector(const std::vector<CNode*>& vecNodes);
+
+    void RelayTransaction(const CTransaction& tx);
+    void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
+    void RelayInv(CInv &inv, const int minProtoVersion = MIN_PEER_PROTO_VERSION);
 
     // Addrman functions
     size_t GetAddressCount() const;
@@ -316,9 +326,6 @@ public:
         Variable intervals will result in privacy decrease.
     */
     int64_t PoissonNextSendInbound(int64_t now, int average_interval_seconds);
-    std::vector<CNode*> CopyNodeVector();
-    void ReleaseNodeVector(const std::vector<CNode*>& vecNodes);
-    void RelayTransaction(const CTransaction& tx);
 private:
     struct ListenSocket {
         SOCKET socket;
@@ -351,7 +358,8 @@ private:
     void SocketHandler();
     void ThreadSocketHandler();
     void ThreadDNSAddressSeed();
-
+    void ThreadMnbRequestConnections();
+    
     uint64_t CalculateKeyedNetGroup(const CAddress& ad) const;
 
     CNode* FindNode(const CNetAddr& ip);
@@ -360,7 +368,7 @@ private:
     CNode* FindNode(const CService& addr);
 
     bool AttemptToEvictConnection();
-    CNode* ConnectNode(CAddress addrConnect, const char *pszDest, bool fCountFailure, bool manual_connection);
+    CNode* ConnectNode(CAddress addrConnect, const char *pszDest, bool fCountFailure, bool manual_connection, bool fConnectToMasternode = false);
     bool IsWhitelistedRange(const CNetAddr &addr);
 
     void DeleteNode(CNode* pnode);
@@ -417,6 +425,7 @@ private:
     ServiceFlags nLocalServices;
 
     std::unique_ptr<CSemaphore> semOutbound;
+    std::unique_ptr<CSemaphore> semMasternodeOutbound;
     std::unique_ptr<CSemaphore> semAddnode;
     int nMaxConnections;
     int nMaxOutbound;
@@ -444,6 +453,7 @@ private:
     std::thread threadSocketHandler;
     std::thread threadOpenAddedConnections;
     std::thread threadOpenConnections;
+    std::thread threadMnbRequestConnections;
     std::thread threadMessageHandler;
 
     /** flag for deciding to connect to an extra outbound peer,
@@ -675,6 +685,7 @@ public:
     bool m_prefer_evict{false}; // This peer is preferred for eviction.
     bool fWhitelisted{false}; // This peer can bypass DoS banning.
     bool fFeeler{false}; // If true this node is being used as a short lived feeler.
+    bool fNetworkNode;
     bool fOneShot{false};
     bool m_manual_connection{false};
     bool fClient{false}; // set by version message
@@ -762,7 +773,7 @@ public:
 
     std::set<uint256> orphan_work_set;
 
-    CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, uint64_t nLocalHostNonceIn, const CAddress &addrBindIn, const std::string &addrNameIn = "", bool fInboundIn = false);
+    CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, uint64_t nLocalHostNonceIn, const CAddress &addrBindIn, const std::string &addrNameIn = "", bool fInboundIn = false, bool fNetworkNodeIn = false);
     ~CNode();
     CNode(const CNode&) = delete;
     CNode& operator=(const CNode&) = delete;

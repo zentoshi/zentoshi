@@ -14,16 +14,11 @@ class CPrivateSendClient;
 class CConnman;
 
 static const int DENOMS_COUNT_MAX                   = 100;
-
 static const int DEFAULT_PRIVATESEND_ROUNDS         = 2;
 static const int DEFAULT_PRIVATESEND_AMOUNT         = 1000;
 static const int DEFAULT_PRIVATESEND_LIQUIDITY      = 0;
 static const bool DEFAULT_PRIVATESEND_MULTISESSION  = false;
-
-// Warn user if mixing in gui or try to create backup if mixing in daemon mode
-// when we have only this many keys left
 static const int PRIVATESEND_KEYS_THRESHOLD_WARNING = 100;
-// Stop mixing completely, it's too dangerous to continue when we have only this many keys left
 static const int PRIVATESEND_KEYS_THRESHOLD_STOP    = 50;
 
 // The main object for accessing mixing
@@ -74,11 +69,11 @@ private:
 
     /// Create denominations
     bool CreateDenominated(CConnman& connman);
-    bool CreateDenominated(const CompactTallyItem& tallyItem, bool fCreateMixingCollaterals, CConnman& connman);
+    bool CreateDenominated(const CompactTallyItem& tallyItem, bool fCreateMixingCollaterals, CConnman& connman, mapValue_t mapValue, std::string fromAccount);
 
     /// Split up large inputs or make fee sized inputs
     bool MakeCollateralAmounts(CConnman& connman);
-    bool MakeCollateralAmounts(const CompactTallyItem& tallyItem, bool fTryDenominated, CConnman& connman);
+    bool MakeCollateralAmounts(const CompactTallyItem& tallyItem, bool fTryDenominated, CConnman& connman, mapValue_t mapValue, std::string fromAccount);
 
     /// As a client, submit part of a future mixing transaction to a Masternode to start the process
     bool SubmitDenominate(CConnman& connman);
@@ -93,7 +88,7 @@ private:
     void SetState(PoolState nStateNew);
 
     /// As a client, check and sign the final transaction
-    bool SignFinalTransaction(const CTransaction& finalTransactionNew, CNode* pnode, CConnman& connman);
+    bool SignFinalTransaction(const CMutableTransaction& finalTransactionNew, CNode* pnode, CConnman& connman);
 
     void RelayIn(const CDarkSendEntry& entry, CConnman& connman);
 
@@ -121,7 +116,7 @@ public:
         nCachedNumBlocks(std::numeric_limits<int>::max()),
         fCreateAutoBackups(true) { SetNull(); }
 
-    void ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv, CConnman& connman);
+    void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
     void ClearSkippedDenominations() { vecDenominationsSkipped.clear(); }
 

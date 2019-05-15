@@ -1,7 +1,6 @@
 // Copyright (c) 2014-2017 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include <privatesend/privatesend-util.h>
 
 CKeyHolder::CKeyHolder(CWallet* pwallet) :
@@ -26,14 +25,16 @@ CScript CKeyHolder::GetScriptForDestination() const
 }
 
 
-const CKeyHolder& CKeyHolderStorage::AddKey(CWallet* pwallet)
+CScript CKeyHolderStorage::AddKey(CWallet* pwallet)
 {
+    LOCK(cs_storage);
     storage.emplace_back(std::unique_ptr<CKeyHolder>(new CKeyHolder(pwallet)));
     LogPrintf("CKeyHolderStorage::%s -- storage size %lld\n", __func__, storage.size());
-    return *storage.back();
+    return storage.back()->GetScriptForDestination();
 }
 
 void CKeyHolderStorage::KeepAll(){
+    LOCK(cs_storage);
     if (storage.size() > 0) {
         for (auto &key : storage) {
             key->KeepKey();
@@ -45,6 +46,7 @@ void CKeyHolderStorage::KeepAll(){
 
 void CKeyHolderStorage::ReturnAll()
 {
+    LOCK(cs_storage);
     if (storage.size() > 0) {
         for (auto &key : storage) {
             key->ReturnKey();

@@ -44,6 +44,13 @@
 
 #include <memory>
 
+#include <spork.h>
+#include <instantx.h>
+#ifdef ENABLE_WALLET
+#include <privatesend/privatesend-client.h>
+#endif // ENABLE_WALLET
+#include <privatesend/privatesend-server.h>
+
 #if defined(NDEBUG)
 # error "Bitcoin cannot be compiled without assertions."
 #endif

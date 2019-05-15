@@ -36,10 +36,8 @@
 #include <instantx.h>
 #include <wallet/walletutil.h>
 
-#include <governance.h>
-#include <instantx.h>
-#include <keepass.h>
-#include <privatesend-client.h>
+#include <governance/governance.h>
+#include <privatesend/privatesend-client.h>
 #include <spork.h>
 
 #include <algorithm>

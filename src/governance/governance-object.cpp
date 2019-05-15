@@ -237,18 +237,18 @@ bool CGovernanceObject::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
 
     LOCK(cs);
 
-    if(!CMessageSigner::SignMessage(strMessage, vchSig, keyMasternode, CPubKey::InputScriptType::SPENDP2PKH)) {
+    if(!CMessageSigner::SignMessage(strMessage, vchSig, keyMasternode)) {
         LogPrintf("CGovernanceObject::Sign -- SignMessage() failed\n");
         return false;
     }
 
-    if(!CMessageSigner::VerifyMessage(pubKeyMasternode.GetID(), vchSig, strMessage, strError)) {
+    if(!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
         LogPrintf("CGovernanceObject::Sign -- VerifyMessage() failed, error: %s\n", strError);
         return false;
     }
 
     LogPrint(BCLog::GOBJECT, "CGovernanceObject::Sign -- pubkey id = %s, vin = %s\n",
-             pubKeyMasternode.GetID().ToString(), vinMasternode.prevout.ToString());
+             pubKeyMasternode.GetID().ToString(), vinMasternode.prevout.ToStringShort());
 
 
     return true;
@@ -261,7 +261,7 @@ bool CGovernanceObject::CheckSignature(CPubKey& pubKeyMasternode)
     std::string strMessage = GetSignatureMessage();
 
     LOCK(cs);
-    if(!CMessageSigner::VerifyMessage(pubKeyMasternode.GetID(), vchSig, strMessage, strError)) {
+    if(!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
         LogPrintf("CGovernance::CheckSignature -- VerifyMessage() failed, error: %s\n", strError);
         return false;
     }
