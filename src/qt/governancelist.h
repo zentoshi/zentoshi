@@ -1,10 +1,10 @@
 #ifndef GOVERNANCELIST_H
 #define GOVERNANCELIST_H
 
-#include "primitives/transaction.h"
-#include "platformstyle.h"
-#include "sync.h"
-#include "util.h"
+#include <primitives/transaction.h>
+#include <qt/platformstyle.h>
+#include <sync.h>
+#include <util/system.h>
 #include <governance/governance.h>
 
 #include <QMenu>

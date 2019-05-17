@@ -31,6 +31,8 @@
 #include <wallet/rpcwallet.h>
 #include <wallet/wallet.h>
 #include <wallet/walletutil.h>
+#include <masternode.h>
+#include <masternodeman.h>
 
 #include <memory>
 #include <string>
@@ -145,6 +147,7 @@ public:
     bool lock() override { return m_wallet->Lock(); }
     bool unlock(const SecureString& wallet_passphrase, bool stakingOnly) override { return m_wallet->Unlock(wallet_passphrase, stakingOnly); }
     bool isLocked() override { return m_wallet->IsLocked(); }
+    bool isLockedForStaking() override { return m_wallet->fWalletUnlockStakingOnly; }
     bool changeWalletPassphrase(const SecureString& old_wallet_passphrase,
         const SecureString& new_wallet_passphrase) override
     {
@@ -319,11 +322,10 @@ public:
         }
         return result;
     }
-    //CAmount getStakeSplitThreshold() const override
-    // TODO: FIX
-    //{
-    //    return m_wallet->nStakeSplitThreshold;
-    //}
+    CAmount getStakeSplitThreshold() const override
+    {
+        return m_wallet->nStakeSplitThreshold;
+    }
     bool tryGetTxStatus(const uint256& txid,
         interfaces::WalletTxStatus& tx_status,
         int& num_blocks,
@@ -411,6 +413,12 @@ public:
         auto locked_chain = m_wallet->chain().lock();
         LOCK(m_wallet->cs_wallet);
         return m_wallet->IsMine(txout);
+    }
+    bool txoutIsSpent(const uint256 &hash, unsigned int outputIndex) override
+    {
+        auto locked_chain = m_wallet->chain().lock();
+        LOCK(m_wallet->cs_wallet);
+        return m_wallet->IsSpent(*locked_chain, hash, outputIndex);
     }
     CAmount getDebit(const CTxIn& txin, isminefilter filter) override
     {
@@ -510,7 +518,18 @@ public:
     {
         return MakeHandler(m_wallet->NotifyCanGetAddressesChanged.connect(fn));
     }
-
+    bool startMasternode(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet) override
+    {
+        CMasternodeBroadcast mnb;
+        bool fSuccess = CMasternodeBroadcast::Create(m_wallet.get(), strService, strKeyMasternode, strTxHash, strOutputIndex, strErrorRet, mnb, false);
+        if(fSuccess)
+        {
+            mnodeman.UpdateMasternodeList(mnb, *g_connman);
+            mnb.Relay(*g_connman);
+            mnodeman.NotifyMasternodeUpdates(*g_connman);
+        }
+        return true;
+    }
     std::shared_ptr<CWallet> m_wallet;
 };
 
@@ -535,7 +554,8 @@ public:
 
 } // namespace
 
-std::unique_ptr<Wallet> MakeWallet(const std::shared_ptr<CWallet>& wallet) { return wallet ? MakeUnique<WalletImpl>(wallet) : nullptr; }
+// std::unique_ptr<Wallet> MakeWallet(const std::shared_ptr<CWallet>& wallet) { return wallet ? MakeUnique<WalletImpl>(wallet) : nullptr; }
+std::unique_ptr<Wallet> MakeWallet(CWallet& wallet);
 
 std::unique_ptr<ChainClient> MakeWalletClient(Chain& chain, std::vector<std::string> wallet_filenames)
 {

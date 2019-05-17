@@ -2038,6 +2038,20 @@ CNode* CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountF
     return pnode;
 }
 
+CNode *CConnman::OpenMasternodeConnection(const CAddress &addrConnect)
+{
+    if(auto pNode = OpenNetworkConnectionImpl(addrConnect, true, nullptr, nullptr, false, false, false, true))
+    {
+        if(!pNode->fMasternode)
+            pNode->AddRef();
+
+        pNode->fMasternode = true;
+        return pNode;
+    }
+
+    return nullptr;
+}
+
 void CConnman::ThreadMessageHandler()
 {
     while (!flagInterruptMsgProc)
@@ -2863,6 +2877,11 @@ void CNode::AskFor(const CInv& inv)
 bool CConnman::NodeFullyConnected(const CNode* pnode)
 {
     return pnode && pnode->fSuccessfullyConnected && !pnode->fDisconnect;
+}
+
+bool CConnman::NotMasternodesOnly(const CNode* pnode)
+{
+    return pnode && !pnode->fMasternode;
 }
 
 void CConnman::PushMessage(CNode* pnode, CSerializedNetMsg&& msg)

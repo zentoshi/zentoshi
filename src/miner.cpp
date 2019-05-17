@@ -111,6 +111,9 @@ void BlockAssembler::resetBlock()
     nFees = 0;
 }
 
+Optional<int64_t> BlockAssembler::m_last_block_num_txs{nullopt};
+Optional<int64_t> BlockAssembler::m_last_block_weight{nullopt};
+
 std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(CWallet *wallet, const CScript &scriptPubKeyIn, bool fProofOfStake, bool fMineWitnessTx)
 {
     int64_t nTimeStart = GetTimeMicros();

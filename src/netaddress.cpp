@@ -284,11 +284,6 @@ std::string CNetAddr::ToStringIP() const
                          GetByte(3) << 8 | GetByte(2), GetByte(1) << 8 | GetByte(0));
 }
 
-std::string CNetAddr::ToStringIP() const
-{
-    return ToStringIP(false);
-}
-
 std::string CNetAddr::ToString() const
 {
     return ToStringIP();

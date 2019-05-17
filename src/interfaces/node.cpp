@@ -309,7 +309,7 @@ public:
             ::uiInterface.NotifyHeaderTip_connect([fn](bool initial_download, const CBlockIndex* block) {
                 fn(initial_download, block->nHeight, block->GetBlockTime(),
                     GuessVerificationProgress(Params().TxData(), block));
-            }));
+        }));
     }
     std::unique_ptr<Handler> handleNotifyAdditionalDataSyncProgressChanged(NotifyAdditionalDataSyncProgressChangedFn fn)
     {

@@ -1033,28 +1033,6 @@ void RPCConsole::setTrafficGraphRange(int mins)
     ui->lblGraphRange->setText(GUIUtil::formatDurationStr(mins * 60));
 }
 
-void RPCConsole::buildParameterlist(QString arg)
-{
-    // Get command-line arguments and remove the application name
-    QStringList args = QApplication::arguments();
-    args.removeFirst();
-
-    // Remove existing repair-options
-    args.removeAll(SALVAGEWALLET);
-    args.removeAll(RESCAN);
-    args.removeAll(ZAPTXES1);
-    args.removeAll(ZAPTXES2);
-    args.removeAll(UPGRADEWALLET);
-    args.removeAll(REINDEX);
-    args.removeAll(CLEARMNCACHE);
-
-    // Append repair parameter to command line.
-    args.append(arg);
-
-    // Send command-line arguments to BitcoinGUI::handleRestart()
-    Q_EMIT handleRestart(args);
-}
-
 void RPCConsole::updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut)
 {
     ui->lblBytesIn->setText(GUIUtil::formatBytes(totalBytesIn));

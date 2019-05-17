@@ -21,6 +21,7 @@ struct UISignals {
     boost::signals2::signal<CClientUIInterface::ShowProgressSig> ShowProgress;
     boost::signals2::signal<CClientUIInterface::NotifyBlockTipSig> NotifyBlockTip;
     boost::signals2::signal<CClientUIInterface::NotifyHeaderTipSig> NotifyHeaderTip;
+    boost::signals2::signal<CClientUIInterface::NotifyAdditionalDataSyncProgressChangedSig> NotifyAdditionalDataSyncProgressChanged;
     boost::signals2::signal<CClientUIInterface::BannedListChangedSig> BannedListChanged;
 } g_ui_signals;
 
@@ -44,6 +45,7 @@ ADD_SIGNALS_IMPL_WRAPPER(LoadWallet);
 ADD_SIGNALS_IMPL_WRAPPER(ShowProgress);
 ADD_SIGNALS_IMPL_WRAPPER(NotifyBlockTip);
 ADD_SIGNALS_IMPL_WRAPPER(NotifyHeaderTip);
+ADD_SIGNALS_IMPL_WRAPPER(NotifyAdditionalDataSyncProgressChanged);
 ADD_SIGNALS_IMPL_WRAPPER(BannedListChanged);
 
 bool CClientUIInterface::ThreadSafeMessageBox(const std::string& message, const std::string& caption, unsigned int style) { return g_ui_signals.ThreadSafeMessageBox(message, caption, style); }
@@ -56,6 +58,7 @@ void CClientUIInterface::LoadWallet(std::shared_ptr<CWallet> wallet) { return g_
 void CClientUIInterface::ShowProgress(const std::string& title, int nProgress, bool resume_possible) { return g_ui_signals.ShowProgress(title, nProgress, resume_possible); }
 void CClientUIInterface::NotifyBlockTip(bool b, const CBlockIndex* i) { return g_ui_signals.NotifyBlockTip(b, i); }
 void CClientUIInterface::NotifyHeaderTip(bool b, const CBlockIndex* i) { return g_ui_signals.NotifyHeaderTip(b, i); }
+void CClientUIInterface::NotifyAdditionalDataSyncProgressChanged(double nSyncProgress) { return g_ui_signals.NotifyAdditionalDataSyncProgressChanged(nSyncProgress); }
 void CClientUIInterface::BannedListChanged() { return g_ui_signals.BannedListChanged(); }
 
 

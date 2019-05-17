@@ -7,7 +7,7 @@
 
 #include <amount.h>
 #include <qt/masternodelist.h>
-#include <governancelist.h>
+#include <qt/governancelist.h>
 
 #include <QStackedWidget>
 

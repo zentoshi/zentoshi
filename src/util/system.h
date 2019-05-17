@@ -41,11 +41,10 @@ int64_t GetStartupTime();
 
 extern bool fMasterNode;
 extern bool fLiteMode;
+extern int nWalletBackups;
 
 extern const char * const BITCOIN_CONF_FILENAME;
-
-const char * const MASTERNODE_CONF_FILENAME_ARG = "-mnconf";
-const char * const MASTERNODE_CONF_FILENAME = "masternode.conf";
+extern const char * const MASTERNODE_CONF_FILENAME;
 
 /** Translate a message to the native language of the user. */
 const extern std::function<std::string(const char*)> G_TRANSLATION_FUN;

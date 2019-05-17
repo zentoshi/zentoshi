@@ -364,8 +364,6 @@ void BitcoinGUI::createActions()
     openGraphAction->setStatusTip(tr("Show network monitor"));
     openPeersAction = new QAction(QIcon(":/icons/connect_4"), tr("&Peers list"), this);
     openPeersAction->setStatusTip(tr("Show peers info"));
-    openRepairAction = new QAction(QIcon(":/icons/options"), tr("Wallet &Repair"), this);
-    openRepairAction->setStatusTip(tr("Show wallet repair options"));
     openConfEditorAction = new QAction(QIcon(":/icons/edit"), tr("Open Wallet &Configuration File"), this);
     openConfEditorAction->setStatusTip(tr("Open configuration file"));
     openMNConfEditorAction = new QAction(QIcon(":/icons/edit"), tr("Open &Masternode Configuration File"), this);
@@ -377,8 +375,6 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction->setEnabled(true);
     openGraphAction->setEnabled(true);
     openPeersAction->setEnabled(true);
-    openRepairAction->setEnabled(false);
-    // showBackupsAction->setEnabled(false);
 
     usedSendingAddressesAction = new QAction(platformStyle->TextColorIcon(":/icons/address-book"), tr("&Sending addresses"), this);
     usedSendingAddressesAction->setStatusTip(tr("Show the list of used sending addresses and labels"));
@@ -411,7 +407,6 @@ void BitcoinGUI::createActions()
     connect(openInfoAction, SIGNAL(triggered()), this, SLOT(showInfo()));
     connect(openGraphAction, SIGNAL(triggered()), this, SLOT(showGraph()));
     connect(openPeersAction, SIGNAL(triggered()), this, SLOT(showPeers()));
-    connect(openRepairAction, SIGNAL(triggered()), this, SLOT(showRepair()));
 
     // prevents an open debug window from becoming stuck/unusable on client shutdown
     connect(quitAction, &QAction::triggered, rpcConsole, &QWidget::hide);
@@ -855,7 +850,6 @@ void BitcoinGUI::createTrayIconMenu()
         trayIconMenu->addAction(openRPCConsoleAction);
         trayIconMenu->addAction(openGraphAction);
         trayIconMenu->addAction(openPeersAction);
-        trayIconMenu->addAction(openRepairAction);
         trayIconMenu->addSeparator();
         trayIconMenu->addAction(openConfEditorAction);
         trayIconMenu->addAction(openMNConfEditorAction);
@@ -933,12 +927,6 @@ void BitcoinGUI::showGraph()
 void BitcoinGUI::showPeers()
 {
     rpcConsole->setTabFocus(RPCConsole::TAB_PEERS);
-    showDebugWindow();
-}
-
-void BitcoinGUI::showRepair()
-{
-    rpcConsole->setTabFocus(RPCConsole::TAB_REPAIR);
     showDebugWindow();
 }
 
@@ -1355,7 +1343,6 @@ void BitcoinGUI::showEvent(QShowEvent *event)
     openRPCConsoleAction->setEnabled(true);
     openGraphAction->setEnabled(true);
     openPeersAction->setEnabled(true);
-    openRepairAction->setEnabled(true);
     aboutAction->setEnabled(true);
     optionsAction->setEnabled(true);
 }

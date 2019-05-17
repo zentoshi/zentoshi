@@ -73,7 +73,16 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
+// Masternode features
+bool fMasterNode = false;
+bool fLiteMode = false;
+int nWalletBackups = 10;
+
 const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
+const char * const BITCOIN_PID_FILENAME = "bitcoind.pid";
+
+const char * const MASTERNODE_CONF_FILENAME_ARG = "-mnconf";
+const char * const MASTERNODE_CONF_FILENAME = "masternode.conf";
 
 ArgsManager gArgs;
 
@@ -1276,6 +1285,19 @@ double nround(double value, int to)
 {
     double places = pow(10.0, to);
     return round(value * places) / places;
+}
+
+void SetThreadPriority(int nPriority)
+{
+#ifdef WIN32
+    SetThreadPriority(GetCurrentThread(), nPriority);
+#else // WIN32
+#ifdef PRIO_THREAD
+    setpriority(PRIO_THREAD, 0, nPriority);
+#else // PRIO_THREAD
+    setpriority(PRIO_PROCESS, 0, nPriority);
+#endif // PRIO_THREAD
+#endif // WIN32
 }
 
 int ScheduleBatchPriority()

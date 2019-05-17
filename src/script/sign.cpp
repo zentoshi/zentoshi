@@ -261,16 +261,23 @@ bool SignatureExtractorChecker::CheckSig(const std::vector<unsigned char>& scrip
 namespace
 {
 struct Stacks
-{
+  {
     std::vector<valtype> script;
     std::vector<valtype> witness;
 
-    Stacks() = delete;
-    Stacks(const Stacks&) = delete;
+    Stacks() {}
+    explicit Stacks(const std::vector<valtype>& scriptSigStack_) : script(scriptSigStack_), witness() {}
     explicit Stacks(const SignatureData& data) : witness(data.scriptWitness.stack) {
         EvalScript(script, data.scriptSig, SCRIPT_VERIFY_STRICTENC, BaseSignatureChecker(), SigVersion::BASE);
     }
-};
+
+    SignatureData Output() const {
+        SignatureData result;
+        result.scriptSig = PushAll(script);
+        result.scriptWitness.stack = witness;
+        return result;
+    }
+  };
 }
 
 // Extracts signatures and scripts from incomplete scriptSigs. Please do not extend this, use PSBT instead
@@ -437,28 +444,6 @@ static std::vector<valtype> CombineMultisig(const CScript& scriptPubKey, const B
         result.push_back(valtype());
 
     return result;
-}
-
-namespace
-{
-struct Stacks
-{
-    std::vector<valtype> script;
-    std::vector<valtype> witness;
-
-    Stacks() {}
-    explicit Stacks(const std::vector<valtype>& scriptSigStack_) : script(scriptSigStack_), witness() {}
-    explicit Stacks(const SignatureData& data) : witness(data.scriptWitness.stack) {
-        EvalScript(script, data.scriptSig, SCRIPT_VERIFY_STRICTENC, BaseSignatureChecker(), SigVersion::BASE);
-    }
-
-    SignatureData Output() const {
-        SignatureData result;
-        result.scriptSig = PushAll(script);
-        result.scriptWitness.stack = witness;
-        return result;
-    }
-};
 }
 
 static Stacks CombineSignatures(const CScript& scriptPubKey, const BaseSignatureChecker& checker,

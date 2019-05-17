@@ -66,8 +66,7 @@ public:
     virtual bool isLocked() = 0;
 
     //! Return whether wallet is locked for Staking only.
-    // TODO: FIX
-    // virtual bool isLockedForStaking() = 0;
+    virtual bool isLockedForStaking() = 0;
 
     //! Change wallet passphrase.
     virtual bool changeWalletPassphrase(const SecureString& old_wallet_passphrase,
@@ -184,8 +183,7 @@ public:
     virtual std::vector<WalletTx> getWalletTxs() = 0;
 
     //! Get minimum limit where stake gets split between vouts.
-    // TODO: FIX
-    //virtual CAmount getStakeSplitThreshold() const = 0;
+    virtual CAmount getStakeSplitThreshold() const = 0;
 
     //! Try to get updated status for a particular transaction, if possible without blocking.
     virtual bool tryGetTxStatus(const uint256& txid,
@@ -219,7 +217,7 @@ public:
     virtual isminetype txoutIsMine(const CTxOut& txout) = 0;
 
     //! Return whether transaction output has been spent.
-    //virtual bool txoutIsSpent(const uint256 &hash, unsigned int outputIndex) = 0;
+    virtual bool txoutIsSpent(const uint256 &hash, unsigned int outputIndex) = 0;
 
     //! Return debit amount if transaction input belongs to wallet.
     virtual CAmount getDebit(const CTxIn& txin, isminefilter filter) = 0;
@@ -296,6 +294,8 @@ public:
     //! Register handler for keypool changed messages.
     using CanGetAddressesChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) = 0;
+
+    virtual bool startMasternode(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet) = 0;
 };
 
 //! Tracking object returned by CreateTransaction and passed to CommitTransaction.

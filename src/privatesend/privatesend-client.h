@@ -9,6 +9,8 @@
 #include <privatesend/privatesend.h>
 #include <wallet/wallet.h>
 #include <privatesend/privatesend-util.h>
+#include <interfaces/chain.h>
+#include <interfaces/node.h>
 
 class CPrivateSendClient;
 class CConnman;

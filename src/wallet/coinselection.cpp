@@ -168,7 +168,7 @@ bool SelectCoinsBnB(std::vector<OutputGroup>& utxo_pool, const CAmount& target_v
 }
 
 static void ApproximateBestSubset(const std::vector<OutputGroup>& groups, const CAmount& nTotalLower, const CAmount& nTargetValue,
-                                  std::vector<char>& vfBest, CAmount& nBest, int iterations = 1000)
+                                  std::vector<char>& vfBest, CAmount& nBest, bool fUseInstantSend, int iterations = 1000)
 {
     std::vector<char> vfIncluded;
 
@@ -213,7 +213,7 @@ static void ApproximateBestSubset(const std::vector<OutputGroup>& groups, const 
     }
 }
 
-bool KnapsackSolver(const CAmount& nTargetValue, std::vector<OutputGroup>& groups, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet)
+bool KnapsackSolver(const CAmount& nTargetValue, std::vector<OutputGroup>& groups, std::set<CInputCoin>& setCoinsRet, CAmount& nValueRet, bool fUseInstantSend)
 {
     setCoinsRet.clear();
     nValueRet = 0;
@@ -258,9 +258,9 @@ bool KnapsackSolver(const CAmount& nTargetValue, std::vector<OutputGroup>& group
     std::vector<char> vfBest;
     CAmount nBest;
 
-    ApproximateBestSubset(applicable_groups, nTotalLower, nTargetValue, vfBest, nBest);
+    ApproximateBestSubset(applicable_groups, nTotalLower, nTargetValue, vfBest, nBest, false);
     if (nBest != nTargetValue && nTotalLower >= nTargetValue + MIN_CHANGE) {
-        ApproximateBestSubset(applicable_groups, nTotalLower, nTargetValue + MIN_CHANGE, vfBest, nBest);
+        ApproximateBestSubset(applicable_groups, nTotalLower, nTargetValue + MIN_CHANGE, vfBest, nBest, fUseInstantSend);
     }
 
     // If we have a bigger coin and (either the stochastic approximation didn't find a good solution,

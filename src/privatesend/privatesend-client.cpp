@@ -1219,8 +1219,7 @@ bool CPrivateSendClient::MakeCollateralAmounts(const CompactTallyItem& tallyItem
     for (const auto& txin : tallyItem.vecTxIn)
         coinControl.Select(txin.prevout);
 
-    bool fSuccess = pwallet->CreateTransaction(vecSend, tx_New, reservekeyChange,
-            nFeeRet, nChangePosRet, strFail, coinControl, true, ONLY_NONDENOMINATED);
+    bool fSuccess = pwallet->CreateTransaction(vecSend, tx_New, reservekeyChange, nFeeRet, nChangePosRet, strFail, coinControl, true, ONLY_NONDENOMINATED);
     if(!fSuccess) {
         LogPrintf("CPrivateSendClient::MakeCollateralAmounts -- ONLY_NONDENOMINATED: %s\n", strFail);
         // If we failed then most likeky there are not enough funds on this address.

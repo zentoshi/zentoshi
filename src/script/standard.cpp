@@ -213,7 +213,8 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::
 {
     addressRet.clear();
     std::vector<valtype> vSolutions;
-    typeRet = Solver(scriptPubKey, vSolutions);
+    Solver(scriptPubKey, typeRet, vSolutions);
+
     if (typeRet == TX_NONSTANDARD) {
         return false;
     } else if (typeRet == TX_NULL_DATA) {
@@ -324,8 +325,10 @@ CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys)
 
 CScript GetScriptForWitness(const CScript& redeemscript)
 {
+    txnouttype typ;
     std::vector<std::vector<unsigned char> > vSolutions;
-    txnouttype typ = Solver(redeemscript, vSolutions);
+    Solver(redeemscript, typ, vSolutions);
+
     if (typ == TX_PUBKEY) {
         return GetScriptForDestination(WitnessV0KeyHash(Hash160(vSolutions[0].begin(), vSolutions[0].end())));
     } else if (typ == TX_PUBKEYHASH) {

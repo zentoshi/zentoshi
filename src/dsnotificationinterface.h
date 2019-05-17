@@ -22,6 +22,7 @@ protected:
     void NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload) override;
     void UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) override;
     void SyncTransaction(const CTransaction &tx, const CBlock *pblock) override;
+
 private:
     CConnman& connman;
 };

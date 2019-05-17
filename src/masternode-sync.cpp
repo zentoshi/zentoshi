@@ -5,6 +5,7 @@
 #include <activemasternode.h>
 #include <checkpoints.h>
 #include <governance/governance.h>
+#include <interfaces/node.h>
 #include <masternode.h>
 #include <masternode-payments.h>
 #include <masternode-sync.h>
