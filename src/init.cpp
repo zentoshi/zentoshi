@@ -9,6 +9,7 @@
 
 #include <init.h>
 
+#include <activemasternode.h>
 #include <addrman.h>
 #include <amount.h>
 #include <banman.h>
@@ -18,19 +19,24 @@
 #include <compat/sanity.h>
 #include <consensus/validation.h>
 #include <dsnotificationinterface.h>
+#include <flat-database.h>
 #include <fs.h>
+#include <governance/governance.h>
 #include <httpserver.h>
 #include <httprpc.h>
 #include <interfaces/chain.h>
 #include <index/txindex.h>
 #include <instantx.h>
 #include <key.h>
-#include <validation.h>
+#include <masternodeman.h>
+#include <masternode-payments.h>
+#include <messagesigner.h>
+#include <masternodeconfig.h>
 #include <miner.h>
 #include <netbase.h>
 #include <net.h>
+#include <netfulfilledman.h>
 #include <net_processing.h>
-#include <outputtype.h>
 #include <policy/feerate.h>
 #include <policy/fees.h>
 #include <policy/policy.h>
@@ -52,25 +58,17 @@
 #include <util/moneystr.h>
 #include <validationinterface.h>
 #include <warnings.h>
+#include <wallet/wallet.h>
 #include <walletinitinterface.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#include <activemasternode.h>
-#include <messagesigner.h>
-#include <masternodeconfig.h>
-#include <activemasternode.h>
-#include <instantx.h>
-#include <wallet/wallet.h>
-#include <masternodeman.h>
-#include <masternode-payments.h>
+#include <privatesend/privatesend-client.h>
+#include <privatesend/privatesend-server.h>
 #include <netfulfilledman.h>
 #include <governance/governance.h>
 #include <flat-database.h>
-#ifdef ENABLE_WALLET
-#include <privatesend/privatesend-client.h>
-#endif // ENABLE_WALLET
-#include <privatesend/privatesend-server.h>
+
 
 #ifndef WIN32
 #include <attributes.h>
@@ -549,19 +547,11 @@ void SetupServerArgs()
     gArgs.AddArg("-zmqpubhashtx=<address>", "Enable publish hash transaction in <address>", false, OptionsCategory::ZMQ);
     gArgs.AddArg("-zmqpubrawblock=<address>", "Enable publish raw block in <address>", false, OptionsCategory::ZMQ);
     gArgs.AddArg("-zmqpubrawtx=<address>", "Enable publish raw transaction in <address>", false, OptionsCategory::ZMQ);
-    gArgs.AddArg("-zmqpubhashblockhwm=<n>", strprintf("Set publish hash block outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), false, OptionsCategory::ZMQ);
-    gArgs.AddArg("-zmqpubhashtxhwm=<n>", strprintf("Set publish hash transaction outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), false, OptionsCategory::ZMQ);
-    gArgs.AddArg("-zmqpubrawblockhwm=<n>", strprintf("Set publish raw block outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), false, OptionsCategory::ZMQ);
-    gArgs.AddArg("-zmqpubrawtxhwm=<n>", strprintf("Set publish raw transaction outbound message high water mark (default: %d)", CZMQAbstractNotifier::DEFAULT_ZMQ_SNDHWM), false, OptionsCategory::ZMQ);
 #else
     hidden_args.emplace_back("-zmqpubhashblock=<address>");
     hidden_args.emplace_back("-zmqpubhashtx=<address>");
     hidden_args.emplace_back("-zmqpubrawblock=<address>");
     hidden_args.emplace_back("-zmqpubrawtx=<address>");
-    hidden_args.emplace_back("-zmqpubhashblockhwm=<n>");
-    hidden_args.emplace_back("-zmqpubhashtxhwm=<n>");
-    hidden_args.emplace_back("-zmqpubrawblockhwm=<n>");
-    hidden_args.emplace_back("-zmqpubrawtxhwm=<n>");
 #endif
 
     gArgs.AddArg("-checkblocks=<n>", strprintf("How many blocks to check at startup (default: %u, 0 = all)", DEFAULT_CHECKBLOCKS), true, OptionsCategory::DEBUG_TEST);

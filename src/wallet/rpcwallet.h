@@ -14,6 +14,11 @@ class UniValue;
 struct PartiallySignedTransaction;
 class CTransaction;
 
+namespace interfaces {
+class Chain;
+class Handler;
+}
+
 void RegisterWalletRPCCommands(CRPCTable &t);
 
 /**

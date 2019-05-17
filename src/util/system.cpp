@@ -73,16 +73,15 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-// Masternode features
-bool fMasterNode = false;
-bool fLiteMode = false;
-int nWalletBackups = 10;
-
 const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
 const char * const BITCOIN_PID_FILENAME = "bitcoind.pid";
 
 const char * const MASTERNODE_CONF_FILENAME_ARG = "-mnconf";
 const char * const MASTERNODE_CONF_FILENAME = "masternode.conf";
+
+bool fMasterNode = false;
+bool fLiteMode = false;
+int nWalletBackups = 10;
 
 ArgsManager gArgs;
 
@@ -830,6 +829,16 @@ fs::path GetConfigFile(const std::string& confPath)
     return AbsPathForConfigVal(fs::path(confPath), false);
 }
 
+fs::path GetMasternodeConfigFile()
+{
+    boost::filesystem::path pathConfigFile(gArgs.GetArg("-mnconf", "masternode.conf"));
+    if (!pathConfigFile.is_complete())
+        return fs::absolute(pathConfigFile, GetDataDir());
+
+
+    return pathConfigFile;
+}
+
 static std::string TrimString(const std::string& str, const std::string& pattern)
 {
     std::string::size_type front = str.find_first_not_of(pattern);
@@ -883,15 +892,6 @@ static bool GetConfigOptions(std::istream& stream, std::string& error, std::vect
         ++linenr;
     }
     return true;
-}
-
-fs::path GetMasternodeConfigFile()
-{
-    boost::filesystem::path pathConfigFile(gArgs.GetArg("-mnconf", "masternode.conf"));
-    if (!pathConfigFile.is_complete())
-        return fs::absolute(pathConfigFile, GetDataDir());
-
-    return pathConfigFile;
 }
 
 bool ArgsManager::ReadConfigStream(std::istream& stream, std::string& error, bool ignore_invalid_keys)

@@ -309,7 +309,9 @@ libbitcoin_server_a_SOURCES = \
   noui.cpp \
   outputtype.cpp \
   privatesend/privatesend.cpp \
+  privatesend/privatesend-client.cpp \
   privatesend/privatesend-server.cpp \
+  privatesend/privatesend-util.cpp \
   policy/fees.cpp \
   policy/policy.cpp \
   policy/rbf.cpp \
@@ -373,8 +375,6 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/walletdb.cpp \
   wallet/walletutil.cpp \
   wallet/coinselection.cpp \
-  privatesend/privatesend-client.cpp \
-  privatesend/privatesend-util.cpp \
   $(BITCOIN_CORE_H)
 
 libbitcoin_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)

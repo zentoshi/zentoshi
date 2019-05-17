@@ -176,6 +176,15 @@ std::string COutput::ToString() const
     return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString(), i, nDepth, FormatMoney(tx->tx->vout[i].nValue));
 }
 
+int COutput::Priority() const
+{
+    for (CAmount d : CPrivateSend::GetStandardDenominations())
+        if(tx->tx->vout[i].nValue == d) return 10000;
+    if(tx->tx->vout[i].nValue < 1*COIN) return 20000;
+
+    return -(tx->tx->vout[i].nValue/COIN);
+}
+
 std::vector<CKeyID> GetAffectedKeys(const CScript& spk, const SigningProvider& provider)
 {
     std::vector<CScript> dummy;
@@ -1299,8 +1308,6 @@ void CWallet::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock) {
     }
 }
 
-
-
 void CWallet::BlockUntilSyncedToCurrentChain() {
     AssertLockNotHeld(cs_main);
     AssertLockNotHeld(cs_wallet);
@@ -1324,6 +1331,105 @@ void CWallet::BlockUntilSyncedToCurrentChain() {
     SyncWithValidationInterfaceQueue();
 }
 
+int CWallet::GetRealOutpointPrivateSendRounds(const COutPoint& outpoint, int nRounds) const
+{
+    static std::map<uint256, CMutableTransaction> mDenomWtxes;
+
+    if(nRounds >= 16) return 15; // 16 rounds max
+
+    uint256 hash = outpoint.hash;
+    unsigned int nout = outpoint.n;
+
+    const CWalletTx* wtx = GetWalletTx(hash);
+    if(wtx != NULL)
+    {
+        std::map<uint256, CMutableTransaction>::const_iterator mdwi = mDenomWtxes.find(hash);
+        if (mdwi == mDenomWtxes.end()) {
+            // not known yet, let's add it
+            LogPrint(BCLog::PRIVATESEND, "GetRealOutpointPrivateSendRounds INSERTING %s\n", hash.ToString());
+            mDenomWtxes[hash] = CMutableTransaction(*wtx->tx);
+        } else if(mDenomWtxes[hash].vout[nout].nRounds != -10) {
+            // found and it's not an initial value, just return it
+            return mDenomWtxes[hash].vout[nout].nRounds;
+        }
+
+
+        // bounds check
+        if (nout >= wtx->tx->vout.size()) {
+            // should never actually hit this
+            LogPrint(BCLog::PRIVATESEND, "GetRealOutpointPrivateSendRounds UPDATED   %s %3d %3d\n", hash.ToString(), nout, -4);
+            return -4;
+        }
+
+        if (CPrivateSend::IsCollateralAmount(wtx->tx->vout[nout].nValue)) {
+            mDenomWtxes[hash].vout[nout].nRounds = -3;
+            LogPrint(BCLog::PRIVATESEND, "GetRealOutpointPrivateSendRounds UPDATED   %s %3d %3d\n", hash.ToString(), nout, mDenomWtxes[hash].vout[nout].nRounds);
+            return mDenomWtxes[hash].vout[nout].nRounds;
+        }
+
+        //make sure the final output is non-denominate
+        if (!CPrivateSend::IsDenominatedAmount(wtx->tx->vout[nout].nValue)) { //NOT DENOM
+            mDenomWtxes[hash].vout[nout].nRounds = -2;
+            LogPrint(BCLog::PRIVATESEND, "GetRealOutpointPrivateSendRounds UPDATED   %s %3d %3d\n", hash.ToString(), nout, mDenomWtxes[hash].vout[nout].nRounds);
+            return mDenomWtxes[hash].vout[nout].nRounds;
+        }
+
+        bool fAllDenoms = true;
+        for (CTxOut out : wtx->tx->vout) {
+            fAllDenoms = fAllDenoms && CPrivateSend::IsDenominatedAmount(out.nValue);
+        }
+
+        // this one is denominated but there is another non-denominated output found in the same tx
+        if (!fAllDenoms) {
+            mDenomWtxes[hash].vout[nout].nRounds = 0;
+            LogPrint(BCLog::PRIVATESEND, "GetRealOutpointPrivateSendRounds UPDATED   %s %3d %3d\n", hash.ToString(), nout, mDenomWtxes[hash].vout[nout].nRounds);
+            return mDenomWtxes[hash].vout[nout].nRounds;
+        }
+
+        int nShortest = -10; // an initial value, should be no way to get this by calculations
+        bool fDenomFound = false;
+        // only denoms here so let's look up
+        for (CTxIn txinNext : wtx->tx->vin) {
+            if (IsMine(txinNext)) {
+                int n = GetRealOutpointPrivateSendRounds(txinNext.prevout, nRounds + 1);
+                // denom found, find the shortest chain or initially assign nShortest with the first found value
+                if(n >= 0 && (n < nShortest || nShortest == -10)) {
+                    nShortest = n;
+                    fDenomFound = true;
+                }
+            }
+        }
+        mDenomWtxes[hash].vout[nout].nRounds = fDenomFound
+                ? (nShortest >= 15 ? 16 : nShortest + 1) // good, we a +1 to the shortest one but only 16 rounds max allowed
+                : 0;            // too bad, we are the fist one in that chain
+        LogPrint(BCLog::PRIVATESEND, "GetRealOutpointPrivateSendRounds UPDATED   %s %3d %3d\n", hash.ToString(), nout, mDenomWtxes[hash].vout[nout].nRounds);
+        return mDenomWtxes[hash].vout[nout].nRounds;
+    }
+
+    return nRounds - 1;
+}
+
+int CWallet::GetOutpointPrivateSendRounds(const COutPoint& outpoint) const
+{
+    LOCK(cs_wallet);
+    int realPrivateSendRounds = GetRealOutpointPrivateSendRounds(outpoint, 0);
+    return realPrivateSendRounds > privateSendClient.nPrivateSendRounds ? privateSendClient.nPrivateSendRounds : realPrivateSendRounds;
+}
+
+bool CWallet::IsDenominated(const COutPoint& outpoint) const
+{
+    LOCK(cs_wallet);
+
+    map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(outpoint.hash);
+    if (mi != mapWallet.end()) {
+        const CWalletTx& prev = (*mi).second;
+        if (outpoint.n < prev.tx->vout.size()) {
+            return CPrivateSend::IsDenominatedAmount(prev.tx->vout[outpoint.n].nValue);
+        }
+    }
+
+    return false;
+}
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
 {

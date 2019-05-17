@@ -11,26 +11,26 @@
 #include <masternode-sync.h>
 #include <masternodeconfig.h>
 #include <masternodeman.h>
-#ifdef ENABLE_WALLET
 #include <wallet/wallet.h>
-#endif // ENABLE_WALLET
 #include <rpc/server.h>
 #include <util/system.h>
 #include <util/moneystr.h>
 #include <key_io.h>
 #include <wallet/coincontrol.h>
 #include <wallet/rpcwallet.h>
+#include <privatesend/privatesend-client.h>
+#include <privatesend/privatesend-server.h>
 
 #include <fstream>
 #include <iomanip>
-#include <univalue.h>
-
 
 #ifdef ENABLE_WALLET
-#if 0
 UniValue privatesend(const JSONRPCRequest& request)
 {
-    if (request.request.fHelp || request.request.params.size() != 1)
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+
+    if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
             "privatesend \"command\"\n"
             "\nArguments:\n"
@@ -38,21 +38,19 @@ UniValue privatesend(const JSONRPCRequest& request)
             "\nAvailable commands:\n"
             "  start       - Start mixing\n"
             "  stop        - Stop mixing\n"
-            "  reset       - Reset mixing\n"
-            );
+            "  reset       - Reset mixing\n");
 
     if(request.params[0].get_str() == "start") {
-        {
-            LOCK(pwalletMain->cs_wallet);
-            EnsureWalletIsUnlocked();
-        }
+
+        LOCK(cs_main);
+        EnsureWalletIsUnlocked(pwallet);
 
         if(fMasterNode)
             return "Mixing is not supported from masternodes";
 
         privateSendClient.fEnablePrivateSend = true;
-        bool result = privateSendClient.DoAutomaticDenominating(*g_connman);
-        return "Mixing " + (result ? "started successfully" : ("start failed: " + privateSendClient.GetStatus() + ", will retry");
+        privateSendClient.DoAutomaticDenominating(*g_connman);
+        return "Mixing started successfully";
     }
 
     if(request.params[0].get_str() == "stop") {
@@ -68,11 +66,12 @@ UniValue privatesend(const JSONRPCRequest& request)
     return "Unknown command, please see \"help privatesend\"";
 }
 #endif // ENABLE_WALLET
-#endif
 
-#if 0
 static UniValue getpoolinfo(const JSONRPCRequest& request)
 {
+    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
+    CWallet* const pwallet = wallet.get();
+
     if (request.fHelp || request.params.size() != 0)
         throw std::runtime_error(
             "getpoolinfo\n"
@@ -94,9 +93,9 @@ static UniValue getpoolinfo(const JSONRPCRequest& request)
         obj.pushKV("addr",          mnInfo.addr.ToString());
     }
 
-    if (pwalletMain) {
-        obj.pushKV("keys_left",     pwalletMain->nKeysLeftSinceAutoBackup);
-        obj.pushKV("warnings",      pwalletMain->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING
+    if (pwallet) {
+        obj.pushKV("keys_left",     pwallet->nKeysLeftSinceAutoBackup);
+        obj.pushKV("warnings",      pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING
                                                 ? "WARNING: keypool is almost depleted!" : "");
     }
 #else // ENABLE_WALLET
@@ -108,7 +107,6 @@ static UniValue getpoolinfo(const JSONRPCRequest& request)
 
     return obj;
 }
-#endif
 
 static UniValue masternodelist(const JSONRPCRequest& request)
 {
