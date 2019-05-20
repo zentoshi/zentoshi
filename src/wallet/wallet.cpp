@@ -34,8 +34,6 @@
 #include <wallet/fees.h>
 #include <kernel.h>
 #include <masternode-payments.h>
-#include <wallet/walletutil.h>
-
 #include <governance/governance.h>
 #include <privatesend/privatesend-client.h>
 #include <spork.h>

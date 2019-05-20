@@ -132,7 +132,8 @@ private:
     QAction* overviewAction = nullptr;
     QAction* historyAction = nullptr;
     QAction* masternodeAction = nullptr;
-    QAction* governanceAction = nullptr; 
+    QAction* governanceAction = nullptr;
+    QAction* privatesendAction = nullptr;
     QAction* quitAction = nullptr;
     QAction* sendCoinsAction = nullptr;
     QAction* sendCoinsMenuAction = nullptr;
@@ -279,6 +280,8 @@ public Q_SLOTS:
     void gotoMasternodePage();
     /** Switch to governance page */
     void gotoGovernancePage();
+    /** Switch to privatesend page */
+    void gotoPrivateSendPage();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
@@ -306,7 +309,6 @@ public Q_SLOTS:
     void showConsole();
     void showGraph();
     void showPeers();
-    void showRepair();
 
     /** Open external (default) editor with dash.conf */
     void showConfEditor();

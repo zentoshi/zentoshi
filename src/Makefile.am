@@ -91,11 +91,6 @@ endif
 if BUILD_BITCOIN_TX
   bin_PROGRAMS += bitcoin-tx
 endif
-if ENABLE_WALLET
-if BUILD_BITCOIN_WALLET
-  bin_PROGRAMS += bitcoin-wallet
-endif
-endif
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
@@ -603,33 +598,31 @@ bitcoin_tx_LDADD = \
   $(LIBSECP256K1)
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
-#
 
 # bitcoin-wallet binary #
-bitcoin_wallet_SOURCES = bitcoin-wallet.cpp
-bitcoin_wallet_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-bitcoin_wallet_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-bitcoin_wallet_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+#bitcoin_wallet_SOURCES = bitcoin-wallet.cpp
+#bitcoin_wallet_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+#bitcoin_wallet_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+#bitcoin_wallet_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
-if TARGET_WINDOWS
-bitcoin_wallet_SOURCES += bitcoin-wallet-res.rc
-endif
+#if TARGET_WINDOWS
+#bitcoin_wallet_SOURCES += bitcoin-wallet-res.rc
+#endif
 
-bitcoin_wallet_LDADD = \
-  $(LIBBITCOIN_WALLET_TOOL) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_SERVER) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBLEVELDB) \
-  $(LIBLEVELDB_SSE42) \
-  $(LIBMEMENV) \
-  $(LIBSECP256K1)
+#bitcoin_wallet_LDADD = \
+# $(LIBBITCOIN_WALLET_TOOL) \
+# $(LIBBITCOIN_WALLET) \
+# $(LIBBITCOIN_SERVER) \
+# $(LIBBITCOIN_COMMON) \
+# $(LIBBITCOIN_CONSENSUS) \
+# $(LIBBITCOIN_UTIL) \
+# $(LIBBITCOIN_CRYPTO) \
+# $(LIBLEVELDB) \
+# $(LIBLEVELDB_SSE42) \
+# $(LIBMEMENV) \
+# $(LIBSECP256K1)
 
-bitcoin_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
-#
+#bitcoin_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
 
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
@@ -712,10 +705,6 @@ endif
 
 if EMBEDDED_LEVELDB
 include Makefile.leveldb.include
-endif
-
-if ENABLE_BENCH
-include Makefile.bench.include
 endif
 
 if ENABLE_QT

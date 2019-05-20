@@ -12,6 +12,7 @@
 #include <qt/optionsmodel.h>
 #include <qt/overviewpage.h>
 #include <qt/platformstyle.h>
+#include <qt/privatesendpage.h>
 #include <qt/receivecoinsdialog.h>
 #include <qt/sendcoinsdialog.h>
 #include <qt/signverifymessagedialog.h>
@@ -59,6 +60,8 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     receiveCoinsPage = new ReceiveCoinsDialog(platformStyle);
     sendCoinsPage = new SendCoinsDialog(platformStyle);
     masternodeListPage = new MasternodeList(platformStyle);
+    governanceListPage = new GovernanceList(platformStyle);
+    privatesendPage = new PrivateSendPage(platformStyle);
 
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
@@ -67,9 +70,9 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
-    addWidget(masternodeListPage);
-    governanceListPage = new GovernanceList(platformStyle);
+    addWidget(masternodeListPage);    
     addWidget(governanceListPage);
+    addWidget(privatesendPage);
 
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
     connect(overviewPage, &OverviewPage::transactionClicked, transactionView, static_cast<void (TransactionView::*)(const QModelIndex&)>(&TransactionView::focusTransaction));
@@ -128,6 +131,7 @@ void WalletView::setClientModel(ClientModel *_clientModel)
     sendCoinsPage->setClientModel(_clientModel);
     masternodeListPage->setClientModel(clientModel);
     governanceListPage->setClientModel(_clientModel);
+    privatesendPage->setClientModel(_clientModel);
 }
 
 void WalletView::setWalletModel(WalletModel *_walletModel)
@@ -138,6 +142,7 @@ void WalletView::setWalletModel(WalletModel *_walletModel)
     transactionView->setModel(_walletModel);
     overviewPage->setWalletModel(_walletModel);
     masternodeListPage->setWalletModel(walletModel);
+    governanceListPage->setWalletModel(_walletModel);
     governanceListPage->setWalletModel(_walletModel);
     receiveCoinsPage->setModel(_walletModel);
     sendCoinsPage->setModel(_walletModel);
@@ -210,6 +215,11 @@ void WalletView::gotoReceiveCoinsPage()
 void WalletView::gotoGovernancePage()
 {
     setCurrentWidget(governanceListPage);
+}
+
+void WalletView::gotoPrivateSendPage()
+{
+    setCurrentWidget(privatesendPage);
 }
 
 void WalletView::gotoSendCoinsPage(QString addr)

@@ -152,6 +152,13 @@ void WalletFrame::gotoGovernancePage()
         i.value()->gotoGovernancePage();
 }
 
+void WalletFrame::gotoPrivateSendPage()
+{
+    QMap<WalletModel*, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->gotoPrivateSendPage();
+}
+
 void WalletFrame::gotoReceiveCoinsPage()
 {
     QMap<WalletModel*, WalletView*>::const_iterator i;

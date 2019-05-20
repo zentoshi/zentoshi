@@ -307,6 +307,15 @@ void BitcoinGUI::createActions()
     connect(governanceAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(governanceAction, SIGNAL(triggered()), this, SLOT(gotoGovernancePage()));
 
+    privatesendAction = new QAction(platformStyle->SingleColorIcon(":/icons/privatesend"), tr("&Privatesend"), this);
+    privatesendAction->setStatusTip(tr("View the privatesend/mixing functions"));
+    privatesendAction->setToolTip(privatesendAction->statusTip());
+    privatesendAction->setCheckable(true);
+    privatesendAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    tabGroup->addAction(privatesendAction);
+    connect(privatesendAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
+    connect(privatesendAction, SIGNAL(triggered()), this, SLOT(gotoPrivateSendPage()));
+
     // These showNormalIfMinimized are needed because Send Coins and Receive Coins
     // can be triggered from the tray menu, and need to show the GUI to be useful.
     connect(overviewAction, &QAction::triggered, [this]{ showNormalIfMinimized(); });
@@ -368,13 +377,6 @@ void BitcoinGUI::createActions()
     openConfEditorAction->setStatusTip(tr("Open configuration file"));
     openMNConfEditorAction = new QAction(QIcon(":/icons/edit"), tr("Open &Masternode Configuration File"), this);
     openMNConfEditorAction->setStatusTip(tr("Open Masternode configuration file"));
-    // showBackupsAction = new QAction(QIcon(":/icons/browse"), tr("Show Automatic &Backups"), this);
-    // showBackupsAction->setStatusTip(tr("Show automatically created wallet backups"));
-
-    openInfoAction->setEnabled(true);
-    openRPCConsoleAction->setEnabled(true);
-    openGraphAction->setEnabled(true);
-    openPeersAction->setEnabled(true);
 
     usedSendingAddressesAction = new QAction(platformStyle->TextColorIcon(":/icons/address-book"), tr("&Sending addresses"), this);
     usedSendingAddressesAction->setStatusTip(tr("Show the list of used sending addresses and labels"));
@@ -614,6 +616,7 @@ void BitcoinGUI::createToolBars()
         toolbar->addAction(historyAction);
         toolbar->addAction(masternodeAction);
         toolbar->addAction(governanceAction);
+        toolbar->addAction(privatesendAction);
         overviewAction->setChecked(true);
 
 #ifdef ENABLE_WALLET
@@ -792,6 +795,7 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     historyAction->setEnabled(enabled);
     masternodeAction->setEnabled(enabled);
     governanceAction->setEnabled(enabled);
+    privatesendAction->setEnabled(enabled);
     encryptWalletAction->setEnabled(enabled);
     backupWalletAction->setEnabled(enabled);
     changePassphraseAction->setEnabled(enabled);
@@ -977,6 +981,12 @@ void BitcoinGUI::gotoGovernancePage()
 {
     governanceAction->setChecked(true);
     if (walletFrame) walletFrame->gotoGovernancePage();
+}
+
+void BitcoinGUI::gotoPrivateSendPage()
+{
+    privatesendAction->setChecked(true);
+    if (walletFrame) walletFrame->gotoPrivateSendPage();
 }
 
 void BitcoinGUI::gotoReceiveCoinsPage()
