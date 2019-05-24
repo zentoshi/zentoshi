@@ -161,18 +161,7 @@ enum WalletFlags : uint64_t {
     WALLET_FLAG_BLANK_WALLET = (1ULL << 33),
 };
 
-struct CompactTallyItem
-{
-    CTxDestination txdest;
-    CAmount nAmount;
-    std::vector<COutPoint> vecOutPoints;
-    CompactTallyItem()
-    {
-        nAmount = 0;
-    }
-};
-
-static constexpr uint64_t g_known_wallet_flags = WALLET_FLAG_DISABLE_PRIVATE_KEYS | WALLET_FLAG_BLANK_WALLET | WALLET_FLAG_KEY_ORIGIN_METADATA;
+static constexpr uint64_t KNOWN_WALLET_FLAGS = WALLET_FLAG_DISABLE_PRIVATE_KEYS | WALLET_FLAG_BLANK_WALLET | WALLET_FLAG_KEY_ORIGIN_METADATA;
 
 /** A key from a CWallet's keypool
  *
