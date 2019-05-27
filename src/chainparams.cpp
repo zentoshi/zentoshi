@@ -78,8 +78,8 @@ public:
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP65Height = consensus.nFirstPoSBlock;
         consensus.BIP66Height = consensus.nFirstPoSBlock;
-        consensus.powLimit = uint256S("000fffff00000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("007ffff000000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;

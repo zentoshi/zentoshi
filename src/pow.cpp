@@ -7,12 +7,10 @@
 
 #include <arith_uint256.h>
 #include <chain.h>
-#include <uint256.h>
 #include <chainparams.h>
-#include <arith_uint256.h>
 #include <primitives/block.h>
-#include <util/system.h>
 #include <uint256.h>
+#include <util/system.h>
 
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
 {

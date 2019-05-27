@@ -5,14 +5,20 @@
 
 #include <net_processing.h>
 
+#include <activemasternode.h>
 #include <addrman.h>
 #include <banman.h>
 #include <arith_uint256.h>
 #include <blockencodings.h>
 #include <chainparams.h>
 #include <consensus/validation.h>
+#include <governance/governance.h>
 #include <hash.h>
-#include <validation.h>
+#include <init.h>
+#include <instantx.h>
+#include <masternodeman.h>
+#include <masternode-sync.h>
+#include <masternode-payments.h>
 #include <merkleblock.h>
 #include <netmessagemaker.h>
 #include <netbase.h>
@@ -20,6 +26,8 @@
 #include <policy/policy.h>
 #include <primitives/block.h>
 #include <primitives/transaction.h>
+#include <privatesend/privatesend-client.h>
+#include <privatesend/privatesend-server.h>
 #include <random.h>
 #include <reverse_iterator.h>
 #include <scheduler.h>
@@ -31,25 +39,13 @@
 #include <util/moneystr.h>
 #include <util/strencodings.h>
 #include <spork.h>
+#include <validation.h>
+
 #include <map>
 #include <functional>
-#include <masternodeman.h>
-#include <masternode-sync.h>
-#include <masternode-payments.h>
-#include <governance/governance.h>
-#include <activemasternode.h>
-#include <instantx.h>
-#include <init.h>
-#include <boost/thread.hpp>
-
 #include <memory>
 
-#include <spork.h>
-#include <instantx.h>
-#ifdef ENABLE_WALLET
-#include <privatesend/privatesend-client.h>
-#endif // ENABLE_WALLET
-#include <privatesend/privatesend-server.h>
+#include <boost/thread.hpp>
 
 #if defined(NDEBUG)
 # error "Bitcoin cannot be compiled without assertions."

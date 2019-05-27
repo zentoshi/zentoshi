@@ -1,6 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2018 The Bitcoin Core developers
-
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -2599,14 +2598,10 @@ static bool IsCorrectType(CAmount nAmount, AvailableCoinsType nCoinType)
 {
     bool found = false;
     if(nCoinType == ONLY_DENOMINATED) {
-#if 0
         found = CPrivateSend::IsDenominatedAmount(nAmount);
-#endif
     } else if(nCoinType == ONLY_NONDENOMINATED) {
-#if 0
         if (!CPrivateSend::IsCollateralAmount(nAmount))
             found = !CPrivateSend::IsDenominatedAmount(nAmount);
-#endif
     } else if(nCoinType == ONLY_MASTERNODE_COLLATERAL) {
         for(int i=0; i<Params().CollateralLevels(); i++) {
             if(nAmount == (Params().ValidCollateralAmounts()[i] * COIN)) {
@@ -2615,9 +2610,7 @@ static bool IsCorrectType(CAmount nAmount, AvailableCoinsType nCoinType)
             }
         }
     } else if(nCoinType == ONLY_PRIVATESEND_COLLATERAL) {
-#if 0
         found = CPrivateSend::IsCollateralAmount(nAmount);
-#endif
     } else {
         found = true;
     }
@@ -3513,66 +3506,6 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nC
     }
 
     return true;
-}
-
-static bool IsCurrentForAntiFeeSniping(interfaces::Chain::Lock& locked_chain)
-{
-    if (IsInitialBlockDownload()) {
-        return false;
-    }
-    constexpr int64_t MAX_ANTI_FEE_SNIPING_TIP_AGE = 8 * 60 * 60; // in seconds
-    if (chainActive.Tip()->GetBlockTime() < (GetTime() - MAX_ANTI_FEE_SNIPING_TIP_AGE)) {
-        return false;
-    }
-    return true;
-}
-
-/**
- * Return a height-based locktime for new transactions (uses the height of the
- * current chain tip unless we are not synced with the current chain
- */
-static uint32_t GetLocktimeForNewTransaction(interfaces::Chain::Lock& locked_chain)
-{
-    uint32_t const height = locked_chain.getHeight().get_value_or(-1);
-    uint32_t locktime;
-    // Discourage fee sniping.
-    //
-    // For a large miner the value of the transactions in the best block and
-    // the mempool can exceed the cost of deliberately attempting to mine two
-    // blocks to orphan the current best block. By setting nLockTime such that
-    // only the next block can include the transaction, we discourage this
-    // practice as the height restricted and limited blocksize gives miners
-    // considering fee sniping fewer options for pulling off this attack.
-    //
-    // A simple way to think about this is from the wallet's point of view we
-    // always want the blockchain to move forward. By setting nLockTime this
-    // way we're basically making the statement that we only want this
-    // transaction to appear in the next block; we don't want to potentially
-    // encourage reorgs by allowing transactions to appear at lower heights
-    // than the next block in forks of the best chain.
-    //
-    // Of course, the subsidy is high enough, and transaction volume low
-    // enough, that fee sniping isn't a problem yet, but by implementing a fix
-    // now we ensure code won't be written that makes assumptions about
-    // nLockTime that preclude a fix later.
-    if (IsCurrentForAntiFeeSniping(locked_chain)) {
-        locktime = height;
-
-        // Secondly occasionally randomly pick a nLockTime even further back, so
-        // that transactions that are delayed after signing for whatever reason,
-        // e.g. high-latency mix networks and some CoinJoin implementations, have
-        // better privacy.
-        if (GetRandInt(10) == 0)
-            locktime = std::max(0, (int)locktime - GetRandInt(100));
-    } else {
-        // If our chain is lagging behind, we can't discourage fee sniping nor help
-        // the privacy of high-latency transactions. To avoid leaking a potentially
-        // unique "nLockTime fingerprint", set nLockTime to a constant.
-        locktime = 0;
-    }
-    assert(locktime <= height);
-    assert(locktime < LOCKTIME_THRESHOLD);
-    return locktime;
 }
 
 OutputType CWallet::TransactionChangeType(OutputType change_type, const std::vector<CRecipient>& vecSend)

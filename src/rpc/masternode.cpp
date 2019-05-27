@@ -3,23 +3,22 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <activemasternode.h>
-#include <key_io.h>
 #include <init.h>
+#include <key_io.h>
 #include <netbase.h>
-#include <validation.h>
 #include <masternode-payments.h>
 #include <masternode-sync.h>
 #include <masternodeconfig.h>
 #include <masternodeman.h>
-#include <wallet/wallet.h>
+#include <privatesend/privatesend-client.h>
+#include <privatesend/privatesend-server.h>
 #include <rpc/server.h>
 #include <util/system.h>
 #include <util/moneystr.h>
-#include <key_io.h>
+#include <validation.h>
 #include <wallet/coincontrol.h>
 #include <wallet/rpcwallet.h>
-#include <privatesend/privatesend-client.h>
-#include <privatesend/privatesend-server.h>
+#include <wallet/wallet.h>
 
 #include <fstream>
 #include <iomanip>
@@ -66,47 +65,6 @@ UniValue privatesend(const JSONRPCRequest& request)
     return "Unknown command, please see \"help privatesend\"";
 }
 #endif // ENABLE_WALLET
-
-static UniValue getpoolinfo(const JSONRPCRequest& request)
-{
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
-
-    if (request.fHelp || request.params.size() != 0)
-        throw std::runtime_error(
-            "getpoolinfo\n"
-            "Returns an object containing mixing pool related information.\n");
-
-#ifdef ENABLE_WALLET
-    CPrivateSendBase* pprivateSendBase = fMasterNode ? (CPrivateSendBase*)&privateSendServer : (CPrivateSendBase*)&privateSendClient;
-
-    UniValue obj(UniValue::VOBJ);
-    obj.pushKV("state",             pprivateSendBase->GetStateString());
-    obj.pushKV("mixing_mode",       (!fMasterNode && privateSendClient.fPrivateSendMultiSession) ? "multi-session" : "normal");
-    obj.pushKV("queue",             pprivateSendBase->GetQueueSize());
-    obj.pushKV("entries",           pprivateSendBase->GetEntriesCount());
-    obj.pushKV("status",            privateSendClient.GetStatus());
-
-    masternode_info_t mnInfo;
-    if (privateSendClient.GetMixingMasternodeInfo(mnInfo)) {
-        obj.pushKV("outpoint",      mnInfo.vin.prevout.ToString());
-        obj.pushKV("addr",          mnInfo.addr.ToString());
-    }
-
-    if (pwallet) {
-        obj.pushKV("keys_left",     pwallet->nKeysLeftSinceAutoBackup);
-        obj.pushKV("warnings",      pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING
-                                                ? "WARNING: keypool is almost depleted!" : "");
-    }
-#else // ENABLE_WALLET
-    UniValue obj(UniValue::VOBJ);
-    obj.pushKV("state",             privateSendServer.GetStateString());
-    obj.pushKV("queue",             privateSendServer.GetQueueSize());
-    obj.pushKV("entries",           privateSendServer.GetEntriesCount());
-#endif // ENABLE_WALLET
-
-    return obj;
-}
 
 static UniValue masternodelist(const JSONRPCRequest& request)
 {
