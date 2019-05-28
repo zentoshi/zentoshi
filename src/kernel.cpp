@@ -307,6 +307,12 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     ss << nTimeBlockFrom << nTxPrevOffset << txPrevTime << prevout.n << nTimeTx;
     hashProofOfStake = Hash(ss.begin(), ss.end());
 
+    // Debugging stake kernel
+    if (gArgs.GetBoolArg("-debug", false)) {
+       bool fStakeValid = (UintToArith256(hashProofOfStake) > bnCoinDayWeight * bnTargetPerCoinDay);
+       LogPrintf("hashProofOfStake %s (blockcandidate: %s)\n", hashProofOfStake.ToString().c_str(), !fStakeValid ? "Y" : "N");
+    }
+
     // Now check if proof-of-stake hash meets target protocol
     if (UintToArith256(hashProofOfStake) > bnCoinDayWeight * bnTargetPerCoinDay)
         return false;
