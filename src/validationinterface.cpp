@@ -10,8 +10,6 @@
 #include <scheduler.h>
 #include <sync.h>
 #include <txmempool.h>
-#include <util/system.h>
-#include <validation.h>
 
 #include <list>
 #include <atomic>

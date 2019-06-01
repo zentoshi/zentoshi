@@ -31,9 +31,7 @@
 #include <tinyformat.h>
 #include <txdb.h>
 #include <txmempool.h>
-#include <ui_interface.h>
 #include <util/system.h>
-#include <util/moneystr.h>
 #include <util/strencodings.h>
 #include <validation.h>
 #include <util/validation.h>

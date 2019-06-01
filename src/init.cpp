@@ -55,8 +55,6 @@
 #include <validation.h>
 #include <util/validation.h>
 #include <validationinterface.h>
-#include <warnings.h>
-#include <wallet/wallet.h>
 #include <walletinitinterface.h>
 
 #include <activemasternode.h>
