@@ -6,6 +6,7 @@
 #include <keystore.h>
 #include <policy/fees.h>
 #include <outputtype.h>
+#include <script/signingprovider.h>
 #include <rpc/util.h>
 #include <script/descriptor.h>
 #include <tinyformat.h>
