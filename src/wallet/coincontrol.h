@@ -18,12 +18,17 @@ class CCoinControl
 public:
     //! Custom change destination, if not set an address is generated
     CTxDestination destChange;
+    //! Toggles for private/instantsend
+    bool fUsePrivateSend;
+    bool fUseInstantSend;
     //! Override the default change type if set, ignored if destChange is set
     boost::optional<OutputType> m_change_type;
     //! If false, allows unselected inputs, but requires all selected inputs be used
     bool fAllowOtherInputs;
     //! Includes watch only addresses which are solvable
     bool fAllowWatchOnly;
+    //! Minimum absolute fee (not per kilobyte)
+    CAmount nMinimumTotalFee;
     //! Override automatic min/max checks on fee, m_feerate must be set if true
     bool fOverrideFeeRate;
     //! Override the wallet's m_pay_tx_fee if set
@@ -36,8 +41,6 @@ public:
     bool m_avoid_partial_spends;
     //! Fee estimation mode to control arguments to estimateSmartFee
     FeeEstimateMode m_fee_mode;
-    //! Specific to InstantSend
-    bool fUseInstantSend;
 
     AvailableCoinsType nCoinType;
 

@@ -27,6 +27,9 @@
 #include <wallet/fees.h>
 #include <wallet/wallet.h>
 
+#include <instantx.h>
+#include <privatesend/privatesend-client.h>
+
 #include <QApplication>
 #include <QCheckBox>
 #include <QCursor>
@@ -379,8 +382,16 @@ void CoinControlDialog::viewItemChanged(QTreeWidgetItem* item, int column)
             coinControl()->UnSelect(outpt);
         else if (item->isDisabled()) // locked (this happens if "check all" through parent node)
             item->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
-        else
+        else {
             coinControl()->Select(outpt);
+            int nRounds = model->wallet().GetOutpointPrivateSendRounds(outpt);
+            if (coinControl()->fUsePrivateSend && nRounds < privateSendClient.nPrivateSendRounds) {
+                QMessageBox::warning(this, windowTitle(),
+                    tr("Non-anonymized input selected. <b>PrivateSend will be disabled.</b><br><br>If you still want to use PrivateSend, please deselect all non-anonymized inputs first and then check the PrivateSend checkbox again."),
+                    QMessageBox::Ok, QMessageBox::Ok);
+                coinControl()->fUsePrivateSend = false;
+            }
+        }
 
         // selection changed -> update labels
         if (ui->treeWidget->isEnabled()) // do not update on every click for (un)select all
@@ -482,6 +493,9 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
                 nBytesInputs += 148; // in all error cases, simply assume 148 here
         }
         else nBytesInputs += 148;
+
+        if(coinControl()->fUseInstantSend)
+            txDummy.vin.push_back(CTxIn());
     }
 
     // calculation
@@ -504,7 +518,10 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
                 nBytes -= 34;
 
         // Fee
-        nPayFee = model->wallet().getMinimumFee(nBytes, *coinControl(), nullptr /* returned_target */, nullptr /* reason */);
+        nPayFee = coinControl()->nMinimumTotalFee;
+
+        // InstantSend Fee
+        if (coinControl()->fUseInstantSend) nPayFee = std::max(nPayFee, CTxLockRequest(txDummy).GetMinFee());
 
         if (nPayAmount > 0)
         {
@@ -513,6 +530,11 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
                 nChange -= nPayFee;
 
             // Never create dust outputs; if we would, just add the dust to the fee.
+            if(coinControl()->fUsePrivateSend && nChange > 0)
+            {
+                nPayFee += nChange;
+                nChange = 0;
+            }
             if (nChange > 0 && nChange < MIN_CHANGE)
             {
                 CTxOut txout(nChange, static_cast<CScript>(std::vector<unsigned char>(24, 0)));
@@ -557,7 +579,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
     l2->setText(BitcoinUnits::formatWithUnit(nDisplayUnit, nAmount));        // Amount
     l3->setText(BitcoinUnits::formatWithUnit(nDisplayUnit, nPayFee));        // Fee
     l4->setText(BitcoinUnits::formatWithUnit(nDisplayUnit, nAfterFee));      // After Fee
-    l5->setText(((nBytes > 0) ? ASYMP_UTF8 : "") + QString::number(nBytes));        // Bytes
+    l5->setText(((nBytes > 0) ? ASYMP_UTF8 : "") + QString::number(nBytes)); // Bytes
     l7->setText(fDust ? tr("yes") : tr("no"));                               // Dust
     l8->setText(BitcoinUnits::formatWithUnit(nDisplayUnit, nChange));        // Change
     if (nPayFee > 0)
@@ -698,7 +720,7 @@ void CoinControlDialog::updateView()
             // vout index
             itemOutput->setData(COLUMN_ADDRESS, VOutRole, output.n);
 
-             // disable locked coins
+            // disable locked coins
             if (model->wallet().isLockedCoin(output))
             {
                 coinControl()->UnSelect(output); // just to be sure

@@ -141,6 +141,7 @@ void WalletView::setWalletModel(WalletModel *_walletModel)
     // Put transaction list in tabs
     transactionView->setModel(_walletModel);
     overviewPage->setWalletModel(_walletModel);
+    privatesendPage->setWalletModel(_walletModel);
     masternodeListPage->setWalletModel(walletModel);
     governanceListPage->setWalletModel(_walletModel);
     governanceListPage->setWalletModel(_walletModel);

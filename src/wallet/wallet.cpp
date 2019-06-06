@@ -2432,6 +2432,45 @@ CAmount CWallet::GetAnonymizedBalance() const
     return nTotal;
 }
 
+float CWallet::GetAverageAnonymizedRounds() const
+{
+    if(fLiteMode) return 0;
+
+    int nTotal = 0;
+    int nCount = 0;
+
+    LOCK2(cs_main, cs_wallet);
+    for (auto& outpoint : setWalletUTXO) {
+        if(!IsDenominated(outpoint)) continue;
+
+        nTotal += GetOutpointPrivateSendRounds(outpoint);
+        nCount++;
+    }
+
+    if(nCount == 0) return 0;
+
+    return (float)nTotal/nCount;
+}
+
+CAmount CWallet::GetNormalizedAnonymizedBalance() const
+{
+    if(fLiteMode) return 0;
+    CAmount nTotal = 0;
+
+    auto locked_chain = chain().lock();
+    LOCK2(cs_main, cs_wallet);
+    for (auto& outpoint : setWalletUTXO) {
+        map<uint256, CWalletTx>::const_iterator it = mapWallet.find(outpoint.hash);
+        if (it == mapWallet.end()) continue;
+        if (!IsDenominated(outpoint)) continue;
+        if (it->second.GetDepthInMainChain(*locked_chain) < 0) continue;
+        int nRounds = GetOutpointPrivateSendRounds(outpoint);
+        nTotal += it->second.tx->vout[outpoint.n].nValue * nRounds / privateSendClient.nPrivateSendRounds;
+    }
+
+    return nTotal;
+}
+
 CAmount CWallet::GetNeedsToBeAnonymizedBalance(CAmount nMinBalance) const
 {
     if(fLiteMode) return 0;
@@ -3538,6 +3577,7 @@ OutputType CWallet::TransactionChangeType(OutputType change_type, const std::vec
 
 bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, const CCoinControl& coin_control, bool sign, AvailableCoinsType nCoinType, bool fUseInstantSend)
 {
+    CAmount nFeePay = fUseInstantSend ? CTxLockRequest().GetMinFee() : 0;
     CAmount nValue = 0;
     int nChangePosRequest = nChangePosInOut;
     unsigned int nSubtractFeeFromAmount = 0;
@@ -3648,6 +3688,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
             CFeeRate nFeeRateNeeded = GetMinimumFeeRate(*this, coin_control, ::mempool, ::feeEstimator, &feeCalc);
 
             nFeeRet = 0;
+            if(nFeePay > 0) nFeeRet = nFeePay;
             bool pick_new_inputs = true;
             CAmount nValueIn = 0;
 
@@ -3854,10 +3895,15 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                     return false;
                 }
 
-                nFeeNeeded = GetMinimumFee(*this, nBytes, coin_control, ::mempool, ::feeEstimator, &feeCalc);
-                if (feeCalc.reason == FeeReason::FALLBACK && !m_allow_fallback_fee) {
-                    // eventually allow a fallback fee
-                    strFailReason = _("Fee estimation failed. Fallbackfee is disabled. Wait a few blocks or enable -fallbackfee.");
+                if(fUseInstantSend) {
+                    nFeeNeeded = std::max(nFeeNeeded, CTxLockRequest(txNew).GetMinFee());
+                }
+
+                // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
+                // because we must be at the maximum allowed fee.
+                if (nFeeNeeded < ::minRelayTxFee.GetFee(nBytes))
+                {
+                    strFailReason = _("Transaction too large for fee policy");
                     return false;
                 }
 
@@ -3870,27 +3916,6 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                 }
 
                 if (nFeeRet >= nFeeNeeded) {
-                    // Reduce fee to only the needed amount if possible. This
-                    // prevents potential overpayment in fees if the coins
-                    // selected to meet nFeeNeeded result in a transaction that
-                    // requires less fee than the prior iteration.
-
-                    // If we have no change and a big enough excess fee, then
-                    // try to construct transaction again only without picking
-                    // new inputs. We now know we only need the smaller fee
-                    // (because of reduced tx size) and so we should add a
-                    // change output. Only try this once.
-                    if (nChangePosInOut == -1 && nSubtractFeeFromAmount == 0 && pick_new_inputs) {
-                        unsigned int tx_size_with_change = nBytes + coin_selection_params.change_output_size + 2; // Add 2 as a buffer in case increasing # of outputs changes compact size
-                        CAmount fee_needed_with_change = GetMinimumFee(*this, tx_size_with_change, coin_control, ::mempool, ::feeEstimator, nullptr);
-                        CAmount minimum_value_for_change = GetDustThreshold(change_prototype_txout, discard_rate);
-                        if (nFeeRet >= fee_needed_with_change + minimum_value_for_change) {
-                            pick_new_inputs = false;
-                            nFeeRet = fee_needed_with_change;
-                            continue;
-                        }
-                    }
-
                     // If we have change output already, just increase it
                     if (nFeeRet > nFeeNeeded && nChangePosInOut != -1 && nSubtractFeeFromAmount == 0) {
                         CAmount extraFeePaid = nFeeRet - nFeeNeeded;
@@ -5528,6 +5553,111 @@ void CWallet::postInitProcess()
 bool CWallet::BackupWallet(const std::string& strDest)
 {
     return database->Backup(strDest);
+}
+
+bool AutoBackupWallet(std::shared_ptr<CWallet> wallet, const std::string& strWalletFile_, std::string& strBackupWarningRet, std::string& strBackupErrorRet)
+{
+    namespace fs = boost::filesystem;
+
+    strBackupWarningRet = strBackupErrorRet = "";
+    std::string strWalletFile = "";
+
+    if (nWalletBackups <= 0) {
+        LogPrintf("Automatic wallet backups are disabled!\n");
+        return false;
+    }
+
+    fs::path backupsDir = GetBackupsDir();
+
+    if (!fs::exists(backupsDir))
+    {
+        // Always create backup folder to not confuse the operating system's file browser
+        LogPrintf("Creating backup folder %s\n", backupsDir.string());
+        if(!fs::create_directories(backupsDir)) {
+            // smth is wrong, we shouldn't continue until it's resolved
+            strBackupErrorRet = strprintf(_("Wasn't able to create wallet backup folder %s!"), backupsDir.string());
+            LogPrintf("%s\n", strBackupErrorRet);
+            nWalletBackups = -1;
+            return false;
+        }
+    } else if (!fs::is_directory(backupsDir)) {
+        // smth is wrong, we shouldn't continue until it's resolved
+        strBackupErrorRet = strprintf(_("%s is not a valid backup folder!"), backupsDir.string());
+        LogPrintf("%s\n", strBackupErrorRet);
+        nWalletBackups = -1;
+        return false;
+    }
+
+    // Create backup of the ...
+    std::string dateTimeStr = DateTimeStrFormat(".%Y-%m-%d-%H-%M", GetTime());
+    if (wallet)
+    {
+        // ... opened wallet
+        LOCK2(cs_main, wallet->cs_wallet);
+        strWalletFile = wallet->strWalletFile;
+        fs::path backupFile = backupsDir / (strWalletFile + dateTimeStr);
+        if(!wallet->BackupWallet(backupFile.string())) {
+            strBackupWarningRet = strprintf(_("Failed to create backup %s!"), backupFile.string());
+            LogPrintf("%s\n", strBackupWarningRet);
+            nWalletBackups = -1;
+            return false;
+        }
+        // Update nKeysLeftSinceAutoBackup using current external keypool size
+        wallet->nKeysLeftSinceAutoBackup = wallet->KeypoolCountExternalKeys();
+        LogPrintf("nKeysLeftSinceAutoBackup: %d\n", wallet->nKeysLeftSinceAutoBackup);
+        if(wallet->IsLocked(true)) {
+            strBackupWarningRet = _("Wallet is locked, can't replenish keypool! Automatic backups and mixing are disabled, please unlock your wallet to replenish keypool.");
+            LogPrintf("%s\n", strBackupWarningRet);
+            nWalletBackups = -2;
+            return false;
+        }
+    } else {
+        // ... strWalletFile file
+        strWalletFile = strWalletFile_;
+        fs::path sourceFile = GetDataDir() / strWalletFile;
+        fs::path backupFile = backupsDir / (strWalletFile + dateTimeStr);
+        sourceFile.make_preferred();
+        backupFile.make_preferred();
+        if (fs::exists(backupFile))
+        {
+            strBackupWarningRet = _("Failed to create backup, file already exists! This could happen if you restarted wallet in less than 60 seconds. You can continue if you are ok with this.");
+            LogPrintf("%s\n", strBackupWarningRet);
+            return false;
+        }
+        if(fs::exists(sourceFile)) {
+            try {
+                fs::copy_file(sourceFile, backupFile);
+                LogPrintf("Creating backup of %s -> %s\n", sourceFile.string(), backupFile.string());
+            } catch(fs::filesystem_error &error) {
+                strBackupWarningRet = strprintf(_("Failed to create backup, error: %s"), error.what());
+                LogPrintf("%s\n", strBackupWarningRet);
+                nWalletBackups = -1;
+                return false;
+            }
+        }
+    }
+
+    // Keep only the last 10 backups, including the new one of course
+    typedef std::multimap<std::time_t, fs::path> folder_set_t;
+    folder_set_t folder_set;
+    fs::directory_iterator end_iter;
+    backupsDir.make_preferred();
+    // Build map of backup files for current(!) wallet sorted by last write time
+    fs::path currentFile;
+    for (fs::directory_iterator dir_iter(backupsDir); dir_iter != end_iter; ++dir_iter)
+    {
+        // Only check regular files
+        if ( fs::is_regular_file(dir_iter->status()))
+        {
+            currentFile = dir_iter->path().filename();
+            // Only add the backups for the current wallet, e.g. wallet.dat.*
+            if(dir_iter->path().stem().string() == strWalletFile)
+            {
+                folder_set.insert(folder_set_t::value_type(fs::last_write_time(dir_iter->path()), *dir_iter));
+            }
+        }
+    }
+    return true;
 }
 
 CKeyPool::CKeyPool()

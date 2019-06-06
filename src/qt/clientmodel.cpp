@@ -93,6 +93,12 @@ QString ClientModel::getMasternodeCountString() const
             .arg(QString::number((int)m_node.getNumMasternodes().countEnabled));
 }
 
+int ClientModel::getNumBlocks() const
+{
+    LOCK(cs_main);
+    return chainActive.Height();
+}
+
 int ClientModel::getHeaderTipHeight() const
 {
     if (cachedBestHeaderHeight == -1) {

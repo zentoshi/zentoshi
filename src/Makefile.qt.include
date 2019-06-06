@@ -148,7 +148,8 @@ QT_FORMS_UI = \
   qt/forms/sendcoinsentry.ui \
   qt/forms/signverifymessagedialog.ui \
   qt/forms/transactiondescdialog.ui \
-  qt/forms/masternodelist.ui
+  qt/forms/masternodelist.ui \
+  qt/forms/darksendconfig.ui
 
 QT_MOC_CPP = \
   qt/moc_addressbookpage.cpp \
@@ -202,7 +203,8 @@ QT_MOC_CPP = \
   qt/moc_walletframe.cpp \
   qt/moc_walletmodel.cpp \
   qt/moc_walletview.cpp \
-  qt/moc_masternodelist.cpp
+  qt/moc_masternodelist.cpp \
+  qt/moc_darksendconfig.cpp
 
 BITCOIN_MM = \
   qt/macdockiconhandler.mm \
@@ -215,6 +217,7 @@ QT_MOC = \
   qt/callback.moc \
   qt/intro.moc \
   qt/overviewpage.moc \
+  qt/privatesendpage.moc \
   qt/rpcconsole.moc
 
 QT_QRC_CPP = qt/qrc_bitcoin.cpp
@@ -292,7 +295,8 @@ BITCOIN_QT_H = \
   qt/walletmodeltransaction.h \
   qt/walletview.h \
   qt/winshutdownmonitor.h \
-  qt/masternodelist.h
+  qt/masternodelist.h \
+  qt/darksendconfig.h
 
 RES_ICONS = \
   qt/res/icons/add.png \
@@ -414,7 +418,8 @@ BITCOIN_QT_WALLET_CPP = \
   qt/walletmodel.cpp \
   qt/walletmodeltransaction.cpp \
   qt/walletview.cpp \
-  qt/masternodelist.cpp
+  qt/masternodelist.cpp \
+  qt/darksendconfig.cpp
 
 BITCOIN_QT_WALLET_BIP70_CPP = \
   qt/paymentrequestplus.cpp

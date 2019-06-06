@@ -36,6 +36,11 @@
 #include <utility>
 #include <vector>
 
+/**
+ * Settings
+ */
+extern unsigned int nTxConfirmTarget;
+
 //! Responsible for reading and validating the -wallet arguments and verifying the wallet database.
 //! This function will perform salvage on the wallet if requested, as long as only one wallet is
 //! being loaded (WalletParameterInteraction forbids -salvagewallet, -zapwallettxes or -upgradewallet with multiwallet).
@@ -97,6 +102,8 @@ static const bool DEFAULT_DISABLE_WALLET = false;
 
 //! Pre-calculated constants for input size estimation in *virtual size*
 static constexpr size_t DUMMY_NESTED_P2WPKH_INPUT_SIZE = 91;
+
+bool AutoBackupWallet (std::shared_ptr<CWallet> wallet, const std::string& strWalletFile_, std::string& strBackupWarningRet, std::string& strBackupErrorRet);
 
 class CBlockIndex;
 class CCoinControl;
@@ -817,6 +824,7 @@ public:
     mutable CCriticalSection cs_wallet;
 
     bool fFileBacked;
+    const std::string strWalletFile;
 
     /** Get database handle used by this wallet. Ideally this function would
      * not be necessary.
@@ -882,6 +890,8 @@ public:
     std::map<CTxDestination, CAddressBookData> mapAddressBook GUARDED_BY(cs_wallet);
 
     std::set<COutPoint> setLockedCoins GUARDED_BY(cs_wallet);
+
+    int64_t getKeysLeftSinceAutoBackup() {return nKeysLeftSinceAutoBackup;}
 
     /** Interface for accessing chain state. */
     interfaces::Chain& chain() const { return m_chain; }
@@ -1053,6 +1063,8 @@ public:
     CAmount GetAnonymizableBalance(bool fSkipDenominated = false, bool fSkipUnconfirmed = true) const;
     CAmount GetAnonymizedBalance() const;
     CAmount GetNeedsToBeAnonymizedBalance(CAmount nMinBalance = 0) const;
+    float GetAverageAnonymizedRounds() const;
+    CAmount GetNormalizedAnonymizedBalance() const;
     CAmount GetDenominatedBalance(bool unconfirmed=false) const;
 
     bool GetBudgetSystemCollateralTX(CTransactionRef& tx, uint256 hash, CAmount amount, bool fUseInstantSend);

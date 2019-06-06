@@ -5,7 +5,9 @@
 #ifndef BITCOIN_QT_PRIVATESEND_H
 #define BITCOIN_QT_PRIVATESEND_H
 
+#include <primitives/transaction.h>
 #include <interfaces/wallet.h>
+#include <wallet/wallet.h>
 
 #include <QWidget>
 #include <memory>
@@ -33,11 +35,13 @@ public:
     explicit PrivateSendPage(const PlatformStyle *platformStyle, QWidget *parent = nullptr);
     ~PrivateSendPage();
 
+    interfaces::WalletBalances m_balances;
     void setClientModel(ClientModel *clientModel);
     void setWalletModel(WalletModel *walletModel);
     void showOutOfSyncWarning(bool fShow);
 
 public Q_SLOTS:
+    void privateSendStatus();
     void setBalance(const interfaces::WalletBalances& balances);
 
 Q_SIGNALS:
@@ -45,16 +49,26 @@ Q_SIGNALS:
     void outOfSyncWarningClicked();
 
 private:
+    QTimer *timer;
     Ui::PrivateSendPage *ui;
     ClientModel *clientModel;
     WalletModel *walletModel;
-    interfaces::WalletBalances m_balances;
 
-    TxViewDelegate *txdelegate;
+    int nDisplayUnit;
+    bool fShowAdvancedPSUI;
+
     std::unique_ptr<TransactionFilterProxy> filter;
 
+    void SetupTransactionList(int nNumItems);
+    void DisablePrivateSendCompletely();
+
 private Q_SLOTS:
+    void togglePrivateSend();
+    void privateSendAuto();
+    void privateSendReset();
     void updateDisplayUnit();
+    void updatePrivateSendProgress();
+    void updateAdvancedPSUI(bool fShowAdvancedPSUI);
     void handleTransactionClicked(const QModelIndex &index);
     void updateAlerts(const QString &warnings);
     void updateWatchOnlyLabels(bool showWatchOnly);

@@ -260,6 +260,13 @@ public:
         }
         return std::move(pending);
     }
+    int GetOutpointPrivateSendRounds (const COutPoint& outpoint) override { return m_wallet->GetOutpointPrivateSendRounds(outpoint); }
+    CAmount GetAnonymizableBalance(bool fSkipDenominated, bool fSkipUnconfirmed ) override { return m_wallet->GetAnonymizableBalance(fSkipDenominated, fSkipUnconfirmed); }
+    CAmount GetAnonymizedBalance() override { return m_wallet->GetAnonymizedBalance(); }
+    CAmount GetDenominatedBalance(bool unconfirmed ) override { return m_wallet->GetDenominatedBalance(unconfirmed); }
+    CAmount GetNormalizedAnonymizedBalance() override { return m_wallet->GetNormalizedAnonymizedBalance(); }
+    float GetAverageAnonymizedRounds() override { return m_wallet->GetAverageAnonymizedRounds(); }
+    int64_t getKeysLeftSinceAutoBackup() override { return m_wallet->getKeysLeftSinceAutoBackup(); }
     bool transactionCanBeAbandoned(const uint256& txid) override { return m_wallet->TransactionCanBeAbandoned(txid); }
     bool abandonTransaction(const uint256& txid) override
     {
@@ -377,9 +384,10 @@ public:
         result.balance = m_wallet->GetBalance();
         result.unconfirmed_balance = m_wallet->GetUnconfirmedBalance();
         result.immature_balance = m_wallet->GetImmatureBalance();
+        result.anonymized_balance = m_wallet->GetAnonymizedBalance();
         result.have_watch_only = m_wallet->HaveWatchOnly();
         if (result.have_watch_only) {
-            result.watch_only_balance = m_wallet->GetBalance(ISMINE_WATCH_ONLY);
+            result.watch_only_balance = m_wallet->GetBalance();
             result.unconfirmed_watch_only_balance = m_wallet->GetUnconfirmedWatchOnlyBalance();
             result.immature_watch_only_balance = m_wallet->GetImmatureWatchOnlyBalance();
         }
