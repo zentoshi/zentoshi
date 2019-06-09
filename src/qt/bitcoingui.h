@@ -40,6 +40,8 @@ class WalletModel;
 class HelpMessageDialog;
 class ModalOverlay;
 class MasternodeList;
+class TitleBar;
+class NavigationBar;
 
 namespace interfaces {
 class Handler;
@@ -52,6 +54,7 @@ class QComboBox;
 class QMenu;
 class QProgressBar;
 class QProgressDialog;
+class QDockWidget;
 QT_END_NAMESPACE
 
 namespace GUIUtil {
@@ -89,6 +92,7 @@ public:
     void addWallet(WalletModel* walletModel);
     void removeWallet(WalletModel* walletModel);
     void removeAllWallets();
+    void setTabBarInfo(QObject* into);
 #endif // ENABLE_WALLET
     bool enableWallet = false;
 
@@ -128,7 +132,8 @@ private:
     QProgressDialog* progressDialog = nullptr;
 
     QMenuBar* appMenuBar = nullptr;
-    QToolBar* appToolBar = nullptr;
+    TitleBar *appTitleBar = nullptr;
+    NavigationBar *appNavigationBar = nullptr;
     QAction* overviewAction = nullptr;
     QAction* historyAction = nullptr;
     QAction* masternodeAction = nullptr;
@@ -175,6 +180,7 @@ private:
     RPCConsole* rpcConsole = nullptr;
     HelpMessageDialog* helpMessageDialog = nullptr;
     ModalOverlay* modalOverlay = nullptr;
+    ModalOverlay *modalBackupOverlay = nullptr;
 
 #ifdef Q_OS_MAC
     CAppNapInhibitor* m_app_nap_inhibitor = nullptr;
@@ -193,6 +199,8 @@ private:
     void createMenuBar();
     /** Create the toolbars */
     void createToolBars();
+    /** Create title bar */
+    void createTitleBars();
     /** Create system tray icon and notification */
     void createTrayIcon();
     /** Create system tray menu (or setup the dock menu) */
@@ -212,6 +220,7 @@ private:
     /** Open the OptionsDialog on the specified tab index */
     void openOptionsDialogWithTab(OptionsDialog::Tab tab);
 
+    void addDockWindows(Qt::DockWidgetArea area, QWidget* widget);
 Q_SIGNALS:
     /** Signal raised when a URI was entered or dragged to the GUI */
     void receivedURI(const QString &uri);

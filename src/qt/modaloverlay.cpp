@@ -6,21 +6,24 @@
 #include <qt/forms/ui_modaloverlay.h>
 
 #include <qt/guiutil.h>
+#include <qt/styleSheet.h>
 
 #include <chainparams.h>
 
 #include <QResizeEvent>
 #include <QPropertyAnimation>
 
-ModalOverlay::ModalOverlay(QWidget *parent) :
+ModalOverlay::ModalOverlay(QWidget *parent, OverlayType _type) :
 QWidget(parent),
 ui(new Ui::ModalOverlay),
 bestHeaderHeight(0),
 bestHeaderDate(QDateTime()),
 layerIsVisible(false),
-userClosed(false)
+userClosed(false),
+type(_type)
 {
     ui->setupUi(this);
+    SetObjectStyleSheet(ui->warningIcon, StyleSheetNames::ButtonTransparent);
     connect(ui->closeButton, &QPushButton::clicked, this, &ModalOverlay::closeClicked);
     if (parent) {
         parent->installEventFilter(this);

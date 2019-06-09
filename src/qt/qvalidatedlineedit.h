@@ -20,6 +20,8 @@ public:
     void setCheckValidator(const QValidator *v);
     bool isValid();
 
+    bool getEmptyIsValid() const;
+    void setEmptyIsValid(bool value);
 protected:
     void focusInEvent(QFocusEvent *evt);
     void focusOutEvent(QFocusEvent *evt);
@@ -27,6 +29,7 @@ protected:
 private:
     bool valid;
     const QValidator *checkValidator;
+    bool emptyIsValid;
 
 public Q_SLOTS:
     void setValid(bool valid);

@@ -21,7 +21,13 @@ class ModalOverlay : public QWidget
     Q_OBJECT
 
 public:
-    explicit ModalOverlay(QWidget *parent);
+    enum OverlayType
+    {
+        Sync = 0,
+        Backup = 1
+    };
+
+    explicit ModalOverlay(QWidget *parent, OverlayType _type = OverlayType::Sync);
     ~ModalOverlay();
 
 public Q_SLOTS:
@@ -47,6 +53,7 @@ private:
     bool layerIsVisible;
     bool userClosed;
     void UpdateHeaderSyncLabel();
+    OverlayType type;
     bool foreverHidden;
 };
 
