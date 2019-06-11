@@ -3712,6 +3712,7 @@ bool PeerLogicValidation::ProcessMessages(CNode* pfrom, std::atomic<bool>& inter
         return false;
 
     // this maintains the order of responses
+    // and prevents vRecvGetData to grow unbounded
     if (!pfrom->vRecvGetData.empty()) return true;
 
     // Don't bother if send buffer is too full to respond anyway
