@@ -5,13 +5,15 @@
 
 #include <txdb.h>
 
-#include <random.h>
 #include <pow.h>
+#include <random.h>
 #include <shutdown.h>
+#include <ui_interface.h>
 #include <uint256.h>
 #include <util/system.h>
 #include <ui_interface.h>
 #include <init.h>
+#include <util/translation.h>
 
 #include <stdint.h>
 

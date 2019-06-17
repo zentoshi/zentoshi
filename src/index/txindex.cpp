@@ -9,6 +9,7 @@
 #include <tinyformat.h>
 #include <ui_interface.h>
 #include <util/system.h>
+#include <util/translation.h>
 #include <validation.h>
 #include <warnings.h>
 

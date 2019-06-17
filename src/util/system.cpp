@@ -12,6 +12,7 @@
 #include <serialize.h>
 #include <sync.h>
 #include <util/strencodings.h>
+#include <util/translation.h>
 
 #include <stdarg.h>
 
