@@ -66,12 +66,12 @@
         <translation>Mottaksadresser</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Dette er dine Bitcoin-adresser for sending av betalinger. Sjekk alltid beløpet og mottakeradressen før sending av mynter.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Dette er dine Zentoshi-adresser for sending av betalinger. Sjekk alltid beløpet og mottakeradressen før sending av mynter.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>Dette er dine Bitcoin-adresser for å sende betalinger med. Det er anbefalt å bruke en ny mottaksadresse for hver transaksjon.</translation>
+        <source>These are your Zentoshi addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
+        <translation>Dette er dine Zentoshi-adresser for å sende betalinger med. Det er anbefalt å bruke en ny mottaksadresse for hver transaksjon.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -236,7 +236,7 @@
     </message>
 </context>
 <context>
-    <name>BitcoinGUI</name>
+    <name>ZentoshiGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Signer &amp;melding...</translation>
@@ -310,10 +310,6 @@
         <translation>Åpne &amp;URI...</translation>
     </message>
     <message>
-        <source>Wallet:</source>
-        <translation>Lommebok:</translation>
-    </message>
-    <message>
         <source>Click to disable network activity.</source>
         <translation>Klikk for å deaktivere nettverksaktivitet.</translation>
     </message>
@@ -334,8 +330,8 @@
         <translation>Reindekserer blokker på harddisk...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Send til en Bitcoin-adresse</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Send til en Zentoshi-adresse</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -358,8 +354,8 @@
         <translation>&amp;Verifiser melding...</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>&amp;Send</source>
@@ -382,12 +378,12 @@
         <translation>Krypter de private nøklene som tilhører lommeboken din</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Signer en melding med Bitcoin-adressene dine for å bevise at du eier dem</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Signer en melding med Zentoshi-adressene dine for å bevise at du eier dem</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Bekreft meldinger for å være sikker på at de ble signert av en angitt Bitcoin-adresse</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>Bekreft meldinger for å være sikker på at de ble signert av en angitt Zentoshi-adresse</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -406,8 +402,8 @@
         <translation>Verktøylinje for faner</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>Forespør betalinger (genererer QR-koder og bitcoin: URIer)</translation>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
+        <translation>Forespør betalinger (genererer QR-koder og zentoshi: URIer)</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
@@ -418,16 +414,16 @@
         <translation>Vis listen over bruke mottaksadresser og merkelapper</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>Åpne en Bitcoin: URI eller betalingsetterspørring</translation>
+        <source>Open a zentoshi: URI or payment request</source>
+        <translation>Åpne en Zentoshi: URI eller betalingsetterspørring</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
         <translation>&amp;Kommandolinjevalg</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n aktiv forbindelse til Bitcoin-nettverket</numerusform><numerusform>%n aktive forbindelser til Bitcoin-nettverket</numerusform></translation>
+        <source>%n active connection(s) to Zentoshi network</source>
+        <translation><numerusform>%n aktiv forbindelse til Zentoshi-nettverket</numerusform><numerusform>%n aktive forbindelser til Zentoshi-nettverket</numerusform></translation>
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
@@ -470,44 +466,8 @@
         <translation>Oppdatert</translation>
     </message>
     <message>
-        <source>&amp;Sending addresses</source>
-        <translation>&amp;Utsendingsadresser</translation>
-    </message>
-    <message>
-        <source>&amp;Receiving addresses</source>
-        <translation>&amp;Mottaksadresser</translation>
-    </message>
-    <message>
-        <source>Open Wallet</source>
-        <translation>Åpne Lommebok</translation>
-    </message>
-    <message>
-        <source>Open a wallet</source>
-        <translation>Åpne en lommebok</translation>
-    </message>
-    <message>
-        <source>Close Wallet...</source>
-        <translation>Lukk Lommebok...</translation>
-    </message>
-    <message>
-        <source>Close wallet</source>
-        <translation>Lukk lommebok</translation>
-    </message>
-    <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
-        <translation>Vis %1 hjelpemeldingen for å få en liste med mulige Bitcoin kommandolinjevalg.</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation>standard lommebok</translation>
-    </message>
-    <message>
-        <source>Opening Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
-        <translation>Åpner Lommebok &lt;b&gt;%1&lt;/b&gt;...</translation>
-    </message>
-    <message>
-        <source>Open Wallet Failed</source>
-        <translation>Åpning av Lommebok Feilet</translation>
+        <source>Show the %1 help message to get a list with possible Zentoshi command-line options</source>
+        <translation>Vis %1 hjelpemeldingen for å få en liste med mulige Zentoshi kommandolinjevalg.</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -516,18 +476,6 @@
     <message>
         <source>Minimize</source>
         <translation>Minimer</translation>
-    </message>
-    <message>
-        <source>Zoom</source>
-        <translation>Zoom</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Gjenopprett</translation>
-    </message>
-    <message>
-        <source>Main Window</source>
-        <translation>Hovedvindu</translation>
     </message>
     <message>
         <source>%1 client</source>
@@ -551,12 +499,6 @@
         <source>Amount: %1
 </source>
         <translation>Beløp: %1:
-</translation>
-    </message>
-    <message>
-        <source>Wallet: %1
-</source>
-        <translation>Lommebok: %1
 </translation>
     </message>
     <message>
@@ -594,10 +536,6 @@
         <translation>HD nøkkelgenerering er&lt;b&gt;deaktivert&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>Private key &lt;b&gt;disabled&lt;/b&gt;</source>
-        <translation>Privat nøkkel &lt;b&gt;deaktivert&lt;/b&gt;</translation>
-    </message>
-    <message>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
         <translation>Lommeboken er &lt;b&gt;kryptert&lt;/b&gt; og for tiden &lt;b&gt;låst opp&lt;/b&gt;</translation>
     </message>
@@ -606,8 +544,8 @@
         <translation>Lommeboken er &lt;b&gt;kryptert&lt;/b&gt; og for tiden &lt;b&gt;låst&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>En fatal feil har inntruffet. Bitcoin kan ikke lenger trygt fortsette, og må derfor avslutte.</translation>
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
+        <translation>En fatal feil har inntruffet. Zentoshi kan ikke lenger trygt fortsette, og må derfor avslutte.</translation>
     </message>
 </context>
 <context>
@@ -796,8 +734,8 @@
         <translation>Rediger utsendingsadresse</translation>
     </message>
     <message>
-        <source>The entered address "%1" is not a valid Bitcoin address.</source>
-        <translation>Den angitte adressen "%1" er ikke en gyldig Bitcoin-adresse.</translation>
+        <source>The entered address "%1" is not a valid Zentoshi address.</source>
+        <translation>Den angitte adressen "%1" er ikke en gyldig Zentoshi-adresse.</translation>
     </message>
     <message>
         <source>Could not unlock wallet.</source>
@@ -885,8 +823,8 @@
         <translation>Bruk en egendefinert datamappe:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>At least %1 GB of data will be stored in this directory, and it will grow over time.</source>
@@ -897,8 +835,8 @@
         <translation>Omtrent %1GB data vil bli lagret i denne mappen.</translation>
     </message>
     <message>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
-        <translation>%1 vil laste ned og lagre en kopi av Bitcoin blokkjeden.</translation>
+        <source>%1 will download and store a copy of the Zentoshi block chain.</source>
+        <translation>%1 vil laste ned og lagre en kopi av Zentoshi blokkjeden.</translation>
     </message>
     <message>
         <source>The wallet will also be stored in this directory.</source>
@@ -928,12 +866,12 @@
         <translation>Skjema</translation>
     </message>
     <message>
-        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
-        <translation>Det kan hende nylige transaksjoner ikke vises enda, og at lommeboksaldoen dermed blir uriktig. Denne informasjonen vil rette seg når synkronisering av lommeboka mot bitcoin-nettverket er fullført, som anvist nedenfor.</translation>
+        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the zentoshi network, as detailed below.</source>
+        <translation>Det kan hende nylige transaksjoner ikke vises enda, og at lommeboksaldoen dermed blir uriktig. Denne informasjonen vil rette seg når synkronisering av lommeboka mot zentoshi-nettverket er fullført, som anvist nedenfor.</translation>
     </message>
     <message>
-        <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
-        <translation>Forsøk på å bruke bitcoin som er påvirket av transaksjoner som ikke er vist enda godtas ikke av nettverket.</translation>
+        <source>Attempting to spend zentoshis that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
+        <translation>Forsøk på å bruke zentoshi som er påvirket av transaksjoner som ikke er vist enda godtas ikke av nettverket.</translation>
     </message>
     <message>
         <source>Number of blocks left</source>
@@ -1066,14 +1004,6 @@
         <translation>&amp;Nettverk</translation>
     </message>
     <message>
-        <source>GB</source>
-        <translation>GB</translation>
-    </message>
-    <message>
-        <source>MiB</source>
-        <translation>MiB</translation>
-    </message>
-    <message>
         <source>(0 = auto, &lt;0 = leave that many cores free)</source>
         <translation>(0 = automatisk, &lt;0 = la så mange kjerner være ledig)</translation>
     </message>
@@ -1098,8 +1028,8 @@
         <translation>&amp;Bruk ubekreftet veksel</translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Åpne automatisk Bitcoin klientporten på ruteren. Dette virker kun om din ruter støtter UPnP og dette er påslått.</translation>
+        <source>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Åpne automatisk Zentoshi klientporten på ruteren. Dette virker kun om din ruter støtter UPnP og dette er påslått.</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
@@ -1114,8 +1044,8 @@
         <translation>Tillatt innkommend&amp;e tilkoblinger</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
-        <translation>Koble til Bitcoin-nettverket gjennom en SOCKS5 proxy.</translation>
+        <source>Connect to the Zentoshi network through a SOCKS5 proxy.</source>
+        <translation>Koble til Zentoshi-nettverket gjennom en SOCKS5 proxy.</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
@@ -1150,8 +1080,8 @@
         <translation>Tor</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
-        <translation>Koble til Bitcoin-nettverket gjennom en separat SOCKS5 mellomtjener for Tor skjulte tjenester.</translation>
+        <source>Connect to the Zentoshi network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <translation>Koble til Zentoshi-nettverket gjennom en separat SOCKS5 mellomtjener for Tor skjulte tjenester.</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -1187,7 +1117,7 @@
     </message>
     <message>
         <source>Choose the default subdivision unit to show in the interface and when sending coins.</source>
-        <translation>Velg standard delt enhet for visning i grensesnittet og for sending av bitcoins.</translation>
+        <translation>Velg standard delt enhet for visning i grensesnittet og for sending av zentoshis.</translation>
     </message>
     <message>
         <source>Whether to show coin control features or not.</source>
@@ -1257,8 +1187,8 @@
         <translation>Skjema</translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>Informasjonen som vises kan være foreldet. Din lommebok synkroniseres automatisk med Bitcoin-nettverket etter at tilkobling er opprettet, men denne prosessen er ikke ferdig enda.</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</source>
+        <translation>Informasjonen som vises kan være foreldet. Din lommebok synkroniseres automatisk med Zentoshi-nettverket etter at tilkobling er opprettet, men denne prosessen er ikke ferdig enda.</translation>
     </message>
     <message>
         <source>Watch-only:</source>
@@ -1332,8 +1262,8 @@
         <translation>Feil ved betalingsforespørsel</translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>Kan ikke starte bitcoin: Klikk-og-betal håndterer</translation>
+        <source>Cannot start zentoshi: click-to-pay handler</source>
+        <translation>Kan ikke starte zentoshi: Klikk-og-betal håndterer</translation>
     </message>
     <message>
         <source>URI handling</source>
@@ -1348,8 +1278,8 @@
         <translation>Ugyldig betalingsadresse %1</translation>
     </message>
     <message>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>URI kan ikke fortolkes! Dette kan være forårsaket av en ugyldig bitcoin-adresse eller feilformede URI-parametre.</translation>
+        <source>URI cannot be parsed! This can be caused by an invalid Zentoshi address or malformed URI parameters.</source>
+        <translation>URI kan ikke fortolkes! Dette kan være forårsaket av en ugyldig zentoshi-adresse eller feilformede URI-parametre.</translation>
     </message>
     <message>
         <source>Payment request file handling</source>
@@ -1450,8 +1380,8 @@
         <translation>Beløp</translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
-        <translation>Oppgi en Bitcoin-adresse (f.eks. %1)</translation>
+        <source>Enter a Zentoshi address (e.g. %1)</source>
+        <translation>Oppgi en Zentoshi-adresse (f.eks. %1)</translation>
     </message>
     <message>
         <source>%1 d</source>
@@ -1629,14 +1559,6 @@
     <message>
         <source>Memory usage</source>
         <translation>Minnebruk</translation>
-    </message>
-    <message>
-        <source>Wallet: </source>
-        <translation>Lommebok:</translation>
-    </message>
-    <message>
-        <source>(none)</source>
-        <translation>(ingen)</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
@@ -1878,8 +1800,8 @@
         <translation>&amp;Melding:</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-        <translation>En valgfri melding å tilknytte betalingsetterspørringen, som vil bli vist når forespørselen er åpnet. Meldingen vil ikke bli sendt med betalingen over Bitcoin-nettverket.</translation>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Zentoshi network.</source>
+        <translation>En valgfri melding å tilknytte betalingsetterspørringen, som vil bli vist når forespørselen er åpnet. Meldingen vil ikke bli sendt med betalingen over Zentoshi-nettverket.</translation>
     </message>
     <message>
         <source>An optional label to associate with the new receiving address.</source>
@@ -2036,7 +1958,7 @@
     <name>SendCoinsDialog</name>
     <message>
         <source>Send Coins</source>
-        <translation>Send Bitcoins</translation>
+        <translation>Send Zentoshis</translation>
     </message>
     <message>
         <source>Coin Control Features</source>
@@ -2219,24 +2141,12 @@
         <translation>Du kan øke gebyret senere (signaliserer Replace-By-Fee, BIP-125).</translation>
     </message>
     <message>
-        <source>from wallet %1</source>
-        <translation>fra lommebok %1</translation>
-    </message>
-    <message>
-        <source>Please, review your transaction.</source>
-        <translation>Vennligst se over transaksjonen din.</translation>
-    </message>
-    <message>
         <source>Transaction fee</source>
         <translation>Transaksjonsgebyr</translation>
     </message>
     <message>
         <source>Not signalling Replace-By-Fee, BIP-125.</source>
         <translation>Signaliserer ikke Replace-By-Fee, BIP-125</translation>
-    </message>
-    <message>
-        <source>Total Amount</source>
-        <translation>Totalbeløp</translation>
     </message>
     <message>
         <source>Confirm send coins</source>
@@ -2283,8 +2193,8 @@
         <translation><numerusform>Antatt bekreftelsesbegynnelse innen %n blokk.</numerusform><numerusform>Antatt bekreftelsesbegynnelse innen %n blokker.</numerusform></translation>
     </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>Advarsel Ugyldig bitcoin-adresse</translation>
+        <source>Warning: Invalid Zentoshi address</source>
+        <translation>Advarsel Ugyldig zentoshi-adresse</translation>
     </message>
     <message>
         <source>Warning: Unknown change address</source>
@@ -2326,8 +2236,8 @@
         <translation>Dette er en normal betaling.</translation>
     </message>
     <message>
-        <source>The Bitcoin address to send the payment to</source>
-        <translation>Bitcoin-adressen betalingen skal sendes til</translation>
+        <source>The Zentoshi address to send the payment to</source>
+        <translation>Zentoshi-adressen betalingen skal sendes til</translation>
     </message>
     <message>
         <source>Alt+A</source>
@@ -2346,8 +2256,8 @@
         <translation>Fjern denne oppføringen</translation>
     </message>
     <message>
-        <source>The fee will be deducted from the amount being sent. The recipient will receive less bitcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
-        <translation>Gebyret vil bli trukket fra beløpet som blir sendt. Mottakeren vil motta mindre bitcoins enn det du skriver inn i beløpsfeltet. Hvis det er valgt flere mottakere, deles gebyret likt.</translation>
+        <source>The fee will be deducted from the amount being sent. The recipient will receive less zentoshis than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
+        <translation>Gebyret vil bli trukket fra beløpet som blir sendt. Mottakeren vil motta mindre zentoshis enn det du skriver inn i beløpsfeltet. Hvis det er valgt flere mottakere, deles gebyret likt.</translation>
     </message>
     <message>
         <source>S&amp;ubtract fee from amount</source>
@@ -2374,8 +2284,8 @@
         <translation>Skriv inn en merkelapp for denne adressen for å legge den til listen av brukte adresser</translation>
     </message>
     <message>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
-        <translation>En melding som var tilknyttet bitcoinen: URI vil bli lagret med transaksjonen for din oversikt. Denne meldingen vil ikke bli sendt over Bitcoin-nettverket.</translation>
+        <source>A message that was attached to the zentoshi: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Zentoshi network.</source>
+        <translation>En melding som var tilknyttet zentoshien: URI vil bli lagret med transaksjonen for din oversikt. Denne meldingen vil ikke bli sendt over Zentoshi-nettverket.</translation>
     </message>
     <message>
         <source>Pay To:</source>
@@ -2419,12 +2329,12 @@
         <translation>&amp;Signer Melding</translation>
     </message>
     <message>
-        <source>You can sign messages/agreements with your addresses to prove you can receive bitcoins sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation>Du kan signere meldinger/avtaler med adresser for å bevise at du kan motta bitcoins sendt til dem. Vær forsiktig med å signere noe vagt eller tilfeldig, siden phishing-angrep kan prøve å lure deg til å signere din identitet over til dem. Bare signer fullt detaljerte utsagn som du er enig i.</translation>
+        <source>You can sign messages/agreements with your addresses to prove you can receive zentoshis sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
+        <translation>Du kan signere meldinger/avtaler med adresser for å bevise at du kan motta zentoshis sendt til dem. Vær forsiktig med å signere noe vagt eller tilfeldig, siden phishing-angrep kan prøve å lure deg til å signere din identitet over til dem. Bare signer fullt detaljerte utsagn som du er enig i.</translation>
     </message>
     <message>
-        <source>The Bitcoin address to sign the message with</source>
-        <translation>Bitcoin-adressen meldingen skal signeres med</translation>
+        <source>The Zentoshi address to sign the message with</source>
+        <translation>Zentoshi-adressen meldingen skal signeres med</translation>
     </message>
     <message>
         <source>Choose previously used address</source>
@@ -2455,8 +2365,8 @@
         <translation>Kopier valgt signatur til utklippstavle</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Signer meldingen for å bevise at du eier denne Bitcoin-adressen</translation>
+        <source>Sign the message to prove you own this Zentoshi address</source>
+        <translation>Signer meldingen for å bevise at du eier denne Zentoshi-adressen</translation>
     </message>
     <message>
         <source>Sign &amp;Message</source>
@@ -2479,12 +2389,12 @@
         <translation>Skriv inn mottakerens adresse, melding (forsikre deg om at du kopier linjeskift, mellomrom, faner osv. nøyaktig) og underskrift nedenfor for å bekrefte meldingen. Vær forsiktig så du ikke leser mer ut av signaturen enn hva som er i den signerte meldingen i seg selv, for å unngå å bli lurt av et man-in-the-middle-angrep. Merk at dette bare beviser at den som signerer kan motta med adressen, dette beviser ikke hvem som har sendt transaksjoner!</translation>
     </message>
     <message>
-        <source>The Bitcoin address the message was signed with</source>
-        <translation>Bitcoin-adressen meldingen ble signert med</translation>
+        <source>The Zentoshi address the message was signed with</source>
+        <translation>Zentoshi-adressen meldingen ble signert med</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Verifiser meldingen for å være sikker på at den ble signert av den angitte Bitcoin-adressen</translation>
+        <source>Verify the message to ensure it was signed with the specified Zentoshi address</source>
+        <translation>Verifiser meldingen for å være sikker på at den ble signert av den angitte Zentoshi-adressen</translation>
     </message>
     <message>
         <source>Verify &amp;Message</source>
@@ -2688,10 +2598,6 @@
         <translation>Total transaksjonsstørrelse</translation>
     </message>
     <message>
-        <source>Transaction virtual size</source>
-        <translation>Virtuell transaksjonsstørrelse</translation>
-    </message>
-    <message>
         <source>Output index</source>
         <translation>Utdatainndeks</translation>
     </message>
@@ -2701,7 +2607,7 @@
     </message>
     <message>
         <source>Generated coins must mature %1 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to "not accepted" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation>Genererte bitcoins må modne %1 blokker før de kan brukes. Da du genererte denne blokken ble den kringkastet på nettverket for å bli lagt til i kjeden av blokker. Hvis den ikke kommer med i kjeden vil den endre seg til "ikke akseptert", og vil ikke kunne brukes. Dette vil noen ganger skje hvis en annen node genererer en blokk innen noen sekunder av din.</translation>
+        <translation>Genererte zentoshis må modne %1 blokker før de kan brukes. Da du genererte denne blokken ble den kringkastet på nettverket for å bli lagt til i kjeden av blokker. Hvis den ikke kommer med i kjeden vil den endre seg til "ikke akseptert", og vil ikke kunne brukes. Dette vil noen ganger skje hvis en annen node genererer en blokk innen noen sekunder av din.</translation>
     </message>
     <message>
         <source>Debug information</source>
@@ -3014,10 +2920,6 @@
 </context>
 <context>
     <name>WalletController</name>
-    <message>
-        <source>Close wallet</source>
-        <translation>Lukk lommebok</translation>
-    </message>
     </context>
 <context>
     <name>WalletFrame</name>
@@ -3068,11 +2970,7 @@
         <source>Could not commit transaction</source>
         <translation>Kunne ikke sende inn transaksjon</translation>
     </message>
-    <message>
-        <source>default wallet</source>
-        <translation>standard lommebok</translation>
-    </message>
-</context>
+    </context>
 <context>
     <name>WalletView</name>
     <message>
@@ -3107,13 +3005,9 @@
         <source>The wallet data was successfully saved to %1.</source>
         <translation>Lommebokdata lagret til %1.</translation>
     </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-</context>
+    </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation>Lisensiert MIT. Se tilhørende fil %s eller %s</translation>
@@ -3143,8 +3037,8 @@
         <translation>Kunne ikke starte HTTP-tjener. Se feilrettingslogg for detaljer.</translation>
     </message>
     <message>
-        <source>Bitcoin Core</source>
-        <translation>Bitcoin Core</translation>
+        <source>Zentoshi Core</source>
+        <translation>Zentoshi Core</translation>
     </message>
     <message>
         <source>The %s developers</source>
@@ -3295,10 +3189,6 @@
         <translation>Ugyldig beløp for -fallbackfee=&lt;amount&gt;: "%s"</translation>
     </message>
     <message>
-        <source>Upgrading txindex database</source>
-        <translation>Oppgraderer txindex databasen</translation>
-    </message>
-    <message>
         <source>Loading P2P addresses...</source>
         <translation>Laster maskin-til-maskin -adresser…</translation>
     </message>
@@ -3337,10 +3227,6 @@
     <message>
         <source>Unable to bind to %s on this computer. %s is probably already running.</source>
         <translation>Kan ikke binde til %s på denne datamaskinen. Sannsynligvis kjører %s allerede.</translation>
-    </message>
-    <message>
-        <source>Unable to generate keys</source>
-        <translation>Klarte ikke å lage nøkkel</translation>
     </message>
     <message>
         <source>Unsupported logging category %s=%s.</source>
@@ -3387,10 +3273,6 @@
         <translation>Feil ved oppgradering av kjedetilstandsdatabase</translation>
     </message>
     <message>
-        <source>Error: Disk space is low for %s</source>
-        <translation>Feil: Ikke nok ledig diskplass for %s</translation>
-    </message>
-    <message>
         <source>Information</source>
         <translation>Informasjon</translation>
     </message>
@@ -3433,12 +3315,6 @@
     <message>
         <source>Specified -walletdir "%s" is not a directory</source>
         <translation>Oppgitt -walletdir "%s" er ikke en katalog</translation>
-    </message>
-    <message>
-        <source>The specified config file %s does not exist
-</source>
-        <translation>Konfigurasjonsfilen %s eksisterer ikke
-</translation>
     </message>
     <message>
         <source>The transaction amount is too small to pay the fee</source>

@@ -6,10 +6,10 @@
 #define BITCOIN_QT_GUICONSTANTS_H
 
 /* Milliseconds between model updates */
-static const int MODEL_UPDATE_DELAY = 250;
+static const int MODEL_UPDATE_DELAY = 125;
 
 /* AskPassphraseDialog -- Maximum passphrase length */
-static const int MAX_PASSPHRASE_SIZE = 1024;
+static const int MAX_PASSPHRASE_SIZE = 128;
 
 /* BitcoinGUI -- Size of icons in status bar */
 static const int STATUSBAR_ICONSIZE = 16;
@@ -46,11 +46,11 @@ static const int MAX_URI_LENGTH = 255;
 /* Number of frames in spinner animation */
 #define SPINNER_FRAMES 36
 
-#define QAPP_ORG_NAME "Bitcoin"
-#define QAPP_ORG_DOMAIN "bitcoin.org"
-#define QAPP_APP_NAME_DEFAULT "Bitcoin-Qt"
-#define QAPP_APP_NAME_TESTNET "Bitcoin-Qt-testnet"
-#define QAPP_APP_NAME_REGTEST "Bitcoin-Qt-regtest"
+#define QAPP_ORG_NAME "Zentoshi"
+#define QAPP_ORG_DOMAIN "zentoshi.com"
+#define QAPP_APP_NAME_DEFAULT "Zentoshi-Qt"
+#define QAPP_APP_NAME_TESTNET "Zentoshi-Qt-testnet"
+#define QAPP_APP_NAME_REGTEST "Zentoshi-Qt-regtest"
 
 /* One gigabyte (GB) in bytes */
 static constexpr uint64_t GB_BYTES{1000000000};

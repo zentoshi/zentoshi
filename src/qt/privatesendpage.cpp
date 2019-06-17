@@ -212,7 +212,7 @@ void PrivateSendPage::setWalletModel(WalletModel *model)
         ui->togglePrivateSend->setFocusPolicy(Qt::NoFocus);
     }
 
-    // update the display unit, to not use the default ("BTC")
+    // update the display unit, to not use the default ("ZENX")
     updateDisplayUnit();
 }
 

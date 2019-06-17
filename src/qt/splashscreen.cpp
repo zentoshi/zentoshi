@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
+#include <config/zentoshi-config.h>
 #endif
 
 #include <qt/splashscreen.h>
@@ -29,24 +29,20 @@ SplashScreen::SplashScreen(interfaces::Node& node, Qt::WindowFlags f, const Netw
     QWidget(nullptr, f), curAlignment(0), m_node(node)
 {
     // set sizes
-    int versionTextHeight       = 30;
-    int statusHeight            = 30;
-    int titleAddTextHeight      = 20;
+    int statusHeight            = 32;
+    int titleAddTextHeight      = 25;
     float fontFactor            = 1.0;
     float devicePixelRatio      = 1.0;
     devicePixelRatio = static_cast<QGuiApplication*>(QCoreApplication::instance())->devicePixelRatio();
 
     // define text to place
-    QString titleText       = tr(PACKAGE_NAME);
-    QString versionText     = QString("Version %1").arg(QString::fromStdString(FormatFullVersion()));
     QString copyrightText   = QString::fromUtf8(CopyrightHolders(strprintf("\xc2\xA9 %u ", COPYRIGHT_YEAR)).c_str());
     QString titleAddText    = networkStyle->getTitleAddText();
-
     QString font            = QApplication::font().toString();
 
     // create a bitmap according to device pixelratio
-    QSize splashSize(480,320);
-    pixmap = QPixmap(480*devicePixelRatio,320*devicePixelRatio);
+    QSize splashSize(480,540);
+    pixmap = QPixmap(480*devicePixelRatio,540*devicePixelRatio);
 
     // change to HiDPI if it makes sense
     pixmap.setDevicePixelRatio(devicePixelRatio);
@@ -58,13 +54,12 @@ SplashScreen::SplashScreen(interfaces::Node& node, Qt::WindowFlags f, const Netw
     pixPaint.fillRect(mainRect, QColor("#030509"));
 
     // draw background
-    QRect rectBg(QPoint(-50, -50), QSize(splashSize.width() + 50, splashSize.height() + 50));
+    QRect rectBg(QPoint(0, 0), QSize(splashSize.width(), splashSize.height()));
     QPixmap bg(":/styles/app-icons/splash_bg");
     pixPaint.drawPixmap(rectBg, bg);
 
-    pixPaint.setFont(QFont(font, 32*fontFactor, QFont::Bold));
+    pixPaint.setFont(QFont(font, 24*fontFactor, QFont::Bold));
     QRect rectTitle(QPoint(0,0), QSize(splashSize.width(), (splashSize.height() / 2)));
-    pixPaint.drawText(rectTitle, Qt::AlignHCenter | Qt::AlignBottom, titleText);
 
     QPoint versionPoint(rectTitle.bottomLeft());
 
@@ -78,8 +73,6 @@ SplashScreen::SplashScreen(interfaces::Node& node, Qt::WindowFlags f, const Netw
     }
 
     pixPaint.setFont(QFont(font, 11*fontFactor));
-    QRect versionRect(versionPoint, QSize(rectTitle.width(), versionTextHeight));
-    pixPaint.drawText(versionRect, Qt::AlignHCenter | Qt::AlignTop, versionText);
 
     // draw copyright stuff
     QFont statusFont = QApplication::font();
@@ -93,9 +86,6 @@ SplashScreen::SplashScreen(interfaces::Node& node, Qt::WindowFlags f, const Netw
 
     pixPaint.end();
 
-    // Set window title
-    setWindowTitle(titleText + " " + titleAddText);
-
     // Resize window and move to center of desktop, disallow resizing
     QRect r(QPoint(), QSize(pixmap.size().width()/devicePixelRatio,pixmap.size().height()/devicePixelRatio));
     resize(r.size());
@@ -103,6 +93,7 @@ SplashScreen::SplashScreen(interfaces::Node& node, Qt::WindowFlags f, const Netw
     move(QApplication::desktop()->screenGeometry().center() - r.center());
 
     subscribeToCoreSignals();
+    sleep(1);
     installEventFilter(this);
 }
 
