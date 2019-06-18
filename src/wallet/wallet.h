@@ -941,6 +941,9 @@ private:
                                const CScript &kernelScript,
                                const COutPoint &stakePrevout, CAmount blockReward) const;
 
+    //! Fetches a key from the keypool
+    bool GetKeyFromPool(CPubKey &key, bool internal = false);
+
 public:
     int64_t nKeysLeftSinceAutoBackup;
 
@@ -1305,7 +1308,6 @@ public:
     bool ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRequestedInternal);
     void KeepKey(int64_t nIndex);
     void ReturnKey(int64_t nIndex, bool fInternal, const CPubKey& pubkey);
-    bool GetKeyFromPool(CPubKey &key, bool internal = false);
     int64_t GetOldestKeyPoolTime();
     /**
      * Marks all keys in the keypool up to and including reserve_key as used.
@@ -1317,6 +1319,8 @@ public:
     std::map<CTxDestination, CAmount> GetAddressBalances(interfaces::Chain::Lock& locked_chain);
 
     std::set<CTxDestination> GetLabelAddresses(const std::string& label) const;
+
+    bool GetNewDestination(const OutputType type, const std::string label, CTxDestination& dest, std::string& error);
 
     isminetype IsMine(const CTxIn& txin) const;
     /**
