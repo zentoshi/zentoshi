@@ -2829,6 +2829,35 @@ const CTxOut& CWallet::FindNonChangeParentOutput(const CTransaction& tx, int out
     return ptx->vout[n];
 }
 
+// ppcoin: total coins staked (non-spendable until maturity)
+CAmount CWallet::GetStake() const
+{
+    CAmount nTotal = 0;
+    auto locked_chain = chain().lock();
+    LOCK2(cs_main, cs_wallet);
+    for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+    {
+        const CWalletTx* pcoin = &(*it).second;
+        if (pcoin->IsCoinStake() && pcoin->GetBlocksToMaturity(*locked_chain) > 0 && pcoin->GetDepthInMainChain(*locked_chain) > 0)
+            nTotal += CWallet::GetCredit(*(pcoin->tx), ISMINE_SPENDABLE);
+    }
+    return nTotal;
+}
+
+CAmount CWallet::GetWatchOnlyStake() const
+{
+    CAmount nTotal = 0;
+    auto locked_chain = chain().lock();
+    LOCK2(cs_main, cs_wallet);
+    for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+    {
+        const CWalletTx* pcoin = &(*it).second;
+        if (pcoin->IsCoinStake() && pcoin->GetBlocksToMaturity(*locked_chain) > 0 && pcoin->GetDepthInMainChain(*locked_chain) > 0)
+            nTotal += CWallet::GetCredit(*(pcoin->tx), ISMINE_WATCH_ONLY);
+    }
+    return nTotal;
+}
+
 bool CWallet::UpdatedTransaction(const uint256 &hashTx)
 {
     {

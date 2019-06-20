@@ -95,6 +95,8 @@ WalletTx MakeWalletTx(interfaces::Chain::Lock& locked_chain, CWallet& wallet, co
     result.time = wtx.GetTxTime();
     result.value_map = wtx.mapValue;
     result.is_coinbase = wtx.IsCoinBase();
+    result.is_coinstake = wtx.IsCoinStake();
+    result.is_in_main_chain = wtx.IsInMainChain(locked_chain);
     return result;
 }
 
@@ -115,6 +117,7 @@ WalletTxStatus MakeWalletTxStatus(interfaces::Chain::Lock& locked_chain, const C
     result.is_trusted = wtx.IsTrusted(locked_chain);
     result.is_abandoned = wtx.isAbandoned();
     result.is_coinbase = wtx.IsCoinBase();
+    result.is_coinstake = wtx.IsCoinStake();
     result.is_in_main_chain = wtx.IsInMainChain(locked_chain);
     return result;
 }
@@ -385,11 +388,13 @@ public:
         result.unconfirmed_balance = m_wallet->GetUnconfirmedBalance();
         result.immature_balance = m_wallet->GetImmatureBalance();
         result.anonymized_balance = m_wallet->GetAnonymizedBalance();
+        result.stake = m_wallet->GetStake();
         result.have_watch_only = m_wallet->HaveWatchOnly();
         if (result.have_watch_only) {
             result.watch_only_balance = m_wallet->GetBalance();
             result.unconfirmed_watch_only_balance = m_wallet->GetUnconfirmedWatchOnlyBalance();
             result.immature_watch_only_balance = m_wallet->GetImmatureWatchOnlyBalance();
+            result.watch_only_stake = m_wallet->GetWatchOnlyStake();
         }
         return result;
     }
