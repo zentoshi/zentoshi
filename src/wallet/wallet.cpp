@@ -3924,6 +3924,14 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                     return false;
                 }
 
+                // Placed here to avoid compiler warnings about uninit var
+                nFeeNeeded = GetMinimumFee(*this, nBytes, coin_control, ::mempool, ::feeEstimator, &feeCalc);
+                if (feeCalc.reason == FeeReason::FALLBACK && !m_allow_fallback_fee) {
+                    // eventually allow a fallback fee
+                    strFailReason = _("Fee estimation failed. Fallbackfee is disabled. Wait a few blocks or enable -fallbackfee.");
+                    return false;
+                }
+
                 if(fUseInstantSend) {
                     nFeeNeeded = std::max(nFeeNeeded, CTxLockRequest(txNew).GetMinFee());
                 }

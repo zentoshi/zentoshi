@@ -49,8 +49,6 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent) :
             setWindowTitle(tr("Encrypt wallet"));
             break;
         case UnlockStaking:
-            ui->stakingCheckBox->setChecked(true);
-            ui->stakingCheckBox->show();
         case Unlock: // Ask passphrase
             ui->warningLabel->setText(tr("This operation needs your wallet passphrase to unlock the wallet."));
             ui->passLabel2->hide();
@@ -136,7 +134,6 @@ void AskPassphraseDialog::accept()
                                          "For security reasons, previous backups of the unencrypted wallet file "
                                          "will become useless as soon as you start using the new, encrypted wallet.") +
                                          "</b></qt>");
-                    QApplication::quit();
                 }
                 else
                 {

@@ -51,13 +51,6 @@ PrivateSendPage::PrivateSendPage(const PlatformStyle *platformStyle, QWidget *pa
     QIcon icon = platformStyle->SingleColorIcon(":/icons/warning");
     icon.addPixmap(icon.pixmap(QSize(64,64), QIcon::Normal), QIcon::Disabled); // also set the disabled icon because we are using a disabled QPushButton to work around missing HiDPI support of QLabel (https://bugreports.qt.io/browse/QTBUG-42503)
 
-    // Recent transactions
-    ui->listTransactions->setIconSize(QSize(DECORATION_SIZE, DECORATION_SIZE));
-    ui->listTransactions->setMinimumHeight(NUM_ITEMS * (DECORATION_SIZE + 2));
-    ui->listTransactions->setAttribute(Qt::WA_MacShowFocusRect, false);
-
-    connect(ui->listTransactions, &QListView::clicked, this, &PrivateSendPage::handleTransactionClicked);
-
     // start with displaying the "out of sync" warnings
     showOutOfSyncWarning(true);
 
@@ -131,10 +124,8 @@ void PrivateSendPage::setBalance(const interfaces::WalletBalances& balances)
 
     static int cachedTxLocks = 0;
 
-    if(cachedTxLocks != nCompleteTXLocks){
+    if(cachedTxLocks != nCompleteTXLocks)
         cachedTxLocks = nCompleteTXLocks;
-        ui->listTransactions->update();
-    }
 }
 
 // show/hide watch-only labels
@@ -183,9 +174,6 @@ void PrivateSendPage::setWalletModel(WalletModel *model)
         filter->setShowInactive(false);
         filter->sort(TransactionTableModel::Date, Qt::DescendingOrder);
 
-        ui->listTransactions->setModel(filter.get());
-        ui->listTransactions->setModelColumn(TransactionTableModel::ToAddress);
-
         // Keep up to date with wallet
         interfaces::Wallet& wallet = model->wallet();
         interfaces::WalletBalances balances = wallet.getBalances();
@@ -223,11 +211,6 @@ void PrivateSendPage::updateDisplayUnit()
         if (m_balances.balance != -1) {
             setBalance(m_balances);
         }
-
-        // Update txdelegate->unit with the current unit
-        // txdelegateSec->unit = walletModel->getOptionsModel()->getDisplayUnit();
-
-        ui->listTransactions->update();
     }
 }
 
@@ -241,7 +224,6 @@ void PrivateSendPage::showOutOfSyncWarning(bool fShow)
 {
     ui->labelWalletStatus->setVisible(fShow);
     ui->labelPrivateSendSyncStatus->setVisible(fShow);
-    ui->labelTransactionsStatus->setVisible(fShow);
 }
 
 void PrivateSendPage::updatePrivateSendProgress()
@@ -348,11 +330,9 @@ void PrivateSendPage::updatePrivateSendProgress()
     ui->privateSendProgress->setToolTip(strToolPip);
 }
 
-void PrivateSendPage::updateAdvancedPSUI(bool fShowAdvancedPSUI) {
+void PrivateSendPage::updateAdvancedPSUI(bool fShowAdvancedPSUI)
+{
     this->fShowAdvancedPSUI = fShowAdvancedPSUI;
-    int nNumItems = (fLiteMode || !fShowAdvancedPSUI) ? NUM_ITEMS : NUM_ITEMS_ADV;
-    SetupTransactionList(nNumItems);
-
     if (fLiteMode) return;
 
     ui->framePrivateSend->setVisible(true);
@@ -548,24 +528,6 @@ void PrivateSendPage::togglePrivateSend(){
             dlg.exec();
         }
 
-    }
-}
-
-void PrivateSendPage::SetupTransactionList(int nNumItems) {
-    ui->listTransactions->setMinimumHeight(nNumItems * (DECORATION_SIZE + 2));
-
-    if(walletModel && walletModel->getOptionsModel()) {
-        // Set up transaction list
-        filter.reset(new TransactionFilterProxy());
-        filter->setSourceModel(walletModel->getTransactionTableModel());
-        filter->setLimit(nNumItems);
-        filter->setDynamicSortFilter(true);
-        filter->setSortRole(Qt::EditRole);
-        filter->setShowInactive(false);
-        filter->sort(TransactionTableModel::Date, Qt::DescendingOrder);
-
-        ui->listTransactions->setModel(filter.get());
-        ui->listTransactions->setModelColumn(TransactionTableModel::ToAddress);
     }
 }
 
