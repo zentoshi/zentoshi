@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,12 +20,11 @@
 #include <fs.h>
 #include <logging.h>
 #include <sync.h>
-#include <util/threadnames.h>
 #include <tinyformat.h>
 #include <util/memory.h>
+#include <util/threadnames.h>
 #include <util/time.h>
 
-#include <atomic>
 #include <exception>
 #include <map>
 #include <set>
@@ -118,6 +117,7 @@ fs::path GetDefaultDataDir();
 const fs::path &GetBlocksDir(bool fNetSpecific = true);
 const fs::path &GetDataDir(bool fNetSpecific = true);
 const fs::path &GetBackupsDir(bool fNetSpecific = true);
+/** Tests only */
 void ClearDatadirCache();
 fs::path GetConfigFile(const std::string& confPath);
 fs::path GetMasternodeConfigFile();
