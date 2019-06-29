@@ -17,7 +17,7 @@ CAmount GetRequiredFee(const CWallet& wallet, unsigned int nTxBytes)
 
 CAmount GetMinimumFee(const CWallet& wallet, unsigned int nTxBytes, const CCoinControl& coin_control, FeeCalculation* feeCalc)
 {
-    return GetMinimumFeeRate(wallet, coin_control, pool, estimator, feeCalc).GetFee(nTxBytes);
+    return GetMinimumFeeRate(wallet, coin_control, feeCalc).GetFee(nTxBytes);
 }
 
 CFeeRate GetRequiredFeeRate(const CWallet& wallet)
