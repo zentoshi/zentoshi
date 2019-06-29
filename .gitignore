@@ -10,6 +10,7 @@ tests
 exhaustive_tests
 gen_context
 *.exe
+*.pdb
 src/bitcoin
 src/bitcoind
 src/bitcoin-cli
