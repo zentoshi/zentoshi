@@ -2004,7 +2004,7 @@ void CWallet::ReacceptWalletTransactions(interfaces::Chain::Lock& locked_chain)
 
         int nDepth = wtx.GetDepthInMainChain(locked_chain);
 
-        if (!wtx.IsCoinBase() && (nDepth == 0 && !wtx.isAbandoned())) {
+        if (!(wtx.IsCoinBase() || wtx.IsCoinStake()) && (nDepth == 0 && !wtx.isAbandoned())) {
             mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
         }
     }
@@ -2020,7 +2020,7 @@ void CWallet::ReacceptWalletTransactions(interfaces::Chain::Lock& locked_chain)
 bool CWalletTx::RelayWalletTransaction(interfaces::Chain::Lock& locked_chain, CConnman* connman)
 {
     assert(pwallet->GetBroadcastTransactions());
-    if (!IsCoinBase() && !isAbandoned() && GetDepthInMainChain(locked_chain) == 0)
+    if (!(IsCoinBase() || IsCoinStake()) && !isAbandoned() && GetDepthInMainChain(locked_chain) == 0)
     {
         CValidationState state;
         /* GetDepthInMainChain already catches known conflicts. */
@@ -2839,9 +2839,10 @@ CAmount CWallet::GetStake() const
     {
         const CWalletTx* pcoin = &(*it).second;
         if (pcoin->IsCoinStake() && pcoin->GetBlocksToMaturity(*locked_chain) > 0 && pcoin->GetDepthInMainChain(*locked_chain) > 0)
-            nTotal += CWallet::GetCredit(*(pcoin->tx), ISMINE_SPENDABLE);
+            nTotal += CWallet::GetCredit(*(pcoin->tx), ISMINE_ALL);
     }
     return nTotal;
+
 }
 
 CAmount CWallet::GetWatchOnlyStake() const
@@ -4093,14 +4094,15 @@ bool CWallet::CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeS
                                     const COutPoint &prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const
 {
     unsigned int nTryTime = 0;
-    uint256 hashProofOfStake;
+    uint256 hashProofOfStake = uint256();
 
     if (blockFrom.GetBlockTime() + Params().GetConsensus().nStakeMinAge + nHashDrift > nTimeTx) // Min age requirement
         return false;
     for(unsigned int i = 0; i < nHashDrift; ++i)
     {
         nTryTime = nTimeTx - i;
-        if (CheckStakeKernelHash(nBits, blockFrom, nTxPrevOffset, txPrev, prevout, nTryTime, hashProofOfStake, true, false))
+        bool fValidStake = CheckStakeKernelHash(nBits, blockFrom, nTxPrevOffset, txPrev, prevout, nTryTime, hashProofOfStake, true, false);
+        if (fValidStake)
         {
             //Double check that this will pass time requirements
             if (nTryTime <= chainActive.Tip()->GetMedianTimePast()) {
@@ -4123,10 +4125,7 @@ CAmount GetStakeReward(CAmount blockReward, unsigned int percentage)
     return (blockReward / 100) * percentage;
 }
 
-void CWallet::FillCoinStakePayments(CMutableTransaction &transaction,
-                                    const CScript &scriptPubKeyOut,
-                                    const COutPoint &stakePrevout,
-                                    CAmount blockReward) const
+void CWallet::FillCoinStakePayments(CMutableTransaction &transaction, const CScript &scriptPubKeyOut, const COutPoint &stakePrevout, CAmount blockReward) const
 {
     const CWalletTx *walletTx = GetWalletTx(stakePrevout.hash);
     CTxOut prevTxOut = walletTx->tx->vout[stakePrevout.n];
@@ -4149,17 +4148,11 @@ void CWallet::FillCoinStakePayments(CMutableTransaction &transaction,
 }
 
 typedef std::vector<unsigned char> valtype;
-bool CWallet::CreateCoinStake(const CKeyStore& keystore,
-                              unsigned int nBits,
-                              CAmount blockReward,
-                              CMutableTransaction &txNew,
-                              unsigned int &nTxNewTime,
-                              std::vector<const CWalletTx*> &vwtxPrev,
-                              bool fGenerateSegwit)
+bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, CAmount blockReward, CMutableTransaction &txNew, unsigned int &nTxNewTime, std::vector<const CWalletTx*> &vwtxPrev, bool fGenerateSegwit)
 {
     // The following split & combine thresholds are important to security
     // Should not be adjusted if you don't understand the consequences
-    //int64_t nCombineThreshold = 0;
+    // int64_t nCombineThreshold = 0;
     txNew.vin.clear();
     txNew.vout.clear();
 
@@ -5739,7 +5732,7 @@ int CMerkleTx::GetDepthInMainChain(interfaces::Chain::Lock& locked_chain) const
 
 int CMerkleTx::GetBlocksToMaturity(interfaces::Chain::Lock& locked_chain) const
 {
-    if (!IsCoinBase())
+    if (!(IsCoinBase() || IsCoinStake()))
         return 0;
     int chain_depth = GetDepthInMainChain(locked_chain);
     assert(chain_depth >= 0); // coinbase tx should not be conflicted

@@ -390,12 +390,14 @@ public:
         result.anonymized_balance = m_wallet->GetAnonymizedBalance();
         result.stake = m_wallet->GetStake();
         result.have_watch_only = m_wallet->HaveWatchOnly();
+
         if (result.have_watch_only) {
             result.watch_only_balance = m_wallet->GetBalance();
             result.unconfirmed_watch_only_balance = m_wallet->GetUnconfirmedWatchOnlyBalance();
             result.immature_watch_only_balance = m_wallet->GetImmatureWatchOnlyBalance();
             result.watch_only_stake = m_wallet->GetWatchOnlyStake();
         }
+
         return result;
     }
     bool tryGetBalances(WalletBalances& balances, int& num_blocks) override

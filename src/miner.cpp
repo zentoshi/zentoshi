@@ -187,9 +187,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(CWallet *wallet, 
         boost::this_thread::interruption_point();
         pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), fProofOfStake);
         CMutableTransaction coinstakeTx;
-        int64_t nSearchTime = pblock->nTime; // search to current time
+        int64_t nSearchTime = pblock->nTime;
         bool fStakeFound = false;
-        if (nSearchTime >= nLastCoinStakeSearchTime) {
+        if (nSearchTime >= nLastCoinStakeSearchTime)
+        {
+            if (GetAdjustedTime() - chainActive.Tip()->nTime < 5)
+                MilliSleep(5000);
+
             unsigned int nTxNewTime = 0;
             if (wallet->CreateCoinStake(*wallet, pblock->nBits, blockReward,
                                         coinstakeTx, nTxNewTime,
@@ -553,9 +557,6 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 
 static bool ProcessBlockFound(const std::shared_ptr<const CBlock> &pblock, const CChainParams& chainparams)
 {
-    LogPrintf("%s\n", pblock->ToString());
-    LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0]->vout[0].nValue));
-
     // Found a solution
     {
         LOCK(cs_main);
@@ -563,10 +564,8 @@ static bool ProcessBlockFound(const std::shared_ptr<const CBlock> &pblock, const
             return error("ProcessBlockFound -- generated block is stale");
     }
 
-    // Inform about the new block
-    // GetMainSignals().BlockFound(pblock->GetHash());
-
     // Process this block the same as if we had received it from another node
+    LOCK(cs_main);
     if (!ProcessNewBlock(chainparams, pblock, true, nullptr))
         return error("ProcessBlockFound -- ProcessNewBlock() failed, block not accepted");
 

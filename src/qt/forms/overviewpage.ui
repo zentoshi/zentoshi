@@ -239,14 +239,14 @@
            </widget>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="labelStakeText">
+           <widget class="QLabel" name="labelStakedText">
             <property name="text">
              <string>Stake:</string>
             </property>
            </widget>
           </item>
           <item row="4" column="2">
-           <widget class="QLabel" name="labelStake">
+           <widget class="QLabel" name="labelStaked">
             <property name="font">
              <font>
               <weight>75</weight>
@@ -265,7 +265,7 @@
            </widget>
           </item>
           <item row="4" column="3">
-           <widget class="QLabel" name="labelWatchStake">
+           <widget class="QLabel" name="labelWatchStaked">
             <property name="font">
              <font>
               <weight>75</weight>

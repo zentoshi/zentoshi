@@ -324,6 +324,7 @@ bool CheckKernelScript(CScript scriptVin, CScript scriptVout)
 {
     auto extractKeyID = [](CScript scriptPubKey) {
 
+        int resultType = 0;
         std::vector<std::vector<unsigned char>> vSolutions;
         txnouttype whichType;
 
@@ -332,13 +333,22 @@ bool CheckKernelScript(CScript scriptVin, CScript scriptVout)
         {
             if (whichType == TX_PUBKEYHASH)
             {
+                resultType = 1;
                 keyID = CKeyID(uint160(vSolutions[0]));
             }
             else if(whichType == TX_PUBKEY)
             {
+                resultType = 2;
                 keyID = CPubKey(vSolutions[0]).GetID();
             }
+            else if(whichType == TX_WITNESS_V0_SCRIPTHASH ||
+                    whichType == TX_WITNESS_V0_KEYHASH)
+            {
+                resultType = 3;
+                keyID = CKeyID(uint160(vSolutions[0]));
+            }
         }
+        LogPrintf("CheckKernelScript()::Type %d\n", resultType);
 
         return keyID;
     };
