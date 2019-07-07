@@ -32,6 +32,7 @@ enum {
     SPORK_13_OLD_SUPERBLOCK_FLAG                           = 10012,
     SPORK_14_REQUIRE_SENTINEL_FLAG                         = 10013,
     SPORK_15_POS_DISABLED                                  = 10014,
+    SPORK_16_POW_DISABLED                                  = 10015,
     SPORK_END
 };
 

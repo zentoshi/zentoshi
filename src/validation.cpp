@@ -52,7 +52,7 @@
 #include <boost/thread.hpp>
 
 #if defined(NDEBUG)
-# error "Bitcoin cannot be compiled without assertions."
+# error "Zentoshi cannot be compiled without assertions."
 #endif
 
 #define MICRO 0.000001
@@ -266,7 +266,7 @@ std::atomic_bool g_is_mempool_loaded{false};
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const std::string strMessageMagic = "Bitcoin Signed Message:\n";
+const std::string strMessageMagic = "Zentoshi Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -1872,6 +1872,14 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         return true;
     }
 
+    // Special case for 'crisis/damage control' sporks
+    if (sporkManager.IsSporkActive(Spork::SPORK_15_POS_DISABLED) && block.IsProofOfStake())
+        return state.DoS(0, error("ConnectBlock(Zentoshi): PoS blocks temporarily not accepted"),
+                         REJECT_INVALID, "PoS-halted");
+    if (sporkManager.IsSporkActive(Spork::SPORK_16_POW_DISABLED) && block.IsProofOfWork())
+        return state.DoS(0, error("ConnectBlock(Zentoshi): PoW blocks temporarily not accepted"),
+                         REJECT_INVALID, "PoW-halted");
+
     //  Included for reference.
     //  if (pindex->nHeight > Params().GetConsensus().nFirstPoSBlock && block.IsProofOfWork()) {
     //      return state.DoS(100, error("ConnectBlock() : PoW period ended"),
@@ -2102,7 +2110,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint(BCLog::BENCH, "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs (%.2fms/blk)]\n", (unsigned)block.vtx.size(), MILLI * (nTime3 - nTime2), MILLI * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : MILLI * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * MICRO, nTimeConnect * MILLI / nBlocksTotal);
 
-    // Bitcoin : MODIFIED TO CHECK MASTERNODE PAYMENTS AND SUPERBLOCKS
+    // Zentoshi : MODIFIED TO CHECK MASTERNODE PAYMENTS AND SUPERBLOCKS
 
     // It's possible that we simply don't have enough data and this could fail
     // (i.e. block itself could be a correct one and we need to store it),
@@ -2115,18 +2123,18 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
     std::string strError = "";
     if (!IsBlockValueValid(block, pindex->nHeight, expectedReward, pindex->nMint, strError)) {
-        return state.DoS(0, error("ConnectBlock(Bitcoin): %s", strError), REJECT_INVALID, "bad-cb-amount");
+        return state.DoS(0, error("ConnectBlock(Zentoshi): %s", strError), REJECT_INVALID, "bad-cb-amount");
     }
 
     bool isProofOfStake = !block.IsProofOfWork();
     const auto& coinbaseTransaction = block.vtx[isProofOfStake];
 
     if (!IsBlockPayeeValid(coinbaseTransaction, pindex->nHeight, expectedReward, pindex->nMint)) {
-        return state.DoS(0, error("ConnectBlock(Bitcoin): couldn't find masternode or superblock payments"),
+        return state.DoS(0, error("ConnectBlock(Zentoshi): couldn't find masternode or superblock payments"),
                          REJECT_INVALID, "bad-cb-payee");
     }
 
-    // END Bitcoin
+    // END Zentoshi
 
     if (!control.Wait())
         return state.DoS(100, error("%s: CheckQueue failed", __func__), REJECT_INVALID, "block-validation-failed");
