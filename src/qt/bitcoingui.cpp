@@ -43,9 +43,6 @@
 #include <qt/masternodelist.h>
 #include <miner.h>
 
-#include <iostream>
-#include <memory>
-
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
