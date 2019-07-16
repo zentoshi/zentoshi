@@ -327,9 +327,6 @@ public:
 
         chainTxData = ChainTxData{
         };
-
-        /* disable fallback fee on mainnet */
-        m_fallback_fee_enabled = true;
     }
 };
 
@@ -487,9 +484,6 @@ public:
 
         chainTxData = ChainTxData{
         };
-
-        /* disable fallback fee on mainnet */
-        m_fallback_fee_enabled = true;
     }
 
     /**

@@ -15,7 +15,6 @@
 #include <policy/feerate.h>
 #include <protocol.h>
 #include <script/sign.h>
-#include <streams.h>
 #include <tinyformat.h>
 #include <ui_interface.h>
 #include <validationinterface.h>
