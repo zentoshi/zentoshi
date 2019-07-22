@@ -413,7 +413,7 @@ libzentoshi_server_a_SOURCES += dummywallet.cpp
 endif
 
 if ENABLE_ZMQ
-libzentoshi_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libzentoshi_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
 libzentoshi_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_zmq_a_SOURCES = \
   zmq/zmqabstractnotifier.cpp \
