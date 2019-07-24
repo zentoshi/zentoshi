@@ -505,6 +505,18 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
                 hit = true;
                 outs.emplace_back(std::move(coin));
             }
+        };
+
+        if (fCheckMemPool) {
+            // use db+mempool as cache backend in case user likes to query mempool
+            LOCK2(cs_main, mempool.cs);
+            CCoinsViewCache& viewChain = ::ChainstateActive().CoinsTip();
+            CCoinsViewMemPool viewMempool(&viewChain, mempool);
+            process_utxos(viewMempool, mempool);
+        } else {
+            LOCK(cs_main);  // no need to lock mempool!
+            process_utxos(::ChainstateActive().CoinsTip(), CTxMemPool());
+        }
 
             hits.push_back(hit);
             bitmapStringRepresentation.append(hit ? "1" : "0"); // form a binary string representation (human-readable for json output)
