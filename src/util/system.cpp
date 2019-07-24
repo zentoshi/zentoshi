@@ -789,6 +789,10 @@ const fs::path &GetBlocksDir(bool fNetSpecific)
 
     if (gArgs.IsArgSet("-blocksdir")) {
         path = fs::system_complete(gArgs.GetArg("-blocksdir", ""));
+
+    std::string datadir = gArgs.GetArg("-datadir", "");
+    if (!datadir.empty()) {
+        path = fs::system_complete(datadir);
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -801,6 +805,12 @@ const fs::path &GetBlocksDir(bool fNetSpecific)
     path /= "blocks";
     fs::create_directories(path);
     return path;
+}
+
+bool CheckDataDirOption()
+{
+    std::string datadir = gArgs.GetArg("-datadir", "");
+    return datadir.empty() || fs::is_directory(fs::system_complete(datadir));
 }
 
 void ClearDatadirCache()
