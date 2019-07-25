@@ -435,6 +435,9 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
+        CTransactionRef tx;
+        uint256 hashBlock;
+        int nIndex;
         std::vector<uint256> vMerkleBranch; // For compatibility with older versions.
         READWRITE(tx);
         READWRITE(hashBlock);
@@ -477,7 +480,7 @@ int CalculateMaximumSignedInputSize(const CTxOut& txout, const CWallet* pwallet,
  * A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
  */
-class CWalletTx : public CMerkleTx
+class CWalletTx
 {
 private:
     const CWallet* pwallet;
@@ -542,12 +545,10 @@ public:
     mutable bool fInMempool;
     mutable CAmount nChangeCached;
 
-    CWalletTx()
-    {
-        Init(NULL);
-    }
-
-    CWalletTx(const CWallet* pwalletIn, CTransactionRef arg) : CMerkleTx(std::move(arg))
+    CWalletTx(const CWallet* pwalletIn, CTransactionRef arg)
+        : tx(std::move(arg)),
+          hashBlock(uint256()),
+          nIndex(-1)
     {
         Init(pwalletIn);
     }
@@ -568,6 +569,15 @@ public:
         m_confirm = Confirmation{};
     }
 
+    CTransactionRef tx;
+    uint256 hashBlock;
+    /* An nIndex == -1 means that hashBlock (in nonzero) refers to the earliest
+     * block in the chain we know this or any in-wallet dependency conflicts
+     * with. Older clients interpret nIndex == -1 as unconfirmed for backward
+     * compatibility.
+     */
+    int nIndex;
+
     template<typename Stream>
     void Serialize(Stream& s) const
     {
@@ -580,7 +590,8 @@ public:
             mapValueCopy["timesmart"] = strprintf("%u", nTimeSmart);
         }
 
-        s << static_cast<const CMerkleTx&>(*this);
+        std::vector<uint256> dummy_vector; //!< Used to be vMerkleBranch
+        s << tx << hashBlock << dummy_vector << nIndex;
         std::vector<CMerkleTx> vUnused; //!< Used to be vtxPrev
         s << vUnused << mapValueCopy << vOrderForm << fTimeReceivedIsTxTime << nTimeReceived << fFromMe << fSpent;
     }
@@ -591,7 +602,8 @@ public:
         Init(nullptr);
         char fSpent;
 
-        s >> static_cast<CMerkleTx&>(*this);
+        std::vector<uint256> dummy_vector; //!< Used to be vMerkleBranch
+        s >> tx >> hashBlock >> dummy_vector >> nIndex;
         std::vector<CMerkleTx> vUnused; //!< Used to be vtxPrev
         s >> vUnused >> mapValue >> vOrderForm >> fTimeReceivedIsTxTime >> nTimeReceived >> fFromMe >> fSpent;
 
@@ -602,6 +614,11 @@ public:
         mapValue.erase("spent");
         mapValue.erase("n");
         mapValue.erase("timesmart");
+    }
+
+    void SetTx(CTransactionRef arg)
+    {
+        tx = std::move(arg);
     }
 
     //! make sure balances are recalculated
