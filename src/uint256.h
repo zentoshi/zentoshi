@@ -111,6 +111,7 @@ public:
 class uint160 : public base_blob<160> {
 public:
     uint160() {}
+    uint160(const base_blob<160>& b) : base_blob<160>(b) {}
     explicit uint160(const std::vector<unsigned char>& vch) : base_blob<160>(vch) {}
 };
 
@@ -122,6 +123,7 @@ public:
 class uint256 : public base_blob<256> {
 public:
     uint256() {}
+    uint256(const base_blob<256>& b) : base_blob<256>(b) {}
     explicit uint256(const std::vector<unsigned char>& vch) : base_blob<256>(vch) {}
 
     /** A cheap hash function that just returns 64 bits from the result, it can be
@@ -178,5 +180,15 @@ public:
     }
 };
 
+namespace std {
+    template <>
+    struct hash<uint256>
+    {
+        std::size_t operator()(const uint256& k) const
+        {
+            return (std::size_t)k.GetCheapHash();
+        }
+    };
+}
 
 #endif // BITCOIN_UINT256_H

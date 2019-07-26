@@ -26,6 +26,7 @@ int64_t GetSystemTimeInSeconds(); // Like GetTime(), but not mockable
 void SetMockTime(int64_t nMockTimeIn);
 int64_t GetMockTime();
 void MilliSleep(int64_t n);
+int64_t GetLogTimeMicros();
 
 /**
  * ISO 8601 formatting is preferred. Use the FormatISO8601{DateTime,Date,Time}

@@ -36,7 +36,7 @@ namespace BCLog {
         TOR          = (1 <<  1),
         MEMPOOL      = (1 <<  2),
         HTTP         = (1 <<  3),
-        BENCH        = (1 <<  4),
+        PERF         = (1 <<  4),
         ZMQ          = (1 <<  5),
         DB           = (1 <<  6),
         RPC          = (1 <<  7),
@@ -45,7 +45,7 @@ namespace BCLog {
         SELECTCOINS  = (1 << 10),
         REINDEX      = (1 << 11),
         CMPCTBLOCK   = (1 << 12),
-        RAND         = (1 << 13),
+        RANDOM       = (1 << 13),
         PRUNE        = (1 << 14),
         PROXY        = (1 << 15),
         MEMPOOLREJ   = (1 << 16),
@@ -61,6 +61,7 @@ namespace BCLog {
         MNPAYMENTS   = (1 << 27),
         INSTANTSEND  = (1 << 28),
         PRIVATESEND  = (1 << 29),
+        ALERT        = (1 << 30),
         ALL          = ~(uint32_t)0,
     };
 

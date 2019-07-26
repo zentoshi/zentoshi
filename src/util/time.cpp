@@ -58,6 +58,14 @@ int64_t GetSystemTimeInSeconds()
     return GetTimeMicros()/1000000;
 }
 
+/** Return a time useful for the debug log */
+int64_t GetLogTimeMicros()
+{
+    if (nMockTime) return nMockTime*1000000;
+
+    return GetTimeMicros();
+}
+
 void MilliSleep(int64_t n)
 {
 

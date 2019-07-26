@@ -11,8 +11,15 @@
 #include <stdint.h>
 #include <string>
 
+#include <boost/signals2/last_value.hpp>
+#include <boost/signals2/signal.hpp>
+
+class CBasicKeyStore;
 class CWallet;
+class uint256;
 class CBlockIndex;
+class CDeterministicMNList;
+
 namespace boost {
 namespace signals2 {
 class connection;
@@ -99,7 +106,7 @@ public:
     /**
      * Status bar alerts changed.
      */
-    ADD_SIGNALS_DECL_WRAPPER(NotifyAlertChanged, void, );
+    ADD_SIGNALS_DECL_WRAPPER(NotifyAlertChanged, void, const uint256 &hash, ChangeType status);
 
     /** A wallet has been loaded. */
     ADD_SIGNALS_DECL_WRAPPER(LoadWallet, void, std::shared_ptr<CWallet> wallet);
@@ -115,6 +122,9 @@ public:
 
     /** Best header has changed */
     ADD_SIGNALS_DECL_WRAPPER(NotifyHeaderTip, void, bool, const CBlockIndex*);
+
+    /** Masternode list has changed */
+    ADD_SIGNALS_DECL_WRAPPER(NotifyMasternodeListChanged, void, const CDeterministicMNList);
 
     /** Syncing activity has changed */
     ADD_SIGNALS_DECL_WRAPPER(NotifyAdditionalDataSyncProgressChanged, void, double nSyncProgress);

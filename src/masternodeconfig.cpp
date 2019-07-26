@@ -1,27 +1,26 @@
-#include <masternodeconfig.h>
-#include <netbase.h>
-#include <chainparams.h>
 #include <util/strencodings.h>
-#include <util/system.h>
+#include "masternodeconfig.h"
+#include "util/system.h"
+#include "chainparams.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
 CMasternodeConfig masternodeConfig;
 
-void CMasternodeConfig::add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex) {
+void CMasternodeConfig::add(const std::string& alias, const std::string& ip, const std::string& privKey, const std::string& txHash, const std::string& outputIndex) {
     CMasternodeEntry cme(alias, ip, privKey, txHash, outputIndex);
     entries.push_back(cme);
 }
 
-bool CMasternodeConfig::read(std::string& strErr) {
+bool CMasternodeConfig::read(std::string& strErrRet) {
     int linenumber = 1;
     boost::filesystem::path pathMasternodeConfigFile = GetMasternodeConfigFile();
     boost::filesystem::ifstream streamConfig(pathMasternodeConfigFile);
 
     if (!streamConfig.good()) {
         FILE* configFile = fopen(pathMasternodeConfigFile.string().c_str(), "a");
-        if (configFile != NULL) {
+        if (configFile != nullptr) {
             std::string strHeader = "# Masternode config file\n"
                           "# Format: alias IP:port masternodeprivkey collateral_output_txid collateral_output_index\n"
                           "# Example: mn1 127.0.0.2:19999 93HaYBVUCYjEMeeH1Y4sBGLALQZE1Yc1K64xiqgX37tGBDQL8Xg 2bcd3c84c84f87eaa86e4e56834c92927a07f9e18718810b92e0d0324456a67c 0\n";
@@ -48,7 +47,7 @@ bool CMasternodeConfig::read(std::string& strErr) {
             iss.str(line);
             iss.clear();
             if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex)) {
-                strErr = _("Could not parse masternode.conf") + "\n" +
+                strErrRet = _("Could not parse masternode.conf") + "\n" +
                         strprintf(_("Line: %d"), linenumber) + "\n\"" + line + "\"";
                 streamConfig.close();
                 return false;
@@ -59,15 +58,15 @@ bool CMasternodeConfig::read(std::string& strErr) {
         std::string hostname = "";
         SplitHostPort(ip, port, hostname);
         if(port == 0 || hostname == "") {
-            strErr = _("Failed to parse host:port string") + "\n"+
+            strErrRet = _("Failed to parse host:port string") + "\n"+
                     strprintf(_("Line: %d"), linenumber) + "\n\"" + line + "\"";
             streamConfig.close();
             return false;
         }
-        int mainnetDefaultPort = CreateChainParams(CBaseChainParams::MAIN)->GetDefaultPort();
+        int mainnetDefaultPort = Params().GetDefaultPort();
         if(Params().NetworkIDString() == CBaseChainParams::MAIN) {
             if(port != mainnetDefaultPort) {
-                strErr = _("Invalid port detected in masternode.conf") + "\n" +
+                strErrRet = _("Invalid port detected in masternode.conf") + "\n" +
                         strprintf(_("Port: %d"), port) + "\n" +
                         strprintf(_("Line: %d"), linenumber) + "\n\"" + line + "\"" + "\n" +
                         strprintf(_("(must be %d for mainnet)"), mainnetDefaultPort);
@@ -75,7 +74,7 @@ bool CMasternodeConfig::read(std::string& strErr) {
                 return false;
             }
         } else if(port == mainnetDefaultPort) {
-            strErr = _("Invalid port detected in masternode.conf") + "\n" +
+            strErrRet = _("Invalid port detected in masternode.conf") + "\n" +
                     strprintf(_("Line: %d"), linenumber) + "\n\"" + line + "\"" + "\n" +
                     strprintf(_("(%d could be used only on mainnet)"), mainnetDefaultPort);
             streamConfig.close();

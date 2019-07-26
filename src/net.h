@@ -35,6 +35,7 @@
 #endif
 
 
+class CAddrMan;
 class CScheduler;
 class CNode;
 class BanMan;
@@ -43,6 +44,8 @@ class BanMan;
 static const int PING_INTERVAL = 2 * 60;
 /** Time after which to disconnect, after waiting for a ping response (or inactivity). */
 static const int TIMEOUT_INTERVAL = 20 * 60;
+/** Minimum time between warnings printed to log. */
+static const int WARNING_INTERVAL = 10 * 60;
 /** Run the feeler connection loop once every 2 minutes or 120 seconds. **/
 static const int FEELER_INTERVAL = 120;
 /** The maximum number of entries in an 'inv' protocol message */
@@ -98,6 +101,7 @@ struct AddedNodeInfo
     bool fInbound;
 };
 
+class CTransaction;
 class CNodeStats;
 class CClientUIInterface;
 
@@ -129,6 +133,7 @@ public:
     struct Options
     {
         ServiceFlags nLocalServices = NODE_NONE;
+        ServiceFlags nRelevantServices = NODE_NONE;
         int nMaxConnections = 0;
         int nMaxOutbound = 0;
         int nMaxAddnode = 0;
@@ -211,15 +216,31 @@ public:
         bool operator() (const CNode*) const {return true;}
     };
 
-    struct CAllNodesExceptMasternodes {
-        bool operator() (const CNode* pnode) const {return NotMasternodesOnly(pnode);}
-    };
-
     constexpr static const CAllNodes AllNodes{};
-    constexpr static const CAllNodesExceptMasternodes AllNodesExceptMasternodes{};
 
-    bool ForNode(NodeId id, std::function<bool(CNode* pnode)> func);
-    bool ForNode(const CService& addr, std::function<bool(CNode* pnode)> func);
+    bool ForNode(NodeId id, std::function<bool(const CNode* pnode)> cond, std::function<bool(CNode* pnode)> func);
+    bool ForNode(const CService& addr, std::function<bool(const CNode* pnode)> cond, std::function<bool(CNode* pnode)> func);
+
+    template<typename Callable>
+    bool ForNode(const CService& addr, Callable&& func)
+    {
+        return ForNode(addr, FullyConnectedOnly, func);
+    }
+
+    template<typename Callable>
+    bool ForNode(NodeId id, Callable&& func)
+    {
+        return ForNode(id, FullyConnectedOnly, func);
+    }
+
+    bool IsConnected(const CService& addr, std::function<bool(const CNode* pnode)> cond)
+    {
+        return ForNode(addr, cond, [](CNode* pnode){
+            return true;
+        });
+    }
+
+    bool IsMasternodeOrDisconnectRequested(const CService& addr);
 
     void PushMessage(CNode* pnode, CSerializedNetMsg&& msg);
 
@@ -309,18 +330,23 @@ public:
         post();
     };
 
-    // Dash functions
+    std::vector<CNode*> CopyNodeVector(std::function<bool(const CNode* pnode)> cond);
     std::vector<CNode*> CopyNodeVector();
     void ReleaseNodeVector(const std::vector<CNode*>& vecNodes);
 
     void RelayTransaction(const CTransaction& tx);
     void RelayTransaction(const CTransaction& tx, const CDataStream& ss);
     void RelayInv(CInv &inv, const int minProtoVersion = MIN_PEER_PROTO_VERSION);
+    void RelayInvFiltered(CInv &inv, const CTransaction &relatedTx, const int minProtoVersion = MIN_PEER_PROTO_VERSION);
+    // This overload will not update node filters,  so use it only for the cases when other messages will update related transaction data in filters
+    void RelayInvFiltered(CInv &inv, const uint256 &relatedTxHash, const int minProtoVersion = MIN_PEER_PROTO_VERSION);
+    void RemoveAskFor(const uint256& hash);
 
     // Addrman functions
     size_t GetAddressCount() const;
     void SetServices(const CService &addr, ServiceFlags nServices);
     void MarkAddressGood(const CAddress& addr);
+    void AddNewAddress(const CAddress& addr, const CAddress& addrFrom, int64_t nTimePenalty = 0);
     void AddNewAddresses(const std::vector<CAddress>& vAddr, const CAddress& addrFrom, int64_t nTimePenalty = 0);
     std::vector<CAddress> GetAddresses();
 
@@ -339,6 +365,7 @@ public:
 
     bool AddNode(const std::string& node);
     bool RemoveAddedNode(const std::string& node);
+    bool AddPendingMasternode(const CService& addr);
     std::vector<AddedNodeInfo> GetAddedNodeInfo();
 
     size_t GetNodeCount(NumConnections num);
@@ -480,6 +507,8 @@ private:
     CCriticalSection cs_vOneShots;
     std::vector<std::string> vAddedNodes GUARDED_BY(cs_vAddedNodes);
     CCriticalSection cs_vAddedNodes;
+    std::vector<CService> vPendingMasternodes;
+    CCriticalSection cs_vPendingMasternodes;
     std::vector<CNode*> vNodes GUARDED_BY(cs_vNodes);
     std::list<CNode*> vNodesDisconnected;
     mutable CCriticalSection cs_vNodes;
@@ -488,6 +517,9 @@ private:
 
     /** Services this instance offers */
     ServiceFlags nLocalServices;
+
+    /** Services this instance cares about */
+    ServiceFlags nRelevantServices;
 
     std::unique_ptr<CSemaphore> semOutbound;
     std::unique_ptr<CSemaphore> semMasternodeOutbound;
@@ -641,6 +673,7 @@ public:
     std::string cleanSubVer;
     bool fInbound;
     bool m_manual_connection;
+    bool fAddnode;
     int nStartingHeight;
     uint64_t nSendBytes;
     mapMsgCmdSize mapSendBytesPerMsgCmd;
@@ -713,6 +746,7 @@ class CNode
 public:
     // socket
     std::atomic<ServiceFlags> nServices{NODE_NONE};
+    ServiceFlags nServicesExpected;
     SOCKET hSocket GUARDED_BY(cs_hSocket);
     size_t nSendSize{0}; // total size of all vSendMsg entries
     size_t nSendOffset{0}; // offset inside the first vSendMsg already sent
@@ -736,10 +770,12 @@ public:
     std::atomic<int64_t> nLastRecv{0};
     const int64_t nTimeConnected;
     std::atomic<int64_t> nTimeOffset{0};
+    std::atomic<int64_t> nLastWarningTime;
     // Address of this peer
     const CAddress addr;
     // Bind address of our side of the connection
     const CAddress addrBind;
+    std::atomic<int> nNumWarningsSkipped;
     std::atomic<int> nVersion{0};
     // strSubVer is whatever byte array we read from the wire. However, this field is intended
     // to be printed out, displayed to humans in various forms and so on. So we sanitize it and
@@ -752,6 +788,7 @@ public:
     bool fFeeler{false}; // If true this node is being used as a short lived feeler.
     bool fNetworkNode;
     bool fOneShot{false};
+    bool fAddnode;
     bool m_manual_connection{false};
     bool fClient{false}; // set by version message
     bool m_limited_node{false}; //after BIP159, set by version message
@@ -770,8 +807,9 @@ public:
     CSemaphoreGrant grantOutbound;
     CSemaphoreGrant grantMasternodeOutbound;
     mutable CCriticalSection cs_filter;
-    std::unique_ptr<CBloomFilter> pfilter PT_GUARDED_BY(cs_filter);
+    CBloomFilter* pfilter;
     std::atomic<int> nRefCount{0};
+    const NodeId id;
 
     const uint64_t nKeyedNetGroup;
     std::atomic_bool fPauseRecv{false};
@@ -803,6 +841,8 @@ public:
     // There is no final sorting before sending, as they are always sent immediately
     // and in the order requested.
     std::vector<uint256> vInventoryBlockToSend GUARDED_BY(cs_inventory);
+    // List of non-tx/non-block inventory items
+    std::vector<CInv> vInventoryOtherToSend;
     CCriticalSection cs_inventory;
     std::set<uint256> setAskFor;
     std::multimap<int64_t, CInv> mapAskFor;
@@ -838,13 +878,14 @@ public:
 
     std::set<uint256> orphan_work_set;
 
-    CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, uint64_t nLocalHostNonceIn, const CAddress &addrBindIn, const std::string &addrNameIn = "", bool fInboundIn = false, bool fNetworkNodeIn = false);
+    CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, uint64_t nLocalHostNonceIn, const std::string &addrNameIn = "", bool fInboundIn = false);
     ~CNode();
-    CNode(const CNode&) = delete;
-    CNode& operator=(const CNode&) = delete;
 
 private:
-    const NodeId id;
+    CNode(const CNode&);
+    void operator=(const CNode&);
+
+
     const uint64_t nLocalHostNonce;
     // Services offered to this peer
     const ServiceFlags nLocalServices;
@@ -930,9 +971,14 @@ public:
 
     void AddInventoryKnown(const CInv& inv)
     {
+        AddInventoryKnown(inv.hash);
+    }
+
+    void AddInventoryKnown(const uint256& hash)
+    {
         {
             LOCK(cs_inventory);
-            filterInventoryKnown.insert(inv.hash);
+            filterInventoryKnown.insert(hash);
         }
     }
 
@@ -941,15 +987,21 @@ public:
         LOCK(cs_inventory);
         if (inv.type == MSG_TX) {
             if (!filterInventoryKnown.contains(inv.hash)) {
+                LogPrint(BCLog::NET, "PushInventory --  inv: %s peer=%d\n", inv.ToString(), id);
                 setInventoryTxToSend.insert(inv.hash);
+            } else {
+                LogPrint(BCLog::NET, "PushInventory --  filtered inv: %s peer=%d\n", inv.ToString(), id);
             }
         } else if (inv.type == MSG_BLOCK) {
-            vInventoryBlockToSend.push_back(inv.hash);
-        }
-        else
-        {
             LogPrint(BCLog::NET, "PushInventory --  inv: %s peer=%d\n", inv.ToString(), id);
-            vInventoryToSend.push_back(inv);
+            vInventoryBlockToSend.push_back(inv.hash);
+        } else {
+            if (!filterInventoryKnown.contains(inv.hash)) {
+                LogPrint(BCLog::NET, "PushInventory --  inv: %s peer=%d\n", inv.ToString(), id);
+                vInventoryToSend.push_back(inv);
+            } else {
+                LogPrint(BCLog::NET, "PushInventory --  filtered inv: %s peer=%d\n", inv.ToString(), id);
+            }
         }
     }
 
@@ -960,6 +1012,7 @@ public:
     }
 
     void AskFor(const CInv& inv);
+    void RemoveAskFor(const uint256& hash);
 
     void CloseSocketDisconnect();
 

@@ -149,7 +149,7 @@ size_t CCoinsViewDB::EstimateSize() const
     return db.EstimateSize(DB_COIN, (char)(DB_COIN+1));
 }
 
-CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(gArgs.IsArgSet("-blocksdir") ? GetDataDir() / "blocks" / "index" : GetBlocksDir() / "index", nCacheSize, fMemory, fWipe) {
+CBlockTreeDB::CBlockTreeDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "blocks" / "index", nCacheSize, fMemory, fWipe) {
 }
 
 bool CBlockTreeDB::ReadBlockFileInfo(int nFile, CBlockFileInfo &info) {
@@ -163,8 +163,9 @@ bool CBlockTreeDB::WriteReindexing(bool fReindexing) {
         return Erase(DB_REINDEX_FLAG);
 }
 
-void CBlockTreeDB::ReadReindexing(bool &fReindexing) {
+bool CBlockTreeDB::ReadReindexing(bool &fReindexing) {
     fReindexing = Exists(DB_REINDEX_FLAG);
+    return true;
 }
 
 bool CBlockTreeDB::ReadLastBlockFile(int &nFile) {
@@ -273,7 +274,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
             CDiskBlockIndex diskindex;
             if (pcursor->GetValue(diskindex)) {
-
                 // Construct block index object
                 CBlockIndex* pindexNew      = insertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev            = insertBlockIndex(diskindex.hashPrev);
@@ -401,7 +401,7 @@ bool CCoinsViewDB::Upgrade() {
                 uiInterface.ShowProgress(_("Upgrading UTXO database"), percentageDone, true);
                 if (reportDone < percentageDone/10) {
                     // report max. every 10% step
-                    LogPrintf("[%d%%]...", percentageDone); /* Continued */
+                    LogPrintf("[%d%%]...", percentageDone);
                     reportDone = percentageDone/10;
                 }
             }

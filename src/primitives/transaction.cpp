@@ -49,11 +49,11 @@ std::string CTxIn::ToString() const
     return str;
 }
 
-CTxOut::CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn)
+CTxOut::CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn, int nRoundsIn)
 {
     nValue = nValueIn;
     scriptPubKey = scriptPubKeyIn;
-    nRounds = -10;
+    nRounds = nRoundsIn;
 }
 
 std::string CTxOut::ToString() const
@@ -61,8 +61,8 @@ std::string CTxOut::ToString() const
     return strprintf("CTxOut(nValue=%d.%08d, scriptPubKey=%s)", nValue / COIN, nValue % COIN, HexStr(scriptPubKey).substr(0, 30));
 }
 
-CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nLockTime(0) {}
-CMutableTransaction::CMutableTransaction(const CTransaction& tx) : vin(tx.vin), vout(tx.vout), nVersion(tx.nVersion), nLockTime(tx.nLockTime) {}
+CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(TRANSACTION_NORMAL), nLockTime(0) {}
+CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vExtraPayload(tx.vExtraPayload) {}
 
 uint256 CMutableTransaction::GetHash() const
 {
@@ -72,19 +72,20 @@ uint256 CMutableTransaction::GetHash() const
 std::string CMutableTransaction::ToString() const
 {
     std::string str;
-    str += strprintf("CMutableTransaction(hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
+    str += strprintf("CMutableTransaction(hash=%s, ver=%d, type=%d, vin.size=%u, vout.size=%u, nLockTime=%u, vExtraPayload.size=%d)\n",
         GetHash().ToString().substr(0,10),
         nVersion,
+        nType,
         vin.size(),
         vout.size(),
-        nLockTime);
+        nLockTime,
+        vExtraPayload.size());
     for (unsigned int i = 0; i < vin.size(); i++)
         str += "    " + vin[i].ToString() + "\n";
     for (unsigned int i = 0; i < vout.size(); i++)
         str += "    " + vout[i].ToString() + "\n";
     return str;
 }
-
 
 uint256 CTransaction::ComputeHash() const
 {
@@ -100,16 +101,17 @@ uint256 CTransaction::ComputeWitnessHash() const
 }
 
 /* For backward compatibility, the hash is initialized to 0. TODO: remove the need for this default constructor entirely. */
-CTransaction::CTransaction() : vin(), vout(), nVersion(CTransaction::CURRENT_VERSION), nLockTime(0), hash{}, m_witness_hash{} {}
-CTransaction::CTransaction(const CMutableTransaction& tx) : vin(tx.vin), vout(tx.vout), nVersion(tx.nVersion), nLockTime(tx.nLockTime), hash{ComputeHash()}, m_witness_hash{ComputeWitnessHash()} {}
-CTransaction::CTransaction(CMutableTransaction&& tx) : vin(std::move(tx.vin)), vout(std::move(tx.vout)), nVersion(tx.nVersion), nLockTime(tx.nLockTime), hash{ComputeHash()}, m_witness_hash{ComputeWitnessHash()} {}
+CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), nType(TRANSACTION_NORMAL), vin(), vout(), nLockTime(0), hash() {}
+CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), nType(tx.nType), vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime), vExtraPayload(tx.vExtraPayload), hash(ComputeHash()) {}
+CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), nType(tx.nType), vin(std::move(tx.vin)), vout(std::move(tx.vout)), nLockTime(tx.nLockTime), vExtraPayload(tx.vExtraPayload), hash(ComputeHash()) {}
 
 CAmount CTransaction::GetValueOut() const
 {
     CAmount nValueOut = 0;
-    for (const auto& tx_out : vout) {
-        nValueOut += tx_out.nValue;
-        if (!MoneyRange(tx_out.nValue) || !MoneyRange(nValueOut))
+    for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it)
+    {
+        nValueOut += it->nValue;
+        if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
             throw std::runtime_error(std::string(__func__) + ": value out of range");
     }
     return nValueOut;
@@ -131,7 +133,7 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
     // Providing any more cleanup incentive than making additional inputs free would
     // risk encouraging people to create junk outputs to redeem later.
     if (nTxSize == 0)
-        nTxSize = ::GetSerializeSize(*this, PROTOCOL_VERSION);
+        nTxSize = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
     for (std::vector<CTxIn>::const_iterator it(vin.begin()); it != vin.end(); ++it)
     {
         unsigned int offset = 41U + std::min(110U, (unsigned int)it->scriptSig.size());
@@ -143,23 +145,23 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
 
 unsigned int CTransaction::GetTotalSize() const
 {
-    return ::GetSerializeSize(*this, PROTOCOL_VERSION);
+    return ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
 }
 
 std::string CTransaction::ToString() const
 {
     std::string str;
-    str += strprintf("CTransaction(hash=%s, ver=%d, vin.size=%u, vout.size=%u, nLockTime=%u)\n",
+    str += strprintf("CTransaction(hash=%s, ver=%d, type=%d, vin.size=%u, vout.size=%u, nLockTime=%u, vExtraPayload.size=%d)\n",
         GetHash().ToString().substr(0,10),
         nVersion,
+        nType,
         vin.size(),
         vout.size(),
-        nLockTime);
-    for (const auto& tx_in : vin)
-        str += "    " + tx_in.ToString() + "\n";
-    for (const auto& tx_in : vin)
-        str += "    " + tx_in.scriptWitness.ToString() + "\n";
-    for (const auto& tx_out : vout)
-        str += "    " + tx_out.ToString() + "\n";
+        nLockTime,
+        vExtraPayload.size());
+    for (unsigned int i = 0; i < vin.size(); i++)
+        str += "    " + vin[i].ToString() + "\n";
+    for (unsigned int i = 0; i < vout.size(); i++)
+        str += "    " + vout[i].ToString() + "\n";
     return str;
 }

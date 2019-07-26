@@ -4,6 +4,7 @@
 
 #include <chainparams.h>
 #include <netfulfilledman.h>
+#include <shutdown.h>
 #include <util/system.h>
 
 CNetFulfilledRequestManager netfulfilledman;
@@ -69,4 +70,11 @@ std::string CNetFulfilledRequestManager::ToString() const
     std::ostringstream info;
     info << "Nodes with fulfilled requests: " << (int)mapFulfilledRequests.size();
     return info.str();
+}
+
+void CNetFulfilledRequestManager::DoMaintenance()
+{
+    if (ShutdownRequested()) return;
+
+    CheckAndRemove();
 }

@@ -533,18 +533,6 @@ public:
     {
         return MakeHandler(m_wallet->NotifyCanGetAddressesChanged.connect(fn));
     }
-    bool startMasternode(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet) override
-    {
-        CMasternodeBroadcast mnb;
-        bool fSuccess = CMasternodeBroadcast::Create(m_wallet.get(), strService, strKeyMasternode, strTxHash, strOutputIndex, strErrorRet, mnb, false);
-        if(fSuccess)
-        {
-            mnodeman.UpdateMasternodeList(mnb, *g_connman);
-            mnb.Relay(*g_connman);
-            mnodeman.NotifyMasternodeUpdates(*g_connman);
-        }
-        return true;
-    }
     std::shared_ptr<CWallet> m_wallet;
 };
 

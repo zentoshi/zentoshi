@@ -159,6 +159,13 @@ extern const char *PING;
  */
 extern const char *PONG;
 /**
+ * The alert message warns nodes of problems that may affect them or the rest
+ * of the network.
+ * @since protocol version 311.
+ * @see https://bitcoin.org/en/developer-reference#alert
+ */
+extern const char *ALERT;
+/**
  * The notfound message is a reply to a getdata message which requested an
  * object the receiving node does not have available for relay.
  * @since protocol version 70001.
@@ -238,6 +245,10 @@ extern const char *GETBLOCKTXN;
  * @since protocol version 70014 as described by BIP 152
  */
 extern const char *BLOCKTXN;
+
+// Dash message types
+// NOTE: do NOT declare non-implmented here, we don't want them to be exposed to the outside
+// TODO: add description
 extern const char *TXLOCKREQUEST;
 extern const char *TXLOCKVOTE;
 extern const char *SPORK;
@@ -255,16 +266,16 @@ extern const char *DSSTATUSUPDATE;
 extern const char *DSTX;
 extern const char *DSQUEUE;
 extern const char *DSEG;
-extern const char *MERCHANTNODESEG;
 extern const char *SYNCSTATUSCOUNT;
-extern const char *MERCHANTSYNCSTATUSCOUNT;
 extern const char *MNGOVERNANCESYNC;
 extern const char *MNGOVERNANCEOBJECT;
 extern const char *MNGOVERNANCEOBJECTVOTE;
 extern const char *MNVERIFY;
-extern const char *MERCHANTNODEVERIFY;
-extern const char *MERCHANTNODEANNOUNCE;
-extern const char *MERCHANTNODEPING;
+extern const char *GETMNLISTDIFF;
+extern const char *MNLISTDIFF;
+extern const char *QFCOMMITMENT;
+extern const char *QDCOMMITMENT;
+extern const char *QCONTRIB;
 };
 
 /* Get a vector of all valid message types (see above) */
@@ -339,7 +350,9 @@ void SetServiceFlagsIBDCache(bool status);
  * == GetDesirableServiceFlags(services), ie determines whether the given
  * set of service flags are sufficient for a peer to be "relevant".
  */
-bool HasAllDesirableServiceFlags(ServiceFlags services);
+static inline bool HasAllDesirableServiceFlags(ServiceFlags services) {
+    return !(GetDesirableServiceFlags(services) & (~services));
+}
 
 /**
  * Checks if a peer with the given service flags may be capable of having a
@@ -388,7 +401,6 @@ public:
 /** getdata message type flags */
 const uint32_t MSG_WITNESS_FLAG = 1 << 30;
 const uint32_t MSG_TYPE_MASK    = 0xffffffff >> 2;
-const uint32_t MSG_Bitcoin_OFFSET = 1000;
 
 /** getdata / inv message types.
  * These numbers are defined by the protocol. When adding a new value, be sure
@@ -401,21 +413,33 @@ enum GetDataMsg
     MSG_BLOCK = 2,
     // The following can only occur in getdata. Invs always use TX or BLOCK.
     MSG_FILTERED_BLOCK = 3,  //!< Defined in BIP37
-    MSG_CMPCT_BLOCK = 4,     //!< Defined in BIP152
-    MSG_TXLOCK_REQUEST = MSG_Bitcoin_OFFSET,
-    MSG_TXLOCK_VOTE,
-    MSG_SPORK,
-    MSG_MASTERNODE_PAYMENT_VOTE,
-    MSG_MASTERNODE_PAYMENT_BLOCK, // reusing, was MSG_MASTERNODE_SCANNING_ERROR previousely, was NOT used in 12.0
-    MSG_MASTERNODE_ANNOUNCE,
-    MSG_MASTERNODE_PING,
-    MSG_DSTX,
-    MSG_GOVERNANCE_OBJECT,
-    MSG_GOVERNANCE_OBJECT_VOTE,
-    MSG_MASTERNODE_VERIFY,
     MSG_WITNESS_BLOCK = MSG_BLOCK | MSG_WITNESS_FLAG, //!< Defined in BIP144
     MSG_WITNESS_TX = MSG_TX | MSG_WITNESS_FLAG,       //!< Defined in BIP144
     MSG_FILTERED_WITNESS_BLOCK = MSG_FILTERED_BLOCK | MSG_WITNESS_FLAG,
+    // Dash message types
+    // NOTE: declare non-implmented here, we must keep this enum consistent and backwards compatible
+    MSG_TXLOCK_REQUEST = 4,
+    MSG_TXLOCK_VOTE = 5,
+    MSG_SPORK = 6,
+    MSG_MASTERNODE_PAYMENT_VOTE = 7,
+    MSG_MASTERNODE_PAYMENT_BLOCK = 8, // reusing, was MSG_MASTERNODE_SCANNING_ERROR previousely, was NOT used in 12.0
+    MSG_BUDGET_VOTE = 9, // deprecated since 12.1
+    MSG_BUDGET_PROPOSAL = 10, // deprecated since 12.1
+    MSG_BUDGET_FINALIZED = 11, // deprecated since 12.1
+    MSG_BUDGET_FINALIZED_VOTE = 12, // deprecated since 12.1
+    MSG_MASTERNODE_QUORUM = 13, // not implemented
+    MSG_MASTERNODE_ANNOUNCE = 14,
+    MSG_MASTERNODE_PING = 15,
+    MSG_DSTX = 16,
+    MSG_GOVERNANCE_OBJECT = 17,
+    MSG_GOVERNANCE_OBJECT_VOTE = 18,
+    MSG_MASTERNODE_VERIFY = 19,
+    // Nodes may always request a MSG_CMPCT_BLOCK in a getdata, however,
+    // MSG_CMPCT_BLOCK should not appear in any invs except as a part of getdata.
+    MSG_CMPCT_BLOCK = 20, //!< Defined in BIP152
+    MSG_QUORUM_FINAL_COMMITMENT = 21,
+    MSG_QUORUM_DUMMY_COMMITMENT = 22, // only valid on testnet/devnet/regtest
+    MSG_QUORUM_DUMMY_CONTRIBUTION = 23, // not a valid contribution and only allowed on testnet/devnet/regtest. Will later be replaced with the real contribution
 };
 
 /** inv message data */
@@ -424,6 +448,7 @@ class CInv
 public:
     CInv();
     CInv(int typeIn, const uint256& hashIn);
+    CInv(const std::string& strType, const uint256& hashIn);
 
     ADD_SERIALIZE_METHODS;
 
@@ -436,7 +461,8 @@ public:
 
     friend bool operator<(const CInv& a, const CInv& b);
 
-    std::string GetCommand() const;
+    bool IsKnownType() const;
+    const char* GetCommand() const;
     std::string ToString() const;
 
 public:

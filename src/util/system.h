@@ -31,17 +31,46 @@
 #include <stdint.h>
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/thread/condition_variable.hpp> // for boost::thread_interrupted
+#include <boost/filesystem/path.hpp>
+#include <boost/signals2/signal.hpp>
+#include <boost/thread/exceptions.hpp>
+
+// Debugging macros
+
+// Uncomment the following line to enable debugging messages
+// or enable on a per file basis prior to inclusion of util.h
+//#define ENABLE_DASH_DEBUG
+#ifdef ENABLE_DASH_DEBUG
+#define DBG( x ) x
+#else
+#define DBG( x ) 
+#endif
 
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
 
-extern bool fMasterNode;
+extern bool fMasternodeMode;
 extern bool fLiteMode;
 extern int nWalletBackups;
+
+static const bool DEFAULT_LOGTHREADNAMES = false;
+
+extern const std::unordered_map<std::string, std::vector<std::string> >& mapMultiArgs;
+extern bool fDebug;
+extern bool fPrintToConsole;
+extern bool fPrintToDebugLog;
+
+extern bool fLogTimestamps;
+extern bool fLogTimeMicros;
+extern bool fLogThreadNames;
+extern bool fLogIPs;
+extern std::atomic<bool> fReopenDebugLog;
 
 extern const char * const BITCOIN_CONF_FILENAME;
 extern const char * const MASTERNODE_CONF_FILENAME;
@@ -61,10 +90,40 @@ inline std::string _(const char* psz)
 void SetupEnvironment();
 bool SetupNetworking();
 
+/** Return true if log accepts specified category */
+bool LogAcceptCategory(const char* category);
+/** Reset internal log category caching (call this when debug categories have changed) */
+void ResetLogAcceptCategoryCache();
+/** Send a string to the log output */
+int LogPrintStr(const std::string &str);
+
+/** Formats a string without throwing exceptions. Instead, it'll return an error string instead of formatted string. */
+template<typename... Args>
+std::string SafeStringFormat(const std::string& fmt, const Args&... args)
+{
+    try {
+        return tinyformat::format(fmt, args...);
+    } catch (std::runtime_error& e) {
+        std::string message = tinyformat::format("\n****TINYFORMAT ERROR****\n    err=\"%s\"\n    fmt=\"%s\"\n", e.what(), fmt);
+        fprintf(stderr, "%s", message.c_str());
+        return message;
+    }
+}
+
+#define LogPrint(category, ...) do { \
+    if (LogAcceptCategory((category))) { \
+        LogPrintStr(SafeStringFormat(__VA_ARGS__)); \
+    } \
+} while(0)
+
+#define LogPrintf(...) do { \
+    LogPrintStr(SafeStringFormat(__VA_ARGS__)); \
+} while(0)
+
 template<typename... Args>
 bool error(const char* fmt, const Args&... args)
 {
-    LogPrintf("ERROR: %s\n", tfm::format(fmt, args...));
+    LogPrintStr("ERROR: " + SafeStringFormat(fmt, args...) + "\n");
     return false;
 }
 
@@ -326,6 +385,12 @@ std::string HelpMessageOpt(const std::string& option, const std::string& message
 int GetNumCores();
 
 void RenameThread(const char* name);
+std::string GetThreadName();
+
+namespace ctpl {
+    class thread_pool;
+}
+void RenameThreadPool(ctpl::thread_pool& tp, const char* baseName);
 
 /**
  * .. and a wrapper that just calls func once
@@ -367,6 +432,34 @@ std::string CopyrightHolders(const std::string& strPrefix);
 int ScheduleBatchPriority();
 
 double nround(double value, int to);
+
+/**
+ * @brief Converts version strings to 4-byte unsigned integer
+ * @param strVersion version in "x.x.x" format (decimal digits only)
+ * @return 4-byte unsigned integer, most significant byte is always 0
+ * Throws std::bad_cast if format doesn\t match.
+ */
+uint32_t StringVersionToInt(const std::string& strVersion);
+
+
+/**
+ * @brief Converts version as 4-byte unsigned integer to string
+ * @param nVersion 4-byte unsigned integer, most significant byte is always 0
+ * @return version string in "x.x.x" format (last 3 bytes as version parts)
+ * Throws std::bad_cast if format doesn\t match.
+ */
+std::string IntVersionToString(uint32_t nVersion);
+
+
+/**
+ * @brief Copy of the IntVersionToString, that returns "Invalid version" string
+ * instead of throwing std::bad_cast
+ * @param nVersion 4-byte unsigned integer, most significant byte is always 0
+ * @return version string in "x.x.x" format (last 3 bytes as version parts)
+ * or "Invalid version" if can't cast the given value
+ */
+std::string SafeIntVersionToString(uint32_t nVersion);
+
 
 namespace util {
 

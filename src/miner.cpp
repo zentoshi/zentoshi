@@ -181,7 +181,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(CWallet *wallet, 
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
     CAmount blockReward = GetBlockSubsidy(pindexPrev->nHeight, Params().GetConsensus());
     std::vector<const CWalletTx*> vwtxPrev;
-    if(fProofOfStake && !sporkManager.IsSporkActive(Spork::SPORK_15_POS_DISABLED))
+    if(fProofOfStake)
     {
         assert(wallet);
         boost::this_thread::interruption_point();
@@ -215,44 +215,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(CWallet *wallet, 
     }
     else
     {
-
-        if (nHeight <= Params().GetConsensus().nFirstPoSBlock) {
-
-		coinbaseTx.vout[0].nValue = nFees + blockReward;
-
-        } else {
-
-		// masternode payment
-
-		bool hasPayment = true;
-		CScript payee;
-
-		if (!mnpayments.GetBlockPayee(nHeight, payee)) {
-			int nCount = 0;
-			masternode_info_t mnInfo;
-			if(!mnodeman.GetNextMasternodeInQueueForPayment(pindexPrev->nHeight + 1, true, nCount, mnInfo)) {
-				payee = GetScriptForDestination(mnInfo.pubKeyCollateralAddress.GetID());
-			} else {
-				LogPrint(BCLog::MNPAYMENTS, "CreateNewBlock: Failed to detect masternode to pay\n");
-				hasPayment = false;
-			}
-		}
-
-		CAmount masternodePayment = GetMasternodePayment(nHeight, blockReward);
-
-		if (hasPayment) {
-			coinbaseTx.vout.resize(2);
-			coinbaseTx.vout[1].scriptPubKey = payee;
-			coinbaseTx.vout[1].nValue = masternodePayment;
-			coinbaseTx.vout[0].nValue = blockReward - masternodePayment;
-		}
-
-		CTxDestination address1;
-		ExtractDestination(payee, address1);
-		CBitcoinAddress address2(address1);
-		LogPrintf("CreateNewBlock::FillBlockPayee -- Masternode payment %lld to %s\n",
-			  masternodePayment, EncodeDestination(address1));
-         }
     }
 
     {
@@ -281,7 +243,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(CWallet *wallet, 
     }
     int64_t nTime2 = GetTimeMicros();
 
-    LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
+    LogPrintf("CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
 
     return std::move(pblocktemplate);
 }
@@ -638,7 +600,7 @@ void static BitcoinMiner(const CChainParams& chainparams, CConnman& connman, boo
             IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
             LogPrintf("BitcoinMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-                      ::GetSerializeSize(*pblock, PROTOCOL_VERSION));
+                      ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
             //Sign block
             if (fProofOfStake)

@@ -17,6 +17,7 @@
 #include <policy/feerate.h>
 #include <protocol.h> // For CMessageHeader::MessageStartChars
 #include <script/script_error.h>
+#include <spork.h>
 #include <sync.h>
 #include <versionbits.h>
 
@@ -32,8 +33,12 @@
 
 #include <atomic>
 
+#include <boost/unordered_map.hpp>
+#include <boost/filesystem/path.hpp>
+
 class CBlockIndex;
 class CBlockTreeDB;
+class CBloomFilter;
 class CChainParams;
 class CCoinsViewDB;
 class CInv;
@@ -41,12 +46,15 @@ class CConnman;
 class CScriptCheck;
 class CBlockPolicyEstimator;
 class CTxMemPool;
+class CValidationInterface;
 class CValidationState;
 struct ChainTxData;
 
 struct PrecomputedTransactionData;
 struct LockPoints;
 
+/** Default for accepting alerts from the P2P network. */
+static const bool DEFAULT_ALERTS = true;
 /** Default for -whitelistrelay. */
 static const bool DEFAULT_WHITELISTRELAY = true;
 /** Default for -whitelistforcerelay. */
@@ -168,11 +176,16 @@ extern size_t nCoinCacheUsage;
 extern CFeeRate minRelayTxFee;
 /** Absolute maximum transaction fee (in satoshis) used by wallet and mempool (rejects high fee in sendrawtransaction) */
 extern CAmount maxTxFee;
+extern bool fAlerts;
 /** If the tip is older than this (in seconds), the node is considered to be in initial block download. */
 extern int64_t nMaxTipAge;
 extern bool fEnableReplacement;
 extern bool fLargeWorkForkFound;
 extern bool fLargeWorkInvalidChainFound;
+
+extern std::map<uint256, int64_t> mapRejectedBlocks;
+
+extern std::atomic<bool> fDIP0001ActiveAtTip;
 
 /** Block hash whose ancestors we will assume to have valid scripts without checking them. */
 extern uint256 hashAssumeValid;
@@ -253,6 +266,13 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes = 0, bool blocks_dir = false);
 FILE* OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 /** Translation to a filesystem path */
 fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
+
+/** Dash specific */
+bool GetUTXOCoin(const COutPoint& outpoint, Coin& coin);
+int GetUTXOHeight(const COutPoint& outpoint);
+int GetUTXOConfirmations(const COutPoint& outpoint);
+bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
+
 /** Import blocks from an external file */
 bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskBlockPos *dbp = nullptr);
 /** Ensures we have a genesis block in the block tree, possibly writing one to disk. */
@@ -270,6 +290,7 @@ void ThreadScriptCheck();
 bool IsInitialBlockDownload();
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256& hash, CTransactionRef& tx, const Consensus::Params& params, uint256& hashBlock, const CBlockIndex* const blockIndex = nullptr);
+bool GetTransaction(const uint256& hash, CTransactionRef& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool unused);
 /**
  * Find the best known block, and make it the tip of the block chain
  *
@@ -483,6 +504,12 @@ extern VersionBitsCache versionbitscache;
  */
 int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params);
 
+/**
+ * Return true if hash can be found in chainActive at nBlockHeight height.
+ * Fills hashRet with found hash, if no nBlockHeight is specified - chainActive.Height() is used.
+ */
+bool GetBlockHash(uint256& hashRet, int nBlockHeight = -1);
+
 /** Reject codes greater or equal to this can be returned by AcceptToMemPool
  * for transactions, to signal internal conditions. They cannot and should not
  * be sent over the P2P network.
@@ -490,6 +517,10 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
 static const unsigned int REJECT_INTERNAL = 0x100;
 /** Too high fee. Can not be triggered by P2P transactions */
 static const unsigned int REJECT_HIGHFEE = 0x100;
+/** Transaction is already known (either in mempool or blockchain) */
+static const unsigned int REJECT_ALREADY_KNOWN = 0x101;
+/** Transaction conflicts with a transaction already known */
+static const unsigned int REJECT_CONFLICT = 0x102;
 
 /** Get block file info entry for one block file */
 CBlockFileInfo* GetBlockFileInfo(size_t n);

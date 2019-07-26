@@ -34,7 +34,7 @@ CAmount GetDustThreshold(const CTxOut& txout, const CFeeRate& dustRelayFeeIn)
     if (txout.scriptPubKey.IsUnspendable())
         return 0;
 
-    size_t nSize = GetSerializeSize(txout);
+    size_t nSize = GetSerializeSize(txout, SER_DISK, 0);
     int witnessversion = 0;
     std::vector<unsigned char> witnessprogram;
 
@@ -79,7 +79,7 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType, const bool w
     return whichType != TX_NONSTANDARD && whichType != TX_WITNESS_UNKNOWN;
 }
 
-bool IsStandardTx(const CTransaction& tx, std::string& reason)
+bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnessEnabled)
 {
     if (tx.nVersion > CTransaction::MAX_STANDARD_VERSION || tx.nVersion < 1) {
         reason = "version";
@@ -91,7 +91,7 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason)
     // computing signature hashes is O(ninputs*txsize). Limiting transactions
     // to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
     unsigned int sz = GetTransactionWeight(tx);
-    if (sz > MAX_STANDARD_TX_WEIGHT) {
+    if (sz >= MAX_STANDARD_TX_WEIGHT) {
         reason = "tx-size";
         return false;
     }
@@ -118,7 +118,7 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason)
     unsigned int nDataOut = 0;
     txnouttype whichType;
     for (const CTxOut& txout : tx.vout) {
-        if (!::IsStandard(txout.scriptPubKey, whichType)) {
+        if (!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled)) {
             reason = "scriptpubkey";
             return false;
         }

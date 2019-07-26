@@ -19,10 +19,13 @@ else
 LIBUNIVALUE = $(UNIVALUE_LIBS)
 endif
 
-BITCOIN_INCLUDES=-I$(builddir) $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
+BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
+BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
 BITCOIN_INCLUDES += $(UNIVALUE_CFLAGS)
+
+BLS_LIBS=-lchiabls -lgmp
 
 LIBBITCOIN_SERVER=libzentoshi_server.a
 LIBBITCOIN_COMMON=libzentoshi_common.a
@@ -98,6 +101,7 @@ BITCOIN_CORE_H = \
   activemasternode.h \
   addrdb.h \
   addrman.h \
+  alert.h \
   attributes.h \
   banman.h \
   base58.h \
@@ -127,6 +131,14 @@ BITCOIN_CORE_H = \
   core_io.h \
   core_memusage.h \
   cuckoocache.h \
+  ctpl.h \
+  cxxtimer.hpp \
+  evo/evodb.h \
+  evo/specialtx.h \
+  evo/providertx.h \
+  evo/deterministicmns.h \
+  evo/cbtx.h \
+  evo/simplifiedmns.h \
   dsnotificationinterface.h \
   fs.h \
   flat-database.h \
@@ -155,6 +167,11 @@ BITCOIN_CORE_H = \
   dbwrapper.h \
   limitedmap.h \
   logging.h \
+  llmq/quorums_commitment.h \
+  llmq/quorums_blockprocessor.h \
+  llmq/quorums_dummydkg.h \
+  llmq/quorums_utils.h \
+  llmq/quorums_init.h \
   masternode.h \
   masternode-payments.h \
   masternode-sync.h \
@@ -204,6 +221,8 @@ BITCOIN_CORE_H = \
   script/standard.h \
   shutdown.h \
   streams.h \
+  support/allocators/mt_pooled_secure.h \
+  support/allocators/pooled_secure.h \
   support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
   support/cleanse.h \
@@ -263,6 +282,7 @@ libzentoshi_server_a_SOURCES = \
   activemasternode.cpp \
   addrdb.cpp \
   addrman.cpp \
+  alert.cpp \
   banman.cpp \
   bloom.cpp \
   blocksigner.cpp \
@@ -272,6 +292,12 @@ libzentoshi_server_a_SOURCES = \
   checkpoints.cpp \
   consensus/tx_verify.cpp \
   dsnotificationinterface.cpp \
+  evo/evodb.cpp \
+  evo/specialtx.cpp \
+  evo/providertx.cpp \
+  evo/deterministicmns.cpp \
+  evo/cbtx.cpp \
+  evo/simplifiedmns.cpp \
   httprpc.cpp \
   httpserver.cpp \
   index/base.cpp \
@@ -289,6 +315,11 @@ libzentoshi_server_a_SOURCES = \
   governance/governance-validators.cpp \
   governance/governance-vote.cpp \
   governance/governance-votedb.cpp \
+  llmq/quorums_commitment.cpp \
+  llmq/quorums_blockprocessor.cpp \
+  llmq/quorums_dummydkg.cpp \
+  llmq/quorums_utils.cpp \
+  llmq/quorums_init.cpp \
   masternode.cpp \
   masternode-payments.cpp \
   masternode-sync.cpp \
@@ -312,7 +343,6 @@ libzentoshi_server_a_SOURCES = \
   policy/rbf.cpp \
   pow.cpp \
   rest.cpp \
-  rpc/bitcoinmisc.cpp \
   rpc/blockchain.cpp \
   rpc/governance.cpp\
   rpc/mining.cpp \
@@ -431,6 +461,8 @@ libzentoshi_consensus_a_SOURCES = \
   amount.h \
   arith_uint256.cpp \
   arith_uint256.h \
+  bls/bls.cpp \
+  bls/bls.h \
   consensus/merkle.cpp \
   consensus/merkle.h \
   consensus/params.h \
@@ -494,6 +526,10 @@ libzentoshi_common_a_SOURCES = \
 libzentoshi_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libzentoshi_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_util_a_SOURCES = \
+  bls/bls_ies.cpp \
+  bls/bls_ies.h \
+  bls/bls_worker.cpp \
+  bls/bls_worker.h \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
@@ -555,7 +591,7 @@ zentoshid_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-zentoshid_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS)
+zentoshid_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(BLS_LIBS)
 
 # zentoshi-cli binary #
 zentoshi_cli_SOURCES = zentoshi-cli.cpp
@@ -573,7 +609,7 @@ zentoshi_cli_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO)
 
-zentoshi_cli_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
+zentoshi_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(BLS_LIBS)
 #
 
 # zentoshi-tx binary #
@@ -594,7 +630,7 @@ zentoshi_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1)
 
-zentoshi_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+zentoshi_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 
 # zentoshi-wallet binary #
 #zentoshi_wallet_SOURCES = zentoshi-wallet.cpp
@@ -631,7 +667,7 @@ if GLIBC_BACK_COMPAT
 endif
 
 libzentoshiconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libzentoshiconsensus_la_LIBADD = $(LIBSECP256K1)
+libzentoshiconsensus_la_LIBADD = $(LIBSECP256K1) $(BLS_LIBS)
 libzentoshiconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL $(SSL_CFLAGS)
 libzentoshiconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
@@ -660,7 +696,9 @@ CLEANFILES += wallet/test/*.gcda wallet/test/*.gcno
 CLEANFILES += zmq/*.gcda zmq/*.gcno
 CLEANFILES += obj/build.h
 
+IMMER_DIST = immer
 EXTRA_DIST = $(CTAES_DIST)
+EXTRA_DIST += $(IMMER_DIST)
 
 
 config/zentoshi-config.h: config/stamp-h1

@@ -108,7 +108,7 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::TOR, "tor"},
     {BCLog::MEMPOOL, "mempool"},
     {BCLog::HTTP, "http"},
-    {BCLog::BENCH, "bench"},
+    {BCLog::PERF, "performance"},
     {BCLog::ZMQ, "zmq"},
     {BCLog::DB, "db"},
     {BCLog::RPC, "rpc"},
@@ -117,7 +117,7 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::SELECTCOINS, "selectcoins"},
     {BCLog::REINDEX, "reindex"},
     {BCLog::CMPCTBLOCK, "cmpctblock"},
-    {BCLog::RAND, "rand"},
+    {BCLog::RANDOM, "random"},
     {BCLog::PRUNE, "prune"},
     {BCLog::PROXY, "proxy"},
     {BCLog::MEMPOOLREJ, "mempoolrej"},
@@ -131,6 +131,7 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::MASTERNODE, "masternode"},
     {BCLog::GOBJECT, "gobject"},
     {BCLog::MNPAYMENTS, "mnpayments"},
+    {BCLog::ALERT, "alerts"},
     {BCLog::ALL, "1"},
     {BCLog::ALL, "all"},
 };
@@ -310,7 +311,11 @@ void BCLog::Logger::ShrinkDebugFile()
     {
         // Restart the file with some of the end
         std::vector<char> vch(RECENT_DEBUG_HISTORY_SIZE, 0);
-        fseek(file, -((long)vch.size()), SEEK_END);
+        if (fseek(file, -((long)vch.size()), SEEK_END)) {
+            LogPrintf("Failed to shrink debug log file: fseek(...) failed\n");
+            fclose(file);
+            return;
+        }
         int nBytes = fread(vch.data(), 1, vch.size(), file);
         fclose(file);
 

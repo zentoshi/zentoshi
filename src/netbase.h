@@ -67,5 +67,6 @@ bool SetSocketNoDelay(const SOCKET& hSocket);
  */
 struct timeval MillisToTimeval(int64_t nTimeout);
 void InterruptSocks5(bool interrupt);
-
+bool ConnectSocket(const CService &addr, SOCKET& hSocketRet, int nTimeout, bool *outProxyConnectionFailed = 0);
+bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest, int portDefault, int nTimeout, bool *outProxyConnectionFailed = 0);
 #endif // BITCOIN_NETBASE_H

@@ -48,7 +48,7 @@ struct CDiskTxPos : public CDiskBlockPos
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITEAS(CDiskBlockPos, *this);
+        READWRITE(*(CDiskBlockPos*)this);
         READWRITE(VARINT(nTxOffset));
     }
 
@@ -113,11 +113,14 @@ class CBlockTreeDB : public CDBWrapper
 public:
     explicit CBlockTreeDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
+    CBlockTreeDB(const CBlockTreeDB&) = delete;
+    CBlockTreeDB& operator=(const CBlockTreeDB&) = delete;
+
     bool WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo);
     bool ReadBlockFileInfo(int nFile, CBlockFileInfo &info);
     bool ReadLastBlockFile(int &nFile);
     bool WriteReindexing(bool fReindexing);
-    void ReadReindexing(bool &fReindexing);
+    bool ReadReindexing(bool &fReindexing);
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
     bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &vect);
     bool WriteFlag(const std::string &name, bool fValue);

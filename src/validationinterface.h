@@ -19,8 +19,13 @@ struct CBlockLocator;
 class CBlockIndex;
 class CConnman;
 class CReserveScript;
+class CTransaction;
 class CValidationInterface;
 class CValidationState;
+class CGovernanceVote;
+class CGovernanceObject;
+class CDeterministicMNList;
+class CDeterministicMNListDiff;
 class uint256;
 class CScheduler;
 class CTxMemPool;
@@ -139,7 +144,15 @@ protected:
      *
      * Called on a background thread.
      */
-    virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock) {}
+    virtual void SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex, int posInBlock) {}
+    virtual void NotifyTransactionLock(const CTransaction &tx) {}
+    virtual void NotifyChainLock(const CBlockIndex* pindex) {}
+    virtual void NotifyGovernanceVote(const CGovernanceVote &vote) {}
+    virtual void NotifyGovernanceObject(const CGovernanceObject &object) {}
+    virtual void NotifyInstantSendDoubleSpendAttempt(const CTransaction &currentTx, const CTransaction &previousTx) {}
+    virtual void NotifyMasternodeListChanged(bool undo, const CDeterministicMNList& oldMNList, const CDeterministicMNListDiff& diff) {}
+    virtual void SetBestChain(const CBlockLocator &locator) {}
+    virtual bool UpdatedTransaction(const uint256 &hash) { return false;}
     virtual void Inventory(const uint256 &hash) {}
     /** Tells listeners to broadcast their data. */
     virtual void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) {}
@@ -154,7 +167,6 @@ protected:
      * Notifies listeners that a block which builds directly on our current tip
      * has been received and connected to the headers tree, though not validated yet */
     virtual void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& block) {}
-    virtual void NotifyTransactionLock(const CTransaction &tx) {}
     virtual void NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload) {}
     virtual void AcceptedBlockHeader(const CBlockIndex *pindexNew) {}
     friend void ::RegisterValidationInterface(CValidationInterface*);
@@ -189,8 +201,15 @@ public:
     /** Unregister with mempool */
     void UnregisterWithMempoolSignals(CTxMemPool& pool);
 
+    /** A posInBlock value for SyncTransaction calls for tranactions not
+     * included in connected blocks such as transactions removed from mempool,
+     * accepted to mempool or appearing in disconnected blocks.*/
+    static const int SYNC_TRANSACTION_NOT_IN_BLOCK = -1;
+
     void UpdatedBlockTip(const CBlockIndex *, const CBlockIndex *, bool fInitialDownload);
-    void SyncTransaction(const CTransaction &, const CBlock *);
+    void SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex, int posInBlock) {}
+    void NotifyMasternodeListChanged(bool undo, const CDeterministicMNList& oldMNList, const CDeterministicMNListDiff& diff) {}
+    void NotifyChainLock(const CBlockIndex* pindex) {}
     void TransactionAddedToMempool(const CTransactionRef &);
     void BlockConnected(const std::shared_ptr<const CBlock> &, const CBlockIndex *pindex, const std::shared_ptr<const std::vector<CTransactionRef>> &);
     void BlockDisconnected(const std::shared_ptr<const CBlock> &);
@@ -199,6 +218,10 @@ public:
     void Broadcast(int64_t nBestBlockTime, CConnman* connman);
     void BlockChecked(const CBlock&, const CValidationState&);
     void NewPoWValidBlock(const CBlockIndex *, const std::shared_ptr<const CBlock>&);
+    void NotifyInstantSendDoubleSpendAttempt(const CTransaction &currentTx, const CTransaction &previousTx);
+    bool UpdatedTransaction(const uint256 &hash);
+    void NotifyGovernanceVote(const CGovernanceVote& vote);
+    void NotifyGovernanceObject(const CGovernanceObject& object);
     void NotifyTransactionLock(const CTransaction &tx);
     void NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload);
     void AcceptedBlockHeader(const CBlockIndex *pindexNew);

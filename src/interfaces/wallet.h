@@ -303,8 +303,6 @@ public:
     //! Register handler for keypool changed messages.
     using CanGetAddressesChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) = 0;
-
-    virtual bool startMasternode(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet) = 0;
 };
 
 //! Tracking object returned by CreateTransaction and passed to CommitTransaction.

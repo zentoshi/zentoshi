@@ -7,18 +7,14 @@
 
 #include <activemasternode.h>
 #include <addrman.h>
+#include <alert.h>
 #include <banman.h>
 #include <arith_uint256.h>
 #include <blockencodings.h>
 #include <chainparams.h>
 #include <consensus/validation.h>
-#include <governance/governance.h>
 #include <hash.h>
 #include <init.h>
-#include <instantx.h>
-#include <masternodeman.h>
-#include <masternode-sync.h>
-#include <masternode-payments.h>
 #include <merkleblock.h>
 #include <netmessagemaker.h>
 #include <netbase.h>
@@ -26,8 +22,6 @@
 #include <policy/policy.h>
 #include <primitives/block.h>
 #include <primitives/transaction.h>
-#include <privatesend/privatesend-client.h>
-#include <privatesend/privatesend-server.h>
 #include <random.h>
 #include <reverse_iterator.h>
 #include <scheduler.h>
@@ -38,8 +32,24 @@
 #include <util/system.h>
 #include <util/moneystr.h>
 #include <util/strencodings.h>
-#include <spork.h>
 #include <validation.h>
+
+#include <spork.h>
+#include <governance/governance.h>
+#include <instantx.h>
+#include <masternode-sync.h>
+#include <masternode-payments.h>
+#include <masternodeman.h>
+#ifdef ENABLE_WALLET
+#include <privatesend/privatesend-client.h>
+#endif // ENABLE_WALLET
+#include <privatesend/privatesend-server.h>
+
+#include <evo/deterministicmns.h>
+#include <evo/simplifiedmns.h>
+#include <llmq/quorums_commitment.h>
+#include <llmq/quorums_dummydkg.h>
+#include <llmq/quorums_blockprocessor.h>
 
 #include <map>
 #include <functional>
@@ -1070,10 +1080,64 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
         return LookupBlockIndex(inv.hash) != nullptr;
+
+    /* 
+        Dash Related Inventory Messages
+
+        --
+
+        We shouldn't update the sync times for each of the messages when we already have it. 
+        We're going to be asking many nodes upfront for the full inventory list, so we'll get duplicates of these.
+        We want to only update the time on new hits, so that we can time out appropriately if needed.
+    */
+    case MSG_TXLOCK_REQUEST:
+        return instantsend.AlreadyHave(inv.hash);
+
+    case MSG_TXLOCK_VOTE:
+        return instantsend.AlreadyHave(inv.hash);
+
+    case MSG_SPORK:
+        {
+            CSporkMessage spork;
+            return sporkManager.GetSporkByHash(inv.hash, spork);
+        }
+
+    case MSG_MASTERNODE_PAYMENT_VOTE:
+        return mnpayments.mapMasternodePaymentVotes.count(inv.hash);
+
+    case MSG_MASTERNODE_PAYMENT_BLOCK:
+        {
+            BlockMap::iterator mi = mapBlockIndex.find(inv.hash);
+            return mi != mapBlockIndex.end() && mnpayments.mapMasternodeBlocks.find(mi->second->nHeight) != mnpayments.mapMasternodeBlocks.end();
+        }
+
+    case MSG_MASTERNODE_ANNOUNCE:
+        return mnodeman.mapSeenMasternodeBroadcast.count(inv.hash) && !mnodeman.IsMnbRecoveryRequested(inv.hash);
+
+    case MSG_MASTERNODE_PING:
+        return mnodeman.mapSeenMasternodePing.count(inv.hash);
+
+    case MSG_DSTX: {
+        return static_cast<bool>(CPrivateSend::GetDSTX(inv.hash));
     }
 
-    // process one of the extensions
-    return net_processing_bitcoin::AlreadyHave(inv);
+    case MSG_GOVERNANCE_OBJECT:
+    case MSG_GOVERNANCE_OBJECT_VOTE:
+        return ! governance.ConfirmInventoryRequest(inv);
+
+    case MSG_MASTERNODE_VERIFY:
+        return mnodeman.mapSeenMasternodeVerification.count(inv.hash);
+
+    case MSG_QUORUM_FINAL_COMMITMENT:
+        return llmq::quorumBlockProcessor->HasMinableCommitment(inv.hash);
+    case MSG_QUORUM_DUMMY_COMMITMENT:
+        return llmq::quorumDummyDKG->HasDummyCommitment(inv.hash);
+    case MSG_QUORUM_DUMMY_CONTRIBUTION:
+        return llmq::quorumDummyDKG->HasDummyContribution(inv.hash);
+    }
+
+    // Don't know what it is, just say we already got one
+    return true;
 }
 
 static void RelayTransaction(const CTransaction& tx, CConnman* connman)
@@ -1284,8 +1348,6 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
             CInv &inv = *it;
             it++;
 
-            net_processing_bitcoin::TransformInvForLegacyVersion(inv, pfrom, false);
-
             // Send stream from relay memory
             bool push = false;
             if(inv.type == MSG_TX || inv.type == MSG_WITNESS_TX) {
@@ -1308,10 +1370,6 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
             else if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK || inv.type == MSG_CMPCT_BLOCK || inv.type == MSG_WITNESS_BLOCK) {
                 ProcessGetBlockData(pfrom, consensusParams, inv, connman, interruptMsgProc);
                 push = true;
-            }
-            else
-            {
-                push = net_processing_bitcoin::ProcessGetData(pfrom, consensusParams, connman, inv);
             }
 
             if (!push) {
@@ -1591,6 +1649,19 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         return true;
     }
 
+    // BEGIN TEMPORARY CODE
+    bool fDIP0003Active;
+    {
+        LOCK(cs_main);
+        fDIP0003Active = VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE;
+    }
+    // TODO delete this in next release after v13
+    int nMinPeerProtoVersion = MIN_PEER_PROTO_VERSION;
+    if (fDIP0003Active) {
+        nMinPeerProtoVersion = MIN_PEER_PROTO_VERSION_DIP3;
+    }
+    // END TEMPORARY CODE
+
     if (!(pfrom->GetLocalServices() & NODE_BLOOM) &&
             (strCommand == NetMsgType::FILTERLOAD ||
              strCommand == NetMsgType::FILTERADD))
@@ -1817,6 +1888,17 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     // At this point, the outgoing message serialization version can't change.
     const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
 
+    // BEGIN TEMPORARY CODE
+    if (pfrom->nVersion < nMinPeerProtoVersion) {
+        // disconnect from peers with version < 70213 after DIP3 has activated through the BIP9 deployment
+        LogPrintf("peer=%d using obsolete version %i after DIP3 activation; disconnecting\n", pfrom->id, pfrom->GetSendVersion());
+        connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
+                strprintf("Version must be %d or greater", nMinPeerProtoVersion)));
+        pfrom->fDisconnect = true;
+        return false;
+    }
+    // END TEMPORARY CODE
+
     if (strCommand == NetMsgType::VERACK)
     {
         pfrom->SetRecvVersion(std::min(pfrom->nVersion.load(), PROTOCOL_VERSION));
@@ -1967,8 +2049,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             if (interruptMsgProc)
                 return true;
 
-            net_processing_bitcoin::TransformInvForLegacyVersion(inv, pfrom, false);
-
             bool fAlreadyHave = AlreadyHave(inv);
             LogPrint(BCLog::NET, "got inv: %s  %s peer=%d\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->GetId());
 
@@ -1990,6 +2070,21 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             }
             else
             {
+                static std::set<int> legacyMNObjs = {
+                        MSG_MASTERNODE_PAYMENT_VOTE,
+                        MSG_MASTERNODE_PAYMENT_BLOCK,
+                        MSG_MASTERNODE_ANNOUNCE,
+                        MSG_MASTERNODE_PING,
+                        MSG_MASTERNODE_VERIFY,
+                };
+                static std::set<int> allowWhileInIBDObjs = {
+                        MSG_SPORK
+                };
+                if (legacyMNObjs.count(inv.type) && deterministicMNManager->IsDeterministicMNsSporkActive()) {
+                    LogPrint(BCLog::NET, "ignoring (%s) inv of legacy type %d peer=%d\n", inv.hash.ToString(), inv.type, pfrom->id);
+                    continue;
+                }
+
                 pfrom->AddInventoryKnown(inv);
                 if (fBlocksOnly) {
                     LogPrint(BCLog::NET, "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->GetId());
@@ -2243,7 +2338,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         std::list<CTransactionRef> lRemovedTxn;
 
         if (!AlreadyHave(inv) &&
-            AcceptToMemoryPool(mempool, state, ptx, &fMissingInputs, &lRemovedTxn, false /* bypass_limits */, 0 /* nAbsurdFee */)) {
+            AcceptToMemoryPool(mempool, state, ptx, &fMissingInputs, &lRemovedTxn, false, 0)) {
             mempool.check(pcoinsTip.get());
             RelayTransaction(tx, connman);
             for (unsigned int i = 0; i < tx.vout.size(); i++) {
@@ -2803,10 +2898,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
 
         pfrom->fSentAddr = true;
+
         pfrom->vAddrToSend.clear();
         std::vector<CAddress> vAddr = connman->GetAddresses();
         FastRandomContext insecure_rand;
-
         for(const CAddress &addr : vAddr)
            if(!g_banman->IsBanned(addr))
               pfrom->PushAddress(addr, insecure_rand);
@@ -2913,6 +3008,37 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     }
 
 
+    else if (fAlerts && strCommand == NetMsgType::ALERT)
+    {
+        CAlert alert;
+        vRecv >> alert;
+
+        uint256 alertHash = alert.GetHash();
+        if (pfrom->setKnown.count(alertHash) == 0)
+        {
+            if (alert.ProcessAlert(chainparams.AlertKey()))
+            {
+                // Relay
+                pfrom->setKnown.insert(alertHash);
+                {
+                    connman->ForEachNode([&alert, &connman](CNode* pnode) {
+                        alert.RelayTo(pnode, *connman);
+                    });
+                }
+            }
+            else {
+                // Small DoS penalty so peers that send us lots of
+                // duplicate/expired/invalid-signature/whatever alerts
+                // eventually get banned.
+                // This isn't a Misbehaving(100) (immediate ban) because the
+                // peer might be an older or different implementation with
+                // a different signature key, etc.
+                Misbehaving(pfrom->GetId(), 10);
+            }
+        }
+    }
+
+
     else if (strCommand == NetMsgType::FILTERLOAD)
     {
         CBloomFilter filter;
@@ -2927,7 +3053,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         else
         {
             LOCK(pfrom->cs_filter);
-            pfrom->pfilter.reset(new CBloomFilter(filter));
+            delete pfrom->pfilter;
+            pfrom->pfilter = new CBloomFilter(filter);
             pfrom->pfilter->UpdateEmptyFull();
             pfrom->fRelayTxes = true;
         }
@@ -2963,10 +3090,12 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     {
         LOCK(pfrom->cs_filter);
         if (pfrom->GetLocalServices() & NODE_BLOOM) {
-            pfrom->pfilter.reset(new CBloomFilter());
+            delete pfrom->pfilter;
+            pfrom->pfilter = new CBloomFilter();
         }
         pfrom->fRelayTxes = true;
     }
+
 
     else if (strCommand == NetMsgType::FEEFILTER) {
         CAmount newFeeFilter = 0;
@@ -2980,16 +3109,62 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
     }
 
+
+    else if (strCommand == NetMsgType::GETMNLISTDIFF) {
+        CGetSimplifiedMNListDiff cmd;
+        vRecv >> cmd;
+
+        LOCK(cs_main);
+
+        CSimplifiedMNListDiff mnListDiff;
+        std::string strError;
+        if (BuildSimplifiedMNListDiff(cmd.baseBlockHash, cmd.blockHash, mnListDiff, strError)) {
+            connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::MNLISTDIFF, mnListDiff));
+        } else {
+            LogPrint(BCLog::NET, "getmnlistdiff failed for baseBlockHash=%s, blockHash=%s. error=%s\n", cmd.baseBlockHash.ToString(), cmd.blockHash.ToString(), strError);
+            Misbehaving(pfrom->id, 1);
+        }
+    }
+
+
+    else if (strCommand == NetMsgType::MNLISTDIFF) {
+        // we have never requested this
+        LOCK(cs_main);
+        Misbehaving(pfrom->id, 100);
+        LogPrint(BCLog::NET, "received not-requested mnlistdiff. peer=%d\n", pfrom->id);
+    }
+
+
     else if (strCommand == NetMsgType::NOTFOUND) {
         // We do not care about the NOTFOUND message, but logging an Unknown Command
         // message would be undesirable as we transmit it ourselves.
     }
 
     else {
-        const auto &allMessages = getAllNetMessageTypes();
-        if(std::find(std::begin(allMessages), std::end(allMessages), strCommand) != std::end(allMessages))
+        bool found = false;
+        const std::vector<std::string> &allMessages = getAllNetMessageTypes();
+        for (const std::string msg : allMessages) {
+            if(msg == strCommand) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
         {
-            net_processing_bitcoin::ProcessExtension(pfrom, strCommand, vRecv, connman);
+            //probably one the extensions
+#ifdef ENABLE_WALLET
+            privateSendClient.ProcessMessage(pfrom, strCommand, vRecv, *connman);
+#endif // ENABLE_WALLET
+            privateSendServer.ProcessMessage(pfrom, strCommand, vRecv, *connman);
+            mnodeman.ProcessMessage(pfrom, strCommand, vRecv, *connman);
+            mnpayments.ProcessMessage(pfrom, strCommand, vRecv, *connman);
+            instantsend.ProcessMessage(pfrom, strCommand, vRecv, *connman);
+            sporkManager.ProcessSpork(pfrom, strCommand, vRecv, connman);
+            masternodeSync.ProcessMessage(pfrom, strCommand, vRecv);
+            governance.ProcessMessage(pfrom, strCommand, vRecv, *connman);
+            llmq::quorumBlockProcessor->ProcessMessage(pfrom, strCommand, vRecv, *connman);
+            llmq::quorumDummyDKG->ProcessMessage(pfrom, strCommand, vRecv, *connman);
         }
         else
         {
@@ -2997,8 +3172,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             LogPrint(BCLog::NET, "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->GetId());
         }
     }
-
-
 
     return true;
 }
@@ -3579,15 +3752,14 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
             pto->vInventoryBlockToSend.clear();
 
             // Check whether periodic sends should happen
-            bool fSendTrickle = pto->fWhitelisted;
+            // Note: If this node is running in a Masternode mode, it makes no sense to delay outgoing txes
+            // because we never produce any txes ourselves i.e. no privacy is lost in this case.
+            bool fSendTrickle = pto->fWhitelisted || fMasternodeMode;
             if (pto->nNextInvSend < nNow) {
                 fSendTrickle = true;
-                if (pto->fInbound) {
-                    pto->nNextInvSend = connman->PoissonNextSendInbound(nNow, INVENTORY_BROADCAST_INTERVAL);
-                } else {
-                    // Use half the delay for outbound peers, as there is less privacy concern for them.
-                    pto->nNextInvSend = PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> 1);
-                }
+                // Use half the delay for regular outbound peers, as there is less privacy concern for them,
+                // and quarter the delay for Masternode outbound peers, as there is even less privacy concern in this case.
+                pto->nNextInvSend = PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> !pto->fInbound >> pto->fMasternode);
             }
 
             // Time to send but the peer has requested we not relay transactions.
@@ -3695,17 +3867,18 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
                 }
             }
 
-            for(auto &&inv : pto->vInventoryToSend)
-            {
-                net_processing_bitcoin::TransformInvForLegacyVersion(inv, pto, true);
+            // Send non-tx/non-block inventory items
+            for (const auto& inv : pto->vInventoryOtherToSend) {
+                if (pto->filterInventoryKnown.contains(inv.hash)) {
+                    continue;
+                }
                 vInv.push_back(inv);
-                if (vInv.size() == MAX_INV_SZ)
-                {
+                pto->filterInventoryKnown.insert(inv.hash);
+                if (vInv.size() == MAX_INV_SZ) {
                     connman->PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                     vInv.clear();
                 }
             }
-
             pto->vInventoryToSend.clear();
         }
         if (!vInv.empty())
@@ -3807,8 +3980,6 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
                          pto->GetSendVersion(),
                          pto->GetRecvVersion());
 
-                net_processing_bitcoin::TransformInvForLegacyVersion(inv, pto, true);
-
                 vGetData.push_back(inv);
                 if (vGetData.size() >= 1000)
                 {
@@ -3865,305 +4036,3 @@ public:
         mapOrphanTransactionsByPrev.clear();
     }
 } instance_of_cnetprocessingcleanup;
-
-namespace LegacyInvMsg {
-enum {
-    MSG_TX = 1,
-    MSG_BLOCK,
-    // Nodes may always request a MSG_FILTERED_BLOCK in a getdata, however,
-    // MSG_FILTERED_BLOCK should not appear in any invs except as a part of getdata.
-    MSG_FILTERED_BLOCK,
-    // Bitcoin message types
-    // NOTE: declare non-implmented here, we must keep this enum consistent and backwards compatible
-    MSG_TXLOCK_REQUEST,
-    MSG_TXLOCK_VOTE,
-    MSG_SPORK,
-    MSG_MASTERNODE_PAYMENT_VOTE,
-    MSG_MASTERNODE_PAYMENT_BLOCK, // reusing, was MSG_MASTERNODE_SCANNING_ERROR previousely, was NOT used in 12.0
-    MSG_BUDGET_VOTE, // depreciated since 12.1
-    MSG_BUDGET_PROPOSAL, // depreciated since 12.1
-    MSG_BUDGET_FINALIZED, // depreciated since 12.1
-    MSG_BUDGET_FINALIZED_VOTE, // depreciated since 12.1
-    MSG_MASTERNODE_QUORUM, // not implemented
-    MSG_MASTERNODE_ANNOUNCE,
-    MSG_MASTERNODE_PING,
-    MSG_DSTX,
-    MSG_GOVERNANCE_OBJECT,
-    MSG_GOVERNANCE_OBJECT_VOTE,
-    MSG_MASTERNODE_VERIFY
-};
-}
-
-using SporkHandler = std::function<CSerializedNetMsg(const CNetMsgMaker &, const uint256 &)>;
-using MapSporkHandlers = std::map<int, SporkHandler>;
-
-#define ADD_HANDLER(sporkID, handler) sporkHandlers.emplace(sporkID, [](const CNetMsgMaker &msgMaker, const uint256 &hash) -> CSerializedNetMsg handler)
-
-static const MapSporkHandlers &GetMapGetDataHandlers()
-{
-    static MapSporkHandlers sporkHandlers;
-    if(sporkHandlers.empty())
-    {
-        ADD_HANDLER(MSG_SPORK, {
-                        if(mapSporks.count(hash)) {
-                            return msgMaker.Make(NetMsgType::SPORK, mapSporks[hash]);
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_TXLOCK_REQUEST, {
-                        CTxLockRequest txLockRequest;
-                        if(instantsend.GetTxLockRequest(hash, txLockRequest)) {
-                            return msgMaker.Make(NetMsgType::TXLOCKREQUEST, txLockRequest);
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_TXLOCK_VOTE, {
-                        CTxLockVote vote;
-                        if(instantsend.GetTxLockVote(hash, vote)) {
-                            return msgMaker.Make(NetMsgType::TXLOCKVOTE, vote);
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_MASTERNODE_PAYMENT_BLOCK, {
-                        BlockMap::iterator mi = mapBlockIndex.find(hash);
-                        LOCK(cs_mapMasternodeBlocks);
-                        if (mi != mapBlockIndex.end() && mnpayments.mapMasternodeBlocks.count(mi->second->nHeight)) {
-                            for(const CMasternodePayee& payee : mnpayments.mapMasternodeBlocks[mi->second->nHeight].vecPayees) {
-                                std::vector<uint256> vecVoteHashes = payee.GetVoteHashes();
-                                for(const uint256& hash : vecVoteHashes) {
-                                    if(mnpayments.HasVerifiedPaymentVote(hash)) {
-                                        return msgMaker.Make(NetMsgType::MASTERNODEPAYMENTVOTE, mnpayments.mapMasternodePaymentVotes[hash]);
-                                    }
-                                }
-                            }
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_MASTERNODE_PAYMENT_VOTE, {
-                        if(mnpayments.HasVerifiedPaymentVote(hash)) {
-                            return msgMaker.Make(NetMsgType::MASTERNODEPAYMENTVOTE, mnpayments.mapMasternodePaymentVotes[hash]);
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_MASTERNODE_ANNOUNCE, {
-                        if(mnodeman.mapSeenMasternodeBroadcast.count(hash)) {
-                            return msgMaker.Make(NetMsgType::MNANNOUNCE, mnodeman.mapSeenMasternodeBroadcast[hash].second);
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_MASTERNODE_PING, {
-                        if(mnodeman.mapSeenMasternodePing.count(hash)) {
-                            return msgMaker.Make(NetMsgType::MNPING, mnodeman.mapSeenMasternodePing[hash]);
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_GOVERNANCE_OBJECT, {
-                        if(governance.HaveObjectForHash(hash)) {
-                            CGovernanceObject obj;
-                            if(governance.SerializeObjectForHash(hash, obj)) {
-                                return msgMaker.Make(NetMsgType::MNGOVERNANCEOBJECT, obj);
-                            }
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_GOVERNANCE_OBJECT_VOTE, {
-                        if(governance.HaveVoteForHash(hash)) {
-                            CGovernanceVote vote;
-                            if(governance.SerializeVoteForHash(hash, vote)) {
-                                return msgMaker.Make(NetMsgType::MNGOVERNANCEOBJECTVOTE, vote);
-
-                            }
-                        }
-                        return {};
-                    });
-        ADD_HANDLER(MSG_MASTERNODE_VERIFY, {
-                        if(mnodeman.mapSeenMasternodeVerification.count(hash)) {
-                            return msgMaker.Make(NetMsgType::MNVERIFY, mnodeman.mapSeenMasternodeVerification[hash]);
-
-                        }
-                        return {};
-                    });
-    }
-    return sporkHandlers;
-}
-
-bool net_processing_bitcoin::ProcessGetData(CNode *pfrom, const Consensus::Params &consensusParams, CConnman *connman, const CInv &inv)
-{
-    const auto &handlersMap = GetMapGetDataHandlers();
-    auto it = handlersMap.find(inv.type);
-    if(it != std::end(handlersMap))
-    {
-        const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
-        auto &&msg = it->second(msgMaker, inv.hash);
-        if(!msg.command.empty())
-        {
-            connman->PushMessage(pfrom, std::move(msg));
-            return true;
-        }
-    }
-    return false;
-}
-
-void net_processing_bitcoin::ProcessExtension(CNode *pfrom, const std::string &strCommand, CDataStream &vRecv, CConnman *connman)
-{
-    mnodeman.ProcessMessage(pfrom, strCommand, vRecv, *connman);
-    mnpayments.ProcessMessage(pfrom, strCommand, vRecv, *connman);
-    instantsend.ProcessMessage(pfrom, strCommand, vRecv, *connman);
-    sporkManager.ProcessSpork(pfrom, strCommand, vRecv, connman);
-    masternodeSync.ProcessMessage(pfrom, strCommand, vRecv);
-    governance.ProcessMessage(pfrom, strCommand, vRecv, *connman);
-}
-
-void net_processing_bitcoin::ThreadProcessExtensions(CConnman *pConnman)
-{
-    if(fLiteMode) return; // disable all Bitcoin specific functionality
-
-    static bool fOneThread;
-    if(fOneThread) return;
-    fOneThread = true;
-
-    // Make this thread recognisable as the PrivateSend thread
-    RenameThread("bitcoin-ps");
-
-    unsigned int nTick = 0;
-
-    auto &connman = *pConnman;
-    while (!ShutdownRequested())
-    {
-        boost::this_thread::interruption_point();
-        MilliSleep(1000);
-
-        // try to sync from all available nodes, one step at a time
-        masternodeSync.ProcessTick(connman);
-
-        if(!ShutdownRequested()) {
-
-            nTick++;
-
-            if(masternodeSync.IsBlockchainSynced()) {
-                // make sure to check all masternodes first
-                mnodeman.Check();
-
-                // check if we should activate or ping every few minutes,
-                // slightly postpone first run to give net thread a chance to connect to some peers
-                if(nTick % MASTERNODE_MIN_MNP_SECONDS == 15)
-                    activeMasternode.ManageState(connman);
-
-                if(nTick % 60 == 0) {
-                    mnodeman.ProcessMasternodeConnections(connman);
-                    mnodeman.CheckAndRemove(connman);
-                    mnpayments.CheckAndRemove();
-                    instantsend.CheckAndRemove();
-                }
-                if(fMasterNode && (nTick % (60 * 5) == 0)) {
-                    mnodeman.DoFullVerificationStep(connman);
-                }
-
-                if(nTick % (60 * 5) == 0) {
-                    governance.DoMaintenance(connman);
-                }
-            }
-
-        }
-    }
-}
-
-bool net_processing_bitcoin::AlreadyHave(const CInv &inv)
-{
-    switch(inv.type)
-    {
-    /*
-    Bitcoin Related Inventory Messages
-
-    --
-
-    We shouldn't update the sync times for each of the messages when we already have it.
-    We're going to be asking many nodes upfront for the full inventory list, so we'll get duplicates of these.
-    We want to only update the time on new hits, so that we can time out appropriately if needed.
-    */
-    case MSG_TXLOCK_REQUEST:
-        return instantsend.AlreadyHave(inv.hash);
-
-    case MSG_TXLOCK_VOTE:
-        return instantsend.AlreadyHave(inv.hash);
-
-    case MSG_SPORK:
-        return mapSporks.count(inv.hash);
-
-    case MSG_MASTERNODE_PAYMENT_VOTE:
-        return mnpayments.mapMasternodePaymentVotes.count(inv.hash);
-
-    case MSG_MASTERNODE_PAYMENT_BLOCK:
-    {
-        BlockMap::iterator mi = mapBlockIndex.find(inv.hash);
-        return mi != mapBlockIndex.end() && mnpayments.mapMasternodeBlocks.find(mi->second->nHeight) != mnpayments.mapMasternodeBlocks.end();
-    }
-
-    case MSG_MASTERNODE_ANNOUNCE:
-        return mnodeman.mapSeenMasternodeBroadcast.count(inv.hash) && !mnodeman.IsMnbRecoveryRequested(inv.hash);
-
-    case MSG_MASTERNODE_PING:
-        return mnodeman.mapSeenMasternodePing.count(inv.hash);
-
-    case MSG_DSTX: {
-        return static_cast<bool>(CPrivateSend::GetDSTX(inv.hash));
-    }
-    case MSG_GOVERNANCE_OBJECT:
-    case MSG_GOVERNANCE_OBJECT_VOTE:
-        return !governance.ConfirmInventoryRequest(inv);
-
-    case MSG_MASTERNODE_VERIFY:
-        return mnodeman.mapSeenMasternodeVerification.count(inv.hash);
-    }
-    return true;
-}
-
-static int MapLegacyToCurrent(int nLegacyType)
-{
-    switch(nLegacyType)
-    {
-    case LegacyInvMsg::MSG_TXLOCK_REQUEST: return MSG_TXLOCK_REQUEST;
-    case LegacyInvMsg::MSG_TXLOCK_VOTE: return MSG_TXLOCK_VOTE;
-    case LegacyInvMsg::MSG_SPORK: return MSG_SPORK;
-    case LegacyInvMsg::MSG_MASTERNODE_PAYMENT_VOTE: return MSG_MASTERNODE_PAYMENT_VOTE;
-    case LegacyInvMsg::MSG_MASTERNODE_PAYMENT_BLOCK: return MSG_MASTERNODE_PAYMENT_BLOCK;
-    case LegacyInvMsg::MSG_MASTERNODE_ANNOUNCE: return MSG_MASTERNODE_ANNOUNCE;
-    case LegacyInvMsg::MSG_MASTERNODE_PING: return MSG_MASTERNODE_PING;
-    case LegacyInvMsg::MSG_DSTX: return MSG_DSTX;
-    case LegacyInvMsg::MSG_GOVERNANCE_OBJECT: return MSG_GOVERNANCE_OBJECT;
-    case LegacyInvMsg::MSG_GOVERNANCE_OBJECT_VOTE: return MSG_GOVERNANCE_OBJECT_VOTE;
-    case LegacyInvMsg::MSG_MASTERNODE_VERIFY: return MSG_MASTERNODE_VERIFY;
-    }
-    return nLegacyType;
-}
-
-static int MapCurrentToLegacy(int nCurrentType)
-{
-    switch(nCurrentType)
-    {
-    case MSG_TXLOCK_REQUEST: return LegacyInvMsg::MSG_TXLOCK_REQUEST;
-    case MSG_TXLOCK_VOTE: return LegacyInvMsg::MSG_TXLOCK_VOTE;
-    case MSG_SPORK: return LegacyInvMsg::MSG_SPORK;
-    case MSG_MASTERNODE_PAYMENT_VOTE: return LegacyInvMsg::MSG_MASTERNODE_PAYMENT_VOTE;
-    case MSG_MASTERNODE_PAYMENT_BLOCK: return LegacyInvMsg::MSG_MASTERNODE_PAYMENT_BLOCK;
-    case MSG_MASTERNODE_ANNOUNCE: return LegacyInvMsg::MSG_MASTERNODE_ANNOUNCE;
-    case MSG_MASTERNODE_PING: return LegacyInvMsg::MSG_MASTERNODE_PING;
-    case MSG_DSTX: return LegacyInvMsg::MSG_DSTX;
-    case MSG_GOVERNANCE_OBJECT: return LegacyInvMsg::MSG_GOVERNANCE_OBJECT;
-    case MSG_GOVERNANCE_OBJECT_VOTE: return LegacyInvMsg::MSG_GOVERNANCE_OBJECT_VOTE;
-    case MSG_MASTERNODE_VERIFY: return LegacyInvMsg::MSG_MASTERNODE_VERIFY;
-    }
-    return nCurrentType;
-}
-
-bool net_processing_bitcoin::TransformInvForLegacyVersion(CInv &inv, CNode *pfrom, bool fForSending)
-{
-    if(pfrom->GetSendVersion() == PRESEGWIT_PROTO_VERSION)
-    {
-        if(fForSending)
-            inv.type = MapCurrentToLegacy(inv.type);
-        else
-            inv.type = MapLegacyToCurrent(inv.type);
-    }
-    return true;
-}

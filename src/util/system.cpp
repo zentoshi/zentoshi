@@ -6,9 +6,11 @@
 #include <util/system.h>
 
 #include <chainparamsbase.h>
+#include <ctpl.h>
 #include <random.h>
 #include <serialize.h>
 #include <util/strencodings.h>
+#include <util/time.h>
 
 #include <stdarg.h>
 
@@ -44,6 +46,11 @@
 #pragma warning(disable:4717)
 #endif
 
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#define _WIN32_WINNT 0x0501
+
 #ifdef _WIN32_IE
 #undef _WIN32_IE
 #endif
@@ -68,22 +75,114 @@
 #include <malloc.h>
 #endif
 
-#include <thread>
+#include <boost/algorithm/string/case_conv.hpp> // for to_lower()
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/thread.hpp>
+
+// Work around clang compilation problem in Boost 1.46:
+// /usr/include/boost/program_options/detail/config_file.hpp:163:17: error: call to function 'to_internal' that is neither visible in the template definition nor found by argument-dependent lookup
+// See also: http://stackoverflow.com/questions/10020179/compilation-fail-in-boost-librairies-program-options
+//           http://clang.debian.net/status.php?version=3.0&key=CANNOT_FIND_FUNCTION
+namespace boost {
+
+    namespace program_options {
+        std::string to_internal(const std::string&);
+    }
+
+} // namespace boost
 
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
+//Dash only features
+bool fMasternodeMode = false;
+bool fLiteMode = false;
+/**
+    nWalletBackups:
+        1..10   - number of automatic backups to keep
+        0       - disabled by command-line
+        -1      - disabled because of some error during run-time
+        -2      - disabled because wallet was locked and we were not able to replenish keypool
+*/
+int nWalletBackups = 10;
 const char * const BITCOIN_CONF_FILENAME = "zentoshi.conf";
 const char * const BITCOIN_PID_FILENAME = "zentoshid.pid";
-
 const char * const MASTERNODE_CONF_FILENAME_ARG = "-mnconf";
 const char * const MASTERNODE_CONF_FILENAME = "masternode.conf";
 
-bool fMasterNode = false;
-bool fLiteMode = false;
-int nWalletBackups = 10;
-
 ArgsManager gArgs;
+
+bool fDebug = false;
+bool fPrintToConsole = false;
+bool fPrintToDebugLog = true;
+std::atomic<bool> fReopenDebugLog(false);
+bool fLogTimestamps = DEFAULT_LOGTIMESTAMPS;
+bool fLogTimeMicros = DEFAULT_LOGTIMEMICROS;
+bool fLogThreadNames = DEFAULT_LOGTHREADNAMES;
+
+/**
+ * LogPrintf() has been broken a couple of times now
+ * by well-meaning people adding mutexes in the most straightforward way.
+ * It breaks because it may be called by global destructors during shutdown.
+ * Since the order of destruction of static/global objects is undefined,
+ * defining a mutex as a global object doesn't work (the mutex gets
+ * destroyed, and then some later destructor calls OutputDebugStringF,
+ * maybe indirectly, and you get a core dump at shutdown trying to lock
+ * the mutex).
+ */
+
+static boost::once_flag debugPrintInitFlag = BOOST_ONCE_INIT;
+
+/**
+ * We use boost::call_once() to make sure mutexDebugLog and
+ * vMsgsBeforeOpenLog are initialized in a thread-safe manner.
+ *
+ * NOTE: fileout, mutexDebugLog and sometimes vMsgsBeforeOpenLog
+ * are leaked on exit. This is ugly, but will be cleaned up by
+ * the OS/libc. When the shutdown sequence is fully audited and
+ * tested, explicit destruction of these objects can be implemented.
+ */
+static FILE* fileout = NULL;
+static boost::mutex* mutexDebugLog = NULL;
+static std::list<std::string>* vMsgsBeforeOpenLog;
+static std::atomic<int> logAcceptCategoryCacheCounter(0);
+
+static int FileWriteStr(const std::string &str, FILE *fp)
+{
+    return fwrite(str.data(), 1, str.size(), fp);
+}
+
+static void DebugPrintInit()
+{
+    assert(mutexDebugLog == NULL);
+    mutexDebugLog = new boost::mutex();
+    vMsgsBeforeOpenLog = new std::list<std::string>;
+}
+
+void OpenDebugLog()
+{
+    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+
+    assert(fileout == NULL);
+    assert(vMsgsBeforeOpenLog);
+    boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
+    fileout = fopen(pathDebug.string().c_str(), "a");
+    if (fileout) {
+        setbuf(fileout, NULL); // unbuffered
+        // dump buffered messages from before we opened the log
+        while (!vMsgsBeforeOpenLog->empty()) {
+            FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
+            vMsgsBeforeOpenLog->pop_front();
+        }
+    }
+
+    delete vMsgsBeforeOpenLog;
+    vMsgsBeforeOpenLog = NULL;
+}
 
 /** A map that contains all the currently held directory locks. After
  * successful locking, these will be held here until the global destructor
@@ -639,6 +738,103 @@ std::string ArgsManager::GetHelpMessage() const
     }
     return usage;
 }
+
+/**
+ * fStartedNewLine is a state variable held by the calling context that will
+ * suppress printing of the timestamp when multiple calls are made that don't
+ * end in a newline. Initialize it to true, and hold/manage it, in the calling context.
+ */
+static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fStartedNewLine)
+{
+    std::string strStamped;
+
+    if (!fLogTimestamps)
+        return str;
+
+    if (*fStartedNewLine) {
+        if (GetMockTime()) {
+            int64_t nRealTimeMicros = GetTimeMicros();
+            strStamped = DateTimeStrFormat("(real %Y-%m-%d %H:%M:%S) ", nRealTimeMicros/1000000);
+        }
+        int64_t nTimeMicros = GetLogTimeMicros();
+        strStamped += DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros/1000000);
+        if (fLogTimeMicros)
+            strStamped += strprintf(".%06d", nTimeMicros%1000000);
+        strStamped += ' ' + str;
+    } else
+        strStamped = str;
+
+    return strStamped;
+}
+
+/**
+ * fStartedNewLine is a state variable held by the calling context that will
+ * suppress printing of the thread name when multiple calls are made that don't
+ * end in a newline. Initialize it to true, and hold/manage it, in the calling context.
+ */
+static std::string LogThreadNameStr(const std::string &str, std::atomic_bool *fStartedNewLine)
+{
+    std::string strThreadLogged;
+
+    if (!fLogThreadNames)
+        return str;
+
+    std::string strThreadName = GetThreadName();
+
+    if (*fStartedNewLine)
+        strThreadLogged = strprintf("%16s | %s", strThreadName.c_str(), str.c_str());
+    else
+        strThreadLogged = str;
+
+    return strThreadLogged;
+}
+
+int LogPrintStr(const std::string &str)
+{
+    int ret = 0; // Returns total number of characters written
+    static std::atomic_bool fStartedNewLine(true);
+
+    std::string strThreadLogged = LogThreadNameStr(str, &fStartedNewLine);
+    std::string strTimestamped = LogTimestampStr(strThreadLogged, &fStartedNewLine);
+
+    if (!str.empty() && str[str.size()-1] == '\n')
+        fStartedNewLine = true;
+    else
+        fStartedNewLine = false;
+
+    if (fPrintToConsole)
+    {
+        // print to console
+        ret = fwrite(strTimestamped.data(), 1, strTimestamped.size(), stdout);
+        fflush(stdout);
+    }
+    else if (fPrintToDebugLog)
+    {
+        boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+        boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+
+        // buffer if we haven't opened the log yet
+        if (fileout == NULL) {
+            assert(vMsgsBeforeOpenLog);
+            ret = strTimestamped.length();
+            vMsgsBeforeOpenLog->push_back(strTimestamped);
+        }
+        else
+        {
+            // reopen the log file, if requested
+            if (fReopenDebugLog) {
+                fReopenDebugLog = false;
+                boost::filesystem::path pathDebug = GetDataDir() / "debug.log";
+                if (freopen(pathDebug.string().c_str(),"a",fileout) != NULL)
+                    setbuf(fileout, NULL); // unbuffered
+            }
+
+            ret = FileWriteStr(strTimestamped, fileout);
+        }
+    }
+    return ret;
+}
+
 
 bool HelpRequested(const ArgsManager& args)
 {
@@ -1205,6 +1401,40 @@ void RenameThread(const char* name)
 #endif
 }
 
+std::string GetThreadName()
+{
+    char name[16];
+#if defined(PR_GET_NAME)
+    // Only the first 15 characters are used (16 - NUL terminator)
+    ::prctl(PR_GET_NAME, name, 0, 0, 0);
+#elif defined(MAC_OSX)
+    pthread_getname_np(pthread_self(), name, 16);
+// #elif (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__))
+// #else
+    // no get_name here
+#endif
+    return std::string(name);
+}
+
+void RenameThreadPool(ctpl::thread_pool& tp, const char* baseName)
+{
+    auto cond = std::make_shared<std::condition_variable>();
+    auto mutex = std::make_shared<std::mutex>();
+    std::atomic<int> doneCnt(0);
+    for (size_t i = 0; i < tp.size(); i++) {
+        tp.push([baseName, i, cond, mutex, &doneCnt](int threadId) {
+            RenameThread(strprintf("%s-%d", baseName, i).c_str());
+            doneCnt++;
+            std::unique_lock<std::mutex> l(*mutex);
+            cond->wait(l);
+        });
+    }
+    while (doneCnt != tp.size()) {
+        MilliSleep(10);
+    }
+    cond->notify_all();
+}
+
 void SetupEnvironment()
 {
 #ifdef HAVE_MALLOPT_ARENA_MAX
@@ -1263,6 +1493,54 @@ std::string CopyrightHolders(const std::string& strPrefix)
 {
     std::string strCopyrightHolders = strPrefix + "Zentoshi LLC";
     return strCopyrightHolders;
+}
+
+uint32_t StringVersionToInt(const std::string& strVersion)
+{
+    std::vector<std::string> tokens;
+    boost::split(tokens, strVersion, boost::is_any_of("."));
+    if(tokens.size() != 3)
+        throw std::bad_cast();
+    uint32_t nVersion = 0;
+    for(unsigned idx = 0; idx < 3; idx++)
+    {
+        if(tokens[idx].length() == 0)
+            throw std::bad_cast();
+        uint32_t value = boost::lexical_cast<uint32_t>(tokens[idx]);
+        if(value > 255)
+            throw std::bad_cast();
+        nVersion <<= 8;
+        nVersion |= value;
+    }
+    return nVersion;
+}
+
+std::string IntVersionToString(uint32_t nVersion)
+{
+    if((nVersion >> 24) > 0) // MSB is always 0
+        throw std::bad_cast();
+    if(nVersion == 0)
+        throw std::bad_cast();
+    std::array<std::string, 3> tokens;
+    for(unsigned idx = 0; idx < 3; idx++)
+    {
+        unsigned shift = (2 - idx) * 8;
+        uint32_t byteValue = (nVersion >> shift) & 0xff;
+        tokens[idx] = boost::lexical_cast<std::string>(byteValue);
+    }
+    return boost::join(tokens, ".");
+}
+
+std::string SafeIntVersionToString(uint32_t nVersion)
+{
+    try
+    {
+        return IntVersionToString(nVersion);
+    }
+    catch(const std::bad_cast&)
+    {
+        return "invalid_version";
+    }
 }
 
 // Obtain the application startup time (used for uptime calculation)

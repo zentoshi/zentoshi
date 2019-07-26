@@ -14,6 +14,7 @@
 
 class CKey;
 class CKeyID;
+class CKeyStore;
 class CScript;
 class CScriptID;
 class CTransaction;
@@ -90,6 +91,9 @@ FlatSigningProvider Merge(const FlatSigningProvider& a, const FlatSigningProvide
 
 /** Interface for signature creators. */
 class BaseSignatureCreator {
+protected:
+    const CKeyStore* keystore;
+
 public:
     virtual ~BaseSignatureCreator() {}
     virtual const BaseSignatureChecker& Checker() const =0;
@@ -217,6 +221,10 @@ void SerializeHDKeypaths(Stream& s, const std::map<CPubKey, KeyOriginInfo>& hd_k
 
 /** Produce a script signature using a generic signature creator. */
 bool ProduceSignature(const SigningProvider& provider, const BaseSignatureCreator& creator, const CScript& scriptPubKey, SignatureData& sigdata);
+
+/** Produce a script signature for a transaction. */
+bool SignSignature(const CKeyStore& keystore, const CScript& fromPubKey, CMutableTransaction& txTo, unsigned int nIn, int nHashType=SIGHASH_ALL);
+bool SignSignature(const CKeyStore& keystore, const CTransaction& txFrom, CMutableTransaction& txTo, unsigned int nIn, int nHashType=SIGHASH_ALL);
 
 /** Produce a script signature for a transaction. */
 bool SignSignature(const SigningProvider &provider, const CScript& fromPubKey, CMutableTransaction& txTo, unsigned int nIn, const CAmount& amount, int nHashType);

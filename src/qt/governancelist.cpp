@@ -222,8 +222,8 @@ void GovernanceList::Vote(uint256 nHash, vote_outcome_enum_t eVoteOutcome)
             continue;
         }
 
-        CGovernanceVote vote(mn.vin.prevout, nHash, eVoteSignal, eVoteOutcome);
-        if(!vote.Sign(keyMasternode, pubKeyMasternode)){
+        CGovernanceVote vote(mn.outpoint, nHash, eVoteSignal, eVoteOutcome);
+        if(!vote.Sign(keyMasternode, pubKeyMasternode.GetID())){
             nFailed++;
             nStatus = 300;
             continue;
@@ -293,7 +293,7 @@ void GovernanceList::updateGobjects()
 
 
     int nStartTime = 0; //All
-    std::vector<CGovernanceObject*> objs = governance.GetAllNewerThan(nStartTime);
+    std::vector<CGovernanceObject*> objs = governance.GetAllNewerThan(nStartTime).front();
 
     for (const auto& pGovObj : objs)
     {

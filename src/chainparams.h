@@ -59,6 +59,7 @@ public:
 
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
+    const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
     int MaxReorganizationDepth() const { return nMaxReorganizationDepth; }
 
@@ -69,6 +70,8 @@ public:
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** Policy: Filter transactions that do not match well-defined patterns */
     bool RequireStandard() const { return fRequireStandard; }
+    /** Require addresses specified with "-externalip" parameter to be routable */
+    bool RequireRoutableExternalIP() const { return fRequireRoutableExternalIP; }
     uint64_t PruneAfterHeight() const { return nPruneAfterHeight; }
     /** Minimum free space (in GB) needed for data directory */
     uint64_t AssumedBlockchainSize() const { return m_assumed_blockchain_size; }
@@ -76,6 +79,10 @@ public:
     uint64_t AssumedChainStateSize() const { return m_assumed_chain_state_size; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
     bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
+    /** Allow multiple addresses to be selected from the same network group (e.g. 192.168.x.x) */
+    bool AllowMultipleAddressesFromGroup() const { return fAllowMultipleAddressesFromGroup; }
+    /** Allow nodes with the same address and multiple ports */
+    bool AllowMultiplePorts() const { return fAllowMultiplePorts; }
     /** Return the BIP70 network string (main, test or regtest) */
     std::string NetworkIDString() const { return strNetworkID; }
     /** Return true if the fallback fee is by default enabled for this network */
@@ -88,8 +95,13 @@ public:
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     const ChainTxData& TxData() const { return chainTxData; }
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+    int PoolMinParticipants() const { return nPoolMinParticipants; }
+    int PoolMaxParticipants() const { return nPoolMaxParticipants; }
     int PoolMaxTransactions() const { return nPoolMaxTransactions; }
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
+    const std::vector<std::string>& SporkAddresses() const { return vSporkAddresses; }
+    int MinSporkKeys() const { return nMinSporkKeys; }
+    bool BIP9CheckMasternodesUpgraded() const { return fBIP9CheckMasternodesUpgraded; }
     std::string SporkPubKey() const { return strSporkPubKey; }
     int CollateralLevels() const { return nCollateralLevels.size(); }
     const std::vector<CAmount> ValidCollateralAmounts() const { return nCollateralLevels; }
@@ -98,6 +110,8 @@ protected:
 
     Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
+    //! Raw pub key bytes for the broadcast alert signing key.
+    std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort;
     uint64_t nPruneAfterHeight;
     uint64_t m_assumed_blockchain_size;
@@ -111,12 +125,20 @@ protected:
     bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
+    bool fRequireRoutableExternalIP;
     bool fMineBlocksOnDemand;
+    bool fAllowMultipleAddressesFromGroup;
+    bool fAllowMultiplePorts;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
     bool m_fallback_fee_enabled;
+    int nPoolMinParticipants;
+    int nPoolMaxParticipants;
     int nPoolMaxTransactions;
     int nFulfilledRequestExpireTime;
+    std::vector<std::string> vSporkAddresses;
+    int nMinSporkKeys;
+    bool fBIP9CheckMasternodesUpgraded;
     std::string strSporkPubKey;
     int nMaxReorganizationDepth;
     std::vector<CAmount> nCollateralLevels;
@@ -136,6 +158,11 @@ std::unique_ptr<const CChainParams> CreateChainParams(const std::string& chain);
 const CChainParams &Params();
 
 /**
+ * @returns CChainParams for the given BIP70 chain name.
+ */
+CChainParams& Params(const std::string& chain);
+
+/**
  * Sets the params returned by Params() to those for the given BIP70 chain name.
  * @throws std::runtime_error when the chain is not supported.
  */
@@ -145,5 +172,20 @@ void SelectParams(const std::string& chain);
  * Allows modifying the Version Bits regtest parameters.
  */
 void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+
+/**
+ * Allows modifying the BIP9 regtest parameters.
+ */
+void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout, int64_t nWindowSize, int64_t nThreshold);
+
+/**
+ * Allows modifying the DIP3 activation and enforcement height
+ */
+void UpdateRegtestDIP3Parameters(int nActivationHeight, int nEnforcementHeight);
+
+/**
+ * Allows modifying the budget regtest parameters.
+ */
+void UpdateRegtestBudgetParameters(int nMasternodePaymentsStartBlock, int nBudgetPaymentsStartBlock, int nSuperblockStartBlock);
 
 #endif // BITCOIN_CHAINPARAMS_H

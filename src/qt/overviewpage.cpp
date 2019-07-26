@@ -113,8 +113,15 @@ public:
 OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::OverviewPage),
-    clientModel(nullptr),
-    walletModel(nullptr),
+    clientModel(0),
+    walletModel(0),
+    currentBalance(-1),
+    currentStake(-1),
+    currentUnconfirmedBalance(-1),
+    currentImmatureBalance(-1),
+    currentWatchOnlyBalance(-1),
+    currentWatchUnconfBalance(-1),
+    currentWatchImmatureBalance(-1),
     txdelegate(new TxViewDelegate(platformStyle, this))
 {
     ui->setupUi(this);
