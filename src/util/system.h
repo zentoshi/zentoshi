@@ -320,6 +320,7 @@ public:
     void ClearArgs() {
         LOCK(cs_args);
         m_available_args.clear();
+        m_network_only_args.clear();
     }
 
     /**
