@@ -484,9 +484,6 @@
     <None Include="..\..\src\qtes\src\tx_inout.svg">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="..\..\src\qtes\src\verify.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <None Include="GeneratedFiles\bitcoin.moc" />
     <None Include="GeneratedFiles\bitcoinamountfield.moc" />
     <None Include="GeneratedFiles\intro.moc" />
@@ -494,12 +491,6 @@
     <None Include="GeneratedFilespcconsole.moc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\src\qtes\icons\about.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="..\..\src\qtes\icons\about_qt.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
     <Image Include="..\..\src\qtes\icons\add.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -533,9 +524,6 @@
     <Image Include="..\..\src\qtes\icons\clock5.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="..\..\src\qtes\icons\configure.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
     <Image Include="..\..\src\qtes\icons\connect0.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -549,9 +537,6 @@
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="..\..\src\qtes\icons\connect4.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="..\..\src\qtes\icons\debugwindow.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="..\..\src\qtes\icons\edit.png">
@@ -575,9 +560,6 @@
     <Image Include="..\..\src\qtes\icons\eye_plus.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="..\..\src\qtes\icons\filesave.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
     <Image Include="..\..\src\qtes\icons\fontbigger.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -596,9 +578,6 @@
     <Image Include="..\..\src\qtes\icons\info.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="..\..\src\qtes\icons\key.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
     <Image Include="..\..\src\qtes\icons\lock_closed.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
@@ -608,13 +587,7 @@
     <Image Include="..\..\src\qtes\icons\network_disabled.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="..\..\src\qtes\icons\open.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
     <Image Include="..\..\src\qtes\icons\overview.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="..\..\src\qtes\icons\quit.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="..\..\src\qtes\iconseceive.png">
@@ -651,9 +624,6 @@
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="..\..\src\qtes\icons\tx_output.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="..\..\src\qtes\icons\verify.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
     <Image Include="..\..\src\qtes\icons\warning.png">
