@@ -55,14 +55,6 @@ struct DisconnectedBlockTransactions;
 struct PrecomputedTransactionData;
 struct LockPoints;
 
-/** Timeout to elapse before using hardcoded DNS seeds */
-static const int DNS_WAIT_TIMEOUT = 5;
-/** Default for accepting alerts from the P2P network. */
-static const bool DEFAULT_ALERTS = true;
-/** Default for -whitelistrelay. */
-static const bool DEFAULT_WHITELISTRELAY = true;
-/** Default for -whitelistforcerelay. */
-static const bool DEFAULT_WHITELISTFORCERELAY = false;
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 1000;
 /** Default for -limitancestorcount, max number of in-mempool ancestors */
