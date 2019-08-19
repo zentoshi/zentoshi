@@ -19,9 +19,7 @@ bool GetKeyIDFromUTXO(const CTxOut& txout, CKeyID& keyID)
 {
     int resultType = 0;
     std::vector<valtype> vSolutions;
-    txnouttype whichType;
-    if (!Solver(txout.scriptPubKey, whichType, vSolutions))
-        return false;
+    txnouttype whichType = Solver(txout.scriptPubKey, vSolutions);
 
     if (whichType == TX_PUBKEY) {
         resultType = 1;
@@ -76,10 +74,8 @@ bool CheckBlockSignature(const CBlock& block)
         return error("%s: vchBlockSig is empty!", __func__);
 
     CPubKey pubkey;
-    txnouttype whichType;
     const CTxOut& txout = block.vtx[1]->vout[1];
-    if (!Solver(txout.scriptPubKey, whichType, vSolutions))
-        return false;
+    txnouttype whichType = Solver(txout.scriptPubKey, vSolutions);
     if (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) {
         valtype& vchPubKey = vSolutions[0];
         pubkey = CPubKey(vchPubKey);

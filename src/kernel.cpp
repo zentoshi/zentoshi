@@ -326,10 +326,9 @@ bool CheckKernelScript(CScript scriptVin, CScript scriptVout)
 
         int resultType = 0;
         std::vector<std::vector<unsigned char>> vSolutions;
-        txnouttype whichType;
+        txnouttype whichType = Solver(scriptPubKey, vSolutions);
 
         CKeyID keyID;
-        if (Solver(scriptPubKey, whichType, vSolutions))
         {
             if (whichType == TX_PUBKEYHASH)
             {

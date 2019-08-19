@@ -5,12 +5,13 @@
 
 #include <util/system.h>
 
+#include <support/allocators/secure.h>
 #include <chainparamsbase.h>
 #include <ctpl.h>
 #include <random.h>
 #include <serialize.h>
+#include <sync.h>
 #include <util/strencodings.h>
-#include <util/time.h>
 
 #include <stdarg.h>
 
@@ -80,7 +81,15 @@
 #include <boost/algorithm/string/predicate.hpp> // for startswith() and endswith()
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/foreach.hpp>
+#include <boost/program_options/detail/config_file.hpp>
+#include <boost/program_options/parsers.hpp>
 #include <boost/thread.hpp>
+#include <openssl/crypto.h>
+#include <openssl/rand.h>
+#include <openssl/conf.h>
 
 // Work around clang compilation problem in Boost 1.46:
 // /usr/include/boost/program_options/detail/config_file.hpp:163:17: error: call to function 'to_internal' that is neither visible in the template definition nor found by argument-dependent lookup
@@ -182,6 +191,41 @@ void OpenDebugLog()
 
     delete vMsgsBeforeOpenLog;
     vMsgsBeforeOpenLog = NULL;
+}
+
+bool LogAcceptCategory(const char* category)
+{
+    if (category != NULL)
+    {
+        // Give each thread quick access to -debug settings.
+        // This helps prevent issues debugging global destructors,
+        // where mapMultiArgs might be deleted before another
+        // global destructor calls LogPrint()
+        static boost::thread_specific_ptr<std::set<std::string> > ptrCategory;
+        static boost::thread_specific_ptr<int> cacheCounter;
+
+        if (!fDebug) {
+            if (ptrCategory.get() != NULL) {
+                LogPrintf("debug turned off: thread %s\n", GetThreadName());
+                ptrCategory.release();
+            }
+            return false;
+        }
+
+        if (ptrCategory.get() == NULL || *cacheCounter != logAcceptCategoryCacheCounter.load())
+        {
+            cacheCounter.reset(new int(logAcceptCategoryCacheCounter.load()));
+            ptrCategory.reset(new std::set<std::string>());
+        }
+        const std::set<std::string>& setCategories = *ptrCategory;
+
+        // if not debugging everything and not debugging specific category, LogPrint does nothing.
+        if (setCategories.count(std::string("")) == 0 &&
+            setCategories.count(std::string("1")) == 0 &&
+            setCategories.count(std::string(category)) == 0)
+            return false;
+    }
+    return true;
 }
 
 /** A map that contains all the currently held directory locks. After
@@ -1128,7 +1172,7 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
         m_config_args.clear();
     }
 
-    const std::string confPath = GetArg("-conf", BITCOIN_CONF_FILENAME);
+    const std::string confPath = gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME);
     fsbridge::ifstream stream(GetConfigFile(confPath));
 
     // ok to not have a config file
@@ -1175,14 +1219,14 @@ bool ArgsManager::ReadConfigFiles(std::string& error, bool ignore_invalid_keys)
             }
 
             // Warn about recursive -includeconf
-            includeconf = GetArgs("-includeconf");
+            includeconf = gArgs.GetArgs("-includeconf");
             {
                 std::vector<std::string> includeconf_net(GetArgs(std::string("-") + chain_id + ".includeconf"));
                 includeconf.insert(includeconf.end(), includeconf_net.begin(), includeconf_net.end());
                 std::string chain_id_final = GetChainName();
                 if (chain_id_final != chain_id) {
                     // Also warn about recursive includeconf for the chain that was specified in one of the includeconfs
-                    includeconf_net = GetArgs(std::string("-") + chain_id_final + ".includeconf");
+                    includeconf_net = gArgs.GetArgs(std::string("-") + chain_id_final + ".includeconf");
                     includeconf.insert(includeconf.end(), includeconf_net.begin(), includeconf_net.end());
                 }
             }
@@ -1399,6 +1443,7 @@ void RenameThread(const char* name)
     // Prevent warnings for unused parameters...
     (void)name;
 #endif
+    LogPrintf("%s: thread new name %s\n", __func__, name);
 }
 
 std::string GetThreadName()
@@ -1421,18 +1466,37 @@ void RenameThreadPool(ctpl::thread_pool& tp, const char* baseName)
     auto cond = std::make_shared<std::condition_variable>();
     auto mutex = std::make_shared<std::mutex>();
     std::atomic<int> doneCnt(0);
-    for (size_t i = 0; i < tp.size(); i++) {
-        tp.push([baseName, i, cond, mutex, &doneCnt](int threadId) {
+    std::map<int, std::future<void> > futures;
+
+    for (int i = 0; i < tp.size(); i++) {
+        futures[i] = tp.push([baseName, i, cond, mutex, &doneCnt](int threadId) {
             RenameThread(strprintf("%s-%d", baseName, i).c_str());
-            doneCnt++;
             std::unique_lock<std::mutex> l(*mutex);
+            doneCnt++;
             cond->wait(l);
         });
     }
-    while (doneCnt != tp.size()) {
+
+    do {
+        // Always sleep to let all threads acquire locks
         MilliSleep(10);
-    }
+        // `doneCnt` should be at least `futures.size()` if tp size was increased (for whatever reason),
+        // or at least `tp.size()` if tp size was decreased and queue was cleared
+        // (which can happen on `stop()` if we were not fast enough to get all jobs to their threads).
+    } while (doneCnt < futures.size() && doneCnt < tp.size());
+
     cond->notify_all();
+
+    // Make sure no one is left behind, just in case
+    for (auto& pair : futures) {
+        auto& f = pair.second;
+        if (f.valid() && f.wait_for(std::chrono::milliseconds(2000)) == std::future_status::timeout) {
+            LogPrintf("%s: %s-%d timed out\n", __func__, baseName, pair.first);
+            // Notify everyone again
+            cond->notify_all();
+            break;
+        }
+    }
 }
 
 void SetupEnvironment()

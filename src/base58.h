@@ -66,7 +66,6 @@ NODISCARD bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vc
  */
 NODISCARD bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRet);
 
-
 /**
  * Base class for all base58-encoded data
  */

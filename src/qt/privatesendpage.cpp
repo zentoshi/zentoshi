@@ -58,7 +58,7 @@ PrivateSendPage::PrivateSendPage(const PlatformStyle *platformStyle, QWidget *pa
     if(fLiteMode) return;
 
     // Disable any PS UI for masternode or when autobackup is disabled or failed for whatever reason
-    if(fMasterNode || nWalletBackups <= 0){
+    if(fMasternodeMode || nWalletBackups <= 0){
         // DisablePrivateSendCompletely();
         if (nWalletBackups <= 0) {
             ui->labelPrivateSendEnabled->setToolTip(tr("Automatic backups are disabled, no mixing available!"));
@@ -121,11 +121,6 @@ void PrivateSendPage::setBalance(const interfaces::WalletBalances& balances)
     ui->labelWatchImmature->setVisible(showWatchOnlyImmature); // show watch-only immature balance
 
     updatePrivateSendProgress();
-
-    static int cachedTxLocks = 0;
-
-    if(cachedTxLocks != nCompleteTXLocks)
-        cachedTxLocks = nCompleteTXLocks;
 }
 
 // show/hide watch-only labels
@@ -450,7 +445,7 @@ void PrivateSendPage::privateSendStatus()
         updatePrivateSendProgress();
     }
 
-    QString strStatus = QString(privateSendClient.GetStatus().c_str());
+    QString strStatus = QString(privateSendClient.GetStatuses().c_str());
 
     QString s = tr("Last ShadowSend message:\n") + strStatus;
 
@@ -459,13 +454,7 @@ void PrivateSendPage::privateSendStatus()
 
     ui->labelPrivateSendLastMessage->setText(s);
 
-    if(privateSendClient.nSessionDenom == 0){
-        ui->labelSubmittedDenom->setText(tr("N/A"));
-    } else {
-        QString strDenom(CPrivateSend::GetDenominationsToString(privateSendClient.nSessionDenom).c_str());
-        ui->labelSubmittedDenom->setText(strDenom);
-    }
-
+    ui->labelSubmittedDenom->setText(QString(privateSendClient.GetSessionDenoms().c_str()));
 }
 
 void PrivateSendPage::privateSendAuto(){

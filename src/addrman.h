@@ -253,6 +253,9 @@ protected:
     //! Return a random to-be-evicted tried table address.
     CAddrInfo SelectTriedCollision_() EXCLUSIVE_LOCKS_REQUIRED(cs);
 
+    //! Wraps GetRandInt to allow tests to override RandomInt and make it determinismistic.
+    virtual int RandomInt(int nMax);
+
 #ifdef DEBUG_ADDRMAN
     //! Perform consistency check. Returns an error code or zero.
     int Check_() EXCLUSIVE_LOCKS_REQUIRED(cs);
@@ -266,6 +269,9 @@ protected:
 
     //! Update an entry's service bits.
     void SetServices_(const CService &addr, ServiceFlags nServices) EXCLUSIVE_LOCKS_REQUIRED(cs);
+
+    //! Get address info for address
+    CAddrInfo GetAddressInfo_(const CService& addr);
 
 public:
     /**
@@ -619,6 +625,18 @@ public:
         Check();
         SetServices_(addr, nServices);
         Check();
+    }
+
+    CAddrInfo GetAddressInfo(const CService& addr)
+    {
+        CAddrInfo addrRet;
+        {
+            LOCK(cs);
+            Check();
+            addrRet = GetAddressInfo_(addr);
+            Check();
+        }
+        return addrRet;
     }
 
 };

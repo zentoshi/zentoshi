@@ -61,11 +61,10 @@
 #include <flat-database.h>
 #include <governance/governance.h>
 #include <instantx.h>
-
+#include <masternode-meta.h>
 #include <masternode-payments.h>
 #include <masternode-sync.h>
-#include <masternodeman.h>
-#include <masternodeconfig.h>
+#include <masternode-utils.h>
 #include <messagesigner.h>
 #include <netfulfilledman.h>
 #ifdef ENABLE_WALLET
@@ -75,7 +74,6 @@
 #include <spork.h>
 
 #include <evo/deterministicmns.h>
-
 #include <llmq/quorums_init.h>
 
 #include <stdint.h>
@@ -252,11 +250,11 @@ void Shutdown(InitInterfaces& interfaces)
     /// module was initialized.
     RenameThread("bitcoin-shutoff");
     mempool.AddTransactionsUpdated(1);
-
     StopHTTPRPC();
     StopREST();
     StopRPC();
     StopHTTPServer();
+    llmq::StopLLMQSystem();
     for (const auto& client : interfaces.chain_clients) {
         client->flush();
     }
@@ -269,7 +267,6 @@ void Shutdown(InitInterfaces& interfaces)
     if (g_txindex) {
         g_txindex.reset();
     }
-
     StopTorControl();
 
     // After everything has been shut down, but before things get flushed, stop the
@@ -324,6 +321,11 @@ void Shutdown(InitInterfaces& interfaces)
         pcoinscatcher.reset();
         pcoinsdbview.reset();
         pblocktree.reset();
+        llmq::DestroyLLMQSystem();
+        delete deterministicMNManager;
+        deterministicMNManager = nullptr;
+        delete evoDb;
+        evoDb = nullptr;
     }
     for (const auto& client : interfaces.chain_clients) {
         client->stop();
@@ -802,16 +804,10 @@ static void ThreadImport(std::vector<fs::path> vImportFiles)
     // GetMainSignals().UpdatedBlockTip(chainActive.Tip());
     pdsNotificationInterface->InitializeCurrentBlockTip();
 
-    bool fDIP003Active = false;
-    {
-        LOCK(cs_main);
-        if (chainActive.Tip()->pprev) {
-            fDIP003Active = VersionBitsState(chainActive.Tip()->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE;
-        }
-    }
-
-    if (activeMasternodeManager && fDIP003Active)
+    if (fMasternodeMode) {
+        assert(activeMasternodeManager);
         activeMasternodeManager->Init();
+    }
 
 #ifdef ENABLE_WALLET
     // we can't do this before DIP3 is fully initialized
@@ -844,6 +840,11 @@ static bool InitSanityCheck()
         return false;
     }
 
+    if (!Random_SanityCheck()) {
+        InitError("OS cryptographic RNG sanity check failure. Aborting.");
+        return false;
+    }
+
     return true;
 }
 
@@ -873,6 +874,23 @@ void InitParameterInteraction()
     if (gArgs.IsArgSet("-whitebind")) {
         if (gArgs.SoftSetBoolArg("-listen", true))
             LogPrintf("%s: parameter interaction: -whitebind set -> setting -listen=1\n", __func__);
+    }
+
+    if (gArgs.GetBoolArg("-masternode", false)) {
+        // masternodes MUST accept connections from outside
+        gArgs.ForceSetArg("-listen", "1");
+        LogPrintf("%s: parameter interaction: -masternode=1 -> setting -listen=1\n", __func__);
+#ifdef ENABLE_WALLET
+        // masternode should not have wallet enabled
+        gArgs.ForceSetArg("-disablewallet", "1");
+        LogPrintf("%s: parameter interaction: -masternode=1 -> setting -disablewallet=1\n", __func__);
+#endif // ENABLE_WALLET
+        if (gArgs.GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS) < DEFAULT_MAX_PEER_CONNECTIONS) {
+            // masternodes MUST be able to handle at least DEFAULT_MAX_PEER_CONNECTIONS connections
+            gArgs.ForceSetArg("-maxconnections", itostr(DEFAULT_MAX_PEER_CONNECTIONS));
+            LogPrintf("%s: parameter interaction: -masternode=1 -> setting -maxconnections=%d instead of specified -maxconnections=%d\n",
+                    __func__, DEFAULT_MAX_PEER_CONNECTIONS, gArgs.GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS));
+        }
     }
 
     if (gArgs.IsArgSet("-connect")) {
@@ -1251,6 +1269,96 @@ bool AppInitParameterInteraction()
     if (gArgs.GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
         nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
 
+    nMaxTipAge = gArgs.GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
+
+    if (gArgs.IsArgSet("-vbparams")) {
+        // Allow overriding version bits parameters for testing
+        if (!chainparams.MineBlocksOnDemand()) {
+            return InitError("Version bits parameters may only be overridden on regtest.");
+        }
+        for (const std::string& strDeployment : gArgs.GetArgs("-vbparams")) {
+            std::vector<std::string> vDeploymentParams;
+            boost::split(vDeploymentParams, strDeployment, boost::is_any_of(":"));
+            if (vDeploymentParams.size() != 3 && vDeploymentParams.size() != 5) {
+                return InitError("Version bits parameters malformed, expecting deployment:start:end or deployment:start:end:window:threshold");
+            }
+            int64_t nStartTime, nTimeout, nWindowSize = -1, nThreshold = -1;
+            if (!ParseInt64(vDeploymentParams[1], &nStartTime)) {
+                return InitError(strprintf("Invalid nStartTime (%s)", vDeploymentParams[1]));
+            }
+            if (!ParseInt64(vDeploymentParams[2], &nTimeout)) {
+                return InitError(strprintf("Invalid nTimeout (%s)", vDeploymentParams[2]));
+            }
+            if (vDeploymentParams.size() == 5) {
+                if (!ParseInt64(vDeploymentParams[3], &nWindowSize)) {
+                    return InitError(strprintf("Invalid nWindowSize (%s)", vDeploymentParams[3]));
+                }
+                if (!ParseInt64(vDeploymentParams[4], &nThreshold)) {
+                    return InitError(strprintf("Invalid nThreshold (%s)", vDeploymentParams[4]));
+                }
+            }
+            bool found = false;
+            for (int j=0; j<(int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++j)
+            {
+                if (vDeploymentParams[0].compare(VersionBitsDeploymentInfo[j].name) == 0) {
+                    UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout, nWindowSize, nThreshold);
+                    found = true;
+                    LogPrintf("Setting version bits activation parameters for %s to start=%ld, timeout=%ld, window=%ld, threshold=%ld\n", vDeploymentParams[0], nStartTime, nTimeout, nWindowSize, nThreshold);
+                    break;
+                }
+            }
+            if (!found) {
+                return InitError(strprintf("Invalid deployment (%s)", vDeploymentParams[0]));
+            }
+        }
+    }
+
+    if (gArgs.IsArgSet("-dip3params")) {
+        // Allow overriding budget parameters for testing
+        if (!chainparams.MineBlocksOnDemand()) {
+            return InitError("DIP3 parameters may only be overridden on regtest.");
+        }
+        std::string strDIP3Params = gArgs.GetArg("-dip3params", "");
+        std::vector<std::string> vDIP3Params;
+        boost::split(vDIP3Params, strDIP3Params, boost::is_any_of(":"));
+        if (vDIP3Params.size() != 2) {
+            return InitError("DIP3 parameters malformed, expecting DIP3ActivationHeight:DIP3EnforcementHeight");
+        }
+        int nDIP3ActivationHeight, nDIP3EnforcementHeight;
+        if (!ParseInt32(vDIP3Params[0], &nDIP3ActivationHeight)) {
+            return InitError(strprintf("Invalid nDIP3ActivationHeight (%s)", vDIP3Params[0]));
+        }
+        if (!ParseInt32(vDIP3Params[1], &nDIP3EnforcementHeight)) {
+            return InitError(strprintf("Invalid nDIP3EnforcementHeight (%s)", vDIP3Params[1]));
+        }
+        UpdateDIP3Parameters(nDIP3ActivationHeight, nDIP3EnforcementHeight);
+    }
+
+    if (gArgs.IsArgSet("-budgetparams")) {
+        // Allow overriding budget parameters for testing
+        if (!chainparams.MineBlocksOnDemand()) {
+            return InitError("Budget parameters may only be overridden on regtest.");
+        }
+
+        std::string strBudgetParams = gArgs.GetArg("-budgetparams", "");
+        std::vector<std::string> vBudgetParams;
+        boost::split(vBudgetParams, strBudgetParams, boost::is_any_of(":"));
+        if (vBudgetParams.size() != 3) {
+            return InitError("Budget parameters malformed, expecting masternodePaymentsStartBlock:budgetPaymentsStartBlock:superblockStartBlock");
+        }
+        int nMasternodePaymentsStartBlock, nBudgetPaymentsStartBlock, nSuperblockStartBlock;
+        if (!ParseInt32(vBudgetParams[0], &nMasternodePaymentsStartBlock)) {
+            return InitError(strprintf("Invalid nMasternodePaymentsStartBlock (%s)", vBudgetParams[0]));
+        }
+        if (!ParseInt32(vBudgetParams[1], &nBudgetPaymentsStartBlock)) {
+            return InitError(strprintf("Invalid nBudgetPaymentsStartBlock (%s)", vBudgetParams[1]));
+        }
+        if (!ParseInt32(vBudgetParams[2], &nSuperblockStartBlock)) {
+            return InitError(strprintf("Invalid nSuperblockStartBlock (%s)", vBudgetParams[2]));
+        }
+        UpdateBudgetParameters(nMasternodePaymentsStartBlock, nBudgetPaymentsStartBlock, nSuperblockStartBlock);
+    }
+
     if (gArgs.GetArg("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
         return InitError("rpcserialversion must be non-negative.");
 
@@ -1300,13 +1408,13 @@ bool AppInitSanityChecks()
         return InitError(strprintf(_("Initialization sanity check failed. %s is shutting down."), _(PACKAGE_NAME)));
 
     // Probe the data directory lock to give an early error message, if possible
+    // We cannot hold the data directory lock here, as the forking for daemon() hasn't yet happened,
+    // and a fork will cause weird behavior to it.
     return LockDataDirectory(true);
 }
 
-bool AppInitMain(InitInterfaces& interfaces)
+bool AppInitLockDataDirectory()
 {
-    const CChainParams& chainparams = Params();
-    // ********************************************************* Step 4a: application initialization
     // After daemonization get the data directory lock again and hold on to it until exit
     // This creates a slight window for a race condition to happen, however this condition is harmless: it
     // will at most make us exit without printing a message to console.
@@ -1314,7 +1422,12 @@ bool AppInitMain(InitInterfaces& interfaces)
         // Detailed error printed inside LockDataDirectory
         return false;
     }
+    return true;
+}
 
+bool AppInitMain(InitInterfaces& interfaces)
+{
+    const CChainParams& chainparams = Params();
     // ********************************************************* Step 4a: application initialization
     if (!CreatePidFile()) {
         // Detailed error printed inside CreatePidFile().
@@ -1369,28 +1482,16 @@ bool AppInitMain(InitInterfaces& interfaces)
             threadGroup.create_thread(&ThreadScriptCheck);
     }
 
-    std::vector<std::string> vSporkAddresses;
-    if (mapMultiArgs.count("-sporkaddr")) {
-        vSporkAddresses = mapMultiArgs.at("-sporkaddr");
-    } else {
-        vSporkAddresses = Params().SporkAddresses();
-    }
-    for (const auto& address: vSporkAddresses) {
-        if (!sporkManager.SetSporkAddress(address)) {
-            return InitError(_("Invalid spork address specified with -sporkaddr"));
-        }
+    if (gArgs.IsArgSet("-sporkkey")) // spork priv key
+    {
     }
 
     int minsporkkeys = gArgs.GetArg("-minsporkkeys", Params().MinSporkKeys());
     if (!sporkManager.SetMinSporkKeys(minsporkkeys)) {
-        return InitError(_("Invalid minimum number of spork signers specified with -minsporkkeys"));
     }
 
 
     if (gArgs.IsArgSet("-sporkkey")) { // spork priv key
-        if (!sporkManager.SetPrivKey(gArgs.GetArg("-sporkkey", ""))) {
-            return InitError(_("Unable to sign spork message, wrong key?"));
-        }
     }
 
     // Start the lightweight task scheduler thread
@@ -1582,6 +1683,7 @@ bool AppInitMain(InitInterfaces& interfaces)
     nTotalCache -= nCoinDBCache;
     nCoinCacheUsage = nTotalCache; // the rest goes to in-memory cache
     int64_t nMempoolSizeMax = gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
+    int64_t nEvoDbCache = 1024 * 1024 * 16; // TODO
     LogPrintf("Cache configuration:\n");
     LogPrintf("* Using %.1f MiB for block index database\n", nBlockTreeDBCache * (1.0 / 1024 / 1024));
     if (gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
@@ -1614,23 +1716,22 @@ bool AppInitMain(InitInterfaces& interfaces)
                 pcoinsTip.reset();
                 pcoinsdbview.reset();
                 pcoinscatcher.reset();
+                llmq::DestroyLLMQSystem();
                 // new CBlockTreeDB tries to delete the existing file, which
                 // fails if it's still open from the previous loop. Close it first:
                 pblocktree.reset();
                 pblocktree.reset(new CBlockTreeDB(nBlockTreeDBCache, false, fReset));
+                evoDb = new CEvoDB(nEvoDbCache, false, fReindex || fReindexChainState);
+                deterministicMNManager = new CDeterministicMNManager(*evoDb);
+                llmq::InitLLMQSystem(*evoDb, &scheduler, false, fReindex || fReindexChainState);
 
                 if (fReset) {
                     pblocktree->WriteReindexing(true);
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();
-                } else {
-                    // If necessary, upgrade from older database format.
-                    if (!pcoinsdbview->Upgrade()) {
-                        strLoadError = _("Error upgrading chainstate database");
-                        break;
-                    }
                 }
+
                 if (ShutdownRequested()) break;
 
                 // LoadBlockIndex will load fHavePruned if we've ever removed a
@@ -1789,7 +1890,7 @@ bool AppInitMain(InitInterfaces& interfaces)
     CAutoFile est_filein(fsbridge::fopen(est_path, "rb"), SER_DISK, CLIENT_VERSION);
     // Allowed to fail as this file IS missing on first startup.
     if (!est_filein.IsNull())
-        ::feeEstimator.Read(est_filein);
+        mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
 
 
@@ -1874,19 +1975,6 @@ bool AppInitMain(InitInterfaces& interfaces)
     if(fMasternodeMode) {
         LogPrintf("MASTERNODE:\n");
 
-        std::string strMasterNodePrivKey = gArgs.GetArg("-masternodeprivkey", "");
-        if(!strMasterNodePrivKey.empty()) {
-            CPubKey pubKeyMasternode;
-            if(!CMessageSigner::GetKeysFromSecret(strMasterNodePrivKey, activeMasternodeInfo.legacyKeyOperator, pubKeyMasternode))
-                return InitError(_("Invalid masternodeprivkey. Please see documenation."));
-
-            activeMasternodeInfo.legacyKeyIDOperator = pubKeyMasternode.GetID();
-
-            LogPrintf("  keyIDOperator: %s\n", CBitcoinAddress(activeMasternodeInfo.legacyKeyIDOperator).ToString());
-        } else {
-            return InitError(_("You must specify a masternodeprivkey in the configuration. Please see documentation for help."));
-        }
-
         std::string strMasterNodeBLSPrivKey = gArgs.GetArg("-masternodeblsprivkey", "");
         if(!strMasterNodeBLSPrivKey.empty()) {
             auto binKey = ParseHex(strMasterNodeBLSPrivKey);
@@ -1897,14 +1985,14 @@ bool AppInitMain(InitInterfaces& interfaces)
                 activeMasternodeInfo.blsPubKeyOperator = std::make_unique<CBLSPublicKey>(activeMasternodeInfo.blsKeyOperator->GetPublicKey());
                 LogPrintf("  blsPubKeyOperator: %s\n", keyOperator.GetPublicKey().ToString());
             } else {
-                return InitError(_("Invalid masternodeblsprivkey. Please see documenation."));
+                return InitError(_("Invalid masternodeblsprivkey. Please see documentation."));
             }
         } else {
             return InitError(_("You must specify a masternodeblsprivkey in the configuration. Please see documentation for help."));
         }
 
-        // init and register activeMasternodeManager
-        activeMasternodeManager = new CActiveDeterministicMasternodeManager();
+        // Create and register activeMasternodeManager, will init later in ThreadImport
+        activeMasternodeManager = new CActiveMasternodeManager();
         RegisterValidationInterface(activeMasternodeManager);
     }
 
@@ -1915,31 +2003,9 @@ bool AppInitMain(InitInterfaces& interfaces)
         activeMasternodeInfo.blsPubKeyOperator = std::make_unique<CBLSPublicKey>();
     }
 
-#ifdef ENABLE_WALLET
-    LogPrintf("Using masternode config file %s\n", GetMasternodeConfigFile().string());
-
-    auto pwalletMain = GetWallets().at(0);
-    if(gArgs.GetBoolArg("-mnconflock", true) && pwalletMain && (masternodeConfig.getCount() > 0)) {
-        LOCK(pwalletMain->cs_wallet);
-        LogPrintf("Locking Masternodes:\n");
-        uint256 mnTxHash;
-        uint32_t outputIndex;
-        for (const auto& mne : masternodeConfig.getEntries()) {
-            mnTxHash.SetHex(mne.getTxHash());
-            outputIndex = (uint32_t)atoi(mne.getOutputIndex());
-            COutPoint outpoint = COutPoint(mnTxHash, outputIndex);
-            // don't lock non-spendable outpoint (i.e. it's already spent or it's not from this wallet at all)
-            if(pwalletMain->IsMine(CTxIn(outpoint)) != ISMINE_SPENDABLE) {
-                LogPrintf("  %s %s - IS NOT SPENDABLE, was not locked\n", mne.getTxHash(), mne.getOutputIndex());
-                continue;
-            }
-            pwalletMain->LockCoin(outpoint);
-            LogPrintf("  %s %s - locked successfully\n", mne.getTxHash(), mne.getOutputIndex());
-        }
-    }
-
     // ********************************************************* Step 11b: setup PrivateSend
 
+#ifdef ENABLE_WALLET
     privateSendClient.nLiquidityProvider = std::min(std::max((int)gArgs.GetArg("-liquidityprovider", DEFAULT_PRIVATESEND_LIQUIDITY), MIN_PRIVATESEND_LIQUIDITY), MAX_PRIVATESEND_LIQUIDITY);
     int nMaxRounds = MAX_PRIVATESEND_ROUNDS;
     if(privateSendClient.nLiquidityProvider) {
@@ -1953,10 +2019,12 @@ bool AppInitMain(InitInterfaces& interfaces)
     privateSendClient.nPrivateSendSessions = std::min(std::max((int)gArgs.GetArg("-privatesendsessions", DEFAULT_PRIVATESEND_SESSIONS), MIN_PRIVATESEND_SESSIONS), MAX_PRIVATESEND_SESSIONS);
     privateSendClient.nPrivateSendRounds = std::min(std::max((int)gArgs.GetArg("-privatesendrounds", DEFAULT_PRIVATESEND_ROUNDS), MIN_PRIVATESEND_ROUNDS), nMaxRounds);
     privateSendClient.nPrivateSendAmount = std::min(std::max((int)gArgs.GetArg("-privatesendamount", DEFAULT_PRIVATESEND_AMOUNT), MIN_PRIVATESEND_AMOUNT), MAX_PRIVATESEND_AMOUNT);
+    privateSendClient.nPrivateSendDenoms = std::min(std::max((int)gArgs.GetArg("-privatesenddenoms", DEFAULT_PRIVATESEND_DENOMS), MIN_PRIVATESEND_DENOMS), MAX_PRIVATESEND_DENOMS);
 
     LogPrintf("PrivateSend liquidityprovider: %d\n", privateSendClient.nLiquidityProvider);
     LogPrintf("PrivateSend rounds: %d\n", privateSendClient.nPrivateSendRounds);
     LogPrintf("PrivateSend amount: %d\n", privateSendClient.nPrivateSendAmount);
+    LogPrintf("PrivateSend denoms: %d\n", privateSendClient.nPrivateSendDenoms);
 #endif // ENABLE_WALLET
 
     CPrivateSend::InitStandardDenominations();
@@ -1969,35 +2037,25 @@ bool AppInitMain(InitInterfaces& interfaces)
 
     // LOAD SERIALIZED DAT FILES INTO DATA CACHES FOR INTERNAL USE
 
-    if (!fLiteMode) {
+    bool fIgnoreCacheFiles = fLiteMode || fReindex || fReindexChainState;
+    if (!fIgnoreCacheFiles) {
         boost::filesystem::path pathDB = GetDataDir();
         std::string strDBName;
 
         strDBName = "mncache.dat";
         uiInterface.InitMessage(_("Loading masternode cache..."));
-        CFlatDB<CMasternodeMan> flatdb1(strDBName, "magicMasternodeCache");
-        if(!flatdb1.Load(mnodeman)) {
+        CFlatDB<CMasternodeMetaMan> flatdb1(strDBName, "magicMasternodeCache");
+        if(!flatdb1.Load(mmetaman)) {
             return InitError(_("Failed to load masternode cache from") + "\n" + (pathDB / strDBName).string());
         }
 
-        if(mnodeman.size()) {
-            strDBName = "mnpayments.dat";
-            uiInterface.InitMessage(_("Loading masternode payment cache..."));
-            CFlatDB<CMasternodePayments> flatdb2(strDBName, "magicMasternodePaymentsCache");
-            if(!flatdb2.Load(mnpayments)) {
-                return InitError(_("Failed to load masternode payments cache from") + "\n" + (pathDB / strDBName).string());
-            }
-
-            strDBName = "governance.dat";
-            uiInterface.InitMessage(_("Loading governance cache..."));
-            CFlatDB<CGovernanceManager> flatdb3(strDBName, "magicGovernanceCache");
-            if(!flatdb3.Load(governance)) {
-                return InitError(_("Failed to load governance cache from") + "\n" + (pathDB / strDBName).string());
-            }
-            governance.InitOnLoad();
-        } else {
-            uiInterface.InitMessage(_("Masternode cache is empty, skipping payments and governance cache..."));
+        strDBName = "governance.dat";
+        uiInterface.InitMessage(_("Loading governance cache..."));
+        CFlatDB<CGovernanceManager> flatdb3(strDBName, "magicGovernanceCache");
+        if(!flatdb3.Load(governance)) {
+            return InitError(_("Failed to load governance cache from") + "\n" + (pathDB / strDBName).string());
         }
+        governance.InitOnLoad();
 
         strDBName = "netfulfilled.dat";
         uiInterface.InitMessage(_("Loading fulfilled requests cache..."));
@@ -2019,21 +2077,19 @@ bool AppInitMain(InitInterfaces& interfaces)
 
     // ********************************************************* Step 11c: schedule Dash-specific tasks
     if (!fLiteMode) {
-        scheduler.scheduleEvery(boost::bind(&CNetFulfilledRequestManager::DoMaintenance, boost::ref(netfulfilledman)), 60);
-        scheduler.scheduleEvery(boost::bind(&CMasternodeSync::DoMaintenance, boost::ref(masternodeSync), boost::ref(*g_connman)), 1);
-        scheduler.scheduleEvery(boost::bind(&CMasternodeMan::DoMaintenance, boost::ref(mnodeman), boost::ref(*g_connman)), 1);
-        scheduler.scheduleEvery(boost::bind(&CActiveLegacyMasternodeManager::DoMaintenance, boost::ref(legacyActiveMasternodeManager), boost::ref(*g_connman)), MASTERNODE_MIN_MNP_SECONDS);
+        scheduler.scheduleEvery(boost::bind(&CNetFulfilledRequestManager::DoMaintenance, boost::ref(netfulfilledman)), 60 * 1000);
+        scheduler.scheduleEvery(boost::bind(&CMasternodeSync::DoMaintenance, boost::ref(masternodeSync), boost::ref(*g_connman)), 1 * 1000);
+        scheduler.scheduleEvery(boost::bind(&CMasternodeUtils::DoMaintenance, boost::ref(*g_connman)), 1 * 1000);
 
-        scheduler.scheduleEvery(boost::bind(&CMasternodePayments::DoMaintenance, boost::ref(mnpayments)), 60);
-        scheduler.scheduleEvery(boost::bind(&CGovernanceManager::DoMaintenance, boost::ref(governance), boost::ref(*g_connman)), 60 * 5);
+        scheduler.scheduleEvery(boost::bind(&CGovernanceManager::DoMaintenance, boost::ref(governance), boost::ref(*g_connman)), 60 * 5 * 1000);
 
-        scheduler.scheduleEvery(boost::bind(&CInstantSend::DoMaintenance, boost::ref(instantsend)), 60);
+        scheduler.scheduleEvery(boost::bind(&CInstantSend::DoMaintenance, boost::ref(instantsend)), 60 * 1000);
 
         if (fMasternodeMode)
-            scheduler.scheduleEvery(boost::bind(&CPrivateSendServer::DoMaintenance, boost::ref(privateSendServer), boost::ref(*g_connman)), 1);
+            scheduler.scheduleEvery(boost::bind(&CPrivateSendServer::DoMaintenance, boost::ref(privateSendServer), boost::ref(*g_connman)), 1 * 1000);
 #ifdef ENABLE_WALLET
         else
-            scheduler.scheduleEvery(boost::bind(&CPrivateSendClientManager::DoMaintenance, boost::ref(privateSendClient), boost::ref(*g_connman)), 1);
+            scheduler.scheduleEvery(boost::bind(&CPrivateSendClientManager::DoMaintenance, boost::ref(privateSendClient), boost::ref(*g_connman)), 1 * 1000);
 #endif // ENABLE_WALLET
     }
 

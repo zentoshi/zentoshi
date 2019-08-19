@@ -9,7 +9,12 @@
 #include <util/strencodings.h>
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
+#include <vector>
+#include <string>
+#include <boost/variant/apply_visitor.hpp>
+#include <boost/variant/static_visitor.hpp>
 
 /** All alphanumeric characters except for "0", "I", "O", and "l" */
 static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -161,7 +166,6 @@ bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRe
 {
     return DecodeBase58Check(str.c_str(), vchRet);
 }
-
 CBase58Data::CBase58Data()
 {
     vchVersion.clear();
@@ -236,6 +240,9 @@ public:
     bool operator()(const CKeyID& id) const { return addr->Set(id); }
     bool operator()(const CScriptID& id) const { return addr->Set(id); }
     bool operator()(const CNoDestination& no) const { return false; }
+    bool operator()(const WitnessV0KeyHash& id) const { return false; }
+    bool operator()(const WitnessV0ScriptHash& id) const { return false; }
+    bool operator()(const WitnessUnknown& id) const { return false; }
 };
 
 } // anon namespace
@@ -250,6 +257,11 @@ bool CBitcoinAddress::Set(const CScriptID& id)
 {
     SetData(Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS), &id, 20);
     return true;
+}
+
+bool CBitcoinAddress::Set(const CTxDestination& dest)
+{
+    return boost::apply_visitor(CBitcoinAddressVisitor(this), dest);
 }
 
 bool CBitcoinAddress::IsValid() const

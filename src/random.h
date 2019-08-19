@@ -69,6 +69,7 @@ void GetRandBytes(unsigned char* buf, int num) noexcept;
 uint64_t GetRand(uint64_t nMax) noexcept;
 int GetRandInt(int nMax) noexcept;
 uint256 GetRandHash() noexcept;
+bool GetRandBool(double rate);
 
 /**
  * Gather entropy from various sources, feed it into the internal PRNG, and

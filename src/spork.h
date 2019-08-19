@@ -13,6 +13,8 @@
 class CSporkMessage;
 class CSporkManager;
 class CKey;
+class CConnman;
+class CNode;
 
 namespace Spork {
 
@@ -31,6 +33,8 @@ enum {
 	SPORK_15_DETERMINISTIC_MNS_ENABLED                     = 10014,
 	SPORK_16_INSTANTSEND_AUTOLOCKS                         = 10015,
 	SPORK_17_QUORUM_DKG_ENABLED                            = 10016,
+	SPORK_19_CHAINLOCKS_ENABLED                            = 10018,
+	SPORK_20_INSTANTSEND_LLMQ_BASED                        = 10019,
 	SPORK_25_POS_DISABLED_FLAG                             = 10025,
 	SPORK_26_POW_DISABLED_FLAG                             = 10026,
 	SPORK_END

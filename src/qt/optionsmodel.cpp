@@ -19,10 +19,6 @@
 #include <txdb.h> // for -dbcache defaults
 #include <qt/intro.h>
 
-#ifdef ENABLE_WALLET
-#include <masternodeconfig.h>
-#endif // ENABLE_WALLET
-
 #include <QNetworkProxy>
 #include <QSettings>
 #include <QStringList>
@@ -80,15 +76,25 @@ void OptionsModel::Init(bool resetSettings)
         settings.setValue("strThirdPartyTxUrls", "");
     strThirdPartyTxUrls = settings.value("strThirdPartyTxUrls", "").toString();
 
+#ifdef ENABLE_WALLET
     if (!settings.contains("fCoinControlFeatures"))
         settings.setValue("fCoinControlFeatures", false);
     fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
 
-#ifdef ENABLE_WALLET
-    if (!settings.contains("fShowMasternodesTab"))
-    settings.setValue("fShowMasternodesTab", masternodeConfig.getCount());
+    if (!settings.contains("digits"))
+        settings.setValue("digits", "2");
+
+    // PrivateSend
+    if (!settings.contains("fShowAdvancedPSUI"))
+        settings.setValue("fShowAdvancedPSUI", false);
+    fShowAdvancedPSUI = settings.value("fShowAdvancedPSUI", false).toBool();
+
+    if (!settings.contains("fShowPrivateSendPopups"))
+        settings.setValue("fShowPrivateSendPopups", true);
+
+    if (!settings.contains("fLowKeysWarning"))
+        settings.setValue("fLowKeysWarning", true);
 #endif // ENABLE_WALLET
-    //
 
     // These are shared with the core or have a command-line parameter
     // and we want command-line parameters to overwrite the GUI settings.

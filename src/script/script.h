@@ -8,12 +8,12 @@
 
 #include <crypto/common.h>
 #include <prevector.h>
+#include <pubkey.h>
 #include <serialize.h>
 
 #include <assert.h>
 #include <climits>
 #include <limits>
-#include <pubkey.h>
 #include <stdexcept>
 #include <stdint.h>
 #include <string.h>
@@ -569,8 +569,6 @@ public:
     {
         return (size() > 0 && *begin() == OP_RETURN) || (size() > MAX_SCRIPT_SIZE);
     }
-
-    std::string ToString() const;
 
     void clear()
     {

@@ -367,7 +367,7 @@ struct CheckVarIntMode {
     }
 };
 
-template<VarIntMode Mode, typename I>
+template<typename I>
 inline unsigned int GetSizeOfVarInt(I n)
 {
     int nRet = 0;
@@ -383,7 +383,7 @@ inline unsigned int GetSizeOfVarInt(I n)
 template<typename I>
 inline void WriteVarInt(CSizeComputer& os, I n);
 
-template<typename Stream, VarIntMode Mode, typename I>
+template<typename Stream, typename I>
 void WriteVarInt(Stream& os, I n)
 {
     unsigned char tmp[(sizeof(n)*8+6)/7];
@@ -400,9 +400,24 @@ void WriteVarInt(Stream& os, I n)
     } while(len--);
 }
 
+template<typename Stream, typename I>
+I ReadVarInt(Stream& is)
+{
+    I n = 0;
+    while(true) {
+        unsigned char chData = ser_readdata8(is);
+        n = (n << 7) | (chData & 0x7F);
+        if (chData & 0x80)
+            n++;
+        else
+            return n;
+    }
+}
+
 template<typename Stream, VarIntMode Mode, typename I>
 I ReadVarInt(Stream& is)
 {
+    CheckVarIntMode<Mode, I>();
     I n = 0;
     while(true) {
         unsigned char chData = ser_readdata8(is);
@@ -426,9 +441,9 @@ I ReadVarInt(Stream& is)
 #define DYNBITSET(obj) REF(CDynamicBitSet(REF(obj)))
 #define FIXEDVARINTSBITSET(obj, size) REF(CFixedVarIntsBitSet(REF(obj), (size)))
 #define AUTOBITSET(obj, size) REF(CAutoBitSet(REF(obj), (size)))
-#define VARINT(obj, ...) WrapVarInt<__VA_ARGS__>(REF(obj))
-#define COMPACTSIZE(obj) CCompactSize(REF(obj))
-#define LIMITED_STRING(obj,n) LimitedString< n >(REF(obj))
+#define VARINT(obj) REF(WrapVarInt(REF(obj)))
+#define COMPACTSIZE(obj) REF(CCompactSize(REF(obj)))
+#define LIMITED_STRING(obj,n) REF(LimitedString< n >(REF(obj)))
 
 /** 
  * Wrapper for serializing arrays and POD.
@@ -626,22 +641,22 @@ public:
     }
 };
 
-template<VarIntMode Mode, typename I>
+template<typename I>
 class CVarInt
 {
 protected:
     I &n;
 public:
-    explicit CVarInt(I& nIn) : n(nIn) { }
+    CVarInt(I& nIn) : n(nIn) { }
 
     template<typename Stream>
     void Serialize(Stream &s) const {
-        WriteVarInt<Stream,Mode,I>(s, n);
+        WriteVarInt<Stream,I>(s, n);
     }
 
     template<typename Stream>
     void Unserialize(Stream& s) {
-        n = ReadVarInt<Stream,Mode,I>(s);
+        n = ReadVarInt<Stream,I>(s);
     }
 };
 
@@ -686,6 +701,10 @@ protected:
 public:
     explicit CCompactSize(uint64_t& nIn) : n(nIn) { }
 
+    unsigned int GetSerializeSize() const {
+        return GetSizeOfCompactSize(n);
+    }
+
     template<typename Stream>
     void Serialize(Stream &s) const {
         WriteCompactSize<Stream>(s, n);
@@ -726,8 +745,8 @@ public:
     }
 };
 
-template<VarIntMode Mode=VarIntMode::DEFAULT, typename I>
-CVarInt<Mode, I> WrapVarInt(I& n) { return CVarInt<Mode, I>{n}; }
+template<typename I>
+CVarInt<I> WrapVarInt(I& n) { return CVarInt<I>{n}; }
 
 template<typename I>
 BigEndian<I> WrapBigEndian(I& n) { return BigEndian<I>(n); }
@@ -769,6 +788,12 @@ template<typename Stream, typename T, typename A> inline void Unserialize(Stream
  */
 template<typename Stream, typename K, typename T> void Serialize(Stream& os, const std::pair<K, T>& item);
 template<typename Stream, typename K, typename T> void Unserialize(Stream& is, std::pair<K, T>& item);
+
+/**
+ * pair
+ */
+template<typename Stream, typename... Elements> void Serialize(Stream& os, const std::tuple<Elements...>& item);
+template<typename Stream, typename... Elements> void Unserialize(Stream& is, std::tuple<Elements...>& item);
 
 /**
  * map
@@ -1000,6 +1025,53 @@ void Unserialize(Stream& is, std::pair<K, T>& item)
     Unserialize(is, item.second);
 }
 
+/**
+ * tuple
+ */
+template<typename Stream, int index, typename... Ts>
+struct SerializeTuple {
+    void operator() (Stream&s, std::tuple<Ts...>& t) {
+        SerializeTuple<Stream, index - 1, Ts...>{}(s, t);
+        s << std::get<index>(t);
+    }
+};
+
+template<typename Stream, typename... Ts>
+struct SerializeTuple<Stream, 0, Ts...> {
+    void operator() (Stream&s, std::tuple<Ts...>& t) {
+        s << std::get<0>(t);
+    }
+};
+
+template<typename Stream, int index, typename... Ts>
+struct DeserializeTuple {
+    void operator() (Stream&s, std::tuple<Ts...>& t) {
+        DeserializeTuple<Stream, index - 1, Ts...>{}(s, t);
+        s >> std::get<index>(t);
+    }
+};
+
+template<typename Stream, typename... Ts>
+struct DeserializeTuple<Stream, 0, Ts...> {
+    void operator() (Stream&s, std::tuple<Ts...>& t) {
+        s >> std::get<0>(t);
+    }
+};
+
+
+template<typename Stream, typename... Elements>
+void Serialize(Stream& os, const std::tuple<Elements...>& item)
+{
+    const auto size = std::tuple_size<std::tuple<Elements...>>::value;
+    SerializeTuple<Stream, size - 1, Elements...>{}(os, const_cast<std::tuple<Elements...>&>(item));
+}
+
+template<typename Stream, typename... Elements>
+void Unserialize(Stream& is, std::tuple<Elements...>& item)
+{
+    const auto size = std::tuple_size<std::tuple<Elements...>>::value;
+    DeserializeTuple<Stream, size - 1, Elements...>{}(is, item);
+}
 
 
 /**
@@ -1192,6 +1264,13 @@ void SerializeMany(Stream& s, const Arg& arg, const Args&... args)
     ::SerializeMany(s, args...);
 }
 
+template<typename Stream, typename Arg, typename... Args>
+void SerializeMany(Stream& s, Arg&& arg, Args&&... args)
+{
+    ::Serialize(s, std::forward<Arg>(arg));
+    ::SerializeMany(s, std::forward<Args>(args)...);
+}
+
 template<typename Stream>
 inline void UnserializeMany(Stream& s)
 {
@@ -1199,6 +1278,13 @@ inline void UnserializeMany(Stream& s)
 
 template<typename Stream, typename Arg, typename... Args>
 inline void UnserializeMany(Stream& s, Arg&& arg, Args&&... args)
+{
+    ::Unserialize(s, arg);
+    ::UnserializeMany(s, args...);
+}
+
+template<typename Stream, typename Arg, typename... Args>
+inline void UnserializeMany(Stream& s, Arg& arg, Args&... args)
 {
     ::Unserialize(s, arg);
     ::UnserializeMany(s, args...);
@@ -1231,6 +1317,12 @@ template <typename T>
 size_t GetSerializeSize(const T& t, int nVersion = 0)
 {
     return (CSizeComputer(nVersion) << t).size();
+}
+
+template <typename S, typename T>
+size_t GetSerializeSize(const S& s, const T& t)
+{
+    return (CSizeComputer(s.GetType()) << t).size();
 }
 
 template <typename... T>

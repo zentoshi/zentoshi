@@ -98,17 +98,18 @@ endif
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
-  activemasternode.h \
   addrdb.h \
+  activemasternode.h \
   addrman.h \
   alert.h \
   attributes.h \
   banman.h \
   base58.h \
+  batchedlogger.h \
   bech32.h \
   bloom.h \
-  blocksigner.h \
   blockencodings.h \
+  blocksigner.h \
   blockfilter.h \
   cachemap.h \
   cachemultimap.h \
@@ -133,12 +134,13 @@ BITCOIN_CORE_H = \
   cuckoocache.h \
   ctpl.h \
   cxxtimer.hpp \
-  evo/evodb.h \
-  evo/specialtx.h \
-  evo/providertx.h \
-  evo/deterministicmns.h \
   evo/cbtx.h \
+  evo/deterministicmns.h \
+  evo/evodb.h \
+  evo/mnauth.h \
+  evo/providertx.h \
   evo/simplifiedmns.h \
+  evo/specialtx.h \
   dsnotificationinterface.h \
   fs.h \
   flat-database.h \
@@ -167,25 +169,32 @@ BITCOIN_CORE_H = \
   dbwrapper.h \
   limitedmap.h \
   logging.h \
-  llmq/quorums_commitment.h \
+  llmq/quorums.h \
   llmq/quorums_blockprocessor.h \
-  llmq/quorums_dummydkg.h \
-  llmq/quorums_utils.h \
+  llmq/quorums_commitment.h \
+  llmq/quorums_chainlocks.h \
+  llmq/quorums_debug.h \
+  llmq/quorums_dkgsessionhandler.h \
+  llmq/quorums_dkgsessionmgr.h \
+  llmq/quorums_dkgsession.h \
   llmq/quorums_init.h \
-  masternode.h \
+  llmq/quorums_instantsend.h \
+  llmq/quorums_signing.h \
+  llmq/quorums_signing_shares.h \
+  llmq/quorums_utils.h \
+  masternode-meta.h \
   masternode-payments.h \
   masternode-sync.h \
-  masternodeman.h \
-  masternodeconfig.h \
-  messagesigner.h \
+  masternode-utils.h \
   memusage.h \
   merkleblock.h \
+  messagesigner.h \
   miner.h \
   net.h \
   net_processing.h \
-  netfulfilledman.h \
   netaddress.h \
   netbase.h \
+  netfulfilledman.h \
   netmessagemaker.h \
   node/transaction.h \
   noui.h \
@@ -213,9 +222,11 @@ BITCOIN_CORE_H = \
   rpc/rawtransaction.h \
   rpc/register.h \
   rpc/util.h \
+  saltedhasher.h \
   scheduler.h \
   script/descriptor.h \
   script/ismine.h \
+  script/keyorigin.h \
   script/sigcache.h \
   script/sign.h \
   script/standard.h \
@@ -238,6 +249,7 @@ BITCOIN_CORE_H = \
   txmempool.h \
   ui_interface.h \
   undo.h \
+  unordered_lru_cache.h \
   util/bip32.h \
   util/bytevectorhash.h \
   util/system.h \
@@ -247,7 +259,6 @@ BITCOIN_CORE_H = \
   validation.h \
   validationinterface.h \
   versionbits.h \
-  versionbitsinfo.h \
   walletinitinterface.h \
   wallet/coincontrol.h \
   wallet/crypter.h \
@@ -280,9 +291,10 @@ libzentoshi_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_C
 libzentoshi_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_server_a_SOURCES = \
   activemasternode.cpp \
-  addrdb.cpp \
   addrman.cpp \
+  addrdb.cpp \
   alert.cpp \
+  batchedlogger.cpp \
   banman.cpp \
   bloom.cpp \
   blocksigner.cpp \
@@ -292,12 +304,13 @@ libzentoshi_server_a_SOURCES = \
   checkpoints.cpp \
   consensus/tx_verify.cpp \
   dsnotificationinterface.cpp \
-  evo/evodb.cpp \
-  evo/specialtx.cpp \
-  evo/providertx.cpp \
-  evo/deterministicmns.cpp \
   evo/cbtx.cpp \
+  evo/deterministicmns.cpp \
+  evo/evodb.cpp \
+  evo/mnauth.cpp \
+  evo/providertx.cpp \
   evo/simplifiedmns.cpp \
+  evo/specialtx.cpp \
   httprpc.cpp \
   httpserver.cpp \
   index/base.cpp \
@@ -315,22 +328,30 @@ libzentoshi_server_a_SOURCES = \
   governance/governance-validators.cpp \
   governance/governance-vote.cpp \
   governance/governance-votedb.cpp \
-  llmq/quorums_commitment.cpp \
+  llmq/quorums.cpp \
   llmq/quorums_blockprocessor.cpp \
-  llmq/quorums_dummydkg.cpp \
-  llmq/quorums_utils.cpp \
+  llmq/quorums_commitment.cpp \
+  llmq/quorums_chainlocks.cpp \
+  llmq/quorums_debug.cpp \
+  llmq/quorums_dkgsessionhandler.cpp \
+  llmq/quorums_dkgsessionmgr.cpp \
+  llmq/quorums_dkgsession.cpp \
   llmq/quorums_init.cpp \
-  masternode.cpp \
+  llmq/quorums_instantsend.cpp \
+  llmq/quorums_signing.cpp \
+  llmq/quorums_signing_shares.cpp \
+  llmq/quorums_utils.cpp \
+  logging.cpp \
+  masternode-meta.cpp \
   masternode-payments.cpp \
   masternode-sync.cpp \
-  masternodeconfig.cpp \
-  masternodeman.cpp \
+  masternode-utils.cpp \
   merkleblock.cpp \
   messagesigner.cpp \
   miner.cpp \
   net.cpp \
-  net_processing.cpp \
   netfulfilledman.cpp \
+  net_processing.cpp \
   node/transaction.cpp \
   noui.cpp \
   outputtype.cpp \
@@ -344,15 +365,18 @@ libzentoshi_server_a_SOURCES = \
   pow.cpp \
   rest.cpp \
   rpc/blockchain.cpp \
+  rpc/masternode.cpp \
   rpc/governance.cpp\
   rpc/mining.cpp \
   rpc/misc.cpp \
   rpc/net.cpp \
-  rpc/masternode.cpp \
   rpc/rawtransaction.cpp \
+  rpc/rpcevo.cpp \
+  rpc/rpcquorums.cpp \
   rpc/server.cpp \
   rpc/util.cpp \
   script/sigcache.cpp \
+  script/ismine.cpp \
   shutdown.cpp \
   spork.cpp \
   timedata.cpp \
@@ -385,7 +409,6 @@ endif
 libzentoshi_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libzentoshi_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_wallet_a_SOURCES = \
-  outputtype.cpp \
   interfaces/wallet.cpp \
   wallet/coincontrol.cpp \
   wallet/crypter.cpp \
@@ -484,6 +507,7 @@ libzentoshi_consensus_a_SOURCES = \
   script/script_error.cpp \
   script/script_error.h \
   serialize.h \
+  streams.h \
   span.h \
   tinyformat.h \
   uint256.cpp \
@@ -496,6 +520,7 @@ libzentoshi_consensus_a_SOURCES = \
 libzentoshi_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libzentoshi_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_common_a_SOURCES = \
+  amount.cpp \
   base58.cpp \
   bech32.cpp \
   chainparams.cpp \
@@ -511,12 +536,13 @@ libzentoshi_common_a_SOURCES = \
   policy/feerate.cpp \
   psbt.cpp \
   protocol.cpp \
+  saltedhasher.cpp \
   scheduler.cpp \
   script/descriptor.cpp \
   script/ismine.cpp \
   script/sign.cpp \
   script/standard.cpp \
-  versionbitsinfo.cpp \
+  util/system.cpp \
   warnings.cpp \
   $(BITCOIN_CORE_H)
 
@@ -526,6 +552,7 @@ libzentoshi_common_a_SOURCES = \
 libzentoshi_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libzentoshi_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_util_a_SOURCES = \
+  bls/bls_batchverifier.h \
   bls/bls_ies.cpp \
   bls/bls_ies.h \
   bls/bls_worker.cpp \
@@ -655,7 +682,7 @@ zentoshi_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 # $(LIBMEMENV) \
 # $(LIBSECP256K1)
 
-#zentoshi_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
+#zentoshi_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(BLS_LIBS)
 
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
@@ -697,6 +724,9 @@ CLEANFILES += zmq/*.gcda zmq/*.gcno
 CLEANFILES += obj/build.h
 
 IMMER_DIST = immer
+
+DISTCLEANFILES = obj/build.h
+
 EXTRA_DIST = $(CTAES_DIST)
 EXTRA_DIST += $(IMMER_DIST)
 
@@ -719,6 +749,10 @@ clean-local:
 	@test -f $(WINDRES)
 	## FIXME: How to get the appropriate modulename_CPPFLAGS in here?
 	$(AM_V_GEN) $(WINDRES) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) -DWINDRES_PREPROC -i $< -o $@
+
+.mm.o:
+	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
 check-symbols: $(bin_PROGRAMS)
 if GLIBC_BACK_COMPAT

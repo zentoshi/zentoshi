@@ -5,6 +5,7 @@
 #include <governance/governance-validators.h>
 
 #include <base58.h>
+#include <key_io.h>
 #include <timedata.h>
 #include <tinyformat.h>
 #include <util/strencodings.h>
@@ -14,9 +15,10 @@
 const size_t MAX_DATA_SIZE = 512;
 const size_t MAX_NAME_SIZE = 40;
 
-CProposalValidator::CProposalValidator(const std::string& strHexData) :
+CProposalValidator::CProposalValidator(const std::string& strHexData, bool fAllowLegacyFormat) :
     objJSON(UniValue::VOBJ),
     fJSONValid(false),
+    fAllowLegacyFormat(fAllowLegacyFormat),
     strErrorMessages()
 {
     if (!strHexData.empty()) {
@@ -207,9 +209,13 @@ void CProposalValidator::ParseJSONData(const std::string& strJSONData)
         if (obj.isObject()) {
             objJSON = obj;
         } else {
-            std::vector<UniValue> arr1 = obj.getValues();
-            std::vector<UniValue> arr2 = arr1.at(0).getValues();
-            objJSON = arr2.at(1);
+            if (fAllowLegacyFormat) {
+                std::vector<UniValue> arr1 = obj.getValues();
+                std::vector<UniValue> arr2 = arr1.at(0).getValues();
+                objJSON = arr2.at(1);
+            } else {
+                throw std::runtime_error("Legacy proposal serialization format not allowed");
+            }
         }
 
         fJSONValid = true;

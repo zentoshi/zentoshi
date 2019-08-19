@@ -1,15 +1,15 @@
-#include <qt/governancelist.h>
-#include <qt/forms/ui_governancelist.h>
+#include "qt/governancelist.h"
+#include "qt/forms/ui_governancelist.h"
 
-#include <masternode.h>
-#include <masternode-sync.h>
-#include <masternodeconfig.h>
-#include <masternodeman.h>
+#include "activemasternode.h"
+#include "consensus/validation.h"
 #include <governance/governance.h>
 #include <governance/governance-vote.h>
 #include <governance/governance-classes.h>
 #include <governance/governance-validators.h>
+#include <init.h>
 #include <qt/governancedialog.h>
+#include <masternode-sync.h>
 #include <messagesigner.h>
 #include <qt/clientmodel.h>
 #include <validation.h>
@@ -181,70 +181,6 @@ void GovernanceList::on_voteAbstainButton_clicked()
 
 void GovernanceList::Vote(uint256 nHash, vote_outcome_enum_t eVoteOutcome)
 {
-    int nSuccessful = 0;
-    int nFailed = 0;
-    int nStatus = 0;
-    vote_signal_enum_t eVoteSignal = CGovernanceVoting::ConvertVoteSignal("funding");
-
-    for (const auto& mne : masternodeConfig.getEntries()) {
-        std::string strError;
-        std::vector<unsigned char> vchMasterNodeSignature;
-        std::string strMasterNodeSignMessage;
-
-        CPubKey pubKeyCollateralAddress;
-        CKey keyCollateralAddress;
-        CPubKey pubKeyMasternode;
-        CKey keyMasternode;
-
-
-        if(!CMessageSigner::GetKeysFromSecret(mne.getPrivKey(), keyMasternode, pubKeyMasternode)){
-            nFailed++;
-            nStatus = 100;
-            continue;
-        }
-
-        uint256 nTxHash;
-        nTxHash.SetHex(mne.getTxHash());
-
-        int nOutputIndex = 0;
-        if(!ParseInt32(mne.getOutputIndex(), &nOutputIndex)) {
-            continue;
-        }
-
-        COutPoint outpoint(nTxHash, nOutputIndex);
-
-        CMasternode mn;
-        bool fMnFound = mnodeman.Get(outpoint, mn);
-
-        if(!fMnFound) {
-            nFailed++;
-            nStatus = 200;
-            continue;
-        }
-
-        CGovernanceVote vote(mn.outpoint, nHash, eVoteSignal, eVoteOutcome);
-        if(!vote.Sign(keyMasternode, pubKeyMasternode.GetID())){
-            nFailed++;
-            nStatus = 300;
-            continue;
-        }
-
-        CGovernanceException exception;
-        if(governance.ProcessVoteAndRelay(vote, exception, *g_connman)) {
-            nSuccessful++;
-        }
-        else {
-            nFailed++;
-            nStatus = 400;
-        }
-
-    }
-    std::string returnObj;
-    returnObj = strprintf("Successfully vote %d masternodes, failed to vote %d, total %d. Error Code:%d", nSuccessful, nFailed, nFailed + nSuccessful, nStatus);
-    QMessageBox msg;
-    msg.setText(QString::fromStdString(returnObj));
-    msg.exec();
-    update();
 }
 
 GovernanceList::~GovernanceList()
@@ -292,10 +228,8 @@ void GovernanceList::updateGobjects()
     ui->tableWidgetGobjects->setRowCount(0);
 
 
-    int nStartTime = 0; //All
-    std::vector<CGovernanceObject*> objs = governance.GetAllNewerThan(nStartTime).front();
-
-    for (const auto& pGovObj : objs)
+    int nStartTime = 0;
+    for (const auto& pGovObj : governance.GetAllNewerThan(nStartTime))
     {
         int gobject = pGovObj->GetObjectType();
 

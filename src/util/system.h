@@ -61,7 +61,6 @@ extern int nWalletBackups;
 
 static const bool DEFAULT_LOGTHREADNAMES = false;
 
-extern const std::unordered_map<std::string, std::vector<std::string> >& mapMultiArgs;
 extern bool fDebug;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
@@ -114,10 +113,6 @@ std::string SafeStringFormat(const std::string& fmt, const Args&... args)
     if (LogAcceptCategory((category))) { \
         LogPrintStr(SafeStringFormat(__VA_ARGS__)); \
     } \
-} while(0)
-
-#define LogPrintf(...) do { \
-    LogPrintStr(SafeStringFormat(__VA_ARGS__)); \
 } while(0)
 
 template<typename... Args>

@@ -163,6 +163,14 @@ void CKey::MakeNewKey(bool fCompressedIn) {
     fCompressed = fCompressedIn;
 }
 
+bool CKey::SetPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
+    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)begin(), &privkey[0], privkey.size()))
+        return false;
+    fCompressed = fCompressedIn;
+    fValid = true;
+    return true;
+}
+
 CPrivKey CKey::GetPrivKey() const {
     assert(fValid);
     CPrivKey privkey;
@@ -238,7 +246,7 @@ bool CKey::VerifyPubKey(const CPubKey& pubkey) const {
     return pubkey.Verify(hash, vchSig);
 }
 
-bool CKey::SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig, CPubKey::InputScriptType scriptType) const {
+bool CKey::SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig) const {
     if (!fValid)
         return false;
     vchSig.resize(CPubKey::COMPACT_SIGNATURE_SIZE);
@@ -249,15 +257,7 @@ bool CKey::SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig, 
     ret = secp256k1_ecdsa_recoverable_signature_serialize_compact(secp256k1_context_sign, &vchSig[1], &rec, &sig);
     assert(ret);
     assert(rec != -1);
-
-    switch(scriptType) {
-    case CPubKey::InputScriptType::SPENDP2SHWITNESS: vchSig[0] = 31 + rec + (fCompressed ? 4 : 0); break;
-    case CPubKey::InputScriptType::SPENDWITNESS: vchSig[0] = 35 + rec + (fCompressed ? 4 : 0); break;
-    case CPubKey::InputScriptType::SPENDP2PKH: vchSig[0] = 27 + rec + (fCompressed ? 4 : 0); break;
-    default:
-        return false;
-    }
-
+    vchSig[0] = 27 + rec + (fCompressed ? 4 : 0);
     return true;
 }
 

@@ -21,6 +21,7 @@ class CBlockIndex;
 class CChainParams;
 class CScript;
 class CWallet;
+class CConnman;
 
 namespace Consensus { struct Params; };
 
@@ -33,6 +34,8 @@ struct CBlockTemplate
     std::vector<CAmount> vTxFees;
     std::vector<int64_t> vTxSigOpsCost;
     std::vector<unsigned char> vchCoinbaseCommitment;
+    std::vector<CTxOut> voutMasternodePayments; // masternode payment
+    std::vector<CTxOut> voutSuperblockPayments; // superblock payment
 };
 
 // Container for tracking updates to ancestor feerate as we include (parent)
@@ -165,10 +168,7 @@ public:
 
     /** Construct a new block template with coinbase to scriptPubKeyIn */
     std::unique_ptr<CBlockTemplate> CreateNewBlock(const CScript& scriptPubKeyIn, bool fMineWitnessTx=true);
-    std::unique_ptr<CBlockTemplate> CreateNewBlock(CWallet *wallet,
-                                                   const CScript& scriptPubKeyIn,
-                                                   bool fProofOfStake,
-                                                   bool fMineWitnessTx);
+    std::unique_ptr<CBlockTemplate> CreateNewBlock(CWallet *wallet, const CScript& scriptPubKeyIn, bool fProofOfStake,bool fMineWitnessTx);
 
     static Optional<int64_t> m_last_block_num_txs;
     static Optional<int64_t> m_last_block_weight;

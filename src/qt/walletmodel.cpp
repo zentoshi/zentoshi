@@ -24,6 +24,11 @@
 #include <wallet/coincontrol.h>
 #include <wallet/wallet.h>
 
+#include "instantx.h"
+#include "spork.h"
+#include "privatesend/privatesend-client.h"
+#include "llmq/quorums_instantsend.h"
+
 #include <stdint.h>
 
 #include <QDebug>
@@ -103,6 +108,30 @@ void WalletModel::updateTransaction()
 {
     // Balance and number of transactions might have changed
     fForceCheckBalanceChanged = true;
+}
+
+void WalletModel::updateNumISLocks()
+{
+    fForceCheckBalanceChanged = true;
+    cachedNumISLocks++;
+    if (transactionTableModel)
+        transactionTableModel->updateNumISLocks(cachedNumISLocks);
+}
+
+void WalletModel::updateChainLockHeight(int chainLockHeight)
+{
+    if (transactionTableModel)
+        transactionTableModel->updateChainLockHeight(chainLockHeight);
+}
+
+int WalletModel::getNumISLocks() const
+{
+    return cachedNumISLocks;
+}
+
+bool WalletModel::IsOldInstantSendEnabled() const
+{
+    return llmq::IsOldInstantSendEnabled();
 }
 
 void WalletModel::updateAddressBook(const QString &address, const QString &label,
@@ -540,6 +569,33 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
     // Transfer context; old object no longer relocks wallet
     *this = rhs;
     rhs.relock = false;
+}
+
+bool WalletModel::getPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const
+{
+    return GetMainWallet()->GetPubKey(address, vchPubKeyOut);
+}
+
+bool WalletModel::havePrivKey(const CKeyID &address) const
+{
+    return GetMainWallet()->HaveKey(address);
+}
+
+bool WalletModel::havePrivKey(const CScript& script) const
+{
+    CTxDestination dest;
+    if (ExtractDestination(script, dest)) {
+        if ((boost::get<CKeyID>(&dest) && GetMainWallet()->HaveKey(*boost::get<CKeyID>(&dest))) || (boost::get<CScriptID>(&dest) && GetMainWallet()->HaveCScript(*boost::get<CScriptID>(&dest)))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void WalletModel::listProTxCoins(std::vector<COutPoint>& vOutpts)
+{
+    LOCK2(cs_main, m_wallet->cs_wallet);
+    GetMainWallet()->ListProTxCoins(vOutpts);
 }
 
 void WalletModel::loadReceiveRequests(std::vector<std::string>& vReceiveRequests)

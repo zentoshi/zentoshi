@@ -23,6 +23,11 @@
 #include <util/system.h>
 #include <warnings.h>
 
+#include "masternode-sync.h"
+#include "privatesend/privatesend.h"
+
+#include "llmq/quorums_instantsend.h"
+
 #include <stdint.h>
 
 #include <QDebug>
@@ -30,20 +35,14 @@
 
 class CBlockIndex;
 
+static const int64_t nClientStartupTime = GetTime();
 static int64_t nLastHeaderTipUpdateNotification = 0;
 static int64_t nLastBlockTipUpdateNotification = 0;
-
-static void NotifyAdditionalDataSyncProgressChanged(ClientModel *clientmodel, double nSyncProgress)
-{
-    QMetaObject::invokeMethod(clientmodel, "additionalDataSyncProgressChanged", Qt::QueuedConnection,
-                              Q_ARG(double, nSyncProgress));
-}
 
 ClientModel::ClientModel(interfaces::Node& node, OptionsModel *_optionsModel, QObject *parent) :
     QObject(parent),
     m_node(node),
     optionsModel(_optionsModel),
-    cachedMasternodeCountString(""),
     peerTableModel(nullptr),
     banTableModel(nullptr),
     pollTimer(nullptr)
@@ -55,12 +54,6 @@ ClientModel::ClientModel(interfaces::Node& node, OptionsModel *_optionsModel, QO
     pollTimer = new QTimer(this);
     connect(pollTimer, &QTimer::timeout, this, &ClientModel::updateTimer);
     pollTimer->start(MODEL_UPDATE_DELAY);
-
-    pollMnTimer = new QTimer(this);
-    connect(pollMnTimer, SIGNAL(timeout()), this, SLOT(updateMnTimer()));
-    // no need to update as frequent as data for balances/txes/blocks
-    pollMnTimer->start(MODEL_UPDATE_DELAY * 4);
-
 
     subscribeToCoreSignals();
 }
@@ -81,16 +74,31 @@ int ClientModel::getNumConnections(unsigned int flags) const
     else if (flags == CONNECTIONS_ALL)
         connections = CConnman::CONNECTIONS_ALL;
 
-    return m_node.getNodeCount(connections);
+    if(g_connman)
+         return g_connman->GetNodeCount(connections);
+    return 0;
 }
 
-QString ClientModel::getMasternodeCountString() const
+void ClientModel::setMasternodeList(const CDeterministicMNList& mnList)
 {
-    // return tr("Total: %1 (PS compatible: %2 / Enabled: %3) (IPv4: %4, IPv6: %5, TOR: %6)").arg(QString::number((int)mnodeman.size()))
-    return tr("Total: %1 (PS compatible: %2 / Enabled: %3)")
-            .arg(QString::number((int)m_node.getNumMasternodes().size))
-            .arg(QString::number((int)m_node.getNumMasternodes().countEnabledProtVersion))
-            .arg(QString::number((int)m_node.getNumMasternodes().countEnabled));
+    LOCK(cs_mnlinst);
+    if (mnListCached.GetBlockHash() == mnList.GetBlockHash()) {
+        return;
+    }
+    mnListCached = mnList;
+    Q_EMIT masternodeListChanged();
+}
+
+CDeterministicMNList ClientModel::getMasternodeList() const
+{
+    LOCK(cs_mnlinst);
+    return mnListCached;
+}
+
+void ClientModel::refreshMasternodeList()
+{
+    LOCK(cs_mnlinst);
+    setMasternodeList(deterministicMNManager->GetListAtChainTip());
 }
 
 int ClientModel::getNumBlocks() const
@@ -127,24 +135,66 @@ int64_t ClientModel::getHeaderTipTime() const
     return cachedBestHeaderTime;
 }
 
+quint64 ClientModel::getTotalBytesRecv() const
+{
+    if(!g_connman)
+        return 0;
+    return g_connman->GetTotalBytesRecv();
+}
+
+quint64 ClientModel::getTotalBytesSent() const
+{
+    if(!g_connman)
+        return 0;
+    return g_connman->GetTotalBytesSent();
+}
+
+QDateTime ClientModel::getLastBlockDate() const
+{
+    LOCK(cs_main);
+
+    if (chainActive.Tip())
+        return QDateTime::fromTime_t(chainActive.Tip()->GetBlockTime());
+
+    return QDateTime::fromTime_t(Params().GenesisBlock().GetBlockTime()); // Genesis block's time of current network
+}
+
+long ClientModel::getMempoolSize() const
+{
+    return mempool.size();
+}
+
+size_t ClientModel::getMempoolDynamicUsage() const
+{
+    return mempool.DynamicMemoryUsage();
+}
+
+size_t ClientModel::getInstantSentLockCount() const
+{
+    if (!llmq::quorumInstantSendManager) {
+        return 0;
+    }
+    return llmq::quorumInstantSendManager->GetInstantSendLockCount();
+}
+
+double ClientModel::getVerificationProgress(const CBlockIndex *tipIn) const
+{
+    CBlockIndex *tip = const_cast<CBlockIndex *>(tipIn);
+    if (!tip)
+    {
+        LOCK(cs_main);
+        tip = chainActive.Tip();
+    }
+    return GuessVerificationProgress(Params().TxData(), tip);
+}
+
 void ClientModel::updateTimer()
 {
     // no locking required at this point
     // the following calls will acquire the required lock
-    Q_EMIT mempoolSizeChanged(m_node.getMempoolSize(), m_node.getMempoolDynamicUsage());
-    Q_EMIT bytesChanged(m_node.getTotalBytesRecv(), m_node.getTotalBytesSent());
-}
-
-void ClientModel::updateMnTimer()
-{
-    QString newMasternodeCountString = getMasternodeCountString();
-
-    if (cachedMasternodeCountString != newMasternodeCountString)
-    {
-        cachedMasternodeCountString = newMasternodeCountString;
-
-        Q_EMIT strMasternodesChanged(cachedMasternodeCountString);
-    }
+    Q_EMIT mempoolSizeChanged(getMempoolSize(), getMempoolDynamicUsage());
+    Q_EMIT islockCountChanged(getInstantSentLockCount());
+    Q_EMIT bytesChanged(getTotalBytesRecv(), getTotalBytesSent());
 }
 
 void ClientModel::updateNumConnections(int numConnections)
@@ -159,7 +209,11 @@ void ClientModel::updateNetworkActive(bool networkActive)
 
 void ClientModel::updateAlert()
 {
-    Q_EMIT alertsChanged(getStatusBarWarnings());
+}
+
+bool ClientModel::inInitialBlockDownload() const
+{
+    return IsInitialBlockDownload();
 }
 
 enum BlockSource ClientModel::getBlockSource() const
@@ -300,6 +354,17 @@ static void BlockTipChanged(ClientModel *clientmodel, bool initialSync, int heig
         assert(invoked);
         nLastUpdateNotification = now;
     }
+}
+
+static void NotifyMasternodeListChanged(ClientModel *clientmodel, const CDeterministicMNList& newList)
+{
+    clientmodel->setMasternodeList(newList);
+}
+
+static void NotifyAdditionalDataSyncProgressChanged(ClientModel *clientmodel, double nSyncProgress)
+{
+    QMetaObject::invokeMethod(clientmodel, "additionalDataSyncProgressChanged", Qt::QueuedConnection,
+                              Q_ARG(double, nSyncProgress));
 }
 
 void ClientModel::subscribeToCoreSignals()

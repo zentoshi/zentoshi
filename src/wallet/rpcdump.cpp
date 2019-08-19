@@ -930,9 +930,8 @@ enum class ScriptContext
 static std::string RecurseImportData(const CScript& script, ImportData& import_data, const ScriptContext script_ctx)
 {
     // Use Solver to obtain script type and parsed pubkeys or hashes:
-    txnouttype script_type;
     std::vector<std::vector<unsigned char>> solverdata;
-    Solver(script, script_type, solverdata);
+    txnouttype script_type = Solver(script, solverdata);
 
     switch (script_type) {
     case TX_PUBKEY: {

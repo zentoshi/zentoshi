@@ -52,6 +52,10 @@ public:
         WatchonlyRole,
         /** Watch-only icon */
         WatchonlyDecorationRole,
+        /** InstantSend boolean */
+        InstantSendRole,
+        /** InstantSend icon */
+        InstantSendDecorationRole,
         /** Long description (HTML format) */
         LongDescriptionRole,
         /** Address of transaction */
@@ -60,6 +64,8 @@ public:
         LabelRole,
         /** Net amount of transaction */
         AmountRole,
+        /** Unique identifier */
+        TxIDRole,
         /** Transaction hash */
         TxHashRole,
         /** Transaction data, hex-encoded */
@@ -82,6 +88,10 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     QModelIndex index(int row, int column, const QModelIndex & parent = QModelIndex()) const;
     bool processingQueuedTransactions() const { return fProcessingQueuedTransactions; }
+    void updateNumISLocks(int numISLocks);
+    void updateChainLockHeight(int chainLockHeight);
+    int getNumISLocks() const;
+    int getChainLockHeight() const;
 
 private:
     WalletModel *walletModel;
@@ -91,6 +101,8 @@ private:
     TransactionTablePriv *priv;
     bool fProcessingQueuedTransactions;
     const PlatformStyle *platformStyle;
+    int cachedNumISLocks;
+    int cachedChainLockHeight;
 
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();

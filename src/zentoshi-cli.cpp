@@ -10,6 +10,7 @@
 #include <chainparamsbase.h>
 #include <clientversion.h>
 #include <fs.h>
+#include <netbase.h>
 #include <rpc/client.h>
 #include <rpc/protocol.h>
 #include <util/system.h>

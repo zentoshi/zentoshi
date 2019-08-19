@@ -532,6 +532,27 @@ void CAddrMan::SetServices_(const CService& addr, ServiceFlags nServices)
     info.nServices = nServices;
 }
 
+CAddrInfo CAddrMan::GetAddressInfo_(const CService& addr)
+{
+    CAddrInfo* pinfo = Find(addr);
+
+    // if not found, bail out
+    if (!pinfo)
+        return CAddrInfo();
+
+    CAddrInfo& info = *pinfo;
+
+    // check whether we are talking about the exact same CService (including same port)
+    if (info != addr)
+        return CAddrInfo();
+
+    return *pinfo;
+}
+
+int CAddrMan::RandomInt(int nMax){
+    return GetRandInt(nMax);
+}
+
 void CAddrMan::ResolveCollisions_()
 {
     for (std::set<int>::iterator it = m_tried_collisions.begin(); it != m_tried_collisions.end();) {

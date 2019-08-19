@@ -5,6 +5,10 @@
 #ifndef BITCOIN_RPC_RAWTRANSACTION_H
 #define BITCOIN_RPC_RAWTRANSACTION_H
 
+#include <rpc/server.h>
+
+#include <univalue.h>
+
 class CBasicKeyStore;
 struct CMutableTransaction;
 class UniValue;
@@ -18,5 +22,10 @@ UniValue SignTransaction(interfaces::Chain& chain, CMutableTransaction& mtx, con
 
 /** Create a transaction from univalue parameters */
 CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf);
+
+#ifdef ENABLE_WALLET
+extern UniValue signrawtransaction(const JSONRPCRequest& request);
+extern UniValue sendrawtransaction(const JSONRPCRequest& request);
+#endif//ENABLE_WALLET
 
 #endif // BITCOIN_RPC_RAWTRANSACTION_H

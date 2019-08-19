@@ -1,13 +1,15 @@
-// Copyright (c) 2014-2018 The Dash Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <governance/governance-vote.h>
 #include <governance/governance-object.h>
 #include <masternode-sync.h>
-#include <masternodeman.h>
 #include <messagesigner.h>
+#include <spork.h>
 #include <util/system.h>
+
+#include <evo/deterministicmns.h>
 
 std::string CGovernanceVoting::ConvertOutcomeToString(vote_outcome_enum_t nOutcome)
 {
@@ -118,8 +120,21 @@ void CGovernanceVote::Relay(CConnman& connman) const
         return;
     }
 
+    auto mnList = deterministicMNManager->GetListAtChainTip();
+    auto dmn = mnList.GetMNByCollateral(masternodeOutpoint);
+    if (!dmn) {
+        return;
+    }
+
+    // When this vote is from non-valid (PoSe banned) MN, we should only announce it to v0.14.0.1 nodes as older nodes
+    // will ban us otherwise.
+    int minVersion = MIN_GOVERNANCE_PEER_PROTO_VERSION;
+    if (!mnList.IsMNValid(dmn)) {
+        minVersion = GOVERNANCE_POSE_BANNED_VOTES_VERSION;
+    }
+
     CInv inv(MSG_GOVERNANCE_OBJECT_VOTE, GetHash());
-    connman.RelayInv(inv, MIN_GOVERNANCE_PEER_PROTO_VERSION);
+    connman.RelayInv(inv, minVersion);
 }
 
 void CGovernanceVote::UpdateHash() const
@@ -214,6 +229,32 @@ bool CGovernanceVote::CheckSignature(const CKeyID& keyID) const
     return true;
 }
 
+bool CGovernanceVote::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
+{
+    // Choose coins to use
+    CPubKey pubKeyCollateralAddress;
+    CKey keyCollateralAddress;
+
+    std::string strError;
+    std::string strMessage = masternodeOutpoint.ToStringShort() + "|" + nParentHash.ToString() + "|" +
+                                     std::to_string(nVoteSignal) + "|" +
+                                     std::to_string(nVoteOutcome) + "|" +
+                                     std::to_string(nTime);
+
+
+    if(!CMessageSigner::SignMessage(strMessage, vchSig, keyMasternode)) {
+        LogPrintf("CGovernanceVote::Sign -- SignMessage() failed\n");
+        return false;
+    }
+
+    if(!CMessageSigner::VerifyMessage(pubKeyMasternode.GetID(), vchSig, strMessage, strError)) {
+        LogPrintf("CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
+        return false;
+    }
+
+    return true;
+}
+
 bool CGovernanceVote::Sign(const CBLSSecretKey& key)
 {
     uint256 hash = GetSignatureHash();
@@ -256,20 +297,16 @@ bool CGovernanceVote::IsValid(bool useVotingKey) const
         return false;
     }
 
-    masternode_info_t infoMn;
-    if (!mnodeman.GetMasternodeInfo(masternodeOutpoint, infoMn)) {
+    auto dmn = deterministicMNManager->GetListAtChainTip().GetMNByCollateral(masternodeOutpoint);
+    if (!dmn) {
         LogPrint(BCLog::GOBJECT, "CGovernanceVote::IsValid -- Unknown Masternode - %s\n", masternodeOutpoint.ToStringShort());
         return false;
     }
 
     if (useVotingKey) {
-        return CheckSignature(infoMn.keyIDVoting);
+        return CheckSignature(dmn->pdmnState->keyIDVoting);
     } else {
-        if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
-            return CheckSignature(infoMn.blsPubKeyOperator);
-        } else {
-            return CheckSignature(infoMn.legacyKeyIDOperator);
-        }
+        return CheckSignature(dmn->pdmnState->pubKeyOperator.Get());
     }
 }
 

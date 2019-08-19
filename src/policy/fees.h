@@ -218,7 +218,7 @@ public:
     bool Write(CAutoFile& fileout) const;
 
     /** Read estimation data from a file */
-    bool Read(CAutoFile& filein);
+    bool Read(CAutoFile& filein, int& nVersionThatWrote);
 
     /** Empty mempool transactions on shutdown to record failure to confirm for txs still in mempool */
     void FlushUnconfirmed();

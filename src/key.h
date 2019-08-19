@@ -69,6 +69,12 @@ public:
             memcmp(a.keydata.data(), b.keydata.data(), a.size()) == 0;
     }
 
+    friend bool operator<(const CKey& a, const CKey& b)
+    {
+        return a.fCompressed == b.fCompressed && a.size() == b.size() &&
+               memcmp(a.keydata.data(), b.keydata.data(), a.size()) < 0;
+    }
+
     //! Initialize using begin and end iterators to byte data.
     template <typename T>
     void Set(const T pbegin, const T pend, bool fCompressedIn)
@@ -84,16 +90,45 @@ public:
         }
     }
 
+    void Set(const unsigned char *p, bool fCompressedIn)
+    {
+        if (Check(p)) {
+            memcpy(keydata.data(), p, keydata.size());
+            fValid = true;
+            fCompressed = fCompressedIn;
+        } else {
+            fValid = false;
+        }
+    }
+
+    void Clear()
+    {
+        //memory_cleanse(vch, sizeof(vch));
+        memset(keydata.data(), 0, size());
+        fCompressed = true;
+        fValid = false;
+    }
+
+    void SetFlags(bool fValidIn, bool fCompressedIn)
+    {
+        fValid = fValidIn;
+        fCompressed = fCompressedIn;
+    }
+
     //! Simple read-only vector-like interface.
     unsigned int size() const { return (fValid ? keydata.size() : 0); }
     const unsigned char* begin() const { return keydata.data(); }
     const unsigned char* end() const { return keydata.data() + size(); }
+    unsigned char* begin_nc() { return keydata.data(); }
 
     //! Check whether this private key is valid.
     bool IsValid() const { return fValid; }
 
     //! Check whether the public key corresponding to this private key is (to be) compressed.
     bool IsCompressed() const { return fCompressed; }
+
+    //! Initialize from a CPrivKey (serialized OpenSSL private key data).
+    bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
 
     //! Generate a new private key using a cryptographic PRNG.
     void MakeNewKey(bool fCompressed);
@@ -123,7 +158,7 @@ public:
      *                  0x1D = second key with even y, 0x1E = second key with odd y,
      *                  add 0x04 for compressed keys.
      */
-    bool SignCompact(const uint256& hash, std::vector<unsigned char>& vchSig, CPubKey::InputScriptType scriptType = CPubKey::InputScriptType::SPENDP2PKH) const;
+    bool SignCompact(const uint256& hash, std::vector<unsigned char>& vchSig) const;
 
     //! Derive BIP32 child key.
     bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;

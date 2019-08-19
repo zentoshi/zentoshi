@@ -120,6 +120,12 @@ class CVectorWriter
     {
         return nType;
     }
+    void seek(size_t nSize)
+    {
+        nPos += nSize;
+        if(nPos > vchData.size())
+            vchData.resize(nPos);
+    }
     size_t size() const
     {
         return vchData.size();
@@ -393,7 +399,7 @@ public:
     //
     bool eof() const             { return size() == 0; }
     CDataStream* rdbuf()         { return this; }
-    int in_avail() const         { return size(); }
+    int in_avail()               { return size(); }
 
     void SetType(int n)          { nType = n; }
     int GetType() const          { return nType; }
@@ -406,16 +412,18 @@ public:
 
         // Read from the beginning of the buffer
         unsigned int nReadPosNext = nReadPos + nSize;
-        if (nReadPosNext > vch.size()) {
-            throw std::ios_base::failure("CDataStream::read(): end of data");
-        }
-        memcpy(pch, &vch[nReadPos], nSize);
-        if (nReadPosNext == vch.size())
+        if (nReadPosNext >= vch.size())
         {
+            if (nReadPosNext > vch.size())
+            {
+                throw std::ios_base::failure("CDataStream::read(): end of data");
+            }
+            memcpy(pch, &vch[nReadPos], nSize);
             nReadPos = 0;
             vch.clear();
             return;
         }
+        memcpy(pch, &vch[nReadPos], nSize);
         nReadPos = nReadPosNext;
     }
 
@@ -448,7 +456,7 @@ public:
     {
         // Special case: stream << stream concatenates like stream += stream
         if (!vch.empty())
-            s.write((char*)vch.data(), vch.size() * sizeof(value_type));
+            s.write((char*)&vch[0], vch.size() * sizeof(vch[0]));
     }
 
     template<typename T>
@@ -467,8 +475,8 @@ public:
         return (*this);
     }
 
-    void GetAndClear(CSerializeData &d) {
-        d.insert(d.end(), begin(), end());
+    void GetAndClear(CSerializeData &data) {
+        data.insert(data.end(), begin(), end());
         clear();
     }
 

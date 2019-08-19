@@ -229,7 +229,6 @@ bool CCryptoKeyStore::SetCrypted()
 }
 
 bool CCryptoKeyStore::IsLocked(bool fForMixing) const
-//
 {
     if (!IsCrypted()) {
         return false;
@@ -241,13 +240,12 @@ bool CCryptoKeyStore::IsLocked(bool fForMixing) const
         result = vMasterKey.empty();
     }
 
-    if(!fForMixing && fOnlyMixingAllowed) return true;
+    if(!fForMixing) return true;
 
     return result;
 }
 
 bool CCryptoKeyStore::Lock(bool fAllowMixing)
-//
 {
     if (!SetCrypted())
         return false;
@@ -256,8 +254,6 @@ bool CCryptoKeyStore::Lock(bool fAllowMixing)
         LOCK(cs_KeyStore);
         vMasterKey.clear();
     }
-
-    fOnlyMixingAllowed = fAllowMixing;
 
     NotifyStatusChanged(this);
     return true;
@@ -298,7 +294,6 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn, bool fForMixin
         fDecryptionThoroughlyChecked = true;
     }
 
-    fOnlyMixingAllowed = fForMixingOnly;
     NotifyStatusChanged(this);
     return true;
 }

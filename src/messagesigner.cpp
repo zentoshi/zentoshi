@@ -1,13 +1,14 @@
-// Copyright (c) 2014-2017 The Dash Core developers
+// Copyright (c) 2014-2018 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <base58.h>
 #include <hash.h>
-#include <validation.h> // For strMessageMagic
+#include <key_io.h>
 #include <messagesigner.h>
+#include <pubkey.h>
 #include <tinyformat.h>
 #include <util/strencodings.h>
+#include <validation.h>
 
 bool CMessageSigner::GetKeysFromSecret(const std::string& strSecret, CKey& keyRet, CPubKey& pubkeyRet)
 {

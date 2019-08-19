@@ -41,6 +41,7 @@ class CKeyID;
 class COutPoint;
 class COutput;
 class CPubKey;
+class CWallet;
 class uint256;
 
 namespace interfaces {
@@ -167,6 +168,7 @@ public:
 
     // Check address for validity
     bool validateAddress(const QString &address);
+    void updateNumISLocks();
 
     // Return status record for SendCoins, contains error id + information
     struct SendCoinsReturn
@@ -217,12 +219,23 @@ public:
 
     UnlockContext requestUnlock();
 
+    bool getPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const;
+    bool havePrivKey(const CKeyID &address) const;
+    bool havePrivKey(const CScript& script) const;
+    void listProTxCoins(std::vector<COutPoint>& vOutpts);
+
     void loadReceiveRequests(std::vector<std::string>& vReceiveRequests);
     bool saveReceiveRequest(const std::string &sAddress, const int64_t nId, const std::string &sRequest);
 
     bool bumpFee(uint256 hash, uint256& new_hash);
 
     static bool isWalletEnabled();
+
+    void updateChainLockHeight(int chainLockHeight);
+    int getDefaultConfirmTarget() const;
+    int getNumISLocks() const;
+    bool IsOldInstantSendEnabled() const;
+
     bool privateKeysDisabled() const;
     bool canGetAddresses() const;
 
@@ -261,6 +274,8 @@ private:
     interfaces::WalletBalances m_cached_balances;
     EncryptionStatus cachedEncryptionStatus;
     int cachedNumBlocks;
+    int cachedNumISLocks;
+    int cachedPrivateSendRounds;
 
     QTimer *pollTimer;
 

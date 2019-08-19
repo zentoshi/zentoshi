@@ -25,6 +25,8 @@ public:
     boost::optional<OutputType> m_change_type;
     //! If false, allows unselected inputs, but requires all selected inputs be used
     bool fAllowOtherInputs;
+    //! If false, only include as many inputs as necessary to fulfill a coin selection request. Only usable together with fAllowOtherInputs
+    bool fRequireAllInputs;
     //! Includes watch only addresses which are solvable
     bool fAllowWatchOnly;
     //! Minimum absolute fee (not per kilobyte)

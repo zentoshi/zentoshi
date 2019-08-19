@@ -67,6 +67,7 @@ const char *DSSTATUSUPDATE="dssu";
 const char *DSTX="dstx";
 const char *DSQUEUE="dsq";
 const char *DSEG="dseg";
+const char *SENDDSQUEUE="senddsq";
 const char *SYNCSTATUSCOUNT="ssc";
 const char *MNGOVERNANCESYNC="govsync";
 const char *MNGOVERNANCEOBJECT="govobj";
@@ -74,10 +75,22 @@ const char *MNGOVERNANCEOBJECTVOTE="govobjvote";
 const char *MNVERIFY="mnv";
 const char *GETMNLISTDIFF="getmnlistd";
 const char *MNLISTDIFF="mnlistdiff";
+const char *QSENDRECSIGS="qsendrecsigs";
 const char *QFCOMMITMENT="qfcommit";
-const char *QDCOMMITMENT="qdcommit";
+const char *QJUSTIFICATION="qjustify";
+const char *QPCOMMITMENT="qpcommit";
 const char *QCONTRIB="qcontrib";
-} // namespace NetMsgType
+const char *QCOMPLAINT="qcomplaint";
+const char *QWATCH="qwatch";
+const char *QSIGSESANN="qsigsesann";
+const char *QSIGSHARESINV="qsigsinv";
+const char *QGETSIGSHARES="qgetsigs";
+const char *QBSIGSHARES="qbsigs";
+const char *QSIGREC="qsigrec";
+const char *CLSIG="clsig";
+const char *ISLOCK="islock";
+const char *MNAUTH="mnauth";
+};
 
 static const char* ppszTypeName[] =
 {
@@ -105,8 +118,15 @@ static const char* ppszTypeName[] =
     NetMsgType::MNVERIFY,
     "compact block", // Should never occur
     NetMsgType::QFCOMMITMENT,
-    NetMsgType::QDCOMMITMENT,
+    "qdcommit", // was only shortly used on testnet
     NetMsgType::QCONTRIB,
+    NetMsgType::QCOMPLAINT,
+    NetMsgType::QJUSTIFICATION,
+    NetMsgType::QPCOMMITMENT,
+    "qdebugstatus", // was only shortly used on testnet
+    NetMsgType::QSIGREC,
+    NetMsgType::CLSIG,
+    NetMsgType::ISLOCK,
 };
 
 /** All known message types. Keep this in the same order as the list of
@@ -146,6 +166,7 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::TXLOCKVOTE,
     NetMsgType::SPORK,
     NetMsgType::GETSPORKS,
+    NetMsgType::SENDDSQUEUE,
     NetMsgType::MASTERNODEPAYMENTVOTE,
     // NetMsgType::MASTERNODEPAYMENTBLOCK, // there is no message for this, only inventory
     NetMsgType::MASTERNODEPAYMENTSYNC,
@@ -167,9 +188,21 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::MNVERIFY,
     NetMsgType::GETMNLISTDIFF,
     NetMsgType::MNLISTDIFF,
+    NetMsgType::QSENDRECSIGS,
     NetMsgType::QFCOMMITMENT,
-    NetMsgType::QDCOMMITMENT,
     NetMsgType::QCONTRIB,
+    NetMsgType::QCOMPLAINT,
+    NetMsgType::QJUSTIFICATION,
+    NetMsgType::QPCOMMITMENT,
+    NetMsgType::QWATCH,
+    NetMsgType::QSIGSESANN,
+    NetMsgType::QSIGSHARESINV,
+    NetMsgType::QGETSIGSHARES,
+    NetMsgType::QBSIGSHARES,
+    NetMsgType::QSIGREC,
+    NetMsgType::CLSIG,
+    NetMsgType::ISLOCK,
+    NetMsgType::MNAUTH,
 };
 const static std::vector<std::string> allNetMessageTypesVec(allNetMessageTypes, allNetMessageTypes+ARRAYLEN(allNetMessageTypes));
 
@@ -261,7 +294,11 @@ CInv::CInv()
     hash.SetNull();
 }
 
-CInv::CInv(int typeIn, const uint256& hashIn) : type(typeIn), hash(hashIn) {}
+CInv::CInv(int typeIn, const uint256& hashIn)
+{
+    type = typeIn;
+    hash = hashIn;
+}
 
 CInv::CInv(const std::string& strType, const uint256& hashIn)
 {

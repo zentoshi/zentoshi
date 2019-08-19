@@ -269,6 +269,7 @@ public:
         nFlags = 0;
         nStakeModifier = 0;
         nStakeModifierChecksum = 0;
+        hashProofOfStake = uint256();
         prevoutStake.SetNull();
         nStakeTime = 0;
 
