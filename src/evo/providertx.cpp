@@ -6,11 +6,11 @@
 #include "providertx.h"
 #include "specialtx.h"
 
+#include "base58.h"
 #include "chainparams.h"
 #include "clientversion.h"
 #include "core_io.h"
 #include "hash.h"
-#include "key_io.h"
 #include "messagesigner.h"
 #include "script/standard.h"
 #include "streams.h"

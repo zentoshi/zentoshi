@@ -157,11 +157,11 @@ BITCOIN_CORE_H = \
   index/txindex.h \
   indirectmap.h \
   init.h \
-  instantx.h \
   interfaces/chain.h \
   interfaces/handler.h \
   interfaces/node.h \
   interfaces/wallet.h \
+  instantx.h \
   key.h \
   key_io.h \
   keystore.h \

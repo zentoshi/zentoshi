@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 The Dash Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef INSTANTX_H
@@ -233,7 +233,7 @@ class CTxLockVote
 private:
     uint256 txHash;
     COutPoint outpoint;
-    // TODO remove this member when the legacy masternode code is removed after DIP3 deployment
+    // TODO remove this member (not needed anymore after DIP3 has been deployed)
     COutPoint outpointMasternode;
     uint256 quorumModifierHash;
     uint256 masternodeProTxHash;

@@ -1,29 +1,29 @@
-// Copyright (c) 2014-2017 The Dash Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <activemasternode.h>
-#include <init.h>
-#include <instantx.h>
-#include <key.h>
-#include <validation.h>
-#include <masternode-payments.h>
-#include <masternode-sync.h>
-#include <masternode-utils.h>
-#include <messagesigner.h>
-#include <net.h>
-#include <netmessagemaker.h>
-#include <protocol.h>
-#include <shutdown.h>
-#include <spork.h>
-#include <sync.h>
-#include <txmempool.h>
-#include <util/system.h>
-#include <consensus/validation.h>
-#include <validationinterface.h>
-#include <warnings.h>
+#include "activemasternode.h"
+#include "init.h"
+#include "instantx.h"
+#include "key.h"
+#include "validation.h"
+#include "masternode-payments.h"
+#include "masternode-sync.h"
+#include "masternode-utils.h"
+#include "messagesigner.h"
+#include "net.h"
+#include "netmessagemaker.h"
+#include "protocol.h"
+#include "shutdown.h"
+#include "spork.h"
+#include "sync.h"
+#include "txmempool.h"
+#include "util/system.h"
+#include "consensus/validation.h"
+#include "validationinterface.h"
+#include "warnings.h"
 #ifdef ENABLE_WALLET
-#include <wallet/wallet.h>
+#include "wallet/wallet.h"
 #endif // ENABLE_WALLET
 
 #include "llmq/quorums_instantsend.h"
@@ -31,10 +31,12 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/thread.hpp>
 
+#ifdef ENABLE_WALLET
+extern CWallet* pwalletMain;
+#endif // ENABLE_WALLET
 extern CTxMemPool mempool;
 
 bool fEnableInstantSend = true;
-int nCompleteTXLocks;
 
 std::atomic<bool> CInstantSend::isAutoLockBip9Active{false};
 const double CInstantSend::AUTO_IX_MEMPOOL_THRESHOLD = 0.1;
@@ -45,8 +47,8 @@ const std::string CInstantSend::SERIALIZATION_VERSION_STRING = "CInstantSend-Ver
 // Transaction Locks
 //
 // step 1) Some node announces intention to lock transaction inputs via "txlockrequest" message (ix)
-// step 2) Top COutPointLock::SIGNATURES_TOTAL masternodes per each spent outpoint push "txlockvote" message (txlvote)
-// step 3) Once there are COutPointLock::SIGNATURES_REQUIRED valid "txlockvote" messages (txlvote) per each spent outpoint
+// step 2) Top nInstantSendSigsTotal masternodes per each spent outpoint push "txlockvote" message (txlvote)
+// step 3) Once there are nInstantSendSigsRequired valid "txlockvote" messages (txlvote) per each spent outpoint
 //         for a corresponding "txlockrequest" message (ix), all outpoints from that tx are treated as locked
 
 //
@@ -56,13 +58,13 @@ const std::string CInstantSend::SERIALIZATION_VERSION_STRING = "CInstantSend-Ver
 void CInstantSend::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
     if (fLiteMode) return; // disable all Dash specific functionality
-    if (!sporkManager.IsSporkActive(Spork::SPORK_2_INSTANTSEND_ENABLED)) return;
+    if (!llmq::IsInstantSendEnabled()) return;
 
     // NOTE: NetMsgType::TXLOCKREQUEST is handled via ProcessMessage() in net_processing.cpp
 
     if (strCommand == NetMsgType::TXLOCKVOTE) { // InstantSend Transaction Lock Consensus Votes
         if(pfrom->nVersion < MIN_INSTANTSEND_PROTO_VERSION) {
-            LogPrint(BCLog::INSTANTSEND, "TXLOCKVOTE -- peer=%d using obsolete version %i\n", pfrom->id, pfrom->nVersion);
+            LogPrint(BCLog::INSTANTSEND, "TXLOCKVOTE -- peer=%d using obsolete version %i\n", pfrom->GetId(), pfrom->nVersion);
             connman.PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater", MIN_INSTANTSEND_PROTO_VERSION)));
             return;
@@ -98,7 +100,6 @@ bool CInstantSend::ProcessTxLockRequest(const CTxLockRequest& txLockRequest, CCo
 {
     LOCK(cs_main);
 #ifdef ENABLE_WALLET
-    auto pwalletMain = GetMainWallet();
     LOCK(pwalletMain ? &pwalletMain->cs_wallet : NULL);
 #endif
     LOCK2(mempool.cs, cs_instantsend);
@@ -204,7 +205,6 @@ void CInstantSend::Vote(const uint256& txHash, CConnman& connman)
 {
     AssertLockHeld(cs_main);
 #ifdef ENABLE_WALLET
-    auto pwalletMain = GetMainWallet();
     LOCK(pwalletMain ? &pwalletMain->cs_wallet : NULL);
 #endif
 
@@ -226,7 +226,7 @@ void CInstantSend::Vote(const uint256& txHash, CConnman& connman)
 void CInstantSend::Vote(CTxLockCandidate& txLockCandidate, CConnman& connman)
 {
     if (!fMasternodeMode) return;
-    if (!sporkManager.IsSporkActive(Spork::SPORK_2_INSTANTSEND_ENABLED)) return;
+    if (!llmq::IsInstantSendEnabled()) return;
 
     AssertLockHeld(cs_main);
     AssertLockHeld(cs_instantsend);
@@ -336,7 +336,6 @@ bool CInstantSend::ProcessNewTxLockVote(CNode* pfrom, const CTxLockVote& vote, C
 
     LOCK(cs_main);
 #ifdef ENABLE_WALLET
-    auto pwalletMain = GetMainWallet();
     LOCK(pwalletMain ? &pwalletMain->cs_wallet : NULL);
 #endif
     LOCK2(mempool.cs, cs_instantsend);
@@ -366,7 +365,7 @@ bool CInstantSend::ProcessNewTxLockVote(CNode* pfrom, const CTxLockVote& vote, C
             if (itMnOV->second > GetTime() && itMnOV->second > GetAverageMasternodeOrphanVoteTime()) {
                 LogPrint(BCLog::INSTANTSEND, "CInstantSend::%s -- masternode is spamming orphan Transaction Lock Votes: txid=%s  masternode=%s\n",
                         __func__, txHash.ToString(), vote.GetMasternodeOutpoint().ToStringShort());
-                // Misbehaving(pfrom->id, 1);
+                // Misbehaving(pfrom->GetId(), 1);
                 return false;
             }
             // not spamming, refresh
@@ -408,7 +407,6 @@ bool CInstantSend::ProcessOrphanTxLockVote(const CTxLockVote& vote)
     // cs_main, cs_wallet and cs_instantsend should be already locked
     AssertLockHeld(cs_main);
 #ifdef ENABLE_WALLET
-    auto pwalletMain = GetMainWallet();
     if (pwalletMain)
         AssertLockHeld(pwalletMain->cs_wallet);
 #endif
@@ -500,7 +498,7 @@ void CInstantSend::ProcessOrphanTxLockVotes()
 
 void CInstantSend::TryToFinalizeLockCandidate(const CTxLockCandidate& txLockCandidate)
 {
-    if (!llmq::IsOldInstantSendEnabled()) return;
+    if (!llmq::IsInstantSendEnabled()) return;
 
     AssertLockHeld(cs_main);
     AssertLockHeld(cs_instantsend);
@@ -521,7 +519,6 @@ void CInstantSend::UpdateLockedTransaction(const CTxLockCandidate& txLockCandida
     // cs_main, cs_wallet and cs_instantsend should be already locked
     AssertLockHeld(cs_main);
 #ifdef ENABLE_WALLET
-    auto pwalletMain = GetMainWallet();
     if (pwalletMain) {
         AssertLockHeld(pwalletMain->cs_wallet);
     }
@@ -550,7 +547,7 @@ void CInstantSend::UpdateLockedTransaction(const CTxLockCandidate& txLockCandida
 
 void CInstantSend::LockTransactionInputs(const CTxLockCandidate& txLockCandidate)
 {
-    if (!llmq::IsOldInstantSendEnabled()) return;
+    if (!llmq::IsInstantSendEnabled()) return;
 
     LOCK(cs_instantsend);
 
@@ -743,7 +740,7 @@ void CInstantSend::CheckAndRemove()
 
 bool CInstantSend::AlreadyHave(const uint256& hash)
 {
-    if (!llmq::IsOldInstantSendEnabled()) {
+    if (!llmq::IsInstantSendEnabled()) {
         return true;
     }
 
@@ -773,7 +770,7 @@ bool CInstantSend::HasTxLockRequest(const uint256& txHash)
 
 bool CInstantSend::GetTxLockRequest(const uint256& txHash, CTxLockRequest& txLockRequestRet)
 {
-    if (!llmq::IsOldInstantSendEnabled()) {
+    if (!llmq::IsInstantSendEnabled()) {
         return false;
     }
 
@@ -788,7 +785,7 @@ bool CInstantSend::GetTxLockRequest(const uint256& txHash, CTxLockRequest& txLoc
 
 bool CInstantSend::GetTxLockVote(const uint256& hash, CTxLockVote& txLockVoteRet)
 {
-    if (!llmq::IsOldInstantSendEnabled()) {
+    if (!llmq::IsInstantSendEnabled()) {
         return false;
     }
 
@@ -819,7 +816,7 @@ void CInstantSend::Clear()
 bool CInstantSend::IsLockedInstantSendTransaction(const uint256& txHash)
 {
     if (!fEnableInstantSend || GetfLargeWorkForkFound() || GetfLargeWorkInvalidChainFound() ||
-        !sporkManager.IsSporkActive(Spork::SPORK_3_INSTANTSEND_BLOCK_FILTERING)) return false;
+        !sporkManager.IsSporkActive(SPORK_3_INSTANTSEND_BLOCK_FILTERING)) return false;
 
     LOCK(cs_instantsend);
 
@@ -843,7 +840,7 @@ int CInstantSend::GetTransactionLockSignatures(const uint256& txHash)
 {
     if (!fEnableInstantSend) return -1;
     if (GetfLargeWorkForkFound() || GetfLargeWorkInvalidChainFound()) return -2;
-    if (!llmq::IsOldInstantSendEnabled()) return -3;
+    if (!llmq::IsInstantSendEnabled()) return -3;
 
     LOCK(cs_instantsend);
 
@@ -947,10 +944,10 @@ void CInstantSend::DoMaintenance()
 
 bool CInstantSend::CanAutoLock()
 {
-    if (!isAutoLockBip9Active || !llmq::IsOldInstantSendEnabled()) {
+    if (!isAutoLockBip9Active || !llmq::IsInstantSendEnabled()) {
         return false;
     }
-    if (!sporkManager.IsSporkActive(Spork::SPORK_16_INSTANTSEND_AUTOLOCKS)) {
+    if (!sporkManager.IsSporkActive(SPORK_16_INSTANTSEND_AUTOLOCKS)) {
         return false;
     }
     return (mempool.UsedMemoryShare() < AUTO_IX_MEMPOOL_THRESHOLD);
@@ -1000,7 +997,7 @@ bool CTxLockRequest::IsValid() const
         nValueIn += coin.out.nValue;
     }
 
-    if (nValueIn > sporkManager.GetSporkValue(Spork::SPORK_5_INSTANTSEND_MAX_VALUE)*COIN) {
+    if (nValueIn > sporkManager.GetSporkValue(SPORK_5_INSTANTSEND_MAX_VALUE)*COIN) {
         LogPrint(BCLog::INSTANTSEND, "CTxLockRequest::IsValid -- Transaction value too high: nValueIn=%d, tx=%s", nValueIn, ToString());
         return false;
     }
@@ -1057,7 +1054,7 @@ bool CTxLockVote::IsValid(CNode* pnode, CConnman& connman) const
             return false;
         }
     } else {
-        LogPrint(BCLog::INSTANTSEND, "CTxLockVote::IsValid -- missing masternodeProTxHash while DIP3 is active\n");
+        LogPrint(BCLog::INSTANTSEND, "CTxLockVote::IsValid -- missing masternodeProTxHash\n");
         return false;
     }
 
@@ -1082,7 +1079,7 @@ bool CTxLockVote::IsValid(CNode* pnode, CConnman& connman) const
             return false;
         }
     } else {
-        LogPrint(BCLog::INSTANTSEND, "CTxLockVote::IsValid -- missing quorumModifierHash while DIP3 is active\n");
+        LogPrint(BCLog::INSTANTSEND, "CTxLockVote::IsValid -- missing quorumModifierHash\n");
         return false;
     }
 

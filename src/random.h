@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <limits>
+#include <chrono>
 
 /**
  * Overall design of the RNG and entropy sources.
@@ -66,6 +67,7 @@
  * Thread-safe.
  */
 void GetRandBytes(unsigned char* buf, int num) noexcept;
+std::chrono::microseconds GetRandMicros(std::chrono::microseconds duration_max) noexcept;
 uint64_t GetRand(uint64_t nMax) noexcept;
 int GetRandInt(int nMax) noexcept;
 uint256 GetRandHash() noexcept;

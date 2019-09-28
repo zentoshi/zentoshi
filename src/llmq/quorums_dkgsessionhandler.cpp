@@ -95,7 +95,7 @@ CDKGSessionHandler::CDKGSessionHandler(const Consensus::LLMQParams& _params, ctp
     pendingPrematureCommitments((size_t)_params.size * 2)
 {
     phaseHandlerThread = std::thread([this] {
-        RenameThread(strprintf("dash-q-phase-%d", (uint8_t)params.type).c_str());
+        RenameThread(strprintf("zentoshi-q-phase-%d", (uint8_t)params.type).c_str());
         PhaseHandlerThread();
     });
 }
@@ -129,13 +129,13 @@ void CDKGSessionHandler::ProcessMessage(CNode* pfrom, const std::string& strComm
 {
     // We don't handle messages in the calling thread as deserialization/processing of these would block everything
     if (strCommand == NetMsgType::QCONTRIB) {
-        pendingContributions.PushPendingMessage(pfrom->id, vRecv);
+        pendingContributions.PushPendingMessage(pfrom->GetId(), vRecv);
     } else if (strCommand == NetMsgType::QCOMPLAINT) {
-        pendingComplaints.PushPendingMessage(pfrom->id, vRecv);
+        pendingComplaints.PushPendingMessage(pfrom->GetId(), vRecv);
     } else if (strCommand == NetMsgType::QJUSTIFICATION) {
-        pendingJustifications.PushPendingMessage(pfrom->id, vRecv);
+        pendingJustifications.PushPendingMessage(pfrom->GetId(), vRecv);
     } else if (strCommand == NetMsgType::QPCOMMITMENT) {
-        pendingPrematureCommitments.PushPendingMessage(pfrom->id, vRecv);
+        pendingPrematureCommitments.PushPendingMessage(pfrom->GetId(), vRecv);
     }
 }
 

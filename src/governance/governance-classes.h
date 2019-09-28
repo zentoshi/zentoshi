@@ -4,6 +4,7 @@
 #ifndef GOVERNANCE_CLASSES_H
 #define GOVERNANCE_CLASSES_H
 
+#include <base58.h>
 #include <governance/governance.h>
 #include <key.h>
 #include <key_io.h>

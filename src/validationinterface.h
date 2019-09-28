@@ -31,6 +31,11 @@ class CScheduler;
 class CTxMemPool;
 enum class MemPoolRemovalReason;
 
+namespace llmq {
+    class CChainLockSig;
+    class CInstantSendLock;
+} // namespace llmq
+
 // These functions dispatch to one or all registered wallets
 
 /** Register a wallet to receive updates from core */
@@ -207,7 +212,7 @@ public:
     static const int SYNC_TRANSACTION_NOT_IN_BLOCK = -1;
 
     void UpdatedBlockTip(const CBlockIndex *, const CBlockIndex *, bool fInitialDownload);
-    void SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex, int posInBlock) {}
+    void SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex, int posInBlock);
     void NotifyMasternodeListChanged(bool undo, const CDeterministicMNList& oldMNList, const CDeterministicMNListDiff& diff) {}
     void NotifyChainLock(const CBlockIndex* pindex) {}
     void TransactionAddedToMempool(const CTransactionRef &);

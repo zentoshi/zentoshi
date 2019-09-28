@@ -1,21 +1,18 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#include <qt/masternodelist.h>
-#include <qt/forms/ui_masternodelist.h>
+#include "qt/masternodelist.h"
+#include "qt/forms/ui_masternodelist.h"
 
 #include <activemasternode.h>
-#include <qt/clientmodel.h>
-#include <qt/guiutil.h>
-#include <qt/walletmodel.h>
-#include <init.h>
-#include <key_io.h>
+#include "qt/clientmodel.h"
+#include "clientversion.h"
+#include "qt/guiutil.h"
+#include "init.h"
 #include <masternode-sync.h>
-#include <netbase.h>
-#include <sync.h>
-#include <shutdown.h>
-#include <wallet/wallet.h>
+#include "netbase.h"
+#include "shutdown.h"
+#include "sync.h"
+#include "key_io.h"
+#include "wallet/wallet.h"
+#include "walletmodel.h"
 
 #include <univalue.h>
 
@@ -170,24 +167,8 @@ void MasternodeList::updateDIP3List()
         nextPayments.emplace(dmn->proTxHash, mnList.GetHeight() + (int)i + 1);
     }
 
-    std::set<COutPoint> setOutpts;
-    if (walletModel && ui->checkBoxMyMasternodesOnly->isChecked()) {
-        std::vector<COutPoint> vOutpts;
-        walletModel->listProTxCoins(vOutpts);
-        for (const auto& outpt : vOutpts) {
-            setOutpts.emplace(outpt);
-        }
-    }
-
     mnList.ForEachMN(false, [&](const CDeterministicMNCPtr& dmn) {
-        if (walletModel && ui->checkBoxMyMasternodesOnly->isChecked()) {
-            bool fMyMasternode = setOutpts.count(dmn->collateralOutpoint) ||
-                walletModel->havePrivKey(dmn->pdmnState->keyIDOwner) ||
-                walletModel->havePrivKey(dmn->pdmnState->keyIDVoting) ||
-                walletModel->havePrivKey(dmn->pdmnState->scriptPayout) ||
-                walletModel->havePrivKey(dmn->pdmnState->scriptOperatorPayout);
-            if (!fMyMasternode) return;
-        }
+
         // populate list
         // Address, Protocol, Status, Active Seconds, Last Seen, Pub Key
         QTableWidgetItem* addressItem = new QTableWidgetItem(QString::fromStdString(dmn->pdmnState->addr.ToString()));
@@ -200,7 +181,8 @@ void MasternodeList::updateDIP3List()
         CTxDestination payeeDest;
         QString payeeStr;
         if (ExtractDestination(dmn->pdmnState->scriptPayout, payeeDest)) {
-            payeeStr = QString::fromStdString(CBitcoinAddress(payeeDest).ToString());
+            std::string payeeString = EncodeDestination(payeeDest);
+            payeeStr = QString::fromStdString(payeeString);
         } else {
             payeeStr = tr("UNKNOWN");
         }
@@ -213,7 +195,8 @@ void MasternodeList::updateDIP3List()
             if (dmn->pdmnState->scriptOperatorPayout != CScript()) {
                 CTxDestination operatorDest;
                 if (ExtractDestination(dmn->pdmnState->scriptOperatorPayout, operatorDest)) {
-                    operatorRewardStr += tr("to %1").arg(QString::fromStdString(CBitcoinAddress(operatorDest).ToString()));
+                    std::string operatorDestString = EncodeDestination(operatorDest);
+                    operatorRewardStr += tr("to %1").arg(QString::fromStdString(operatorDestString));
                 } else {
                     operatorRewardStr += tr("to UNKNOWN");
                 }
@@ -331,5 +314,5 @@ void MasternodeList::copyCollateralOutpoint_clicked()
         return;
     }
 
-    QApplication::clipboard()->setText(QString::fromStdString(dmn->collateralOutpoint.ToStringShort()));
+    QApplication::clipboard()->setText(QString::fromStdString(dmn->collateralOutpoint.ToString()));
 }

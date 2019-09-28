@@ -234,7 +234,7 @@ public:
     void updateChainLockHeight(int chainLockHeight);
     int getDefaultConfirmTarget() const;
     int getNumISLocks() const;
-    bool IsOldInstantSendEnabled() const;
+    bool IsInstantSendEnabled() const;
 
     bool privateKeysDisabled() const;
     bool canGetAddresses() const;

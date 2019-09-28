@@ -6,6 +6,7 @@
 #include <primitives/block.h>
 
 #include <hash.h>
+#include <streams.h>
 #include <tinyformat.h>
 #include <util/strencodings.h>
 #include <crypto/common.h>
@@ -17,7 +18,10 @@ uint256 CBlockHeader::GetHash() const
 
 uint256 CBlockHeader::GetPoWHash() const
 {
-    return SerializeHash(*this);
+    std::vector<unsigned char> vch(80);
+    CVectorWriter ss(SER_NETWORK, PROTOCOL_VERSION, vch, 0);
+    ss << *this;
+    return Hash((const char *)vch.data(), (const char *)vch.data() + vch.size());
 }
 
 bool CBlock::IsProofOfStake() const

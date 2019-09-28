@@ -6,6 +6,7 @@
 #include <llmq/quorums_utils.h>
 #include <chainparams.h>
 #include <evo/deterministicmns.h>
+#include <validation.h>
 
 namespace llmq
 {

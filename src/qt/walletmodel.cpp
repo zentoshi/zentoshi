@@ -129,9 +129,9 @@ int WalletModel::getNumISLocks() const
     return cachedNumISLocks;
 }
 
-bool WalletModel::IsOldInstantSendEnabled() const
+bool WalletModel::IsInstantSendEnabled() const
 {
-    return llmq::IsOldInstantSendEnabled();
+    return llmq::IsInstantSendEnabled();
 }
 
 void WalletModel::updateAddressBook(const QString &address, const QString &label,

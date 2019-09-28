@@ -319,7 +319,7 @@ public Q_SLOTS:
     void showGraph();
     void showPeers();
 
-    /** Open external (default) editor with dash.conf */
+    /** Open external (default) editor with zentoshi.conf */
     void showConfEditor();
     /** Open external (default) editor with masternode.conf */
     void showMNConfEditor();

@@ -5,6 +5,7 @@
 
 #include "alert.h"
 
+#include "base58.h"
 #include "clientversion.h"
 #include "key_io.h"
 #include "net.h"

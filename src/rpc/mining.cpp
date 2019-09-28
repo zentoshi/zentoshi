@@ -29,6 +29,7 @@
 #include <validationinterface.h>
 #include <versionbits.h>
 #include <warnings.h>
+#include <wallet/wallet.h>
 
 #include <memory>
 #include <stdint.h>
@@ -123,7 +124,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
             LOCK(cs_main);
             IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
         }
-        while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && !CheckProofOfWork(pblock->GetHash(), pblock->nBits, true, Params().GetConsensus())) {
+        while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && !CheckProofOfWork(pblock->GetPoWHash(), pblock->nBits, true, Params().GetConsensus())) {
             ++pblock->nNonce;
             --nMaxTries;
         }
@@ -689,9 +690,11 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
         masternodeObj.pushKV("script", HexStr(pblock->txoutMasternode.scriptPubKey));
         masternodeObj.pushKV("amount", pblock->txoutMasternode.nValue);
     }
-    result.pushKV("masternode", masternodeObj);
-    result.pushKV("masternode_payments_started", pindexPrev->nHeight + 1 > consensusParams.nFirstPoSBlock);
-    result.pushKV("masternode_payments_enforced", sporkManager.IsSporkActive(Spork::SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT));
+
+    result.push_back(Pair("masternode", masternodeObj));
+    result.push_back(Pair("masternode_payments_started", pindexPrev->nHeight + 1 > consensusParams.nMasternodePaymentsStartBlock));
+    result.push_back(Pair("masternode_payments_enforced", true));
+
     UniValue superblockObjArray(UniValue::VARR);
     if(pblock->voutSuperblock.size()) {
         for (const auto& txout : pblock->voutSuperblock) {
@@ -707,7 +710,7 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     }
     result.pushKV("superblock", superblockObjArray);
     result.pushKV("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock);
-    result.pushKV("superblocks_enabled", sporkManager.IsSporkActive(Spork::SPORK_9_SUPERBLOCKS_ENABLED));
+    result.pushKV("superblocks_enabled", sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED));
 
     if (!pblocktemplate->vchCoinbaseCommitment.empty() && fSupportsSegwit) {
         result.pushKV("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment.begin(), pblocktemplate->vchCoinbaseCommitment.end()));
@@ -1034,6 +1037,8 @@ static UniValue setgenerate(const JSONRPCRequest& request)
     if (Params().MineBlocksOnDemand())
         throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Use the generate method instead of setgenerate on this network");
 
+    std::shared_ptr<CWallet> wallet = GetWallets().front();
+
     const auto& params = request.params;
     bool fGenerate = true;
     if (params.size() > 0)
@@ -1047,7 +1052,7 @@ static UniValue setgenerate(const JSONRPCRequest& request)
             fGenerate = false;
     }
 
-    GenerateBitcoins(fGenerate, nGenProcLimit, Params(), *g_connman);
+    GenerateBitcoins(fGenerate, nGenProcLimit, Params(), *g_connman, wallet);
 
     return fGenerate ? std::string("Mining started") : std::string("Mining stopped");
 }
