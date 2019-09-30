@@ -184,6 +184,10 @@
         <translation>Peňaženka zašifrovaná</translation>
     </message>
     <message>
+        <source>%1 will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
+        <translation>%1 sa teraz zatvorí aby sa dokončil proces šifrovania. Zapamätajte si, že zašifrovanie vašej peňaženky nemôže úplne ochrániť vaše bitcoiny od ukradnutia malvérom ktorý môže infikovať Váš počítač.</translation>
+    </message>
+    <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
         <translation>DÔLEŽITÉ: Všetky predošlé zálohy vašej peňaženky by mali byť nahradené na novo vygenerovaným zašifrovaným súborom. Z bezpečnostných dôvodov, predošlé zálohy nezašifrovaného súboru s peňaženkou budú nefunkčné hneď ako začnete používať vašu novú, zašifrovanú peňaženku.</translation>
     </message>
@@ -232,7 +236,7 @@
     </message>
 </context>
 <context>
-    <name>BitcoinGUI</name>
+    <name>ZentoshiGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Podpísať &amp;správu...</translation>
@@ -244,6 +248,10 @@
     <message>
         <source>&amp;Overview</source>
         <translation>&amp;Prehľad</translation>
+    </message>
+    <message>
+        <source>Node</source>
+        <translation>Uzol</translation>
     </message>
     <message>
         <source>Show general overview of wallet</source>
@@ -302,12 +310,24 @@
         <translation>&amp;Zmeniť prístupovú frázu</translation>
     </message>
     <message>
+        <source>&amp;Sending addresses...</source>
+        <translation>&amp;Adresy odosielateľov...</translation>
+    </message>
+    <message>
+        <source>&amp;Receiving addresses...</source>
+        <translation>&amp;Adresy prijímateľov...</translation>
+    </message>
+    <message>
         <source>Open &amp;URI...</source>
         <translation>Otvoriť &amp;URL</translation>
     </message>
     <message>
         <source>Wallet:</source>
         <translation>Peňaženka:</translation>
+    </message>
+    <message>
+        <source>default wallet</source>
+        <translation>Predvolená peňaženka</translation>
     </message>
     <message>
         <source>Click to disable network activity.</source>
@@ -360,6 +380,10 @@
     <message>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
+    </message>
+    <message>
+        <source>Wallet</source>
+        <translation>Peňaženka</translation>
     </message>
     <message>
         <source>&amp;Send</source>
@@ -474,14 +498,6 @@
         <translation>Ukázať %1 pomocnú správu na dostanie zoznamu s možnými možnosťami v Bitcoin príkazovom riadku</translation>
     </message>
     <message>
-        <source>default wallet</source>
-        <translation>Predvolená peňaženka</translation>
-    </message>
-    <message>
-        <source>&amp;Window</source>
-        <translation>&amp;Okno</translation>
-    </message>
-    <message>
         <source>%1 client</source>
         <translation>%1 klient</translation>
     </message>
@@ -544,6 +560,10 @@
     <message>
         <source>HD key generation is &lt;b&gt;disabled&lt;/b&gt;</source>
         <translation>Generácia HD kľúča je &lt;b&gt;vypnutá&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Private key &lt;b&gt;disabled&lt;/b&gt;</source>
+        <translation>개인키 &lt;b&gt;비활성화됨&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
@@ -923,7 +943,11 @@
         <source>Hide</source>
         <translation>Skryť</translation>
     </message>
-    </context>
+    <message>
+        <source>Unknown. Syncing Headers (%1)...</source>
+        <translation>Neznáme. Synchronizujem Hlavičky (%1)...</translation>
+    </message>
+</context>
 <context>
     <name>OpenURIDialog</name>
     <message>
@@ -970,6 +994,10 @@
         <translation>Veľkosť &amp;databázy cache</translation>
     </message>
     <message>
+        <source>MB</source>
+        <translation>MB</translation>
+    </message>
+    <message>
         <source>Number of script &amp;verification threads</source>
         <translation>Číslo skriptu a &amp;overovacích vlákien</translation>
     </message>
@@ -996,6 +1024,10 @@
     <message>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Exit in the menu.</source>
         <translation>Minimalizovať namiesto zatvorenia aplikácie keď je okno zatvorené. Keď je táto možnosť zapnutá tak sa aplikácia zatvorí len po tom čo ju zatvoríte v menu.</translation>
+    </message>
+    <message>
+        <source>Active command-line options that override above options:</source>
+        <translation>Aktívne možnosti príkazového riadku ktoré potláčajú vyššie uvedené možnosti:</translation>
     </message>
     <message>
         <source>Open the %1 configuration file from the working directory.</source>
@@ -1032,6 +1064,10 @@
     <message>
         <source>Reverting this setting requires re-downloading the entire blockchain.</source>
         <translation>Obnovenie tohto nastavenia vyžaduje opätovné prevzatie celého blockchainu.</translation>
+    </message>
+    <message>
+        <source>MiB</source>
+        <translation>MiB</translation>
     </message>
     <message>
         <source>(0 = auto, &lt;0 = leave that many cores free)</source>
@@ -1308,6 +1344,10 @@
         <translation>URL pre stiahnutie výzvy na zaplatenie je neplatná: %1</translation>
     </message>
     <message>
+        <source>Cannot process payment request because BIP70 support was not compiled in.</source>
+        <translation>BIP70 기능이 포함되지 않아서 지불 요청을 처리할 수 없습니다.</translation>
+    </message>
+    <message>
         <source>Invalid payment address %1</source>
         <translation>Neplatná platobná adresa %1</translation>
     </message>
@@ -1567,6 +1607,18 @@
         <translation>Datadir</translation>
     </message>
     <message>
+        <source>To specify a non-default location of the data directory use the '%1' option.</source>
+        <translation>기본 위치가 아닌 곳으로 데이타 폴더를 지정하려면 '%1' 옵션을 사용하세요.</translation>
+    </message>
+    <message>
+        <source>Blocksdir</source>
+        <translation>Blocksdir</translation>
+    </message>
+    <message>
+        <source>To specify a non-default location of the blocks directory use the '%1' option.</source>
+        <translation>기본 위치가 아닌 곳으로 블럭 폴더를 지정하려면 '%1' 옵션을 사용하세요.</translation>
+    </message>
+    <message>
         <source>Startup time</source>
         <translation>Čas spustenia</translation>
     </message>
@@ -1773,6 +1825,10 @@
     <message>
         <source>&amp;Unban</source>
         <translation>&amp;Odblokovať</translation>
+    </message>
+    <message>
+        <source>default wallet</source>
+        <translation>Predvolená peňaženka</translation>
     </message>
     <message>
         <source>Welcome to the %1 RPC console.</source>
@@ -2103,6 +2159,14 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
         <translation>Skryť</translation>
     </message>
     <message>
+        <source>Paying only the minimum fee is just fine as long as there is less transaction volume than space in the blocks. But be aware that this can end up in a never confirming transaction once there is more demand for bitcoin transactions than the network can process.</source>
+        <translation>Zaplatenie len minimálneho poplatku je v poriadku, pokiaľ existuje menej transakcií ako miesta v blokoch. Uvedomte si však, že ak bude vyšší dopyt po transakciách ako dokáže sieť spracovať, môže byť vaša transakcia oneskorená alebo dokonca nikdy nepotvrdená.</translation>
+    </message>
+    <message>
+        <source>(read the tooltip)</source>
+        <translation>(prečítajte si radu)</translation>
+    </message>
+    <message>
         <source>Recommended:</source>
         <translation>Odporúčané:</translation>
     </message>
@@ -2129,6 +2193,14 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Dust:</source>
         <translation>Prach:</translation>
+    </message>
+    <message>
+        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for zentoshi transactions than the network can process.</source>
+        <translation>거래량이 블록에 남은 공간보다 적은 경우에는 채굴자나 중계 노드들이 최소 수수료를 허용할 수 있습니다. 최소 수수료만 지불하는건 괜찮지만, 네트워크가 처리할 수 있는 용량을 넘는 비트코인 거래가 있을 경우에는 이 거래가 승인이 안될 수 있다는 점을 유의하세요.</translation>
+    </message>
+    <message>
+        <source>A too low fee might result in a never confirming transaction (read the tooltip)</source>
+        <translation>너무 적은 수수료로는 거래 승인이 안될 수도 있습니다 (툴팁을 참고하세요)</translation>
     </message>
     <message>
         <source>Confirmation time target:</source>
@@ -2265,6 +2337,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Payment request expired.</source>
         <translation>Žiadosť o platbu vypršala.</translation>
+    </message>
+    <message>
+        <source>Pay only the required fee of %1</source>
+        <translation>Zaplaťte len vyžadovaný poplatok %1</translation>
     </message>
     <message numerus="yes">
         <source>Estimated to begin confirmation within %n block(s).</source>
@@ -3002,7 +3078,19 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
 </context>
 <context>
     <name>WalletController</name>
-    </context>
+    <message>
+        <source>Close wallet</source>
+        <translation>지갑 닫기</translation>
+    </message>
+    <message>
+        <source>Are you sure you wish to close wallet &lt;i&gt;%1&lt;/i&gt;?</source>
+        <translation>정말로 지갑 &lt;i&gt;%1&lt;/i&gt;을 닫겠습니까?</translation>
+    </message>
+    <message>
+        <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
+        <translation>블록축소를 하고 지갑을 너무 오랫동안 닫으면 체인 전체를 다시 동기화해야 할 수도 있습니다.</translation>
+    </message>
+</context>
 <context>
     <name>WalletFrame</name>
     <message>
@@ -3054,7 +3142,7 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     </message>
     <message>
         <source>default wallet</source>
-        <translation>Predvolená peňaženka</translation>
+        <translation>기본 지갑</translation>
     </message>
 </context>
 <context>
@@ -3097,7 +3185,7 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation>Distribuované pod licenciou softvéru MIT, pozrite si sprevádzajúci súbor %s alebo %s</translation>
@@ -3135,6 +3223,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
         <translation>Vývojári %s</translation>
     </message>
     <message>
+        <source>Can't generate a change-address key. No keys in the internal keypool and can't generate any keys.</source>
+        <translation>거스름돈 주소 생성 불가. 내장 지갑 열쇠 보관함에 열쇠가 없으면 새로운 열쇠를 생성할 수 없습니다.</translation>
+    </message>
+    <message>
         <source>Cannot obtain a lock on data directory %s. %s is probably already running.</source>
         <translation>Nebolo možné získať zámok v dátovom adresári %s. %s Je už pravdepodobne zapnuté.</translation>
     </message>
@@ -3145,6 +3237,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Error reading %s! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
         <translation>Chyba pri čítaní %s! Všetky kľúče boli prečítané správne, ale dáta transakcie alebo knihy adries chýbajú alebo sú nesprávne.</translation>
+    </message>
+    <message>
+        <source>Group outputs by address, selecting all or none, instead of selecting on a per-output basis. Privacy is improved as an address is only used once (unless someone sends to it after spending from it), but may result in slightly higher fees as suboptimal coin selection may result due to the added limitation (default: %u)</source>
+        <translation>Skupinové výstupy z adresy, pri vybratí všetkých alebo žiadnych adries, namiesto vyberania na báze za výstup. Súkromie je vylepšené keďže adresa je použitá len raz (až na to, keď niekto na túto adresu niečo pošle po míňaní z tejto adresy), ale môže vyústiť v trochu väčšie poplatky keďže suboptimálny výber mincí môže vyústiť v pridanú limitáciu (predvolené: %u)</translation>
     </message>
     <message>
         <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
@@ -3199,6 +3295,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
         <translation>Zmena indexu mimo rozsah</translation>
     </message>
     <message>
+        <source>Config setting for %s only applied on %s network when in [%s] section.</source>
+        <translation>%s의 설정은 [%s] 항목에 있을 때 %s 네트워크에만 적용됩니다.</translation>
+    </message>
+    <message>
         <source>Copyright (C) %i-%i</source>
         <translation>Copyright (C) %i-%i</translation>
     </message>
@@ -3209,6 +3309,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Do you want to rebuild the block database now?</source>
         <translation>Chcete prestavať databázu blokov teraz?</translation>
+    </message>
+    <message>
+        <source>Error creating %s: You can't create non-HD wallets with this version.</source>
+        <translation>Chyba pri vytváraní %s: Nemôžete vytvoriť nie-HD peňaženku v tejto verzii.</translation>
     </message>
     <message>
         <source>Error initializing block database</source>
@@ -3327,6 +3431,18 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
         <translation>Nebolo možné vygenerovať kľúče.</translation>
     </message>
     <message>
+        <source>Unsupported argument -benchmark ignored, use -debug=bench.</source>
+        <translation>Nepodporovaný argument -benchmark bol ignorovaný, použite -debug=bench.</translation>
+    </message>
+    <message>
+        <source>Unsupported argument -debugnet ignored, use -debug=net.</source>
+        <translation>Nepodporovaný argument -debugnet bol ignorovaný, použite -debug=net.</translation>
+    </message>
+    <message>
+        <source>Unsupported argument -tor found, use -onion.</source>
+        <translation>Našiel sa nepodporovaný argument -tor , použite -onion.</translation>
+    </message>
+    <message>
         <source>Unsupported logging category %s=%s.</source>
         <translation>Nepodporovaná logovacia kategória %s=%s.</translation>
     </message>
@@ -3359,12 +3475,20 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
         <translation>Musíte znova prestavať databázu použitím -reindex aby ste sa mohli vrátiť to nezmenšeného módu. Toto stiahne celý blockchain od znova</translation>
     </message>
     <message>
+        <source>Error loading %s: You can't disable HD on an already existing HD wallet</source>
+        <translation>hyba pri načítavaní %s: nemôžeš vypnúť HD už existujúcej HD peňaženky</translation>
+    </message>
+    <message>
         <source>Error reading from database, shutting down.</source>
         <translation>Chyba pri čítaní z databázy, vypína sa.</translation>
     </message>
     <message>
         <source>Error upgrading chainstate database</source>
         <translation>Chyba pri aktualizovaní chainstate databázy</translation>
+    </message>
+    <message>
+        <source>Error: Disk space is low for %s</source>
+        <translation>오류: %s 하기엔 저장공간이 부족합니다</translation>
     </message>
     <message>
         <source>Information</source>
@@ -3393,6 +3517,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Reducing -maxconnections from %d to %d, because of system limitations.</source>
         <translation>Zredukované -maxconnections z %d na %d kvôli systémovým obmedzeniam.</translation>
+    </message>
+    <message>
+        <source>Section [%s] is not recognized.</source>
+        <translation>[%s] 항목은 인정되지 않습니다.</translation>
     </message>
     <message>
         <source>Signing transaction failed</source>
@@ -3463,6 +3591,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
         <translation>-maxtxfee je nastavená veľmi vysoko! Tak veľké polatky by boli zapatené na jedinú transakciu,</translation>
     </message>
     <message>
+        <source>Error loading %s: You can't enable HD on an already existing non-HD wallet</source>
+        <translation>Chyba pri načítavaní %s: Nemôžete povoliť HD na už existujúcich non-HD peňaženkách</translation>
+    </message>
+    <message>
         <source>This is the transaction fee you may pay when fee estimates are not available.</source>
         <translation>Toto je transakčný poplatok ktorý môžete zaplatiť keď odhady poplatkov nie sú dostupné.</translation>
     </message>
@@ -3473,6 +3605,18 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.</source>
         <translation>Celková dĺžka verzie sieťového reťazca (%i) prekračuje maximálnu dĺžku (%i). Znížte počet a veľkosť komentárov.</translation>
+    </message>
+    <message>
+        <source>Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported.</source>
+        <translation>Boli nájdené nepodporované -socks argumenty. Nastavenie SOCKS verzie už nie je možné, sú podporované len SOCKS5 proxy.</translation>
+    </message>
+    <message>
+        <source>Unsupported argument -whitelistalwaysrelay ignored, use -whitelistrelay and/or -whitelistforcerelay.</source>
+        <translation>Nepodporovaný argument -whitelistalwaysrelay ignorovaný, použite -whitelistrelay a/alebo -whitelistforcerelay.</translation>
+    </message>
+    <message>
+        <source>Warning: Unknown block versions being mined! It's possible unknown rules are in effect</source>
+        <translation>Upozornenie: Práve sa ťaží neznáma verzia bloku! Platia jeho možné neznáme pravidlá</translation>
     </message>
     <message>
         <source>Warning: Wallet file corrupt, data salvaged! Original %s saved as %s in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
@@ -3525,6 +3669,10 @@ Zapamätajte si: Keďže cena poplatku je počítaná za bajt, tak poplatok o ho
     <message>
         <source>Insufficient funds</source>
         <translation>Nedostatočné prostriedky</translation>
+    </message>
+    <message>
+        <source>Can't generate a change-address key. Private keys are disabled for this wallet.</source>
+        <translation>Nemožno vygenerovať kľúč na zmenu adresy. Súkromné kľúče sú v tejto peňaženke zakázané.</translation>
     </message>
     <message>
         <source>Cannot upgrade a non HD split wallet without upgrading to support pre split keypool. Please use -upgradewallet=169900 or -upgradewallet with no version specified.</source>

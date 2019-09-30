@@ -1,183 +1,168 @@
-<TS language="es_AR" version="2.1">
+<TS language="km" version="2.1">
 <context>
     <name>AddressBookPage</name>
     <message>
         <source>Right-click to edit address or label</source>
-        <translation>Click derecho para editar la dirección o etiqueta</translation>
+        <translation>ចុចខាងស្តាំដើម្បីកែអាស្រយដ្ឋាន​ ឬ ស្លាក</translation>
     </message>
     <message>
         <source>Create a new address</source>
-        <translation>Crear una nueva dirección</translation>
+        <translation>បង្កើតអាស្រយដ្ឋានថ្មីមួយ</translation>
     </message>
     <message>
         <source>&amp;New</source>
-        <translation>&amp;Nuevo</translation>
+        <translation>&amp;ថ្មី</translation>
     </message>
     <message>
         <source>Copy the currently selected address to the system clipboard</source>
-        <translation>Copiar la dirección seleccionada al portapapeles</translation>
+        <translation>ចម្លងអាសយដ្ឋានដែលបានរើស</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>&amp;Copiar</translation>
+        <translation>&amp;ចម្លង</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>C&amp;errar</translation>
+        <translation>&amp;បិទ</translation>
     </message>
     <message>
         <source>Delete the currently selected address from the list</source>
-        <translation>Borrar de la lista la dirección seleccionada</translation>
+        <translation>លុប​អាសយដ្ឋានដែល​បាន​រើស​ពី​បញ្ជី</translation>
     </message>
     <message>
         <source>Export the data in the current tab to a file</source>
-        <translation>Exportar los datos de la pestaña actual a un archivo</translation>
+        <translation>នាំចេញទិន្នន័យនៃថេបបច្ចុប្បន្នទៅជាឯកសារ</translation>
     </message>
     <message>
         <source>&amp;Export</source>
-        <translation>&amp;Exportar</translation>
+        <translation>&amp;នាំចេញ</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>&amp;Borrar</translation>
+        <translation>&amp;លុប</translation>
     </message>
     <message>
         <source>Choose the address to send coins to</source>
-        <translation>Seleccione la dirección donde enviará las monedas</translation>
+        <translation>ជ្រើសរើសអាស្រយដើម្បីផ្ញើរកាកជាមួយ</translation>
     </message>
     <message>
         <source>Choose the address to receive coins with</source>
-        <translation>Seleccione la dirección donde recibirá las monedas</translation>
-    </message>
-    <message>
-        <source>C&amp;hoose</source>
-        <translation>Seleccione</translation>
-    </message>
-    <message>
-        <source>Sending addresses</source>
-        <translation>Dirección origen</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation>Dirección destino</translation>
-    </message>
-    <message>
-        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Estas son tus direcciones Zentoshi para enviar pagos. Chequea siempre el monto y la dirección destino antes de mandar monedas.
+        <translation>ជ្រើសរើសអាស្រយដើម្បីទទួលកាក់ជាមួយ
 </translation>
     </message>
     <message>
+        <source>C&amp;hoose</source>
+        <translation>&amp;ជ្រើសរើស</translation>
+    </message>
+    <message>
+        <source>Sending addresses</source>
+        <translation>អាសយដ្ឋានផ្ញើ</translation>
+    </message>
+    <message>
+        <source>Receiving addresses</source>
+        <translation>អាសយដ្ឋានទទួួល</translation>
+    </message>
+    <message>
         <source>&amp;Copy Address</source>
-        <translation>&amp;Copiar Dirección</translation>
+        <translation>&amp;ចម្លង​អាស្រយដ្ឋាន</translation>
     </message>
     <message>
         <source>Copy &amp;Label</source>
-        <translation>Copiar &amp;Etiqueta</translation>
+        <translation>ចម្លង&amp;ឡាបែល</translation>
     </message>
     <message>
         <source>&amp;Edit</source>
-        <translation>&amp;Editar</translation>
-    </message>
-    <message>
-        <source>Export Address List</source>
-        <translation>Exportar lista de direcciones</translation>
+        <translation>&amp;កែ</translation>
     </message>
     <message>
         <source>Exporting Failed</source>
-        <translation>Exportar archivo</translation>
+        <translation>បរាជ័យ​ការបញ្ជូនចេញ</translation>
     </message>
     </context>
 <context>
     <name>AddressTableModel</name>
     <message>
         <source>Label</source>
-        <translation>Etiqueta</translation>
+        <translation>ឡាបែល</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Dirección
-</translation>
+        <translation>អាសយដ្ឋាន</translation>
     </message>
     <message>
         <source>(no label)</source>
-        <translation>(No etiqueta)</translation>
+        <translation>(គ្មាន​ឡាបែល)</translation>
     </message>
 </context>
 <context>
     <name>AskPassphraseDialog</name>
     <message>
-        <source>Passphrase Dialog</source>
-        <translation>Diálogo de Frase de Contraseña</translation>
-    </message>
-    <message>
         <source>Enter passphrase</source>
-        <translation>Ingresar la Frase de Contraseña</translation>
+        <translation>បញ្ចូលពាក្យសម្ងាត់</translation>
     </message>
     <message>
         <source>New passphrase</source>
-        <translation>Nueva Frase de Contraseña</translation>
+        <translation>ពាក្យសម្ងាត់ថ្មី</translation>
     </message>
     <message>
         <source>Repeat new passphrase</source>
-        <translation>Repetí la nueva Frase de Contraseña</translation>
-    </message>
-    <message>
-        <source>Show password</source>
-        <translation>Mostrar contraseña</translation>
-    </message>
-    <message>
-        <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
-        <translation>Ingrese la nueva Frase de Contraseña de la billetera.&lt;br/&gt;Por favor use una Frase de Contraseña de &lt;b&gt;diez o más caracteres aleatorios &lt;/b&gt;, u&lt;b&gt; ocho o más palabras.</translation>
+        <translation>វាយពាក្យសម្ងាត់ម្ដងទៀត</translation>
     </message>
     <message>
         <source>Encrypt wallet</source>
-        <translation>Encriptar billetera</translation>
-    </message>
-    <message>
-        <source>This operation needs your wallet passphrase to unlock the wallet.</source>
-        <translation>Esta operación necesita su Frase de Contraseña de la billetera para desbloquearla. </translation>
+        <translation>កាបូប​អែនក្រីព</translation>
     </message>
     <message>
         <source>Unlock wallet</source>
-        <translation>Desbloquear la billetera</translation>
+        <translation>ដោះសោរកាបូបលុយ</translation>
     </message>
     <message>
         <source>Decrypt wallet</source>
-        <translation>Desencriptar la billetera</translation>
+        <translation>កាបូប​​ ឌីក្រីព</translation>
     </message>
     <message>
         <source>Change passphrase</source>
-        <translation>Cambiar Frase de Contraseña</translation>
-    </message>
-    <message>
-        <source>Enter the old passphrase and new passphrase to the wallet.</source>
-        <translation>Ingrese la anterior contraseña y la nueva contraseña de la billetera</translation>
+        <translation>ប្ដូរពាក្យសម្ងាត់</translation>
     </message>
     <message>
         <source>Confirm wallet encryption</source>
-        <translation>Confirmar cifrado de la billetera</translation>
+        <translation>បញ្ជាក់ការសំរេចចិត្ត​​កាបូប​​ការ​អែនក្រីព</translation>
     </message>
     <message>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>Advertencia: si usted cifra su billetera y olvida su Frase de Contraseña, usted &lt;b&gt; PERDERÁ TODOS SUS BITCOINS&lt;/b&gt;!</translation>
+        <source>Wallet encrypted</source>
+        <translation>កាបូប ដែលអែនក្រីព</translation>
     </message>
     <message>
-        <source>Are you sure you wish to encrypt your wallet?</source>
-        <translation>¿Está usted seguro que desea cifrar su billetera?</translation>
+        <source>Wallet unlock failed</source>
+        <translation>បរាជ័យដោះសោរកាបូប</translation>
     </message>
     </context>
 <context>
     <name>BanTableModel</name>
-    </context>
+    <message>
+        <source>Banned Until</source>
+        <translation>ផ្អាកដល់</translation>
+    </message>
+</context>
 <context>
-    <name>ZentoshiGUI</name>
+    <name>BitcoinGUI</name>
+    <message>
+        <source>Send coins to a Bitcoin address</source>
+        <translation>ផ្ញើកាក់ទៅកាន់ អាសយដ្ឋាន Bitcoin មួយ</translation>
+    </message>
     </context>
 <context>
     <name>CoinControlDialog</name>
     <message>
         <source>(no label)</source>
-        <translation>(No etiqueta)</translation>
+        <translation>(គ្មាន​ឡាបែល)</translation>
     </message>
+    </context>
+<context>
+    <name>CreateWalletActivity</name>
+    </context>
+<context>
+    <name>CreateWalletDialog</name>
     </context>
 <context>
     <name>EditAddressDialog</name>
@@ -198,6 +183,9 @@
     <name>OpenURIDialog</name>
     </context>
 <context>
+    <name>OpenWalletActivity</name>
+    </context>
+<context>
     <name>OptionsDialog</name>
     </context>
 <context>
@@ -213,9 +201,6 @@
     <name>QObject</name>
     </context>
 <context>
-    <name>QObject::QObject</name>
-    </context>
-<context>
     <name>QRImageWidget</name>
     </context>
 <context>
@@ -228,30 +213,33 @@
     <name>ReceiveRequestDialog</name>
     <message>
         <source>Address</source>
-        <translation>Dirección
-</translation>
+        <translation>អាសយដ្ឋាន</translation>
     </message>
     <message>
         <source>Label</source>
-        <translation>Etiqueta</translation>
+        <translation>ឡាបែល</translation>
     </message>
-    </context>
+    <message>
+        <source>Wallet</source>
+        <translation>កាបូប</translation>
+    </message>
+</context>
 <context>
     <name>RecentRequestsTableModel</name>
     <message>
         <source>Label</source>
-        <translation>Etiqueta</translation>
+        <translation>ឡាបែល</translation>
     </message>
     <message>
         <source>(no label)</source>
-        <translation>(No etiqueta)</translation>
+        <translation>(គ្មាន​ឡាបែល)</translation>
     </message>
     </context>
 <context>
     <name>SendCoinsDialog</name>
     <message>
         <source>(no label)</source>
-        <translation>(No etiqueta)</translation>
+        <translation>(គ្មាន​ឡាបែល)</translation>
     </message>
 </context>
 <context>
@@ -267,9 +255,6 @@
     <name>SignVerifyMessageDialog</name>
     </context>
 <context>
-    <name>SplashScreen</name>
-    </context>
-<context>
     <name>TrafficGraphWidget</name>
     </context>
 <context>
@@ -282,27 +267,26 @@
     <name>TransactionTableModel</name>
     <message>
         <source>Label</source>
-        <translation>Etiqueta</translation>
+        <translation>ឡាបែល</translation>
     </message>
     <message>
         <source>(no label)</source>
-        <translation>(No etiqueta)</translation>
+        <translation>(គ្មាន​ឡាបែល)</translation>
     </message>
     </context>
 <context>
     <name>TransactionView</name>
     <message>
         <source>Label</source>
-        <translation>Etiqueta</translation>
+        <translation>ឡាបែល</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Dirección
-</translation>
+        <translation>អាសយដ្ឋាន</translation>
     </message>
     <message>
         <source>Exporting Failed</source>
-        <translation>Exportar archivo</translation>
+        <translation>បរាជ័យការបញ្ជូនចេញ</translation>
     </message>
     </context>
 <context>
@@ -319,8 +303,16 @@
     </context>
 <context>
     <name>WalletView</name>
+    <message>
+        <source>&amp;Export</source>
+        <translation>&amp;នាំចេញ</translation>
+    </message>
+    <message>
+        <source>Export the data in the current tab to a file</source>
+        <translation>នាំចេញទិន្នន័យនៃថេបបច្ចុប្បន្នទៅជាឯកសារ</translation>
+    </message>
     </context>
 <context>
-    <name>zentoshi-core</name>
+    <name>bitcoin-core</name>
     </context>
 </TS>

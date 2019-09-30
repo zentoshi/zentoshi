@@ -25,10 +25,6 @@
         <source>Synchronizing with network...</source>
         <translation>Synchronising with network...</translation>
     </message>
-    <message>
-        <source>&amp;Window</source>
-        <translation>&amp;Window</translation>
-    </message>
     </context>
 <context>
     <name>CoinControlDialog</name>
@@ -159,9 +155,6 @@
     </context>
 <context>
     <name>UnitDisplayStatusBarControl</name>
-    </context>
-<context>
-    <name>WalletController</name>
     </context>
 <context>
     <name>WalletFrame</name>

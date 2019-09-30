@@ -1,4 +1,4 @@
-<TS language="mk_MK" version="2.1">
+<TS language="mk" version="2.1">
 <context>
     <name>AddressBookPage</name>
     <message>
@@ -64,7 +64,7 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>ZentoshiGUI</name>
+    <name>BitcoinGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Потпиши &amp;порака...</translation>
@@ -126,16 +126,12 @@
         <translation>Повторно индексирање на блокови од дискот...</translation>
     </message>
     <message>
-        <source>Send coins to a Zentoshi address</source>
+        <source>Send coins to a Bitcoin address</source>
         <translation>Испрати биткоини на Биткоин адреса</translation>
     </message>
     <message>
         <source>&amp;Verify message...</source>
         <translation>&amp;Потврди порака...</translation>
-    </message>
-    <message>
-        <source>Zentoshi</source>
-        <translation>Биткоин</translation>
     </message>
     <message>
         <source>&amp;Send</source>
@@ -252,6 +248,12 @@
     </message>
     </context>
 <context>
+    <name>CreateWalletActivity</name>
+    </context>
+<context>
+    <name>CreateWalletDialog</name>
+    </context>
+<context>
     <name>EditAddressDialog</name>
     <message>
         <source>Edit Address</source>
@@ -287,7 +289,7 @@
 <context>
     <name>Intro</name>
     <message>
-        <source>Zentoshi</source>
+        <source>Bitcoin</source>
         <translation>Биткоин</translation>
     </message>
     <message>
@@ -308,6 +310,9 @@
         <source>URI:</source>
         <translation>URI:</translation>
     </message>
+    </context>
+<context>
+    <name>OpenWalletActivity</name>
     </context>
 <context>
     <name>OptionsDialog</name>
@@ -409,10 +414,11 @@
     </message>
     </context>
 <context>
-    <name>QObject::QObject</name>
-    </context>
-<context>
     <name>QRImageWidget</name>
+    <message>
+        <source>&amp;Save Image...</source>
+        <translation>&amp;Сними Слика...</translation>
+    </message>
     </context>
 <context>
     <name>RPCConsole</name>
@@ -483,12 +489,20 @@
         <translation>&amp;Сними Слика...</translation>
     </message>
     <message>
+        <source>Amount</source>
+        <translation>Сума</translation>
+    </message>
+    <message>
         <source>Wallet</source>
         <translation>Паричник</translation>
     </message>
-    </context>
+</context>
 <context>
     <name>RecentRequestsTableModel</name>
+    <message>
+        <source>Date</source>
+        <translation>Дата</translation>
+    </message>
     </context>
 <context>
     <name>SendCoinsDialog</name>
@@ -542,22 +556,35 @@
     <name>SignVerifyMessageDialog</name>
     </context>
 <context>
-    <name>SplashScreen</name>
-    </context>
-<context>
     <name>TrafficGraphWidget</name>
     </context>
 <context>
     <name>TransactionDesc</name>
+    <message>
+        <source>Date</source>
+        <translation>Дата</translation>
+    </message>
+    <message>
+        <source>Amount</source>
+        <translation>Сума</translation>
+    </message>
     </context>
 <context>
     <name>TransactionDescDialog</name>
     </context>
 <context>
     <name>TransactionTableModel</name>
+    <message>
+        <source>Date</source>
+        <translation>Дата</translation>
+    </message>
     </context>
 <context>
     <name>TransactionView</name>
+    <message>
+        <source>Date</source>
+        <translation>Дата</translation>
+    </message>
     </context>
 <context>
     <name>UnitDisplayStatusBarControl</name>
@@ -573,20 +600,16 @@
     </context>
 <context>
     <name>WalletView</name>
+    <message>
+        <source>&amp;Export</source>
+        <translation>&amp;Експорт</translation>
+    </message>
+    <message>
+        <source>Export the data in the current tab to a file</source>
+        <translation>Експортирај ги податоците од активното јазиче во датотека</translation>
+    </message>
     </context>
 <context>
-    <name>zentoshi-core</name>
-    <message>
-        <source>Zentoshi Core</source>
-        <translation>Биткоин Core</translation>
-    </message>
-    <message>
-        <source>Warning</source>
-        <translation>Предупредување</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation>Грешка</translation>
-    </message>
-</context>
+    <name>bitcoin-core</name>
+    </context>
 </TS>

@@ -162,6 +162,10 @@
         <translation>&amp;Přehled</translation>
     </message>
     <message>
+        <source>Node</source>
+        <translation>Uzel</translation>
+    </message>
+    <message>
         <source>Show general overview of wallet</source>
         <translation>Zobrazit základní přehled o peněžence</translation>
     </message>
@@ -188,6 +192,10 @@
     <message>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
+    </message>
+    <message>
+        <source>Wallet</source>
+        <translation>Peněženka</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -651,9 +659,6 @@
     </context>
 <context>
     <name>UnitDisplayStatusBarControl</name>
-    </context>
-<context>
-    <name>WalletController</name>
     </context>
 <context>
     <name>WalletFrame</name>

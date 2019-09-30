@@ -62,12 +62,8 @@
         <translation>Adresa na koju se prima</translation>
     </message>
     <message>
-        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Ovo su Vaše Zentoshi adrese na koju se vrše uplate. Uvek proverite iznos i prijemnu adresu pre slanja novčića.</translation>
-    </message>
-    <message>
-        <source>These are your Zentoshi addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>Ovo su Vaše Zentoshi adrese za primanje uplata. Preporučuje se upotreba nove adrese za svaku transakciju.</translation>
+        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Ovo su Vaše Bitcoin adrese na koju se vrše uplate. Uvek proverite iznos i prijemnu adresu pre slanja novčića.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -87,7 +83,7 @@
     </message>
     <message>
         <source>Comma separated file (*.csv)</source>
-        <translation>Zarezom odvojena datoteka (*.csv) </translation>
+        <translation>Zarezom odvojena datoteka (*.csv)</translation>
     </message>
     <message>
         <source>Exporting Failed</source>
@@ -132,10 +128,6 @@
         <translation>Ponovo unesite pristupnu frazu</translation>
     </message>
     <message>
-        <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
-        <translation>Unesite novu pristupnu frazu u novčanik. &lt;br/&gt;Molimo, koristite pristupnu frazu koja ima &lt;b&gt; deset ili više nasumičnih znakova&lt;/b&gt;, ili &lt;b&gt;osam ili više reči&lt;/b&gt;.</translation>
-    </message>
-    <message>
         <source>Encrypt wallet</source>
         <translation>Šifrujte novčanik</translation>
     </message>
@@ -158,10 +150,6 @@
     <message>
         <source>Change passphrase</source>
         <translation>Promenite pristupnu frazu</translation>
-    </message>
-    <message>
-        <source>Enter the old passphrase and new passphrase to the wallet.</source>
-        <translation>Unesite u novčanik staru pristupnu frazu i novu pristupnu frazu.</translation>
     </message>
     <message>
         <source>Confirm wallet encryption</source>
@@ -228,7 +216,7 @@
     </message>
 </context>
 <context>
-    <name>ZentoshiGUI</name>
+    <name>BitcoinGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Potpišite &amp;poruka...</translation>
@@ -322,8 +310,8 @@
         <translation>Ponovo obeležavam blokove na disku...</translation>
     </message>
     <message>
-        <source>Send coins to a Zentoshi address</source>
-        <translation>Pošalji novčiće na Zentoshi adresu</translation>
+        <source>Send coins to a Bitcoin address</source>
+        <translation>Pošalji novčiće na Bitcoin adresu</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -346,10 +334,6 @@
         <translation>&amp;Proveri poruku...</translation>
     </message>
     <message>
-        <source>Zentoshi</source>
-        <translation>Zentoshi</translation>
-    </message>
-    <message>
         <source>&amp;Send</source>
         <translation>&amp;Pošalji</translation>
     </message>
@@ -370,12 +354,12 @@
         <translation>Enkriptuj privatne ključeve novčanika</translation>
     </message>
     <message>
-        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
-        <translation>Potpišite poruke sa svojim Zentoshi adresama da biste dokazali njihovo vlasništvo</translation>
+        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
+        <translation>Potpišite poruke sa svojim Bitcoin adresama da biste dokazali njihovo vlasništvo</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
-        <translation>Proverite poruke da biste utvrdili sa kojim Zentoshi adresama su potpisane</translation>
+        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
+        <translation>Proverite poruke da biste utvrdili sa kojim Bitcoin adresama su potpisane</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -394,8 +378,8 @@
         <translation>Alatke za tabove</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
-        <translation>Zatražite plaćanje (generiše QR kodove i zentoshi: URI-e)</translation>
+        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
+        <translation>Zatražite plaćanje (generiše QR kodove i bitcoin: URI-e)</translation>
     </message>
     <message>
         <source>Error</source>
@@ -476,6 +460,12 @@
     </message>
     </context>
 <context>
+    <name>CreateWalletActivity</name>
+    </context>
+<context>
+    <name>CreateWalletDialog</name>
+    </context>
+<context>
     <name>EditAddressDialog</name>
     <message>
         <source>Edit Address</source>
@@ -499,8 +489,8 @@
 <context>
     <name>Intro</name>
     <message>
-        <source>Zentoshi</source>
-        <translation>Zentoshi</translation>
+        <source>Bitcoin</source>
+        <translation>Bitcoin</translation>
     </message>
     <message>
         <source>Error</source>
@@ -512,6 +502,9 @@
     </context>
 <context>
     <name>OpenURIDialog</name>
+    </context>
+<context>
+    <name>OpenWalletActivity</name>
     </context>
 <context>
     <name>OptionsDialog</name>
@@ -541,9 +534,6 @@
     </message>
 </context>
 <context>
-    <name>QObject::QObject</name>
-    </context>
-<context>
     <name>QRImageWidget</name>
     </context>
 <context>
@@ -559,6 +549,10 @@
         <translation>Adresa</translation>
     </message>
     <message>
+        <source>Amount</source>
+        <translation>Kolicina</translation>
+    </message>
+    <message>
         <source>Label</source>
         <translation>Oznaka</translation>
     </message>
@@ -566,9 +560,13 @@
         <source>Wallet</source>
         <translation>Novčanik</translation>
     </message>
-    </context>
+</context>
 <context>
     <name>RecentRequestsTableModel</name>
+    <message>
+        <source>Date</source>
+        <translation>Datum</translation>
+    </message>
     <message>
         <source>Label</source>
         <translation>Oznaka</translation>
@@ -618,19 +616,36 @@
     <name>SignVerifyMessageDialog</name>
     </context>
 <context>
-    <name>SplashScreen</name>
-    </context>
-<context>
     <name>TrafficGraphWidget</name>
     </context>
 <context>
     <name>TransactionDesc</name>
+    <message>
+        <source>Date</source>
+        <translation>Datum</translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation>nepoznato</translation>
+    </message>
+    <message>
+        <source>Transaction fee</source>
+        <translation>Taksa transakcije</translation>
+    </message>
+    <message>
+        <source>Amount</source>
+        <translation>Kolicina</translation>
+    </message>
     </context>
 <context>
     <name>TransactionDescDialog</name>
     </context>
 <context>
     <name>TransactionTableModel</name>
+    <message>
+        <source>Date</source>
+        <translation>Datum</translation>
+    </message>
     <message>
         <source>Label</source>
         <translation>Oznaka</translation>
@@ -644,7 +659,11 @@
     <name>TransactionView</name>
     <message>
         <source>Comma separated file (*.csv)</source>
-        <translation>Zarezom odvojena datoteka (*.csv) </translation>
+        <translation>Zarezom odvojena datoteka (*.csv)</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation>Datum</translation>
     </message>
     <message>
         <source>Label</source>
@@ -673,21 +692,17 @@
     </context>
 <context>
     <name>WalletView</name>
+    <message>
+        <source>&amp;Export</source>
+        <translation>&amp;Izvoz</translation>
+    </message>
+    <message>
+        <source>Export the data in the current tab to a file</source>
+        <translation>Izvoz podataka iz trenutne kartice u datoteku</translation>
+    </message>
     </context>
 <context>
-    <name>zentoshi-core</name>
-    <message>
-        <source>Zentoshi Core</source>
-        <translation>Zentoshi Core</translation>
-    </message>
-    <message>
-        <source>Information</source>
-        <translation>Informacije</translation>
-    </message>
-    <message>
-        <source>Warning</source>
-        <translation>Upozorenje</translation>
-    </message>
+    <name>bitcoin-core</name>
     <message>
         <source>Insufficient funds</source>
         <translation>Nedovoljno sredstava</translation>
@@ -707,10 +722,6 @@
     <message>
         <source>Done loading</source>
         <translation>Zavrseno ucitavanje</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation>Greska</translation>
     </message>
 </context>
 </TS>
