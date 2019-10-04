@@ -204,6 +204,18 @@
         <translation>Deine Wallet ist jetzt verschlüsselt.</translation>
     </message>
     <message>
+        <source>Wallet to be encrypted</source>
+        <translation>Wallet zu verschlüsseln</translation>
+    </message>
+    <message>
+        <source>Your wallet is about to be encrypted. </source>
+        <translation>Wallet wird verschlüsselt.</translation>
+    </message>
+    <message>
+        <source>Your wallet is now encrypted. </source>
+        <translation>Deine Wallet ist jetzt verschlüsselt.</translation>
+    </message>
+    <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
         <translation>WICHTIG: Alle vorherigen Wallet-Backups sollten durch die neu erzeugte, verschlüsselte Wallet ersetzt werden. Aus Sicherheitsgründen werden vorherige Backups der unverschlüsselten Wallet nutzlos, sobald Sie die neue, verschlüsselte Wallet verwenden.</translation>
     </message>
@@ -825,10 +837,6 @@
     <message>
         <source>Disable Private Keys</source>
         <translation>Private Keys deaktivieren</translation>
-    </message>
-    <message>
-        <source>Make a blank wallet. Blank wallets do not initially have private keys or scripts. Private keys and addresses can be imported, or an HD seed can be set, at a later time.</source>
-        <translation>Erzeugt ein leeres Wallet. Leere Wallets haben zu Anfang keine privaten Schlüssel oder Scripte. Private Schlüssel oder Adressen können importiert werden, ebenso können jetzt oder später HD-Seeds gesetzt werden.</translation>
     </message>
     <message>
         <source>Make Blank Wallet</source>
