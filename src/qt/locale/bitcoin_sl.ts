@@ -188,10 +188,6 @@
         <translation>Vnesite staro geslo in novo geslo za denarnico.</translation>
     </message>
     <message>
-        <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Pomnite, da šifriranje denarnice ne more preprečiti kraje bitcoinov preko morebitnih virusov na vašem računalniku.</translation>
-    </message>
-    <message>
         <source>Wallet to be encrypted</source>
         <translation>Denarnica, ki bo zašifrirana</translation>
     </message>
@@ -817,10 +813,6 @@
     <message>
         <source>Encrypt Wallet</source>
         <translation>Šifriraj denarnico</translation>
-    </message>
-    <message>
-        <source>Disable private keys for this wallet. Wallets with private keys disabled will have no private keys and cannot have an HD seed or imported private keys. This is ideal for watch-only wallets.</source>
-        <translation>Onemogoči zasebne ključe za to denarnico. Denarnice z onemogočenimi zasebnimi ključi ne bodo imele zasebnih ključev in ne morejo imeti semen HD ali uvoženih zasebnih ključev. To je idealno za "watch-only" denarnice.</translation>
     </message>
     <message>
         <source>Disable Private Keys</source>
