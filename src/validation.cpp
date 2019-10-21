@@ -1841,6 +1841,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
            (*pindex->phashBlock == block.GetHash()));
     int64_t nTimeStart = GetTimeMicros();
 
+    if (pindex->nStakeModifier == 0 && pindex->nStakeModifierChecksum == 0 && !AcceptProofOfStakeBlock(block, pindex))
+        return error("%s: failed PoS check %s", __func__, FormatStateMessage(state));
+
     // Check it again in case a previous version let a bad block in
     // NOTE: We don't currently (re-)invoke ContextualCheckBlock() or
     // ContextualCheckBlockHeader() here. This means that if we add a new
@@ -3086,52 +3089,53 @@ void ResetBlockFailureFlags(CBlockIndex *pindex) {
     return g_chainstate.ResetBlockFailureFlags(pindex);
 }
 
-static void AcceptProofOfStakeBlock(const CBlock &block, CBlockIndex *pindexNew)
+bool AcceptProofOfStakeBlock(const CBlock &block, CBlockIndex *pindex)
 {
-    if(!pindexNew)
-        return;
+    if(!pindex)
+        return false;
 
     if (block.IsProofOfStake()) {
-        pindexNew->SetProofOfStake();
-        pindexNew->prevoutStake = block.vtx[1]->vin[0].prevout;
-        pindexNew->nStakeTime = block.nTime;
+        pindex->SetProofOfStake();
+        pindex->prevoutStake = block.vtx[1]->vin[0].prevout;
+        pindex->nStakeTime = block.nTime;
     } else {
-        pindexNew->prevoutStake.SetNull();
-        pindexNew->nStakeTime = 0;
+        pindex->prevoutStake.SetNull();
+        pindex->nStakeTime = 0;
     }
 
-    //update previous block pointer
-    //        pindexNew->pprev->pnext = pindexNew;
-
     // ppcoin: compute chain trust score
-    pindexNew->bnChainTrust = (pindexNew->pprev ? pindexNew->pprev->bnChainTrust : ArithToUint256(0 + pindexNew->GetBlockTrust()));
+    pindex->bnChainTrust = (pindex->pprev ? pindex->pprev->bnChainTrust : ArithToUint256(0 + pindex->GetBlockTrust()));
 
     // ppcoin: compute stake entropy bit for stake modifier
-    if (!pindexNew->SetStakeEntropyBit(pindexNew->GetStakeEntropyBit()))
+    if (!pindex->SetStakeEntropyBit(pindex->GetStakeEntropyBit())) {
         LogPrintf("AcceptProofOfStakeBlock() : SetStakeEntropyBit() failed \n");
+        return false;
+    }
 
     uint256 hash = block.GetHash();
 
     // ppcoin: record proof-of-stake hash value
-    if (pindexNew->IsProofOfStake()) {
+    if (pindex->IsProofOfStake()) {
         if (!mapProofOfStake.count(hash))
             LogPrintf("AcceptProofOfStakeBlock() : hashProofOfStake not found in map \n");
-        pindexNew->hashProofOfStake = mapProofOfStake[hash];
+        pindex->hashProofOfStake = mapProofOfStake[hash];
     }
 
     // ppcoin: compute stake modifier
     uint64_t nStakeModifier = 0;
     bool fGeneratedStakeModifier = false;
-    if (!ComputeNextStakeModifier(pindexNew, nStakeModifier, fGeneratedStakeModifier))
+    if (!ComputeNextStakeModifier(pindex, nStakeModifier, fGeneratedStakeModifier))
         LogPrintf("AcceptProofOfStakeBlock() : ComputeNextStakeModifier() failed \n");
-    pindexNew->SetStakeModifier(nStakeModifier, fGeneratedStakeModifier);
-    pindexNew->nStakeModifierChecksum = GetStakeModifierChecksum(pindexNew);
-    if (!CheckStakeModifierCheckpoints(pindexNew->nHeight, pindexNew->nStakeModifierChecksum)) {
-        LogPrintf("AcceptProofOfStakeBlock() : Rejected by stake modifier checkpoint height=%d, modifier=%s \n", pindexNew->nHeight, std::to_string(nStakeModifier));
-        LogPrintf("pindexNew->nStakeModifierChecksum = %08x\n", pindexNew->nStakeModifierChecksum);
+    pindex->SetStakeModifier(nStakeModifier, fGeneratedStakeModifier);
+    pindex->nStakeModifierChecksum = GetStakeModifierChecksum(pindex);
+    if (!CheckStakeModifierCheckpoints(pindex->nHeight, pindex->nStakeModifierChecksum)) {
+        LogPrintf("AcceptProofOfStakeBlock() : Rejected by stake modifier checkpoint height=%d, modifier=%s \n", pindex->nHeight, std::to_string(nStakeModifier));
+        LogPrintf("pindex->nStakeModifierChecksum = %08x\n", pindex->nStakeModifierChecksum);
+        return false;
     }
+    setDirtyBlockIndex.insert(pindex);
 
-    setDirtyBlockIndex.insert(pindexNew);
+    return false;
 }
 
 CBlockIndex* CChainState::AddToBlockIndex(const CBlockHeader& block, bool fProofOfStake)
@@ -3897,7 +3901,13 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
         return error("%s: %s", __func__, FormatStateMessage(state));
     }
 
-    AcceptProofOfStakeBlock(block, pindex);
+    // Check PoS
+    bool fCheckPoS = block.IsProofOfStake();
+    if (fCheckPoS && !AcceptProofOfStakeBlock(block, pindex)) {
+        pindex->nStatus |= BLOCK_FAILED_VALID;
+        setDirtyBlockIndex.insert(pindex);
+        return state.DoS(100, false, REJECT_INVALID, "bad-pos", false, "proof of stake is incorrect");
+    }
 
     // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
     // (but if it does not build on our best tip, let the SendMessages loop relay it)

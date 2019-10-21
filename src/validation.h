@@ -503,6 +503,8 @@ int GetSpendHeight(const CCoinsViewCache& inputs);
 
 extern VersionBitsCache versionbitscache;
 
+bool AcceptProofOfStakeBlock(const CBlock &block, CBlockIndex *pindex);
+
 /**
  * Determine what nVersion a new block should use.
  */
