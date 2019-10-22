@@ -1841,9 +1841,6 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
            (*pindex->phashBlock == block.GetHash()));
     int64_t nTimeStart = GetTimeMicros();
 
-    if (pindex->nStakeModifier == 0 && pindex->nStakeModifierChecksum == 0 && !AcceptProofOfStakeBlock(block, pindex))
-        return error("%s: failed PoS check %s", __func__, FormatStateMessage(state));
-
     // Check it again in case a previous version let a bad block in
     // NOTE: We don't currently (re-)invoke ContextualCheckBlock() or
     // ContextualCheckBlockHeader() here. This means that if we add a new
@@ -1971,7 +1968,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         }
     }
 
-    /// DASH: Check superblock start
+    /// ZENTOSHI: Check superblock start
 
     // make sure old budget is the real one
     if (pindex->nHeight == chainparams.GetConsensus().nSuperblockStartBlock &&
@@ -1980,7 +1977,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             return state.DoS(100, error("ConnectBlock(): invalid superblock start"),
                              REJECT_INVALID, "bad-sb-start");
 
-    /// END DASH
+    /// END ZENTOSHI
 
     // BIP16 didn't become active until Apr 1 2012
     int64_t nBIP16SwitchTime = 1333238400;
@@ -2113,7 +2110,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                      pindex->GetBlockHash().ToString(), FormatStateMessage(state));
     }
 
-    // DASH
+    // ZENTOSHI
 
     // It's possible that we simply don't have enough data and this could fail
     // (i.e. block itself could be a correct one and we need to store it),
@@ -2121,7 +2118,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     // the peer who sent us this block is missing some data and wasn't able
     // to recognize that block is actually invalid.
 
-    // DASH : CHECK TRANSACTIONS FOR INSTANTSEND
+    // ZENTOSHI : CHECK TRANSACTIONS FOR INSTANTSEND
 
     if (sporkManager.IsSporkActive(SPORK_3_INSTANTSEND_BLOCK_FILTERING)) {
         // Require other nodes to comply, send them some data in case they are missing it.
@@ -2139,21 +2136,21 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                 // The node which relayed this should switch to correct chain.
                 // TODO: relay instantsend data/proof.
                 LOCK(cs_main);
-                return state.DoS(10, error("ConnectBlock(DASH): transaction %s conflicts with transaction lock %s", tx->GetHash().ToString(), conflictLock->txid.ToString()),
+                return state.DoS(10, error("ConnectBlock(ZENTOSHI): transaction %s conflicts with transaction lock %s", tx->GetHash().ToString(), conflictLock->txid.ToString()),
                                  REJECT_INVALID, "conflict-tx-lock");
             }
         }
     } else {
-        LogPrintf("ConnectBlock(DASH): spork is off, skipping transaction locking checks\n");
+        LogPrintf("ConnectBlock(ZENTOSHI): spork is off, skipping transaction locking checks\n");
     }
 
-    // Zentoshi : MODIFIED TO CHECK MASTERNODE PAYMENTS AND SUPERBLOCKS
+    // ZENTOSHI : CHECK MASTERNODE PAYMENTS AND SUPERBLOCKS
 
     // TODO: resync data (both ways?) and try to reprocess this block later.
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->pprev->nHeight, chainparams.GetConsensus());
     std::string strError = "";
     if (!IsBlockValueValid(block, pindex->nHeight, blockReward, strError)) {
-        return state.DoS(0, error("ConnectBlock(DASH): %s", strError), REJECT_INVALID, "bad-cb-amount");
+        return state.DoS(0, error("ConnectBlock(ZENTOSHI): %s", strError), REJECT_INVALID, "bad-cb-amount");
     }
 
     bool isProofOfStake = !block.IsProofOfWork();
@@ -2161,14 +2158,14 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
     if (!IsBlockPayeeValid(*block.vtx[0], pindex->nHeight, blockReward)) {
         mapRejectedBlocks.insert(std::make_pair(block.GetHash(), GetTime()));
-        return state.DoS(0, error("ConnectBlock(DASH): couldn't find masternode or superblock payments"),
+        return state.DoS(0, error("ConnectBlock(ZENTOSHI): couldn't find masternode or superblock payments"),
                                 REJECT_INVALID, "bad-cb-payee");
     }
 
     int64_t nTime5 = GetTimeMicros(); nTimePayeeAndSpecial += nTime5 - nTime4;
     LogPrint(BCLog::PERF, "    - Payee and special txes: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimePayeeAndSpecial * 0.000001);
 
-    // END Zentoshi
+    // END ZENTOSHI
 
     if (fJustCheck)
         return true;
@@ -3089,55 +3086,6 @@ void ResetBlockFailureFlags(CBlockIndex *pindex) {
     return g_chainstate.ResetBlockFailureFlags(pindex);
 }
 
-bool AcceptProofOfStakeBlock(const CBlock &block, CBlockIndex *pindex)
-{
-    if(!pindex)
-        return false;
-
-    if (block.IsProofOfStake()) {
-        pindex->SetProofOfStake();
-        pindex->prevoutStake = block.vtx[1]->vin[0].prevout;
-        pindex->nStakeTime = block.nTime;
-    } else {
-        pindex->prevoutStake.SetNull();
-        pindex->nStakeTime = 0;
-    }
-
-    // ppcoin: compute chain trust score
-    pindex->bnChainTrust = (pindex->pprev ? pindex->pprev->bnChainTrust : ArithToUint256(0 + pindex->GetBlockTrust()));
-
-    // ppcoin: compute stake entropy bit for stake modifier
-    if (!pindex->SetStakeEntropyBit(pindex->GetStakeEntropyBit())) {
-        LogPrintf("AcceptProofOfStakeBlock() : SetStakeEntropyBit() failed \n");
-        return false;
-    }
-
-    uint256 hash = block.GetHash();
-
-    // ppcoin: record proof-of-stake hash value
-    if (pindex->IsProofOfStake()) {
-        if (!mapProofOfStake.count(hash))
-            LogPrintf("AcceptProofOfStakeBlock() : hashProofOfStake not found in map \n");
-        pindex->hashProofOfStake = mapProofOfStake[hash];
-    }
-
-    // ppcoin: compute stake modifier
-    uint64_t nStakeModifier = 0;
-    bool fGeneratedStakeModifier = false;
-    if (!ComputeNextStakeModifier(pindex, nStakeModifier, fGeneratedStakeModifier))
-        LogPrintf("AcceptProofOfStakeBlock() : ComputeNextStakeModifier() failed \n");
-    pindex->SetStakeModifier(nStakeModifier, fGeneratedStakeModifier);
-    pindex->nStakeModifierChecksum = GetStakeModifierChecksum(pindex);
-    if (!CheckStakeModifierCheckpoints(pindex->nHeight, pindex->nStakeModifierChecksum)) {
-        LogPrintf("AcceptProofOfStakeBlock() : Rejected by stake modifier checkpoint height=%d, modifier=%s \n", pindex->nHeight, std::to_string(nStakeModifier));
-        LogPrintf("pindex->nStakeModifierChecksum = %08x\n", pindex->nStakeModifierChecksum);
-        return false;
-    }
-    setDirtyBlockIndex.insert(pindex);
-
-    return false;
-}
-
 CBlockIndex* CChainState::AddToBlockIndex(const CBlockHeader& block, bool fProofOfStake)
 {
     AssertLockHeld(cs_main);
@@ -3149,33 +3097,42 @@ CBlockIndex* CChainState::AddToBlockIndex(const CBlockHeader& block, bool fProof
         return it->second;
 
     // Construct new block index object
-    CBlockIndex* pindexNew = new CBlockIndex(block);
+    CBlockIndex* pindex = new CBlockIndex(block);
+
     // We assign the sequence id to blocks only when the full data is available,
     // to avoid miners withholding blocks but broadcasting headers, to get a
     // competitive advantage.
-    pindexNew->nSequenceId = 0;
-    BlockMap::iterator mi = mapBlockIndex.insert(std::make_pair(hash, pindexNew)).first;
-    pindexNew->phashBlock = &((*mi).first);
+    pindex->nSequenceId = 0;
+    BlockMap::iterator mi = mapBlockIndex.insert(std::make_pair(hash, pindex)).first;
+    pindex->phashBlock = &((*mi).first);
     BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (miPrev != mapBlockIndex.end())
     {
-        pindexNew->pprev = (*miPrev).second;
-        pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
-        pindexNew->BuildSkip();
+        pindex->pprev = (*miPrev).second;
+        pindex->nHeight = pindex->pprev->nHeight + 1;
+        pindex->BuildSkip();
     }
-    pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
 
-    if (fProofOfStake)
-        pindexNew->SetProofOfStake();
+    if (fProofOfStake) {
+        pindex->SetProofOfStake();
+        if (!pindex->SetStakeEntropyBit(pindex->GetStakeEntropyBit()))
+            LogPrintf("AddToBlockIndex() : SetStakeEntropyBit() failed \n");
+    }
 
-    pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
-    pindexNew->RaiseValidity(BLOCK_VALID_TREE);
-    if (pindexBestHeader == nullptr || pindexBestHeader->nChainWork < pindexNew->nChainWork)
-        pindexBestHeader = pindexNew;
+    pindex->nTimeMax = (pindex->pprev ? std::max(pindex->pprev->nTimeMax, pindex->nTime) : pindex->nTime);
+    pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
+    pindex->RaiseValidity(BLOCK_VALID_TREE);
+    if (pindexBestHeader == nullptr || pindexBestHeader->nChainWork < pindex->nChainWork)
+        pindexBestHeader = pindex;
 
-    setDirtyBlockIndex.insert(pindexNew);
+    pindex->nStakeModifierChecksum = GetStakeModifierChecksum(pindex);
+    if (!CheckStakeModifierCheckpoints(pindex->nHeight, pindex->nStakeModifierChecksum)) {
+        LogPrintf("AddToBlockIndex() : Rejected by stake modifier checkpoint height=%d, modifier=%s \n", pindex->nHeight, std::to_string(pindex->nStakeModifier));
+        LogPrintf("pindex->nStakeModifierChecksum = %08x\n", pindex->nStakeModifierChecksum);
+    }
 
-    return pindexNew;
+    setDirtyBlockIndex.insert(pindex);
+    return pindex;
 }
 
 /** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
@@ -3770,6 +3727,7 @@ bool CChainState::AcceptBlockHeader(const CBlockHeader& block, CValidationState&
             return state.DoS(10, error("%s: header %s conflicts with chainlock", __func__, hash.ToString()), REJECT_INVALID, "bad-chainlock");
         }
     }
+
     if (pindex == nullptr)
         pindex = AddToBlockIndex(block);
 
@@ -3901,12 +3859,19 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
         return error("%s: %s", __func__, FormatStateMessage(state));
     }
 
-    // Check PoS
-    bool fCheckPoS = block.IsProofOfStake();
-    if (fCheckPoS && !AcceptProofOfStakeBlock(block, pindex)) {
-        pindex->nStatus |= BLOCK_FAILED_VALID;
-        setDirtyBlockIndex.insert(pindex);
-        return state.DoS(100, false, REJECT_INVALID, "bad-pos", false, "proof of stake is incorrect");
+    // test if hashproofofstake matches
+    uint256 hashProofOfStake = uint256();
+    if (block.IsProofOfStake())
+    {
+	if(block.GetHash() == hashProofOfStake)
+	   return state.DoS(100, error("CheckBlock(): invalid proof of stake block\n"));
+
+        if(!CheckProofOfStake(block, hashProofOfStake))
+           return state.DoS(100, error("CheckBlock(): check proof-of-stake failed for block %s\n", hashProofOfStake.ToString().c_str()));
+
+        uint256 hash = block.GetHash();
+        if(!mapProofOfStake.count(hash)) // add to mapProofOfStake
+            mapProofOfStake.insert(std::make_pair(hash, hashProofOfStake));
     }
 
     // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
@@ -4856,7 +4821,6 @@ bool CChainState::LoadGenesisBlock(const CChainParams& chainparams)
         if (blockPos.IsNull())
             return error("%s: writing genesis block to disk failed", __func__);
         CBlockIndex *pindex = AddToBlockIndex(block);
-        AcceptProofOfStakeBlock(block, pindex);
         CValidationState state;
         ReceivedBlockTransactions(block, pindex, blockPos, chainparams.GetConsensus());
     } catch (const std::runtime_error& e) {

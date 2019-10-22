@@ -36,7 +36,7 @@ unsigned int getIntervalVersion(bool fTestNet)
 
 // Hard checkpoints of stake modifiers to ensure they are deterministic
 static std::map<int, unsigned int> mapStakeModifierCheckpoints =
-        boost::assign::map_list_of(0, 0x0e00670b);
+    boost::assign::map_list_of(0, 0x0e00670b);
 
 // Get time weight
 int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd)
@@ -220,7 +220,7 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexCurrent, uint64_t &nStake
     return true;
 }
 
-static bool GetKernelStakeModifierV03(uint256 hashBlockFrom, unsigned int nTimeTx, uint64_t& nStakeModifier, int& nStakeModifierHeight, int64_t& nStakeModifierTime, bool fPrintProofOfStake)
+static bool GetKernelStakeModifier(uint256 hashBlockFrom, unsigned int nTimeTx, uint64_t& nStakeModifier, int& nStakeModifierHeight, int64_t& nStakeModifierTime, bool fPrintProofOfStake)
 {
     nStakeModifier = 0;
     if (!mapBlockIndex.count(hashBlockFrom))
@@ -236,21 +236,16 @@ static bool GetKernelStakeModifierV03(uint256 hashBlockFrom, unsigned int nTimeT
     // loop to find the stake modifier later by a selection interval
     while (nStakeModifierTime < pindexFrom->GetBlockTime() + nStakeModifierSelectionInterval) {
         if (!pindexNext) {
-            // Should never happen
-            if(Params().NetworkIDString() == CBaseChainParams::TESTNET)
-            {
+            if(Params().NetworkIDString() == CBaseChainParams::TESTNET) {
                 nStakeModifierHeight = pindexFrom->nHeight;
                 nStakeModifierTime = pindexFrom->GetBlockTime();
                 if(pindex->GeneratedStakeModifier())
                     nStakeModifier = pindex->nStakeModifier;
                 return true;
-            }
-            else
-            {
+            } else {
                 return false;
             }
         }
-
         pindex = pindexNext;
         pindexNext = chainActive[pindexNext->nHeight + 1];
         if (pindex->GeneratedStakeModifier()) {
@@ -260,12 +255,6 @@ static bool GetKernelStakeModifierV03(uint256 hashBlockFrom, unsigned int nTimeT
     }
     nStakeModifier = pindex->nStakeModifier;
     return true;
-}
-
-// Get the stake modifier specified by the protocol to hash for a stake kernel
-static bool GetKernelStakeModifier(uint256 hashBlockFrom, unsigned int nTimeTx, uint64_t& nStakeModifier, int& nStakeModifierHeight, int64_t& nStakeModifierTime, bool fPrintProofOfStake)
-{
-    return GetKernelStakeModifierV03(hashBlockFrom, nTimeTx, nStakeModifier, nStakeModifierHeight, nStakeModifierTime, fPrintProofOfStake);
 }
 
 uint256 stakeHash(unsigned int nTimeTx, CDataStream ss, unsigned int prevoutIndex, uint256 prevoutHash, unsigned int nTimeBlockFrom)

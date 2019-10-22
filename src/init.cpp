@@ -138,7 +138,7 @@ static const char* FEE_ESTIMATES_FILENAME="fee_estimates.dat";
 /**
  * The PID file facilities.
  */
-static const char* BITCOIN_PID_FILENAME = "bitcoind.pid";
+static const char* BITCOIN_PID_FILENAME = "zentoshid.pid";
 
 static fs::path GetPidFile()
 {
@@ -232,6 +232,7 @@ void Interrupt()
     InterruptREST();
     InterruptTorControl();
     InterruptMapPort();
+    llmq::InterruptLLMQSystem();
     if (g_connman)
         g_connman->Interrupt();
 }
@@ -630,6 +631,7 @@ void SetupServerArgs()
     gArgs.AddArg("-mnconflock=<n>", "Lock masternodes from masternode configuration file (default: %u)", false, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-masternodeprivkey=<n>", "Set the masternode private key", false, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-clearmncache", "Clears mncache on startup", false, OptionsCategory::MASTERNODE);
+    gArgs.AddArg("-watchquorums=<n>", strprintf("Watch and validate quorum communication (default: %u)", llmq::DEFAULT_WATCH_QUORUMS), false, OptionsCategory::MASTERNODE);
 
 #if HAVE_DECL_DAEMON
     gArgs.AddArg("-daemon", "Run in the background as a daemon and accept commands", false, OptionsCategory::OPTIONS);
@@ -1499,16 +1501,31 @@ bool AppInitMain(InitInterfaces& interfaces)
             threadGroup.create_thread(&ThreadScriptCheck);
     }
 
-    if (gArgs.IsArgSet("-sporkkey")) // spork priv key
-    {
+    std::vector<std::string> vSporkAddresses;
+    if (!gArgs.GetArgs("-sporkaddr").empty())
+        vSporkAddresses = gArgs.GetArgs("-sporkaddr");
+    else
+        vSporkAddresses = Params().SporkAddresses();
+
+    for (const auto& address: vSporkAddresses) {
+        if (!sporkManager.SetSporkAddress(address)) {
+            LogPrintf("Invalid spork address specified with -sporkaddr\n");
+            return false;
+        }
     }
 
     int minsporkkeys = gArgs.GetArg("-minsporkkeys", Params().MinSporkKeys());
     if (!sporkManager.SetMinSporkKeys(minsporkkeys)) {
+        LogPrintf("Invalid minimum number of spork signers specified with -minsporkkeys\n");
+        return false;
     }
 
 
     if (gArgs.IsArgSet("-sporkkey")) { // spork priv key
+        if (!sporkManager.SetPrivKey(gArgs.GetArg("-sporkkey", ""))) {
+            LogPrintf("Unable to sign spork message, wrong key?\n");
+            return false;
+        }
     }
 
     // Start the lightweight task scheduler thread
@@ -1548,15 +1565,6 @@ bool AppInitMain(InitInterfaces& interfaces)
             return InitError(_("Unable to start HTTP server. See debug log for details."));
     }
 
-#if defined(USE_SSE2)
-    std::string sse2detect = scrypt_detect_sse2();
-    LogPrintf("%s\n", sse2detect);
-#endif
-
-#if defined(USE_SSE2)
-    scrypt_detect_sse2();
-#endif
-
     // ********************************************************* Step 5: verify wallet database integrity
     for (const auto& client : interfaces.chain_clients) {
         if (!client->verify()) {
@@ -1574,7 +1582,6 @@ bool AppInitMain(InitInterfaces& interfaces)
     g_banman = MakeUnique<BanMan>(GetDataDir() / "banlist.dat", &uiInterface, gArgs.GetArg("-bantime", DEFAULT_MISBEHAVING_BANTIME));
     assert(!g_connman);
     g_connman = std::unique_ptr<CConnman>(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()), GetRand(std::numeric_limits<uint64_t>::max())));
-    CConnman& connman = *g_connman;
 
     peerLogic.reset(new PeerLogicValidation(g_connman.get(), g_banman.get(), scheduler, gArgs.GetBoolArg("-enablebip61", DEFAULT_ENABLE_BIP61)));
     RegisterValidationInterface(peerLogic.get());
@@ -1675,7 +1682,7 @@ bool AppInitMain(InitInterfaces& interfaces)
     uint64_t nMaxOutboundLimit = 0; //unlimited unless -maxuploadtarget is set
     uint64_t nMaxOutboundTimeframe = MAX_UPLOAD_TIMEFRAME;
 
-    pdsNotificationInterface = new CDSNotificationInterface(connman);
+    pdsNotificationInterface = new CDSNotificationInterface(*g_connman.get());
     RegisterValidationInterface(pdsNotificationInterface);
 
     if (gArgs.IsArgSet("-maxuploadtarget")) {
@@ -1815,6 +1822,9 @@ bool AppInitMain(InitInterfaces& interfaces)
                     strLoadError = _("Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.");
                     break;
                 }
+
+                // The on-disk coinsdb is now in a good state, create the cache
+                pcoinsTip.reset(new CCoinsViewCache(pcoinscatcher.get()));
 
                 is_coinsview_empty = fReset || fReindexChainState || pcoinsTip->GetBestBlock().IsNull();
                 if (!is_coinsview_empty) {
@@ -1984,11 +1994,9 @@ bool AppInitMain(InitInterfaces& interfaces)
 
     // ********************************************************* Step 11a: setup Masternode related stuff
     fMasternodeMode = gArgs.GetBoolArg("-masternode", false);
-    // TODO: masternode should have no wallet
 
-    if(fLiteMode && fMasternodeMode) {
+    if(fLiteMode && fMasternodeMode)
         return InitError(_("You can not start a masternode in lite mode."));
-    }
 
     if(fMasternodeMode) {
         LogPrintf("MASTERNODE:\n");
@@ -2014,12 +2022,10 @@ bool AppInitMain(InitInterfaces& interfaces)
         RegisterValidationInterface(activeMasternodeManager);
     }
 
-    if (activeMasternodeInfo.blsKeyOperator == nullptr) {
+    if (activeMasternodeInfo.blsKeyOperator == nullptr)
         activeMasternodeInfo.blsKeyOperator = std::make_unique<CBLSSecretKey>();
-    }
-    if (activeMasternodeInfo.blsPubKeyOperator == nullptr) {
+    if (activeMasternodeInfo.blsPubKeyOperator == nullptr)
         activeMasternodeInfo.blsPubKeyOperator = std::make_unique<CBLSPublicKey>();
-    }
 
     // ********************************************************* Step 11b: setup PrivateSend
 
@@ -2200,7 +2206,7 @@ bool AppInitMain(InitInterfaces& interfaces)
 
     #ifdef ENABLE_WALLET
     if(gArgs.GetBoolArg("-staking", true))
-        threadGroup.create_thread(std::bind(&ThreadStakeMinter, boost::ref(chainparams), boost::ref(connman), GetWallets().front()));
+        threadGroup.create_thread(std::bind(&ThreadStakeMinter, boost::ref(chainparams), boost::ref(*g_connman.get()), GetWallets().front()));
     #endif
 
     scheduler.scheduleEvery([]{

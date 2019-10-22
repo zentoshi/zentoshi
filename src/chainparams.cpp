@@ -275,7 +275,7 @@ public:
           genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
                 if (nNonce % 128 == 0) printf("\r%08x", nNonce);
         }
-        printf("%s\n", genesis.ToString().c_str());
+        printf("\n%s\n", genesis.ToString().c_str());
 
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -313,14 +313,14 @@ public:
         nPoolMinParticipants = 3;
         nPoolMaxParticipants = 5;
         nFulfilledRequestExpireTime = 60*60;
-        vSporkAddresses = {"Xgtyuk76vhuFW2iT7UAiHgNdWXCf3J34wh"};
+        vSporkAddresses = {"168VtLtWux9sHM1XzXXTsR6RrTvGRHVcU5"};
         nMinSporkKeys = 1;
         fBIP9CheckMasternodesUpgraded = true;
         consensus.fLLMQAllowDummyCommitments = false;
 
         checkpointData = {
             {
-                { 0, uint256S("") },
+                { 0, consensus.hashGenesisBlock },
             }
         };
 
