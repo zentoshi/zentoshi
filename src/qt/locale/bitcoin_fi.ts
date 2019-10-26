@@ -200,6 +200,10 @@
         <translation>Lompakkosi tulee kohta salatuksi.</translation>
     </message>
     <message>
+        <source>Your wallet is now encrypted. </source>
+        <translation>Lompakkosi on nyt salattu.</translation>
+    </message>
+    <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
         <translation>TÄRKEÄÄ: Kaikki tekemäsi vanhan lompakon varmuuskopiot pitäisi korvata uusilla suojatuilla varmuuskopioilla. Turvallisuussyistä edelliset varmuuskopiot muuttuvat turhiksi, kun aloitat uuden suojatun lompakon käytön.</translation>
     </message>

@@ -827,6 +827,10 @@
         <translation>Private Keys deaktivieren</translation>
     </message>
     <message>
+        <source>Make a blank wallet. Blank wallets do not initially have private keys or scripts. Private keys and addresses can be imported, or an HD seed can be set, at a later time.</source>
+        <translation>Erzeugt ein leeres Wallet. Leere Wallets haben zu Anfang keine privaten Schlüssel oder Scripte. Private Schlüssel oder Adressen können importiert werden, ebenso können jetzt oder später HD-Seeds gesetzt werden.</translation>
+    </message>
+    <message>
         <source>Make Blank Wallet</source>
         <translation>Eine leere Wallet erstellen</translation>
     </message>
