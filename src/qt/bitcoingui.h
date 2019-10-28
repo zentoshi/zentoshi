@@ -121,6 +121,8 @@ private:
     WalletFrame* walletFrame = nullptr;
 
     UnitDisplayStatusBarControl* unitDisplayControl = nullptr;
+    QLabel* labelChainLocksIcon = nullptr;
+    QLabel* labelQuorumIcon = nullptr;
     QLabel* labelStakingIcon = nullptr;
     QLabel* labelWalletEncryptionIcon = nullptr;
     QLabel* labelWalletHDStatusIcon = nullptr;
@@ -253,6 +255,8 @@ public Q_SLOTS:
     */
     void updateWalletStatus();
     void setStakingStatus();
+    void setChainLockStatus(bool status);
+    void setQuorumStatus(bool status);
 
 private:
     /** Set the encryption status as shown in the UI.

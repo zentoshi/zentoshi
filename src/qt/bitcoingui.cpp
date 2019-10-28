@@ -158,6 +158,8 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
     unitDisplayControl = new UnitDisplayStatusBarControl(platformStyle);
+    labelQuorumIcon = new QLabel();
+    labelChainLocksIcon = new QLabel();
     labelStakingIcon = new QLabel();
     labelWalletEncryptionIcon = new QLabel();
     labelWalletHDStatusIcon = new QLabel();
@@ -173,6 +175,10 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
         frameBlocksLayout->addWidget(labelWalletEncryptionIcon);
         frameBlocksLayout->addWidget(labelWalletHDStatusIcon);
     }
+    frameBlocksLayout->addWidget(labelQuorumIcon);
+    frameBlocksLayout->addStretch();
+    frameBlocksLayout->addWidget(labelChainLocksIcon);
+    frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelProxyIcon);
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(connectionsControl);
@@ -1439,6 +1445,30 @@ bool BitcoinGUI::handlePaymentRequest(const SendCoinsRecipient& recipient)
     return false;
 }
 
+void BitcoinGUI::setQuorumStatus(bool status)
+{
+    labelQuorumIcon->show();
+    if(status) {
+        labelQuorumIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/quorum_active").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+        labelQuorumIcon->setToolTip(tr("Quorums are active"));
+    } else {
+        labelQuorumIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/quorum_inactive").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+        labelQuorumIcon->setToolTip(tr("Quorums are inactive"));
+    }
+}
+
+void BitcoinGUI::setChainLockStatus(bool status)
+{
+    labelChainLocksIcon->show();
+    if(status) {
+        labelChainLocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/chainlocks_active").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+        labelChainLocksIcon->setToolTip(tr("Chainlocks are active"));
+    } else {
+        labelChainLocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/chainlocks_inactive").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+        labelChainLocksIcon->setToolTip(tr("Chainlocks are inactive"));
+    }
+}
+
 void BitcoinGUI::setHDStatus(bool privkeyDisabled, int hdEnabled)
 {
     labelWalletHDStatusIcon->setPixmap(platformStyle->SingleColorIcon(privkeyDisabled ? ":/icons/eye" : hdEnabled ? ":/icons/hd_enabled" : ":/icons/hd_disabled").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
@@ -1518,6 +1548,8 @@ void BitcoinGUI::updateWalletStatus()
     WalletModel * const walletModel = walletView->getWalletModel();
     setEncryptionStatus(walletModel->getEncryptionStatus());
     setHDStatus(walletModel->privateKeysDisabled(), walletModel->wallet().hdEnabled());
+    setQuorumStatus(sporkManager.GetSporkValue(SPORK_17_QUORUM_DKG_ENABLED));
+    setChainLockStatus(sporkManager.GetSporkValue(SPORK_19_CHAINLOCKS_ENABLED));
 }
 #endif // ENABLE_WALLET
 

@@ -59,6 +59,10 @@
         <file alias="staking_active">res/icons/staking_active.png</file>
         <file alias="staking_inactive">res/icons/staking_inactive.png</file>
         <file alias="privatesend">res/icons/privatesend.png</file>
+        <file alias="chainlocks_active">res/icons/chainlocks_active.png</file>
+        <file alias="chainlocks_inactive">res/icons/chainlocks_inactive.png</file>
+        <file alias="quorum_active">res/icons/quorum_active.png</file>
+        <file alias="quorum_inactive">res/icons/quorum_inactive.png</file>
     </qresource>
     <qresource prefix="/movies">
         <file alias="spinner-000">res/movies/spinner-000.png</file>

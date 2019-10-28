@@ -597,8 +597,6 @@ void static BitcoinMiner(const CChainParams& chainparams, CConnman& connman, boo
     while (true) {
         try {
 
-            MilliSleep(1000);
-
             // Throw an error if no script was provided.  This can happen
             // due to some internal error but also if the keypool is empty.
             // In the latter case, already the pointer is NULL.
