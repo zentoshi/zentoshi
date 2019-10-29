@@ -27,7 +27,7 @@
 #include <util/system.h>
 #include <validation.h>
 #include <validationinterface.h>
-#include <versionbits.h>
+#include <versionbitsinfo.h>
 #include <warnings.h>
 #include <wallet/wallet.h>
 
@@ -293,7 +293,7 @@ static UniValue BIP22ValidationResult(const CValidationState& state)
     return "valid?";
 }
 
-std::string gbt_vb_name(const Consensus::DeploymentPos pos) {
+static std::string gbt_vb_name(const Consensus::DeploymentPos pos) {
     const struct VBDeploymentInfo& vbinfo = VersionBitsDeploymentInfo[pos];
     std::string s = vbinfo.name;
     if (!vbinfo.gbt_force) {

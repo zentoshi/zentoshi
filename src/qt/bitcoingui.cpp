@@ -1548,8 +1548,8 @@ void BitcoinGUI::updateWalletStatus()
     WalletModel * const walletModel = walletView->getWalletModel();
     setEncryptionStatus(walletModel->getEncryptionStatus());
     setHDStatus(walletModel->privateKeysDisabled(), walletModel->wallet().hdEnabled());
-    setQuorumStatus(sporkManager.GetSporkValue(SPORK_17_QUORUM_DKG_ENABLED));
-    setChainLockStatus(sporkManager.GetSporkValue(SPORK_19_CHAINLOCKS_ENABLED));
+    setQuorumStatus(sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED));
+    setChainLockStatus(sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED));
 }
 #endif // ENABLE_WALLET
 

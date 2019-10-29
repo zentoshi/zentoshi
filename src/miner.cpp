@@ -146,10 +146,11 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
 
-    bool fDIP0003Active_context = nHeight >= chainparams.GetConsensus().DIP0003Height;
-    bool fDIP0008Active_context = VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE;
+    bool fDIP0003Active_context = sporkManager.IsSporkActive(SPORK_15_DETERMINISTIC_MNS_ENABLED);
+    bool fDIP0008Active_context = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED);
 
-    pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus(), chainparams.BIP9CheckMasternodesUpgraded());
+    pblock->nVersion = fDIP0003Active_context ? ComputeBlockVersion(pindexPrev, chainparams.GetConsensus(), chainparams.BIP9CheckMasternodesUpgraded()) : 0x20000000;
+
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
@@ -239,9 +240,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     }
 
-    if (!fDIP0003Active_context) {
-        coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
-    } else {
+    if (fDIP0003Active_context) {
         coinbaseTx.vin[0].scriptSig = CScript() << OP_RETURN;
 
         coinbaseTx.nVersion = 3;

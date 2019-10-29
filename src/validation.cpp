@@ -1715,10 +1715,6 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
     for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++) {
         Consensus::DeploymentPos pos = Consensus::DeploymentPos(i);
         ThresholdState state = VersionBitsState(pindexPrev, params, static_cast<Consensus::DeploymentPos>(i), versionbitscache);
-        const struct VBDeploymentInfo& vbinfo = VersionBitsDeploymentInfo[pos];
-        if (vbinfo.check_mn_protocol && state == ThresholdState::STARTED && fCheckMasternodesUpgraded) {
-            // TODO implement new logic for MN upgrade checks (e.g. with LLMQ based feature/version voting)
-        }
         if (state == ThresholdState::LOCKED_IN || state == ThresholdState::STARTED) {
             nVersion |= VersionBitsMask(params, static_cast<Consensus::DeploymentPos>(i));
         }
@@ -5159,10 +5155,10 @@ ThresholdState VersionBitsTipState(const Consensus::Params& params, Consensus::D
     return VersionBitsState(chainActive.Tip(), params, pos, versionbitscache);
 }
 
-VBDeploymentInfo VersionBitsTipStatistics(const Consensus::Params& params, Consensus::DeploymentPos pos)
+BIP9Stats VersionBitsTipStatistics(const Consensus::Params& params, Consensus::DeploymentPos pos)
 {
     LOCK(cs_main);
-    return VersionBitsTipStatistics(params, pos);
+    return VersionBitsStatistics(chainActive.Tip(), params, pos);
 }
 
 int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::DeploymentPos pos)
