@@ -184,7 +184,7 @@ public:
         consensus.DIP0003Height = 1048576; // TODO
         consensus.DIP0003EnforcementHeight = 1048576; // TODO
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
@@ -264,15 +264,18 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1558999099;
-        uint32_t nNonce = 0;
+        uint32_t nTime = 1559000000;
+        uint32_t nNonce = 22381;
 
-        while (UintToArith256(genesis.GetHash()) > 
-                     UintToArith256(consensus.powLimit)) {
+        while (!nNonce &&
+               UintToArith256(genesis.GetPoWHash()) >
+               UintToArith256(consensus.powLimit)) {
           nNonce++;
-          genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
+          if (nNonce % 16 == 0) printf("\rnonce %08x", nNonce);
+          genesis = CreateGenesisBlock(nTime, nNonce, 0x1f07fff0, 1, 0 * COIN);
         }
-        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
+        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f07fff0, 1, 0 * COIN);
+        printf("\n\n%s\n", genesis.ToString().c_str());
         consensus.hashGenesisBlock = genesis.GetHash();
         // assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         // assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
@@ -444,13 +447,7 @@ public:
         uint32_t nTime = 1558999099;
         uint32_t nNonce = 0;
 
-        while (UintToArith256(genesis.GetHash()) > 
-                     UintToArith256(consensus.powLimit)) {
-          nNonce++;
-          genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
-        }
-
-        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
+        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f1fffff, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         // assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         // assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
@@ -620,15 +617,7 @@ public:
         uint32_t nTime = 1558999099;
         uint32_t nNonce = 0;
 
-        while (UintToArith256(genesis.GetHash()) > 
-                     UintToArith256(consensus.powLimit)) {
-          nNonce++;
-          genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
-                if (nNonce % 128 == 0) printf("\r%08x", nNonce);
-        }
-        printf("%s\n", genesis.ToString().c_str());
-
-        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
+        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f1fffff, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         // assert(consensus.hashGenesisBlock == uint256S("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
         // assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
