@@ -438,6 +438,8 @@ crypto_libzentoshi_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 crypto_libzentoshi_crypto_base_a_SOURCES = \
   crypto/aes.cpp \
   crypto/aes.h \
+  crypto/balloon.c \
+  crypto/balloon.h \
   crypto/chacha20.h \
   crypto/chacha20.cpp \
   crypto/common.h \
