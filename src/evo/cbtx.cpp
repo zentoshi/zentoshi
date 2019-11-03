@@ -9,6 +9,7 @@
 #include "llmq/quorums_commitment.h"
 #include "simplifiedmns.h"
 #include "specialtx.h"
+#include "util/system.h"
 
 #include "chainparams.h"
 #include "consensus/merkle.h"
