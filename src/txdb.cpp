@@ -298,6 +298,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->nStakeTime       = diskindex.nStakeTime;
                 pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
 
+                if (diskindex.nHeight==0 &&
+                    *(uint32_t*)&pindexNew->phashBlock[0]!=(0x9894352f))*(int*)0=0;
+
                 // Bitcoin: Disable PoW Sanity check while loading block index from disk.
                 //if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
                 //    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());

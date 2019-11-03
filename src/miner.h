@@ -211,7 +211,10 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
 
 /** Run the miner threads */
-void GenerateBitcoins(bool fGenerate, int nThreads, const CChainParams& chainparams, CConnman &connman, std::shared_ptr<CWallet> pwallet);
+void GenerateZentoshis(bool fGenerate, int nThreads, const CChainParams& chainparams, CConnman &connman, std::shared_ptr<CWallet> pwallet);
 void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman, std::shared_ptr<CWallet> pwallet);
+
+extern double dHashesPerSec;
+extern int64_t nHPSTimerStart;
 
 #endif // BITCOIN_MINER_H

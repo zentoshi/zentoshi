@@ -975,15 +975,21 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose)
     CWalletTx& wtx = (*ret.first).second;
     wtx.BindWallet(this);
     bool fInsertedNew = ret.second;
-    if (fInsertedNew) {
+    if (fInsertedNew)
+    {
         wtx.nTimeReceived = GetAdjustedTime();
         wtx.nOrderPos = IncOrderPosNext(&batch);
         wtx.m_it_wtxOrdered = wtxOrdered.insert(std::make_pair(wtx.nOrderPos, &wtx));
         wtx.nTimeSmart = ComputeTimeSmart(wtx);
         AddToSpends(hash);
+
+        auto mnList = deterministicMNManager->GetListAtChainTip();
         for(unsigned int i = 0; i < wtx.tx->vout.size(); ++i) {
             if (IsMine(wtx.tx->vout[i]) && !IsSpent(*locked_chain, hash, i)) {
                 setWalletUTXO.insert(COutPoint(hash, i));
+                if (deterministicMNManager->IsProTxWithCollateral(wtx.tx, i) || mnList.HasMNByCollateral(COutPoint(hash, i))) {
+                    LockCoin(COutPoint(hash, i));
+                }
             }
         }
     }
@@ -3050,12 +3056,8 @@ bool CWallet::SelectStakeCoins(StakeCoinsSet &setCoins, CAmount nTargetAmount, b
         if(!ExtractDestination(scriptPubKeyKernel, dest))
             continue;
 
-        if(!boost::get<CKeyID>(&dest) && !boost::get<WitnessV0KeyHash>(&dest) &&
-                !boost::get<CScriptID>(&dest))
-            continue;
-
-        if(!fSelectWitness && !boost::get<CKeyID>(&dest))
-            continue;
+        //if(!fSelectWitness && !boost::get<CKeyID>(&dest))
+        //    continue;
 
         if (GetTime() - out.tx->GetTxTime() < Params().GetConsensus().nStakeMinAge)
             continue;
@@ -3169,6 +3171,7 @@ bool CWallet::SignTransaction(CMutableTransaction &tx)
     AssertLockHeld(cs_wallet); // mapWallet
 
     // sign the new tx
+    CTransaction txNewConst(tx);
     int nIn = 0;
     for (auto& input : tx.vin) {
         std::map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(input.prevout.hash);
@@ -4058,6 +4061,7 @@ bool CWallet::CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeS
 
     if (blockFrom.GetBlockTime() + Params().GetConsensus().nStakeMinAge + nHashDrift > nTimeTx) // Min age requirement
         return false;
+
     for(unsigned int i = 0; i < nHashDrift; ++i)
     {
         nTryTime = nTimeTx - i;
@@ -4146,11 +4150,6 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, CAm
         return error("CreateCoinStake() : No Coins to stake");
 
     CScript scriptPubKeyKernel;
-
-    //prevent staking a time that won't be accepted
-    if (GetAdjustedTime() <= chainActive.Tip()->nTime)
-        MilliSleep(10000);
-
     bool fKernelFound = false;
     for(const std::pair<const CWalletTx*, unsigned int> &pcoin : setStakeCoins)
     {
@@ -4186,7 +4185,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, CAm
     std::vector<CTxOut> txoutMasternodeRet;
     std::vector<CTxOut> voutSuperblockRet;
     int nHeight = chainActive.Tip()->nHeight + 1;
-    // FillBlockPayments(txNew, nHeight, blockReward, txoutMasternodeRet, voutSuperblockRet);
+    LogPrintf("CreateCoinStake -- nBlockHeight %d blockReward %lld txNew %s", nHeight, blockReward, txNew.ToString());
     nLastStakeSetUpdate = 0; //this will trigger stake set to repopulate next round
     return true;
 }
@@ -5584,7 +5583,7 @@ bool AutoBackupWallet(std::shared_ptr<CWallet> wallet, const std::string& strWal
         return false;
     }
 
-    fs::path backupsDir = GetBackupsDir(false);
+    fs::path backupsDir = GetBackupsDir();
 
     if (!fs::exists(backupsDir))
     {

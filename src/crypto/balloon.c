@@ -212,9 +212,9 @@ extern "C" {
     balloon_evp_cipher aes_128_ctr = { 904, 1, 16, 16, 0x5, aes_init_key, aes_ctr_cipher, NULL, 264, NULL, NULL };
     balloon_evp_cipher* balloon_evp_aes_128_ctr(void) { return &aes_128_ctr; }
 
-    SHA256_CTX c;
     void sha256(const void* input, void* output, int len)
     {
+        SHA256_CTX c;
         SHA256_Init(&c);
         SHA256_Update(&c, input, len);
         SHA256_Final(output, &c);

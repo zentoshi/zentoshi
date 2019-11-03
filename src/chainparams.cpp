@@ -161,7 +161,7 @@ public:
     CMainParams() {
         strNetworkID = "main";
 
-        consensus.nFirstPoSBlock = 100;
+        consensus.nFirstPoSBlock = 50;
         consensus.nMasternodePaymentsStartBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreaseBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreasePeriod = 576*30;
@@ -178,7 +178,7 @@ public:
         consensus.nGovernanceMinQuorum = 10;
         consensus.nGovernanceFilterElements = 20000;
         consensus.nMasternodeMinimumConfirmations = 15;
-        consensus.BIP34Height = consensus.nFirstPoSBlock;
+        consensus.BIP34Height = FROMGENESIS;
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP65Height = consensus.nFirstPoSBlock;
         consensus.BIP66Height = consensus.nFirstPoSBlock;
@@ -186,7 +186,7 @@ public:
         consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.powLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
@@ -212,8 +212,8 @@ public:
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1572790000; // Nov 1st, 2019
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1604180000;   // Nov 1st, 2020
 
         // Deployment of DIP0001
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].bit = 2;
@@ -252,7 +252,17 @@ public:
         m_assumed_chain_state_size = 0.5;
         nMaxReorganizationDepth = 100;
 
-        genesis = CreateGenesisBlock(1572600000, 14913, 0x1f07fff0, 1, 0 * COIN);
+        // genesis
+        uint32_t nTime = 1572600000;
+        uint32_t nNonce = 0;
+
+        while (UintToArith256(genesis.GetPoWHash()) > 
+               UintToArith256(consensus.powLimit))
+        {
+          nNonce++;
+          genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
+        }
+        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,80);

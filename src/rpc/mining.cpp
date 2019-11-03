@@ -31,6 +31,10 @@
 #include <warnings.h>
 #include <wallet/wallet.h>
 
+#include <governance/governance-classes.h>
+#include <masternode-sync.h>
+#include <masternode-payments.h>
+
 #include <memory>
 #include <stdint.h>
 
@@ -280,8 +284,9 @@ static UniValue BIP22ValidationResult(const CValidationState& state)
     if (state.IsValid())
         return NullUniValue;
 
+    std::string strRejectReason = state.GetRejectReason();
     if (state.IsError())
-        throw JSONRPCError(RPC_VERIFY_ERROR, FormatStateMessage(state));
+        throw JSONRPCError(RPC_VERIFY_ERROR, strRejectReason);
     if (state.IsInvalid())
     {
         std::string strRejectReason = state.GetRejectReason();
@@ -373,7 +378,28 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
             "  \"weightlimit\" : n,                (numeric) limit of block weight\n"
             "  \"curtime\" : ttt,                  (numeric) current timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"bits\" : \"xxxxxxxx\",              (string) compressed target of next block\n"
+            "  \"previousbits\" : \"xxxxxxxx\",      (string) compressed target of current highest block\n"
             "  \"height\" : n                      (numeric) The height of the next block\n"
+            "  \"masternode\" : [                  (array) required masternode payments that must be included in the next block\n"
+            "      {\n"
+            "         \"payee\" : \"xxxx\",          (string) payee address\n"
+            "         \"script\" : \"xxxx\",         (string) payee scriptPubKey\n"
+            "         \"amount\": n                (numeric) required amount to pay\n"
+            "      }\n"
+            "  },\n"
+            "  \"masternode_payments_started\" :  true|false, (boolean) true, if masternode payments started\n"
+            "  \"masternode_payments_enforced\" : true|false, (boolean) true, if masternode payments are enforced\n"
+            "  \"superblock\" : [                  (array) required superblock payees that must be included in the next block\n"
+            "      {\n"
+            "         \"payee\" : \"xxxx\",          (string) payee address\n"
+            "         \"script\" : \"xxxx\",         (string) payee scriptPubKey\n"
+            "         \"amount\": n                (numeric) required amount to pay\n"
+            "      }\n"
+            "      ,...\n"
+            "  ],\n"
+            "  \"superblocks_started\" : true|false, (boolean) true, if superblock payments started\n"
+            "  \"superblocks_enabled\" : true|false, (boolean) true, if superblock payments are enabled\n"
+            "  \"coinbase_payload\" : \"xxxxxxxx\"    (string) coinbase transaction payload data encoded in hexadecimal\n"
             "}\n"
                 },
                 RPCExamples{
@@ -453,10 +479,21 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
     if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0)
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zentoshi is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zentoshi is downloading blocks...");
+
+    // Get expected MN/superblock payees. The call to GetBlockTxOuts might fail on regtest/devnet or when
+    // testnet is reset. This is fine and we ignore failure (blocks will be accepted)
+    std::vector<CTxOut> voutMasternodePayments;
+    mnpayments.GetBlockTxOuts(chainActive.Height() + 1, 0, voutMasternodePayments);
+
+    // next bock is a superblock and we need governance info to correctly construct it
+    if (sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED)
+        && !masternodeSync.IsSynced()
+        && CSuperblock::IsValidBlockHeight(chainActive.Height() + 1))
+            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zentoshi is syncing with network...");
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -681,14 +718,18 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("curtime", pblock->GetBlockTime());
     result.pushKV("bits", strprintf("%08x", pblock->nBits));
     result.pushKV("height", (int64_t)(pindexPrev->nHeight+1));
-    UniValue masternodeObj(UniValue::VOBJ);
-    if(pblock->txoutMasternode != CTxOut()) {
+
+    UniValue masternodeObj(UniValue::VARR);
+    for (const auto& txout : pblocktemplate->voutMasternodePayments) {
         CTxDestination address1;
-        ExtractDestination(pblock->txoutMasternode.scriptPubKey, address1);
+        ExtractDestination(txout.scriptPubKey, address1);
         CBitcoinAddress address2(address1);
-        masternodeObj.pushKV("payee", address2.ToString().c_str());
-        masternodeObj.pushKV("script", HexStr(pblock->txoutMasternode.scriptPubKey));
-        masternodeObj.pushKV("amount", pblock->txoutMasternode.nValue);
+
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("payee", address2.ToString().c_str()));
+        obj.push_back(Pair("script", HexStr(txout.scriptPubKey)));
+        obj.push_back(Pair("amount", txout.nValue));
+        masternodeObj.push_back(obj);
     }
 
     result.push_back(Pair("masternode", masternodeObj));
@@ -696,21 +737,23 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.push_back(Pair("masternode_payments_enforced", true));
 
     UniValue superblockObjArray(UniValue::VARR);
-    if(pblock->voutSuperblock.size()) {
-        for (const auto& txout : pblock->voutSuperblock) {
+    if(pblocktemplate->voutSuperblockPayments.size()) {
+        for (const auto& txout : pblocktemplate->voutSuperblockPayments) {
             UniValue entry(UniValue::VOBJ);
             CTxDestination address1;
             ExtractDestination(txout.scriptPubKey, address1);
             CBitcoinAddress address2(address1);
-            entry.pushKV("payee", address2.ToString().c_str());
-            entry.pushKV("script", HexStr(txout.scriptPubKey));
-            entry.pushKV("amount", txout.nValue);
+            entry.push_back(Pair("payee", address2.ToString().c_str()));
+            entry.push_back(Pair("script", HexStr(txout.scriptPubKey)));
+            entry.push_back(Pair("amount", txout.nValue));
             superblockObjArray.push_back(entry);
         }
     }
-    result.pushKV("superblock", superblockObjArray);
-    result.pushKV("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock);
-    result.pushKV("superblocks_enabled", sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED));
+    result.push_back(Pair("superblock", superblockObjArray));
+    result.push_back(Pair("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock));
+    result.push_back(Pair("superblocks_enabled", sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED)));
+
+    result.push_back(Pair("coinbase_payload", HexStr(pblock->vtx[0]->vExtraPayload)));
 
     if (!pblocktemplate->vchCoinbaseCommitment.empty() && fSupportsSegwit) {
         result.pushKV("default_witness_commitment", HexStr(pblocktemplate->vchCoinbaseCommitment.begin(), pblocktemplate->vchCoinbaseCommitment.end()));
@@ -1012,6 +1055,25 @@ static UniValue estimaterawfee(const JSONRPCRequest& request)
     return result;
 }
 
+UniValue gethashespersec(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "gethashespersec\n"
+            "\nReturns a recent hashes per second performance measurement while generating.\n"
+            "See the getgenerate and setgenerate calls to turn generation on and off.\n"
+            "\nResult:\n"
+            "n            (numeric) The recent hashes per second when generation is on (will return 0 if generation is off)\n"
+            "\nExamples:\n"
+            + HelpExampleCli("gethashespersec", "")
+            + HelpExampleRpc("gethashespersec", "")
+        );
+
+    if (GetTimeMillis() - nHPSTimerStart > 8000)
+        return (int64_t)0;
+    return (int64_t)dHashesPerSec;
+}
+
 static UniValue setgenerate(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 4)
@@ -1052,7 +1114,7 @@ static UniValue setgenerate(const JSONRPCRequest& request)
             fGenerate = false;
     }
 
-    GenerateBitcoins(fGenerate, nGenProcLimit, Params(), *g_connman, wallet);
+    GenerateZentoshis(fGenerate, nGenProcLimit, Params(), *g_connman, wallet);
 
     return fGenerate ? std::string("Mining started") : std::string("Mining stopped");
 }
@@ -1067,6 +1129,7 @@ static const CRPCCommand commands[] =
     { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
     { "mining",             "submitheader",           &submitheader,           {"hexdata"} },
     { "mining",             "setgenerate",            &setgenerate,            {"generate", "genproclimit", "staking"} },
+    { "mining",             "gethashespersec",        &gethashespersec,        {} },
 
 
     { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },

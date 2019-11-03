@@ -126,7 +126,7 @@ unsigned int PoSWorkRequired(const CBlockIndex* pindexLast, const Consensus::Par
 
     int64_t nActualSpacing = 0;
     if (LastPoSBlock->nHeight != 0)
-        nActualSpacing = pindexLast->GetBlockTime() - LastPoSBlock->pprev->GetBlockTime();
+        nActualSpacing = abs(LastPoSBlock->GetBlockTime() - LastPoSBlock->pprev->GetBlockTime());
 
     if (nActualSpacing < 0)
         nActualSpacing = 1;

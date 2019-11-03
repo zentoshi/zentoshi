@@ -52,7 +52,10 @@ bool CheckCbTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidatio
 // This can only be done after the block has been fully processed, as otherwise we won't have the finished MN list
 bool CheckCbTxMerkleRoots(const CBlock& block, const CBlockIndex* pindex, CValidationState& state)
 {
-    if (block.vtx[0]->nType != TRANSACTION_COINBASE) {
+    bool isProofOfStake = !block.IsProofOfWork();
+    const auto& coinbaseTransaction = block.vtx[isProofOfStake];
+
+    if (block.vtx[isProofOfStake]->nType != TRANSACTION_COINBASE) {
         return true;
     }
 
@@ -63,7 +66,7 @@ bool CheckCbTxMerkleRoots(const CBlock& block, const CBlockIndex* pindex, CValid
     int64_t nTime1 = GetTimeMicros();
 
     CCbTx cbTx;
-    if (!GetTxPayload(*block.vtx[0], cbTx)) {
+    if (!GetTxPayload(*block.vtx[isProofOfStake], cbTx)) {
         return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-payload");
     }
 
