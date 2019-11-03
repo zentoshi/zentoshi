@@ -520,14 +520,14 @@ void CPrivateSendServer::CheckTimeout(CConnman& connman)
 
     // See if we have at least min number of participants, if so - we can still do smth
     if (nState == POOL_STATE_QUEUE && vecSessionCollaterals.size() >= CPrivateSend::GetMinPoolParticipants()) {
-        LogPrint("privatesend", "CPrivateSendServer::CheckTimeout -- Queue for %d participants timed out (%ds) -- falling back to %d participants\n",
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendServer::CheckTimeout -- Queue for %d participants timed out (%ds) -- falling back to %d participants\n",
             nSessionMaxParticipants, nTimeout, vecSessionCollaterals.size());
         nSessionMaxParticipants = vecSessionCollaterals.size();
         return;
     }
 
     if (nState == POOL_STATE_ACCEPTING_ENTRIES && GetEntriesCount() >= CPrivateSend::GetMinPoolParticipants()) {
-        LogPrint("privatesend", "CPrivateSendServer::CheckTimeout -- Accepting entries for %d participants timed out (%ds) -- falling back to %d participants\n",
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendServer::CheckTimeout -- Accepting entries for %d participants timed out (%ds) -- falling back to %d participants\n",
             nSessionMaxParticipants, nTimeout, GetEntriesCount());
         // Punish misbehaving participants
         ChargeFees(connman);

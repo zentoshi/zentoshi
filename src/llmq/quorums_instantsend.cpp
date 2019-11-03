@@ -1135,7 +1135,7 @@ void CInstantSendManager::HandleFullyConfirmedBlock(const CBlockIndex* pindex)
         for (auto& p : removeISLocks) {
             auto& islockHash = p.first;
             auto& islock = p.second;
-            LogPrint("instantsend", "CInstantSendManager::%s -- txid=%s, islock=%s: removed islock as it got fully confirmed\n", __func__,
+            LogPrint(BCLog::INSTANTSEND, "CInstantSendManager::%s -- txid=%s, islock=%s: removed islock as it got fully confirmed\n", __func__,
                      islock->txid.ToString(), islockHash.ToString());
 
             for (auto& in : islock->inputs) {

@@ -105,7 +105,6 @@ BITCOIN_CORE_H = \
   attributes.h \
   banman.h \
   base58.h \
-  batchedlogger.h \
   bech32.h \
   bloom.h \
   blockencodings.h \
@@ -295,7 +294,6 @@ libzentoshi_server_a_SOURCES = \
   addrman.cpp \
   addrdb.cpp \
   alert.cpp \
-  batchedlogger.cpp \
   banman.cpp \
   bloom.cpp \
   blocksigner.cpp \
@@ -342,7 +340,6 @@ libzentoshi_server_a_SOURCES = \
   llmq/quorums_signing.cpp \
   llmq/quorums_signing_shares.cpp \
   llmq/quorums_utils.cpp \
-  logging.cpp \
   masternode-meta.cpp \
   masternode-payments.cpp \
   masternode-sync.cpp \

@@ -45,7 +45,7 @@ void CDKGPendingMessages::PushPendingMessage(NodeId from, CDataStream& vRecv)
     LOCK2(cs_main, cs);
 
     if (!seenMessages.emplace(hash).second) {
-        LogPrint("llmq-dkg", "CDKGPendingMessages::%s -- already seen %s, peer=%d", __func__, from);
+        LogPrint(BCLog::LLMQ, "CDKGPendingMessages::%s -- already seen %s, peer=%d", __func__, from);
         return;
     }
 
@@ -484,19 +484,17 @@ void CDKGSessionHandler::HandleDKGRound()
             }
         }
         if (!connections.empty()) {
-            if (LogAcceptCategory("llmq-dkg")) {
-                std::string debugMsg = strprintf("CDKGSessionManager::%s -- adding masternodes quorum connections for quorum %s:\n", __func__, curSession->pindexQuorum->GetBlockHash().ToString());
-                auto mnList = deterministicMNManager->GetListAtChainTip();
-                for (const auto& c : connections) {
-                    auto dmn = mnList.GetValidMN(c);
-                    if (!dmn) {
-                        debugMsg += strprintf("  %s (not in valid MN set anymore)\n", c.ToString());
-                    } else {
-                        debugMsg += strprintf("  %s (%s)\n", c.ToString(), dmn->pdmnState->addr.ToString(false));
-                    }
-                }
-                LogPrint("llmq-dkg", debugMsg);
-            }
+			std::string debugMsg = strprintf("CDKGSessionManager::%s -- adding masternodes quorum connections for quorum %s:\n", __func__, curSession->pindexQuorum->GetBlockHash().ToString());
+			auto mnList = deterministicMNManager->GetListAtChainTip();
+			for (const auto& c : connections) {
+				auto dmn = mnList.GetValidMN(c);
+				if (!dmn) {
+					debugMsg += strprintf("  %s (not in valid MN set anymore)\n", c.ToString());
+				} else {
+					debugMsg += strprintf("  %s (%s)\n", c.ToString(), dmn->pdmnState->addr.ToString(false));
+				}
+			}
+			LogPrint(BCLog::LLMQ, "%s", debugMsg);
             g_connman->AddMasternodeQuorumNodes(params.type, curQuorumHash, connections);
         }
     }
@@ -555,7 +553,7 @@ void CDKGSessionHandler::PhaseHandlerThread()
                 status.aborted = true;
                 return true;
             });
-            LogPrint("llmq-dkg", "CDKGSessionHandler::%s -- aborted current DKG session for llmq=%s\n", __func__, params.name);
+            LogPrint(BCLog::LLMQ, "CDKGSessionHandler::%s -- aborted current DKG session for llmq=%s\n", __func__, params.name);
         }
     }
 }

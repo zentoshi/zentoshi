@@ -351,7 +351,7 @@ static void libevent_log_cb(int severity, const char *msg)
     if (severity >= EVENT_LOG_WARN) // Log warn messages and higher without debug category
         LogPrintf("libevent: %s\n", msg);
     else
-        LogPrint(BCLog::LIBEVENT, "libevent: %s\n", msg);
+        LogPrintf("libevent: %s\n", msg);
 }
 
 bool InitHTTPServer()
@@ -361,12 +361,6 @@ bool InitHTTPServer()
 
     // Redirect libevent's logging to our own log
     event_set_log_callback(&libevent_log_cb);
-    // Update libevent's log handling. Returns false if our version of
-    // libevent doesn't support debug logging, in which case we should
-    // clear the BCLog::LIBEVENT flag.
-    if (!UpdateHTTPServerLogging(LogInstance().WillLogCategory(BCLog::LIBEVENT))) {
-        LogInstance().DisableCategory(BCLog::LIBEVENT);
-    }
 
 #ifdef WIN32
     evthread_use_windows_threads();

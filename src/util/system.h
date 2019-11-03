@@ -89,36 +89,10 @@ inline std::string _(const char* psz)
 void SetupEnvironment();
 bool SetupNetworking();
 
-/** Return true if log accepts specified category */
-bool LogAcceptCategory(const char* category);
-/** Reset internal log category caching (call this when debug categories have changed) */
-void ResetLogAcceptCategoryCache();
-/** Send a string to the log output */
-int LogPrintStr(const std::string &str);
-
-/** Formats a string without throwing exceptions. Instead, it'll return an error string instead of formatted string. */
-template<typename... Args>
-std::string SafeStringFormat(const std::string& fmt, const Args&... args)
-{
-    try {
-        return tinyformat::format(fmt, args...);
-    } catch (std::runtime_error& e) {
-        std::string message = tinyformat::format("\n****TINYFORMAT ERROR****\n    err=\"%s\"\n    fmt=\"%s\"\n", e.what(), fmt);
-        fprintf(stderr, "%s", message.c_str());
-        return message;
-    }
-}
-
-#define LogPrint(category, ...) do { \
-    if (LogAcceptCategory((category))) { \
-        LogPrintStr(SafeStringFormat(__VA_ARGS__)); \
-    } \
-} while(0)
-
 template<typename... Args>
 bool error(const char* fmt, const Args&... args)
 {
-    LogPrintStr("ERROR: " + SafeStringFormat(fmt, args...) + "\n");
+    LogPrintf("ERROR: %s\n", tfm::format(fmt, args...));
     return false;
 }
 
@@ -427,34 +401,6 @@ std::string CopyrightHolders(const std::string& strPrefix);
 int ScheduleBatchPriority();
 
 double nround(double value, int to);
-
-/**
- * @brief Converts version strings to 4-byte unsigned integer
- * @param strVersion version in "x.x.x" format (decimal digits only)
- * @return 4-byte unsigned integer, most significant byte is always 0
- * Throws std::bad_cast if format doesn\t match.
- */
-uint32_t StringVersionToInt(const std::string& strVersion);
-
-
-/**
- * @brief Converts version as 4-byte unsigned integer to string
- * @param nVersion 4-byte unsigned integer, most significant byte is always 0
- * @return version string in "x.x.x" format (last 3 bytes as version parts)
- * Throws std::bad_cast if format doesn\t match.
- */
-std::string IntVersionToString(uint32_t nVersion);
-
-
-/**
- * @brief Copy of the IntVersionToString, that returns "Invalid version" string
- * instead of throwing std::bad_cast
- * @param nVersion 4-byte unsigned integer, most significant byte is always 0
- * @return version string in "x.x.x" format (last 3 bytes as version parts)
- * or "Invalid version" if can't cast the given value
- */
-std::string SafeIntVersionToString(uint32_t nVersion);
-
 
 namespace util {
 

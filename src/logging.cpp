@@ -108,7 +108,7 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::TOR, "tor"},
     {BCLog::MEMPOOL, "mempool"},
     {BCLog::HTTP, "http"},
-    {BCLog::PERF, "performance"},
+    {BCLog::BNCH, "bench"},
     {BCLog::ZMQ, "zmq"},
     {BCLog::DB, "db"},
     {BCLog::RPC, "rpc"},
@@ -117,11 +117,10 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::SELECTCOINS, "selectcoins"},
     {BCLog::REINDEX, "reindex"},
     {BCLog::CMPCTBLOCK, "cmpctblock"},
-    {BCLog::RANDOM, "random"},
+    {BCLog::RND, "rand"},
     {BCLog::PRUNE, "prune"},
     {BCLog::PROXY, "proxy"},
     {BCLog::MEMPOOLREJ, "mempoolrej"},
-    {BCLog::LIBEVENT, "libevent"},
     {BCLog::COINDB, "coindb"},
     {BCLog::QT, "qt"},
     {BCLog::LEVELDB, "leveldb"},
@@ -132,7 +131,8 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::GOBJECT, "gobject"},
     {BCLog::MNPAYMENTS, "mnpayments"},
     {BCLog::LLMQ, "llmq"},
-    {BCLog::ALERT, "alerts"},
+    {BCLog::QUORUM, "quorum"},
+    {BCLog::CHAINLOCKS, "chainlocks"},
     {BCLog::ALL, "1"},
     {BCLog::ALL, "all"},
 };
@@ -212,50 +212,6 @@ std::string BCLog::Logger::LogTimestampStr(const std::string &str)
     return strStamped;
 }
 
-bool BCLog::Logger::OpenDebugLogHelper()
-{
-    assert(m_fileout == nullptr);
-    assert(!m_file_path.empty());
-
-    m_fileout = fsbridge::fopen(m_file_path, "a");
-    if (!m_fileout) {
-        return false;
-    }
-
-    setbuf(m_fileout, nullptr); // unbuffered
-    // dump buffered messages from before we opened the log
-    while (!m_msgs_before_open.empty()) {
-        FileWriteStr(m_msgs_before_open.front(), m_fileout);
-        m_msgs_before_open.pop_front();
-    }
-
-    return true;
-}
-
-void BCLog::Logger::RotateLogs()
-{
-    static constexpr size_t MAX_LOG_SIZE = 1024 * 1024 * 500; // 500  MB
-    boost::system::error_code ec;
-    auto fileSize = fs::file_size(m_file_path, ec);
-    if(fileSize > MAX_LOG_SIZE)
-    {
-        if(m_fileout)
-        {
-            fclose(m_fileout);
-            m_fileout = nullptr;
-            auto rotatedPath = m_file_path;
-            rotatedPath += ".old";
-            if(fs::exists(rotatedPath)) // if we already have rotated log
-            {
-                fs::remove(rotatedPath, ec);
-            }
-            fs::rename(m_file_path, rotatedPath, ec);
-
-            OpenDebugLogHelper();
-        }
-    }
-}
-
 void BCLog::Logger::LogPrintStr(const std::string &str)
 {
     std::string strTimestamped = LogTimestampStr(str);
@@ -274,7 +230,6 @@ void BCLog::Logger::LogPrintStr(const std::string &str)
         }
         else
         {
-            RotateLogs();
             // reopen the log file, if requested
             if (m_reopen_file) {
                 m_reopen_file = false;
@@ -304,7 +259,7 @@ void BCLog::Logger::ShrinkDebugFile()
     size_t log_size = 0;
     try {
         log_size = fs::file_size(m_file_path);
-    } catch (boost::filesystem::filesystem_error &) {}
+    } catch (const fs::filesystem_error&) {}
 
     // If debug.log file is more than 10% bigger the RECENT_DEBUG_HISTORY_SIZE
     // trim it down by saving only the last RECENT_DEBUG_HISTORY_SIZE bytes

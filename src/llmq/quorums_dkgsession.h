@@ -7,7 +7,6 @@
 
 #include <consensus/params.h>
 #include <net.h>
-#include <batchedlogger.h>
 
 #include <bls/bls_ies.h>
 #include <bls/bls_worker.h>
@@ -25,13 +24,6 @@ class CFinalCommitment;
 class CDKGSession;
 class CDKGSessionManager;
 class CDKGPendingMessages;
-
-class CDKGLogger : public CBatchedLogger
-{
-public:
-    CDKGLogger(const CDKGSession& _quorumDkg, const std::string& _func);
-    CDKGLogger(Consensus::LLMQType _llmqType, const uint256& _quorumHash, int _height, bool _areWeMember, const std::string& _func);
-};
 
 class CDKGContribution
 {

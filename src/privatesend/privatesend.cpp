@@ -243,14 +243,14 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
         auto mempoolTx = mempool.get(txin.prevout.hash);
         if (mempoolTx != nullptr) {
             if (mempool.isSpent(txin.prevout) || !llmq::quorumInstantSendManager->IsLocked(txin.prevout.hash)) {
-                LogPrint("privatesend", "CPrivateSend::IsCollateralValid -- spent or non-locked mempool input! txin=%s\n", txin.ToString());
+                LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- spent or non-locked mempool input! txin=%s\n", txin.ToString());
                 return false;
             }
             nValueIn += mempoolTx->vout[txin.prevout.n].nValue;
         } else if (GetUTXOCoin(txin.prevout, coin)) {
             nValueIn += coin.out.nValue;
         } else {
-            LogPrint("privatesend", "CPrivateSend::IsCollateralValid -- Unknown inputs in collateral transaction, txCollateral=%s", txCollateral.ToString());
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- Unknown inputs in collateral transaction, txCollateral=%s", txCollateral.ToString());
             return false;
         }
     }
