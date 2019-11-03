@@ -2558,25 +2558,25 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         } else if (nInvType == MSG_DSTX) {
             uint256 hashTx = tx.GetHash();
             if(CPrivateSend::GetDSTX(hashTx)) {
-                LogPrint("privatesend", "DSTX -- Already have %s, skipping...\n", hashTx.ToString());
+                LogPrint(BCLog::PRIVATESEND, "DSTX -- Already have %s, skipping...\n", hashTx.ToString());
                 return true; // not an error
             }
 
             auto dmn = deterministicMNManager->GetListAtChainTip().GetMNByCollateral(dstx.masternodeOutpoint);
             if(!dmn) {
-                LogPrint("privatesend", "DSTX -- Can't find masternode %s to verify %s\n", dstx.masternodeOutpoint.ToStringShort(), hashTx.ToString());
+                LogPrint(BCLog::PRIVATESEND, "DSTX -- Can't find masternode %s to verify %s\n", dstx.masternodeOutpoint.ToStringShort(), hashTx.ToString());
                 return false;
             }
 
             if (!mmetaman.GetMetaInfo(dmn->proTxHash)->IsValidForMixingTxes()) {
-                LogPrint("privatesend", "DSTX -- Masternode %s is sending too many transactions %s\n", dstx.masternodeOutpoint.ToStringShort(), hashTx.ToString());
+                LogPrint(BCLog::PRIVATESEND, "DSTX -- Masternode %s is sending too many transactions %s\n", dstx.masternodeOutpoint.ToStringShort(), hashTx.ToString());
                 return true;
                 // TODO: Not an error? Could it be that someone is relaying old DSTXes
                 // we have no idea about (e.g we were offline)? How to handle them?
             }
 
             if (!dstx.CheckSignature(dmn->pdmnState->pubKeyOperator.Get())) {
-                LogPrint("privatesend", "DSTX -- CheckSignature() failed for %s\n", hashTx.ToString());
+                LogPrint(BCLog::PRIVATESEND, "DSTX -- CheckSignature() failed for %s\n", hashTx.ToString());
                 return false;
             }
 

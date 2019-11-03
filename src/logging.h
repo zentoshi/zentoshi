@@ -30,13 +30,14 @@ struct CLogCategoryActive
 };
 
 namespace BCLog {
+
     enum LogFlags : uint32_t {
         NONE         = 0,
         NET          = (1 <<  0),
         TOR          = (1 <<  1),
         MEMPOOL      = (1 <<  2),
         HTTP         = (1 <<  3),
-        PERF         = (1 <<  4),
+        BNCH         = (1 <<  4),
         ZMQ          = (1 <<  5),
         DB           = (1 <<  6),
         RPC          = (1 <<  7),
@@ -45,24 +46,24 @@ namespace BCLog {
         SELECTCOINS  = (1 << 10),
         REINDEX      = (1 << 11),
         CMPCTBLOCK   = (1 << 12),
-        RANDOM       = (1 << 13),
+        RND          = (1 << 13),
         PRUNE        = (1 << 14),
         PROXY        = (1 << 15),
         MEMPOOLREJ   = (1 << 16),
-        LIBEVENT     = (1 << 17),
-        COINDB       = (1 << 18),
-        QT           = (1 << 19),
-        LEVELDB      = (1 << 20),
-        KERNEL       = (1 << 21),
-        LLMQ         = (1 << 22),
-        SPORK        = (1 << 23),
-        MNSYNC       = (1 << 24),
-        MASTERNODE   = (1 << 25),
-        GOBJECT      = (1 << 26),
-        MNPAYMENTS   = (1 << 27),
-        INSTANTSEND  = (1 << 28),
-        PRIVATESEND  = (1 << 29),
-        ALERT        = (1 << 30),
+        COINDB       = (1 << 17),
+        QT           = (1 << 18),
+        LEVELDB      = (1 << 19),
+        KERNEL       = (1 << 20),
+        LLMQ         = (1 << 21),
+        SPORK        = (1 << 22),
+        MNSYNC       = (1 << 23),
+        MASTERNODE   = (1 << 24),
+        GOBJECT      = (1 << 25),
+        MNPAYMENTS   = (1 << 26),
+        INSTANTSEND  = (1 << 27),
+        PRIVATESEND  = (1 << 28),
+        QUORUM       = (1 << 29),
+        CHAINLOCKS   = (1 << 30),
         ALL          = ~(uint32_t)0,
     };
 
@@ -84,8 +85,6 @@ namespace BCLog {
         std::atomic<uint32_t> m_categories{0};
 
         std::string LogTimestampStr(const std::string& str);
-        bool OpenDebugLogHelper();
-        void RotateLogs();
 
     public:
         bool m_print_to_console = false;
@@ -136,16 +135,6 @@ std::vector<CLogCategoryActive> ListActiveLogCategories();
 
 /** Return true if str parses as a log category and set the flag */
 bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str);
-
-/** Get format string from VA_ARGS for error reporting */
-template<typename... Args> std::string FormatStringFromLogArgs(const char *fmt, const Args&... args) { return fmt; }
-
-static inline void MarkUsed() {}
-template<typename T, typename... Args> static inline void MarkUsed(const T& t, const Args&... args)
-{
-    (void)t;
-    MarkUsed(args...);
-}
 
 // Be conservative when using LogPrintf/error or other things which
 // unconditionally log to debug.log! It should not be the case that an inbound

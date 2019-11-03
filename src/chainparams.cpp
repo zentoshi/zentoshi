@@ -182,7 +182,7 @@ public:
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP65Height = consensus.nFirstPoSBlock;
         consensus.BIP66Height = consensus.nFirstPoSBlock;
-        consensus.DIP0001Height = consensus.nFirstPoSBlock;
+        consensus.DIP0001Height = FROMGENESIS;
         consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");

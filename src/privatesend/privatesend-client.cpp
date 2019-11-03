@@ -857,7 +857,7 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         nBalanceNeedsAnonymized = privateSendClient.nPrivateSendAmount*COIN - nBalanceAnonymized;
 
         if (nBalanceNeedsAnonymized < 0) {
-            LogPrint("privatesend", "CPrivateSendClientSession::DoAutomaticDenominating -- Nothing to do\n");
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- Nothing to do\n");
             // nothing to do, just keep it in idle mode
             return false;
         }
@@ -1077,11 +1077,11 @@ CDeterministicMNCPtr CPrivateSendClientManager::GetRandomNotUsedMasternode()
             continue;
         }
 
-        LogPrint("masternode", "CPrivateSendClientManager::%s -- found, masternode=%s\n", __func__, dmn->collateralOutpoint.ToStringShort());
+        LogPrint(BCLog::MASTERNODE, "CPrivateSendClientManager::%s -- found, masternode=%s\n", __func__, dmn->collateralOutpoint.ToStringShort());
         return dmn;
     }
 
-    LogPrint("masternode", "CPrivateSendClientManager::%s -- failed\n", __func__);
+    LogPrint(BCLog::MASTERNODE, "CPrivateSendClientManager::%s -- failed\n", __func__);
     return nullptr;
 }
 

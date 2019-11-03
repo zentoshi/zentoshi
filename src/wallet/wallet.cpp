@@ -3280,7 +3280,7 @@ bool CWallet::SelectPSInOutPairsByDenominations(int nDenom, CAmount nValueMin, C
             vecPSInOutPairsRet.emplace_back(CTxDSIn(txin, scriptPubKey), CTxOut(nValue, scriptPubKey, nRounds));
             setRecentTxIds.emplace(txHash);
             nDenomResult |= 1 << nBit;
-            LogPrint("privatesend", "CWallet::%s -- hash: %s, nValue: %d.%08d, nRounds: %d\n",
+            LogPrint(BCLog::PRIVATESEND, "CWallet::%s -- hash: %s, nValue: %d.%08d, nRounds: %d\n",
                             __func__, txHash.ToString(), nValue / COIN, nValue % COIN, nRounds);
         }
     }
@@ -3301,12 +3301,12 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
     if(nMaxOupointsPerAddress != -1 && fAnonymizable && fSkipUnconfirmed) {
         if(fSkipDenominated && fAnonymizableTallyCachedNonDenom) {
             vecTallyRet = vecAnonymizableTallyCachedNonDenom;
-            LogPrint("selectcoins", "SelectCoinsGroupedByAddresses - using cache for non-denom inputs %d\n", vecTallyRet.size());
+            LogPrint(BCLog::SELECTCOINS, "SelectCoinsGroupedByAddresses - using cache for non-denom inputs %d\n", vecTallyRet.size());
             return vecTallyRet.size() > 0;
         }
         if(!fSkipDenominated && fAnonymizableTallyCached) {
             vecTallyRet = vecAnonymizableTallyCached;
-            LogPrint("selectcoins", "SelectCoinsGroupedByAddresses - using cache for all inputs %d\n", vecTallyRet.size());
+            LogPrint(BCLog::SELECTCOINS, "SelectCoinsGroupedByAddresses - using cache for all inputs %d\n", vecTallyRet.size());
             return vecTallyRet.size() > 0;
         }
     }
@@ -3382,12 +3382,10 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
     }
 
     // debug
-    if (LogAcceptCategory("selectcoins")) {
-        std::string strMessage = "SelectCoinsGroupedByAddresses - vecTallyRet:\n";
-        for (const auto& item : vecTallyRet)
-            strMessage += strprintf("  %s %f\n", CBitcoinAddress(item.txdest).ToString().c_str(), float(item.nAmount)/COIN);
-        LogPrint("selectcoins", "%s", strMessage);
-    }
+    std::string strMessage = "SelectCoinsGroupedByAddresses - vecTallyRet:\n";
+    for (const auto& item : vecTallyRet)
+        strMessage += strprintf("  %s %f\n", CBitcoinAddress(item.txdest).ToString().c_str(), float(item.nAmount)/COIN);
+    LogPrint(BCLog::SELECTCOINS, "%s", strMessage);
 
     return vecTallyRet.size() > 0;
 }
@@ -5586,7 +5584,7 @@ bool AutoBackupWallet(std::shared_ptr<CWallet> wallet, const std::string& strWal
         return false;
     }
 
-    fs::path backupsDir = GetBackupsDir();
+    fs::path backupsDir = GetBackupsDir(false);
 
     if (!fs::exists(backupsDir))
     {

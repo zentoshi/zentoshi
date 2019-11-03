@@ -202,19 +202,17 @@ void CQuorumManager::EnsureQuorumConnections(Consensus::LLMQType llmqType, const
                 }
             }
             if (!connections.empty()) {
-                if (LogAcceptCategory("llmq")) {
-                    auto mnList = deterministicMNManager->GetListAtChainTip();
-                    std::string debugMsg = strprintf("CQuorumManager::%s -- adding masternodes quorum connections for quorum %s:\n", __func__, quorum->qc.quorumHash.ToString());
-                    for (auto& c : connections) {
-                        auto dmn = mnList.GetValidMN(c);
-                        if (!dmn) {
-                            debugMsg += strprintf("  %s (not in valid MN set anymore)\n", c.ToString());
-                        } else {
-                            debugMsg += strprintf("  %s (%s)\n", c.ToString(), dmn->pdmnState->addr.ToString(false));
-                        }
+                auto mnList = deterministicMNManager->GetListAtChainTip();
+                std::string debugMsg = strprintf("CQuorumManager::%s -- adding masternodes quorum connections for quorum %s:\n", __func__, quorum->qc.quorumHash.ToString());
+                for (auto& c : connections) {
+                    auto dmn = mnList.GetValidMN(c);
+                    if (!dmn) {
+                        debugMsg += strprintf("  %s (not in valid MN set anymore)\n", c.ToString());
+                    } else {
+                        debugMsg += strprintf("  %s (%s)\n", c.ToString(), dmn->pdmnState->addr.ToString(false));
                     }
-                    LogPrint(BCLog::LLMQ, debugMsg);
                 }
+                LogPrint(BCLog::LLMQ, "%s", debugMsg);
                 g_connman->AddMasternodeQuorumNodes(llmqType, quorum->qc.quorumHash, connections);
             }
         }
