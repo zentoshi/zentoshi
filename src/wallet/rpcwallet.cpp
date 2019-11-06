@@ -3421,100 +3421,6 @@ UniValue generate(const JSONRPCRequest& request)
     return generateBlocks(coinbase_script, num_generate, max_tries, true);
 }
 
-UniValue rescanblockchain(const JSONRPCRequest& request)
-{
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
-
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp)) {
-        return NullUniValue;
-    }
-
-    if (request.fHelp || request.params.size() > 2) {
-        throw std::runtime_error(
-            RPCHelpMan{"rescanblockchain",
-                "\nRescan the local blockchain for wallet related transactions.\n",
-                {
-                    {"start_height", RPCArg::Type::NUM, /* default */ "0", "block height where the rescan should start"},
-                    {"stop_height", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "the last block height that should be scanned. If none is provided it will rescan up to the tip at return time of this call."},
-                },
-                RPCResult{
-            "{\n"
-            "  \"start_height\"     (numeric) The block height where the rescan started (the requested height or 0)\n"
-            "  \"stop_height\"      (numeric) The height of the last rescanned block. May be null in rare cases if there was a reorg and the call didn't scan any blocks because they were already scanned in the background.\n"
-            "}\n"
-                },
-                RPCExamples{
-                    HelpExampleCli("rescanblockchain", "100000 120000")
-            + HelpExampleRpc("rescanblockchain", "100000, 120000")
-                },
-            }.ToString());
-    }
-
-    WalletRescanReserver reserver(pwallet);
-    if (!reserver.reserve()) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet is currently rescanning. Abort existing rescan or wait.");
-    }
-
-    int start_height = 0;
-    uint256 start_block, stop_block;
-    {
-        auto locked_chain = pwallet->chain().lock();
-        Optional<int> tip_height = locked_chain->getHeight();
-
-        if (!request.params[0].isNull()) {
-            start_height = request.params[0].get_int();
-            if (start_height < 0 || !tip_height || start_height > *tip_height) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid start_height");
-            }
-        }
-
-        Optional<int> stop_height;
-        if (!request.params[1].isNull()) {
-            stop_height = request.params[1].get_int();
-            if (*stop_height < 0 || !tip_height || *stop_height > *tip_height) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid stop_height");
-            }
-            else if (*stop_height < start_height) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "stop_height must be greater than start_height");
-            }
-        }
-
-        // We can't rescan beyond non-pruned blocks, stop and throw an error
-        if (locked_chain->findPruned(start_height, stop_height)) {
-            throw JSONRPCError(RPC_MISC_ERROR, "Can't rescan beyond pruned data. Use RPC call getblockchaininfo to determine your pruned height.");
-        }
-
-        if (tip_height) {
-            start_block = locked_chain->getBlockHash(start_height);
-            // If called with a stop_height, set the stop_height here to
-            // trigger a rescan to that height.
-            // If called without a stop height, leave stop_height as null here
-            // so rescan continues to the tip (even if the tip advances during
-            // rescan).
-            if (stop_height) {
-                stop_block = locked_chain->getBlockHash(*stop_height);
-            }
-        }
-    }
-
-    CWallet::ScanResult result =
-        pwallet->ScanForWalletTransactions(start_block, stop_block, reserver, true /* fUpdate */);
-    switch (result.status) {
-    case CWallet::ScanResult::SUCCESS:
-        break;
-    case CWallet::ScanResult::FAILURE:
-        throw JSONRPCError(RPC_MISC_ERROR, "Rescan failed. Potentially corrupted data files.");
-    case CWallet::ScanResult::USER_ABORT:
-        throw JSONRPCError(RPC_MISC_ERROR, "Rescan aborted.");
-        // no default case, so the compiler can warn about missing cases
-    }
-    UniValue response(UniValue::VOBJ);
-    response.pushKV("start_height", start_height);
-    response.pushKV("stop_height", result.last_scanned_height ? *result.last_scanned_height : UniValue());
-    return response;
-}
-
 class DescribeWalletAddressVisitor : public boost::static_visitor<UniValue>
 {
 public:
@@ -4202,7 +4108,6 @@ static const CRPCCommand commands[] =
     { "wallet",             "loadwallet",                       &loadwallet,                    {"filename"} },
     { "wallet",             "lockunspent",                      &lockunspent,                   {"unlock","transactions"} },
     { "wallet",             "removeprunedfunds",                &removeprunedfunds,             {"txid"} },
-    { "wallet",             "rescanblockchain",                 &rescanblockchain,              {"start_height", "stop_height"} },
     { "wallet",             "sendmany",                         &sendmany,                      {"dummy","amounts","minconf","comment","subtractfeefrom","replaceable","conf_target","estimate_mode"} },
     { "wallet",             "sendtoaddress",                    &sendtoaddress,                 {"address","amount","comment","comment_to","subtractfeefromamount","replaceable","conf_target","estimate_mode"} },
     { "wallet",             "sethdseed",                        &sethdseed,                     {"newkeypool","seed"} },

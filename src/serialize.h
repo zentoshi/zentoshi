@@ -403,12 +403,13 @@ I ReadVarInt(Stream& is)
     }
 }
 
+#define FLATDATA(obj) REF(CFlatData((char*)&(obj), (char*)&(obj) + sizeof(obj)))
 #define FIXEDBITSET(obj, size) REF(CFixedBitSet(REF(obj), (size)))
 #define DYNBITSET(obj) REF(CDynamicBitSet(REF(obj)))
 #define FIXEDVARINTSBITSET(obj, size) REF(CFixedVarIntsBitSet(REF(obj), (size)))
 #define AUTOBITSET(obj, size) REF(CAutoBitSet(REF(obj), (size)))
-#define VARINT(obj, ...) WrapVarInt<__VA_ARGS__>(REF(obj))
-#define COMPACTSIZE(obj) CCompactSize(REF(obj))
+#define VARINT(obj) REF(WrapVarInt(REF(obj)))
+#define COMPACTSIZE(obj) REF(CCompactSize(REF(obj)))
 #define LIMITED_STRING(obj,n) LimitedString< n >(REF(obj))
 
 /** Serialization wrapper class for big-endian integers.
@@ -754,20 +755,54 @@ template<typename Stream, typename T> void Unserialize(Stream& os, std::unique_p
 
 
 /**
- * If none of the specialized versions above matched, default to calling member function.
+ * If none of the specialized versions above matched and T is a class, default to calling member function.
  */
-template<typename Stream, typename T>
+template<typename Stream, typename T, typename std::enable_if<std::is_class<T>::value>::type* = nullptr>
 inline void Serialize(Stream& os, const T& a)
 {
     a.Serialize(os);
 }
 
-template<typename Stream, typename T>
-inline void Unserialize(Stream& is, T&& a)
+template<typename Stream, typename T, typename std::enable_if<std::is_class<T>::value>::type* = nullptr>
+inline void Unserialize(Stream& is, T& a)
 {
     a.Unserialize(is);
 }
 
+
+
+/**
+ * If none of the specialized versions above matched and T is an enum, default to calling
+ * Serialize/Unserialze with the underlying type. This is only allowed when a specialized struct of is_serializable_enum<Enum>
+ * is found which derives from std::true_type. This is to ensure that enums are not serialized with the wrong type by
+ * accident.
+ */
+
+template<typename T> struct is_serializable_enum;
+template<typename T> struct is_serializable_enum : std::false_type {};
+
+template<typename Stream, typename T, typename std::enable_if<std::is_enum<T>::value>::type* = nullptr>
+inline void Serialize(Stream& s, T a )
+{
+    // If you ever get into this situation, it usaully means you forgot to declare is_serializable_enum for the desired enum type
+    static_assert(is_serializable_enum<T>::value);
+
+    typedef typename std::underlying_type<T>::type T2;
+    T2 b = (T2)a;
+    Serialize(s, b);
+}
+
+template<typename Stream, typename T, typename std::enable_if<std::is_enum<T>::value>::type* = nullptr>
+inline void Unserialize(Stream& s, T& a )
+{
+    // If you ever get into this situation, it usaully means you forgot to declare is_serializable_enum for the desired enum type
+    static_assert(is_serializable_enum<T>::value);
+
+    typedef typename std::underlying_type<T>::type T2;
+    T2 b;
+    Unserialize(s, b);
+    a = (T)b;
+}
 
 
 
@@ -1166,6 +1201,19 @@ struct CSerActionUnserialize
     constexpr bool ForRead() const { return true; }
 };
 
+template<typename Stream, typename T>
+inline void SerReadWrite(Stream& s, const T& obj, CSerActionSerialize ser_action)
+{
+    ::Serialize(s, obj);
+}
+
+template<typename Stream, typename T>
+inline void SerReadWrite(Stream& s, T& obj, CSerActionUnserialize ser_action)
+{
+    ::Unserialize(s, obj);
+}
+
+
 
 
 
@@ -1223,6 +1271,12 @@ void SerializeMany(Stream& s)
 {
 }
 
+template<typename Stream, typename Arg>
+void SerializeMany(Stream& s, Arg&& arg)
+{
+    ::Serialize(s, std::forward<Arg>(arg));
+}
+
 template<typename Stream, typename Arg, typename... Args>
 void SerializeMany(Stream& s, const Arg& arg, const Args&... args)
 {
@@ -1233,6 +1287,12 @@ void SerializeMany(Stream& s, const Arg& arg, const Args&... args)
 template<typename Stream>
 inline void UnserializeMany(Stream& s)
 {
+}
+
+template<typename Stream, typename Arg>
+inline void UnserializeMany(Stream& s, Arg& arg)
+{
+    ::Unserialize(s, arg);
 }
 
 template<typename Stream, typename Arg, typename... Args>

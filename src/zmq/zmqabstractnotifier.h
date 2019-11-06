@@ -10,6 +10,11 @@
 class CBlockIndex;
 class CZMQAbstractNotifier;
 
+namespace llmq {
+    class CChainLockSig;
+    class CInstantSendLock;
+} // namespace llmq
+
 typedef CZMQAbstractNotifier* (*CZMQNotifierFactory)();
 
 class CZMQAbstractNotifier
@@ -41,7 +46,9 @@ public:
     virtual void Shutdown() = 0;
 
     virtual bool NotifyBlock(const CBlockIndex *pindex);
+    virtual bool NotifyChainLock(const CBlockIndex *pindex, const llmq::CChainLockSig& clsig);
     virtual bool NotifyTransaction(const CTransaction &transaction);
+    virtual bool NotifyTransactionLock(const CTransaction &transaction, const llmq::CInstantSendLock& islock);
 
 protected:
     void *psocket;

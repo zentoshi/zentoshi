@@ -56,7 +56,7 @@ public:
             unsigned int nVersionDummy;
             ::Unserialize(s, VARINT(nVersionDummy));
         }
-        ::Unserialize(s, CTxOutCompressor(REF(txout->out)));
+        ::Unserialize(s, REF(CTxOutCompressor(REF(txout->out))));
     }
 
     explicit TxInUndoDeserializer(Coin* coin) : txout(coin) {}
@@ -78,7 +78,7 @@ public:
         uint64_t count = vprevout.size();
         ::Serialize(s, COMPACTSIZE(REF(count)));
         for (const auto& prevout : vprevout) {
-            ::Serialize(s, TxInUndoSerializer(&prevout));
+            ::Serialize(s, REF(TxInUndoSerializer(&prevout)));
         }
     }
 
@@ -92,7 +92,7 @@ public:
         }
         vprevout.resize(count);
         for (auto& prevout : vprevout) {
-            ::Unserialize(s, TxInUndoDeserializer(&prevout));
+            ::Unserialize(s, REF(TxInUndoDeserializer(&prevout)));
         }
     }
 };

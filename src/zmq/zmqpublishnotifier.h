@@ -34,16 +34,34 @@ public:
     bool NotifyBlock(const CBlockIndex *pindex) override;
 };
 
+class CZMQPublishHashChainLockNotifier : public CZMQAbstractPublishNotifier
+{
+public:
+    bool NotifyChainLock(const CBlockIndex *pindex, const llmq::CChainLockSig& clsig) override;
+};
+
 class CZMQPublishHashTransactionNotifier : public CZMQAbstractPublishNotifier
 {
 public:
     bool NotifyTransaction(const CTransaction &transaction) override;
 };
 
+class CZMQPublishHashTransactionLockNotifier : public CZMQAbstractPublishNotifier
+{
+public:
+    bool NotifyTransactionLock(const CTransaction &transaction, const llmq::CInstantSendLock& islock) override;
+};
+
 class CZMQPublishRawBlockNotifier : public CZMQAbstractPublishNotifier
 {
 public:
     bool NotifyBlock(const CBlockIndex *pindex) override;
+};
+
+class CZMQPublishRawChainLockNotifier : public CZMQAbstractPublishNotifier
+{
+public:
+    bool NotifyChainLock(const CBlockIndex *pindex, const llmq::CChainLockSig& clsig) override;
 };
 
 class CZMQPublishRawTransactionNotifier : public CZMQAbstractPublishNotifier

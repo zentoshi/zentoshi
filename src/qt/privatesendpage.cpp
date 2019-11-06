@@ -19,7 +19,7 @@
 #include <util/system.h>
 
 #include <shutdown.h>
-#include <instantx.h>
+
 #include <masternode-sync.h>
 #include <privatesend/privatesend-client.h>
 

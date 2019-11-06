@@ -249,8 +249,7 @@ extern const char *BLOCKTXN;
 // Dash message types
 // NOTE: do NOT declare non-implmented here, we don't want them to be exposed to the outside
 // TODO: add description
-extern const char *TXLOCKREQUEST;
-extern const char *TXLOCKVOTE;
+extern const char *LEGACYTXLOCKREQUEST; // only present for backwards compatibility
 extern const char *SPORK;
 extern const char *GETSPORKS;
 extern const char *MASTERNODEPAYMENTVOTE;
@@ -433,8 +432,7 @@ enum GetDataMsg
     MSG_FILTERED_WITNESS_BLOCK = MSG_FILTERED_BLOCK | MSG_WITNESS_FLAG,
     // Dash message types
     // NOTE: declare non-implmented here, we must keep this enum consistent and backwards compatible
-    MSG_TXLOCK_REQUEST = 4,
-    MSG_TXLOCK_VOTE = 5,
+    MSG_LEGACY_TXLOCK_REQUEST = 4,
     MSG_SPORK = 6,
     MSG_MASTERNODE_PAYMENT_VOTE = 7,
     MSG_MASTERNODE_PAYMENT_BLOCK = 8, // reusing, was MSG_MASTERNODE_SCANNING_ERROR previousely, was NOT used in 12.0

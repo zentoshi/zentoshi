@@ -19,20 +19,22 @@
 #include <util/moneystr.h>
 #include <validation.h>
 #include <wallet/coincontrol.h>
+#include <wallet/wallet.h>
 
 #include <memory>
+#include <univalue.h>
 
 CPrivateSendClientManager privateSendClient;
 
 void CPrivateSendClientManager::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
     if (fMasternodeMode) return;
-    if (fLiteMode) return; // ignore all Dash related functionality
+    if (!fEnablePrivateSend) return;
     if (!masternodeSync.IsBlockchainSynced()) return;
 
     if (!CheckDiskSpace()) {
         ResetPool();
-        fEnablePrivateSend = false;
+        fPrivateSendRunning = false;
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::ProcessMessage -- Not enough disk space, disabling PrivateSend.\n");
         return;
     }
@@ -54,7 +56,11 @@ void CPrivateSendClientManager::ProcessMessage(CNode* pfrom, const std::string& 
             // process every dsq only once
             for (const auto& q : vecPrivateSendQueue) {
                 if (q == dsq) {
-                    LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- %s seen\n", dsq.ToString());
+                    return;
+                }
+                if (q.fReady == dsq.fReady && q.masternodeOutpoint == dsq.masternodeOutpoint) {
+                    // no way the same mn can send another dsq with the same readiness this soon
+                    LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- Peer %s is sending WAY too many dsq messages for a masternode with collateral %s\n", pfrom->addr.ToString(), dsq.masternodeOutpoint.ToStringShort());
                     return;
                 }
             }
@@ -62,7 +68,7 @@ void CPrivateSendClientManager::ProcessMessage(CNode* pfrom, const std::string& 
 
         LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- %s new\n", dsq.ToString());
 
-        if (dsq.IsExpired()) return;
+        if (dsq.IsTimeOutOfBounds()) return;
 
         auto mnList = deterministicMNManager->GetListAtChainTip();
         auto dmn = mnList.GetValidMNByCollateral(dsq.masternodeOutpoint);
@@ -86,22 +92,10 @@ void CPrivateSendClientManager::ProcessMessage(CNode* pfrom, const std::string& 
                 }
             }
         } else {
-            LOCK(cs_deqsessions); // have to lock this first to avoid deadlocks with cs_vecqueue
-            TRY_LOCK(cs_vecqueue, lockRecv);
-            if (!lockRecv) return;
-
-            for (const auto& q : vecPrivateSendQueue) {
-                if (q.masternodeOutpoint == dsq.masternodeOutpoint) {
-                    // no way same mn can send another "not yet ready" dsq this soon
-                    LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- Masternode %s is sending WAY too many dsq messages\n", dmn->pdmnState->ToString());
-                    return;
-                }
-            }
-
             int64_t nLastDsq = mmetaman.GetMetaInfo(dmn->proTxHash)->GetLastDsq();
             int nThreshold = nLastDsq + mnList.GetValidMNsCount() / 5;
             LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- nLastDsq: %d  threshold: %d  nDsqCount: %d\n", nLastDsq, nThreshold, mmetaman.GetDsqCount());
-            //don't allow a few nodes to dominate the queuing process
+            // don't allow a few nodes to dominate the queuing process
             if (nLastDsq != 0 && nThreshold > mmetaman.GetDsqCount()) {
                 LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- Masternode %s is sending too many dsq messages\n", dmn->proTxHash.ToString());
                 return;
@@ -110,20 +104,24 @@ void CPrivateSendClientManager::ProcessMessage(CNode* pfrom, const std::string& 
             mmetaman.AllowMixing(dmn->proTxHash);
 
             LogPrint(BCLog::PRIVATESEND, "DSQUEUE -- new PrivateSend queue (%s) from masternode %s\n", dsq.ToString(), dmn->pdmnState->addr.ToString());
+
+            LOCK(cs_deqsessions);
             for (auto& session : deqSessions) {
                 CDeterministicMNCPtr mnMixing;
                 if (session.GetMixingMasternodeInfo(mnMixing) && mnMixing->collateralOutpoint == dsq.masternodeOutpoint) {
                     dsq.fTried = true;
                 }
             }
+
+            TRY_LOCK(cs_vecqueue, lockRecv);
+            if (!lockRecv) return;
             vecPrivateSendQueue.push_back(dsq);
             dsq.Relay(connman);
         }
 
-    } else if (
-        strCommand == NetMsgType::DSSTATUSUPDATE ||
-        strCommand == NetMsgType::DSFINALTX ||
-        strCommand == NetMsgType::DSCOMPLETE) {
+    } else if (strCommand == NetMsgType::DSSTATUSUPDATE ||
+               strCommand == NetMsgType::DSFINALTX ||
+               strCommand == NetMsgType::DSCOMPLETE) {
         LOCK(cs_deqsessions);
         for (auto& session : deqSessions) {
             session.ProcessMessage(pfrom, strCommand, vRecv, connman);
@@ -134,7 +132,7 @@ void CPrivateSendClientManager::ProcessMessage(CNode* pfrom, const std::string& 
 void CPrivateSendClientSession::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
     if (fMasternodeMode) return;
-    if (fLiteMode) return; // ignore all Dash related functionality
+    if (!privateSendClient.fEnablePrivateSend) return;
     if (!masternodeSync.IsBlockchainSynced()) return;
 
     if (strCommand == NetMsgType::DSSTATUSUPDATE) {
@@ -146,36 +144,31 @@ void CPrivateSendClientSession::ProcessMessage(CNode* pfrom, const std::string& 
 
         if (!mixingMasternode) return;
         if (mixingMasternode->pdmnState->addr != pfrom->addr) {
-            //LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- message doesn't match current Masternode: infoMixingMasternode %s addr %s\n", infoMixingMasternode.addr.ToString(), pfrom->addr.ToString());
             return;
         }
 
-        int nMsgSessionID;
-        int nMsgState;
-        int nMsgEntriesCount;
-        int nMsgStatusUpdate;
-        int nMsgMessageID;
-        vRecv >> nMsgSessionID >> nMsgState >> nMsgEntriesCount >> nMsgStatusUpdate >> nMsgMessageID;
+        CPrivateSendStatusUpdate psssup;
+        vRecv >> psssup;
 
-        if (nMsgState < POOL_STATE_MIN || nMsgState > POOL_STATE_MAX) {
-            LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- nMsgState is out of bounds: %d\n", nMsgState);
+        if (psssup.nState < POOL_STATE_MIN || psssup.nState > POOL_STATE_MAX) {
+            LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- psssup.nState is out of bounds: %d\n", psssup.nState);
             return;
         }
 
-        if (nMsgStatusUpdate < STATUS_REJECTED || nMsgStatusUpdate > STATUS_ACCEPTED) {
-            LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- nMsgStatusUpdate is out of bounds: %d\n", nMsgStatusUpdate);
+        if (psssup.nStatusUpdate < STATUS_REJECTED || psssup.nStatusUpdate > STATUS_ACCEPTED) {
+            LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- psssup.nStatusUpdate is out of bounds: %d\n", psssup.nStatusUpdate);
             return;
         }
 
-        if (nMsgMessageID < MSG_POOL_MIN || nMsgMessageID > MSG_POOL_MAX) {
-            LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- nMsgMessageID is out of bounds: %d\n", nMsgMessageID);
+        if (psssup.nMessageID < MSG_POOL_MIN || psssup.nMessageID > MSG_POOL_MAX) {
+            LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- psssup.nMessageID is out of bounds: %d\n", psssup.nMessageID);
             return;
         }
 
-        LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- nMsgSessionID %d  nMsgState: %d  nEntriesCount: %d  nMsgStatusUpdate: %d  nMsgMessageID %d (%s)\n",
-            nMsgSessionID, nMsgState, nEntriesCount, nMsgStatusUpdate, nMsgMessageID, CPrivateSend::GetMessageByID(PoolMessage(nMsgMessageID)));
+        LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- psssup.nSessionID %d  psssup.nState: %d  psssup.nStatusUpdate: %d  psssup.nMessageID %d (%s)\n",
+            psssup.nSessionID, psssup.nState, psssup.nStatusUpdate, psssup.nMessageID, CPrivateSend::GetMessageByID(psssup.nMessageID));
 
-        if (!CheckPoolStateUpdate(PoolState(nMsgState), nMsgEntriesCount, PoolStatusUpdate(nMsgStatusUpdate), PoolMessage(nMsgMessageID), nMsgSessionID)) {
+        if (!CheckPoolStateUpdate(psssup)) {
             LogPrint(BCLog::PRIVATESEND, "DSSTATUSUPDATE -- CheckPoolStateUpdate failed\n");
         }
 
@@ -188,7 +181,6 @@ void CPrivateSendClientSession::ProcessMessage(CNode* pfrom, const std::string& 
 
         if (!mixingMasternode) return;
         if (mixingMasternode->pdmnState->addr != pfrom->addr) {
-            //LogPrint(BCLog::PRIVATESEND, "DSFINALTX -- message doesn't match current Masternode: infoMixingMasternode %s addr %s\n", infoMixingMasternode.addr.ToString(), pfrom->addr.ToString());
             return;
         }
 
@@ -203,7 +195,7 @@ void CPrivateSendClientSession::ProcessMessage(CNode* pfrom, const std::string& 
 
         LogPrint(BCLog::PRIVATESEND, "DSFINALTX -- txNew %s", txNew.ToString());
 
-        //check to see if input is spent already? (and probably not confirmed)
+        // check to see if input is spent already? (and probably not confirmed)
         SignFinalTransaction(txNew, pfrom, connman);
 
     } else if (strCommand == NetMsgType::DSCOMPLETE) {
@@ -220,7 +212,7 @@ void CPrivateSendClientSession::ProcessMessage(CNode* pfrom, const std::string& 
         }
 
         int nMsgSessionID;
-        int nMsgMessageID;
+        PoolMessage nMsgMessageID;
         vRecv >> nMsgSessionID >> nMsgMessageID;
 
         if (nMsgMessageID < MSG_POOL_MIN || nMsgMessageID > MSG_POOL_MAX) {
@@ -233,9 +225,9 @@ void CPrivateSendClientSession::ProcessMessage(CNode* pfrom, const std::string& 
             return;
         }
 
-        LogPrint(BCLog::PRIVATESEND, "DSCOMPLETE -- nMsgSessionID %d  nMsgMessageID %d (%s)\n", nMsgSessionID, nMsgMessageID, CPrivateSend::GetMessageByID(PoolMessage(nMsgMessageID)));
+        LogPrint(BCLog::PRIVATESEND, "DSCOMPLETE -- nMsgSessionID %d  nMsgMessageID %d (%s)\n", nMsgSessionID, nMsgMessageID, CPrivateSend::GetMessageByID(nMsgMessageID));
 
-        CompletedTransaction(PoolMessage(nMsgMessageID));
+        CompletedTransaction(nMsgMessageID);
     }
 }
 
@@ -261,8 +253,6 @@ void CPrivateSendClientManager::ResetPool()
 void CPrivateSendClientSession::SetNull()
 {
     // Client side
-    nEntriesCount = 0;
-    fLastEntryAccepted = false;
     mixingMasternode = nullptr;
     pendingDsaRequest = CPendingDsaRequest();
 
@@ -274,17 +264,19 @@ void CPrivateSendClientSession::SetNull()
 //
 void CPrivateSendClientSession::UnlockCoins()
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return;
+    if (!privateSendClient.fEnablePrivateSend) return;
 
     while (true) {
-        TRY_LOCK(pwalletMain->cs_wallet, lockWallet);
+        std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+        CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+
+        TRY_LOCK(pwallet->cs_wallet, lockWallet);
         if (!lockWallet) {
             MilliSleep(50);
             continue;
         }
         for (const auto& outpoint : vecOutPointLocked)
-            pwalletMain->UnlockCoin(outpoint);
+            GetMainWallet()->UnlockCoin(outpoint);
         break;
     }
 
@@ -297,8 +289,9 @@ std::string CPrivateSendClientSession::GetStatus(bool fWaitForBlock)
     nStatusMessageProgress += 10;
     std::string strSuffix = "";
 
-    if (fWaitForBlock || !masternodeSync.IsBlockchainSynced())
+    if (fWaitForBlock || !masternodeSync.IsBlockchainSynced()) {
         return strAutoDenomResult;
+    }
 
     switch (nState) {
     case POOL_STATE_IDLE:
@@ -312,26 +305,7 @@ std::string CPrivateSendClientSession::GetStatus(bool fWaitForBlock)
             strSuffix = "...";
         return strprintf(_("Submitted to masternode, waiting in queue %s"), strSuffix);
     case POOL_STATE_ACCEPTING_ENTRIES:
-        if (nEntriesCount == 0) {
-            nStatusMessageProgress = 0;
-            return strAutoDenomResult;
-        } else if (fLastEntryAccepted) {
-            if (nStatusMessageProgress % 10 > 8) {
-                fLastEntryAccepted = false;
-                nStatusMessageProgress = 0;
-            }
-            return _("PrivateSend request complete:") + " " + _("Your transaction was accepted into the pool!");
-        } else {
-            if (nStatusMessageProgress % 70 <= 40)
-                return strprintf(_("Submitted following entries to masternode: %u"), nEntriesCount);
-            else if (nStatusMessageProgress % 70 <= 50)
-                strSuffix = ".";
-            else if (nStatusMessageProgress % 70 <= 60)
-                strSuffix = "..";
-            else if (nStatusMessageProgress % 70 <= 70)
-                strSuffix = "...";
-            return strprintf(_("Submitted to masternode, waiting for more entries ( %u ) %s"), nEntriesCount, strSuffix);
-        }
+        return strAutoDenomResult;
     case POOL_STATE_SIGNING:
         if (nStatusMessageProgress % 70 <= 40)
             return _("Found enough users, signing ...");
@@ -435,8 +409,7 @@ bool CPrivateSendClientSession::CheckTimeout()
     int nTimeout = (nState == POOL_STATE_SIGNING) ? PRIVATESEND_SIGNING_TIMEOUT : PRIVATESEND_QUEUE_TIMEOUT;
     bool fTimeout = GetTime() - nTimeLastSuccessfulStep >= nTimeout + nLagTime;
 
-    if (nState == POOL_STATE_IDLE || !fTimeout)
-        return false;
+    if (nState == POOL_STATE_IDLE || !fTimeout) return false;
 
     LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CheckTimeout -- %s timed out (%ds) -- resetting\n",
         (nState == POOL_STATE_SIGNING) ? "Signing" : "Session", nTimeout);
@@ -457,7 +430,7 @@ void CPrivateSendClientManager::CheckTimeout()
 
     CheckQueue();
 
-    if (!fEnablePrivateSend) return;
+    if (!fEnablePrivateSend || !fPrivateSendRunning) return;
 
     LOCK(cs_deqsessions);
     for (auto& session : deqSessions) {
@@ -484,11 +457,13 @@ bool CPrivateSendClientSession::SendDenominate(const std::vector<std::pair<CTxDS
     }
 
     // lock the funds we're going to use
-    for (const auto& txin : txMyCollateral.vin)
+    for (const auto& txin : txMyCollateral.vin) {
         vecOutPointLocked.push_back(txin.prevout);
+    }
 
-    for (const auto& pair : vecPSInOutPairsIn)
+    for (const auto& pair : vecPSInOutPairsIn) {
         vecOutPointLocked.push_back(pair.first.prevout);
+    }
 
     // we should already be connected to a Masternode
     if (!nSessionID) {
@@ -534,38 +509,32 @@ bool CPrivateSendClientSession::SendDenominate(const std::vector<std::pair<CTxDS
 }
 
 // Incoming message from Masternode updating the progress of mixing
-bool CPrivateSendClientSession::CheckPoolStateUpdate(PoolState nStateNew, int nEntriesCountNew, PoolStatusUpdate nStatusUpdate, PoolMessage nMessageID, int nSessionIDNew)
+bool CPrivateSendClientSession::CheckPoolStateUpdate(CPrivateSendStatusUpdate psssup)
 {
     if (fMasternodeMode) return false;
 
     // do not update state when mixing client state is one of these
     if (nState == POOL_STATE_IDLE || nState == POOL_STATE_ERROR || nState == POOL_STATE_SUCCESS) return false;
 
-    strAutoDenomResult = _("Masternode:") + " " + CPrivateSend::GetMessageByID(nMessageID);
+    strAutoDenomResult = _("Masternode:") + " " + CPrivateSend::GetMessageByID(psssup.nMessageID);
 
     // if rejected at any state
-    if (nStatusUpdate == STATUS_REJECTED) {
+    if (psssup.nStatusUpdate == STATUS_REJECTED) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CheckPoolStateUpdate -- entry is rejected by Masternode\n");
         UnlockCoins();
         keyHolderStorage.ReturnAll();
         SetNull();
         SetState(POOL_STATE_ERROR);
-        strLastMessage = CPrivateSend::GetMessageByID(nMessageID);
+        strLastMessage = CPrivateSend::GetMessageByID(psssup.nMessageID);
         return true;
     }
 
-    if (nStatusUpdate == STATUS_ACCEPTED && nState == nStateNew) {
-        if (nStateNew == POOL_STATE_QUEUE && nSessionID == 0 && nSessionIDNew != 0) {
+    if (psssup.nStatusUpdate == STATUS_ACCEPTED && nState == psssup.nState) {
+        if (psssup.nState == POOL_STATE_QUEUE && nSessionID == 0 && psssup.nSessionID != 0) {
             // new session id should be set only in POOL_STATE_QUEUE state
-            nSessionID = nSessionIDNew;
+            nSessionID = psssup.nSessionID;
             nTimeLastSuccessfulStep = GetTime();
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CheckPoolStateUpdate -- set nSessionID to %d\n", nSessionID);
-            return true;
-        } else if (nStateNew == POOL_STATE_ACCEPTING_ENTRIES && nEntriesCount != nEntriesCountNew) {
-            nEntriesCount = nEntriesCountNew;
-            nTimeLastSuccessfulStep = GetTime();
-            fLastEntryAccepted = true;
-            LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CheckPoolStateUpdate -- new entry accepted!\n");
             return true;
         }
     }
@@ -581,8 +550,7 @@ bool CPrivateSendClientSession::CheckPoolStateUpdate(PoolState nStateNew, int nE
 //
 bool CPrivateSendClientSession::SignFinalTransaction(const CTransaction& finalTransactionNew, CNode* pnode, CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return false;
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
 
     if (fMasternodeMode || pnode == nullptr) return false;
     if (!mixingMasternode) return false;
@@ -634,8 +602,9 @@ bool CPrivateSendClientSession::SignFinalTransaction(const CTransaction& finalTr
                     }
                 }
 
-                for (const auto& txout : entry.vecTxOut)
+                for (const auto& txout : entry.vecTxOut) {
                     nValue2 += txout.nValue;
+                }
 
                 int nTargetOuputsCount = entry.vecTxOut.size();
                 if (nFoundOutputsCount < nTargetOuputsCount || nValue1 != nValue2) {
@@ -649,10 +618,13 @@ bool CPrivateSendClientSession::SignFinalTransaction(const CTransaction& finalTr
                     return false;
                 }
 
-                const CKeyStore& keystore = *pwalletMain;
+                std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+                CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+                const CKeyStore& keystore = *pwallet;
 
                 LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::SignFinalTransaction -- Signing my input %i\n", nMyInputIndex);
-                if(!SignSignature(keystore, prevPubKey, finalMutableTransaction, nMyInputIndex, nValue1, int(SIGHASH_ALL|SIGHASH_ANYONECANPAY))) { // changes scriptSig
+                // TODO we're using amount=0 here but we should use the correct amount. This works because Dash ignores the amount while signing/verifying (only used in Bitcoin/Segwit)
+                if (!SignSignature(keystore, prevPubKey, finalMutableTransaction, nMyInputIndex, 0, int(SIGHASH_ALL | SIGHASH_ANYONECANPAY))) { // changes scriptSig
                     LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::SignFinalTransaction -- Unable to sign my own transaction!\n");
                     // not sure what to do here, it will timeout...?
                 }
@@ -688,11 +660,11 @@ void CPrivateSendClientSession::CompletedTransaction(PoolMessage nMessageID)
     if (fMasternodeMode) return;
 
     if (nMessageID == MSG_SUCCESS) {
-        LogPrintf("CompletedTransaction -- success\n");
+        LogPrint(BCLog::PRIVATESEND, "CompletedTransaction -- success\n");
         privateSendClient.UpdatedSuccessBlock();
         keyHolderStorage.KeepAll();
     } else {
-        LogPrintf("CompletedTransaction -- error\n");
+        LogPrint(BCLog::PRIVATESEND, "CompletedTransaction -- error\n");
         keyHolderStorage.ReturnAll();
     }
     UnlockCoins();
@@ -723,31 +695,26 @@ void CPrivateSendClientManager::RemoveSkippedDenom(const CAmount& nDenomValue)
 
 bool CPrivateSendClientManager::WaitForAnotherBlock()
 {
-    if (!masternodeSync.IsBlockchainSynced())
-        return true;
+    if (!masternodeSync.IsBlockchainSynced()) return true;
 
-    if (fPrivateSendMultiSession)
-        return false;
+    if (fPrivateSendMultiSession) return false;
 
     return nCachedBlockHeight - nCachedLastSuccessBlock < nMinBlocksToWait;
 }
 
 bool CPrivateSendClientManager::CheckAutomaticBackup()
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) {
-        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Wallet is not initialized, no mixing available.\n");
-        strAutoDenomResult = _("Wallet is not initialized") + ", " + _("no mixing available.");
-        fEnablePrivateSend = false; // no mixing
-        return false;
-    }
+    if (!fEnablePrivateSend || !fPrivateSendRunning) return false;
+
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
 
     switch (nWalletBackups) {
     case 0:
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Automatic backups disabled, no mixing available.\n");
         strAutoDenomResult = _("Automatic backups disabled") + ", " + _("no mixing available.");
-        fEnablePrivateSend = false;                // stop mixing
-        pwalletMain->nKeysLeftSinceAutoBackup = 0; // no backup, no "keys since last backup"
+        fPrivateSendRunning = false;               // stop mixing
+        pwallet->nKeysLeftSinceAutoBackup = 0; // no backup, no "keys since last backup"
         return false;
     case -1:
         // Automatic backup failed, nothing else we can do until user fixes the issue manually.
@@ -765,24 +732,24 @@ bool CPrivateSendClientManager::CheckAutomaticBackup()
         return false;
     }
 
-    if (pwalletMain->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_STOP) {
+    if (pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_STOP) {
         // We should never get here via mixing itself but probably smth else is still actively using keypool
-        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d, no mixing available.\n", pwalletMain->nKeysLeftSinceAutoBackup);
-        strAutoDenomResult = strprintf(_("Very low number of keys left: %d") + ", " + _("no mixing available."), pwalletMain->nKeysLeftSinceAutoBackup);
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d, no mixing available.\n", pwallet->nKeysLeftSinceAutoBackup);
+        strAutoDenomResult = strprintf(_("Very low number of keys left: %d") + ", " + _("no mixing available."), vpwallets[0]->nKeysLeftSinceAutoBackup);
         // It's getting really dangerous, stop mixing
-        fEnablePrivateSend = false;
+        fPrivateSendRunning = false;
         return false;
-    } else if (pwalletMain->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+    } else if (vpwallets[0]->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
         // Low number of keys left but it's still more or less safe to continue
-        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d\n", pwalletMain->nKeysLeftSinceAutoBackup);
-        strAutoDenomResult = strprintf(_("Very low number of keys left: %d"), pwalletMain->nKeysLeftSinceAutoBackup);
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d\n", vpwallets[0]->nKeysLeftSinceAutoBackup);
+        strAutoDenomResult = strprintf(_("Very low number of keys left: %d"), vpwallets[0]->nKeysLeftSinceAutoBackup);
 
         if (fCreateAutoBackups) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Trying to create new backup.\n");
             std::string warningString;
             std::string errorString;
 
-            if (!AutoBackupWallet(pwalletMain, "", warningString, errorString)) {
+            if (!AutoBackupWallet(GetWallets().front(), "", warningString, errorString)) {
                 if (!warningString.empty()) {
                     // There were some issues saving backup but yet more or less safe to continue
                     LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- WARNING! Something went wrong on automatic backup: %s\n", warningString);
@@ -800,7 +767,7 @@ bool CPrivateSendClientManager::CheckAutomaticBackup()
         }
     }
 
-    LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Keys left since latest backup: %d\n", pwalletMain->nKeysLeftSinceAutoBackup);
+    LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Keys left since latest backup: %d\n", vpwallets[0]->nKeysLeftSinceAutoBackup);
 
     return true;
 }
@@ -810,27 +777,27 @@ bool CPrivateSendClientManager::CheckAutomaticBackup()
 //
 bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool fDryRun)
 {
-    auto pwalletMain = GetMainWallet();
     if (fMasternodeMode) return false; // no client-side mixing on masternodes
     if (nState != POOL_STATE_IDLE) return false;
+
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if(!pwallet || pwallet->IsLocked(true)) return false;
+    if(nState != POOL_STATE_IDLE) return false;
 
     if (!masternodeSync.IsBlockchainSynced()) {
         strAutoDenomResult = _("Can't mix while sync in progress.");
         return false;
     }
 
-    if (!pwalletMain) {
-        strAutoDenomResult = _("Wallet is not initialized");
-        return false;
-    }
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
 
     CAmount nBalanceNeedsAnonymized;
-    CAmount nValueMin = CPrivateSend::GetSmallestDenomination();
 
     {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
+        LOCK2(cs_main, pwallet->cs_wallet);
 
-        if (!fDryRun && pwalletMain->IsLocked()) {
+        if (!fDryRun && vpwallets[0]->IsLocked(true)) {
             strAutoDenomResult = _("Wallet is locked.");
             return false;
         }
@@ -853,7 +820,7 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         }
 
         // check if there is anything left to do
-        CAmount nBalanceAnonymized = pwalletMain->GetAnonymizedBalance();
+        CAmount nBalanceAnonymized = vpwallets[0]->GetAnonymizedBalance();
         nBalanceNeedsAnonymized = privateSendClient.nPrivateSendAmount*COIN - nBalanceAnonymized;
 
         if (nBalanceNeedsAnonymized < 0) {
@@ -865,13 +832,13 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         CAmount nValueMin = CPrivateSend::GetSmallestDenomination();
 
         // if there are no confirmed DS collateral inputs yet
-        if (!pwalletMain->HasCollateralInputs()) {
+        if (!vpwallets[0]->HasCollateralInputs()) {
             // should have some additional amount for them
             nValueMin += CPrivateSend::GetMaxCollateralAmount();
         }
 
         // including denoms but applying some restrictions
-        CAmount nBalanceAnonymizable = pwalletMain->GetAnonymizableBalance();
+        CAmount nBalanceAnonymizable = vpwallets[0]->GetAnonymizableBalance();
 
         // anonymizable balance is way too small
         if (nBalanceAnonymizable < nValueMin) {
@@ -881,10 +848,10 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         }
 
         // excluding denoms
-        CAmount nBalanceAnonimizableNonDenom = pwalletMain->GetAnonymizableBalance(true);
+        CAmount nBalanceAnonimizableNonDenom = vpwallets[0]->GetAnonymizableBalance(true);
         // denoms
-        CAmount nBalanceDenominatedConf = pwalletMain->GetDenominatedBalance();
-        CAmount nBalanceDenominatedUnconf = pwalletMain->GetDenominatedBalance(true);
+        CAmount nBalanceDenominatedConf = vpwallets[0]->GetDenominatedBalance();
+        CAmount nBalanceDenominatedUnconf = vpwallets[0]->GetDenominatedBalance(true);
         CAmount nBalanceDenominated = nBalanceDenominatedConf + nBalanceDenominatedUnconf;
         CAmount nBalanceToDenominate = privateSendClient.nPrivateSendAmount * COIN - nBalanceDenominated;
 
@@ -933,8 +900,9 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         }
 
         //check if we have the collateral sized inputs
-        if (!pwalletMain->HasCollateralInputs())
-            return !pwalletMain->HasCollateralInputs(false) && MakeCollateralAmounts(connman);
+        if (!vpwallets[0]->HasCollateralInputs()) {
+            return !vpwallets[0]->HasCollateralInputs(false) && MakeCollateralAmounts(connman);
+        }
 
         if (nSessionID) {
             strAutoDenomResult = _("Mixing in progress...");
@@ -957,31 +925,28 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         //check our collateral and create new if needed
         std::string strReason;
         if (txMyCollateral == CMutableTransaction()) {
-            if (!pwalletMain->CreateCollateralTransaction(txMyCollateral, strReason)) {
+            if (!vpwallets[0]->CreateCollateralTransaction(txMyCollateral, strReason)) {
                 LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- create collateral error:%s\n", strReason);
                 return false;
             }
         } else {
             if (!CPrivateSend::IsCollateralValid(txMyCollateral)) {
                 LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- invalid collateral, recreating...\n");
-                if (!pwalletMain->CreateCollateralTransaction(txMyCollateral, strReason)) {
+                if (!vpwallets[0]->CreateCollateralTransaction(txMyCollateral, strReason)) {
                     LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- create collateral error: %s\n", strReason);
                     return false;
                 }
             }
         }
-    } // LOCK2(cs_main, pwalletMain->cs_wallet);
+    } // LOCK2(cs_main, vpwallets[0]->cs_wallet);
 
-    bool fUseQueue = GetRandInt(100) > 33;
-    // don't use the queues all of the time for mixing unless we are a liquidity provider
-    if ((privateSendClient.nLiquidityProvider || fUseQueue) && JoinExistingQueue(nBalanceNeedsAnonymized, connman))
+    // Always attempt to join an existing queue
+    if (JoinExistingQueue(nBalanceNeedsAnonymized, connman)) {
         return true;
+    }
 
-    // do not initiate queue if we are a liquidity provider to avoid useless inter-mixing
-    if (privateSendClient.nLiquidityProvider) return false;
-
-    if (StartNewQueue(nBalanceNeedsAnonymized, connman))
-        return true;
+    // If we were unable to find/join an existing queue then start a new one.
+    if (StartNewQueue(nBalanceNeedsAnonymized, connman)) return true;
 
     strAutoDenomResult = _("No compatible Masternode found.");
     return false;
@@ -989,21 +954,15 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
 
 bool CPrivateSendClientManager::DoAutomaticDenominating(CConnman& connman, bool fDryRun)
 {
-    auto pwalletMain = GetMainWallet();
     if (fMasternodeMode) return false; // no client-side mixing on masternodes
-    if (!fEnablePrivateSend) return false;
+    if (!fEnablePrivateSend || !fPrivateSendRunning) return false;
 
     if (!masternodeSync.IsBlockchainSynced()) {
         strAutoDenomResult = _("Can't mix while sync in progress.");
         return false;
     }
 
-    if (!pwalletMain) {
-        strAutoDenomResult = _("Wallet is not initialized");
-        return false;
-    }
-
-    if (!fDryRun && pwalletMain->IsLocked()) {
+    if (!fDryRun && vpwallets[0]->IsLocked(true)) {
         strAutoDenomResult = _("Wallet is locked.");
         return false;
     }
@@ -1026,8 +985,7 @@ bool CPrivateSendClientManager::DoAutomaticDenominating(CConnman& connman, bool 
         deqSessions.emplace_back();
     }
     for (auto& session : deqSessions) {
-        if (!CheckAutomaticBackup())
-            return false;
+        if (!CheckAutomaticBackup()) return false;
 
         if (WaitForAnotherBlock()) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::DoAutomaticDenominating -- Last successful PrivateSend action was too recent\n");
@@ -1077,18 +1035,20 @@ CDeterministicMNCPtr CPrivateSendClientManager::GetRandomNotUsedMasternode()
             continue;
         }
 
-        LogPrint(BCLog::MASTERNODE, "CPrivateSendClientManager::%s -- found, masternode=%s\n", __func__, dmn->collateralOutpoint.ToStringShort());
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::%s -- found, masternode=%s\n", __func__, dmn->collateralOutpoint.ToStringShort());
         return dmn;
     }
 
-    LogPrint(BCLog::MASTERNODE, "CPrivateSendClientManager::%s -- failed\n", __func__);
+    LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::%s -- failed\n", __func__);
     return nullptr;
 }
 
 bool CPrivateSendClientSession::JoinExistingQueue(CAmount nBalanceNeedsAnonymized, CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return false;
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
+
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
 
     auto mnList = deterministicMNManager->GetListAtChainTip();
 
@@ -1126,7 +1086,7 @@ bool CPrivateSendClientSession::JoinExistingQueue(CAmount nBalanceNeedsAnonymize
         CAmount nMaxAmount = nBalanceNeedsAnonymized;
 
         // Try to match their denominations if possible, select exact number of denominations
-        if (!pwalletMain->SelectPSInOutPairsByDenominations(dsq.nDenom, nMinAmount, nMaxAmount, vecPSInOutPairsTmp)) {
+        if (!pwallet->SelectPSInOutPairsByDenominations(dsq.nDenom, nMinAmount, nMaxAmount, vecPSInOutPairsTmp)) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::JoinExistingQueue -- Couldn't match %d denominations %d (%s)\n", vecBits.front(), dsq.nDenom, CPrivateSend::GetDenominationsToString(dsq.nDenom));
             continue;
         }
@@ -1156,8 +1116,7 @@ bool CPrivateSendClientSession::JoinExistingQueue(CAmount nBalanceNeedsAnonymize
 
 bool CPrivateSendClientSession::StartNewQueue(CAmount nBalanceNeedsAnonymized, CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return false;
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
     if (nBalanceNeedsAnonymized <= 0) return false;
 
     int nTries = 0;
@@ -1166,7 +1125,10 @@ bool CPrivateSendClientSession::StartNewQueue(CAmount nBalanceNeedsAnonymized, C
     // ** find the coins we'll use
     std::vector<CTxIn> vecTxIn;
     CAmount nValueInTmp = 0;
-    if (!pwalletMain->SelectPrivateCoins(CPrivateSend::GetSmallestDenomination(), nBalanceNeedsAnonymized, vecTxIn, nValueInTmp, 0, privateSendClient.nPrivateSendRounds - 1)) {
+
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if (!pwallet->SelectPrivateCoins(CPrivateSend::GetSmallestDenomination(), nBalanceNeedsAnonymized, vecTxIn, nValueInTmp, 0, privateSendClient.nPrivateSendRounds - 1)) {
         // this should never happen
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::StartNewQueue -- Can't mix: no compatible inputs found!\n");
         strAutoDenomResult = _("Can't mix: no compatible inputs found!");
@@ -1211,7 +1173,7 @@ bool CPrivateSendClientSession::StartNewQueue(CAmount nBalanceNeedsAnonymized, C
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::StartNewQueue -- attempt %d connection to Masternode %s\n", nTries, dmn->pdmnState->addr.ToString());
 
         std::vector<CAmount> vecAmounts;
-        pwalletMain->ConvertList(vecTxIn, vecAmounts);
+        pwallet->ConvertList(vecTxIn, vecAmounts);
         // try to get a single random denom out of vecAmounts
         while (nSessionDenom == 0) {
             nSessionDenom = CPrivateSend::GetDenominationsByAmounts(vecAmounts);
@@ -1268,8 +1230,10 @@ void CPrivateSendClientManager::ProcessPendingDsaRequest(CConnman& connman)
 
 bool CPrivateSendClientSession::SubmitDenominate(CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+
+    LOCK2(cs_main, pwallet->cs_wallet);
 
     std::string strError;
     std::vector<std::pair<CTxDSIn, CTxOut> > vecPSInOutPairs, vecPSInOutPairsTmp;
@@ -1280,15 +1244,10 @@ bool CPrivateSendClientSession::SubmitDenominate(CConnman& connman)
     }
 
     std::vector<std::pair<int, size_t> > vecInputsByRounds;
-    // Note: liquidity providers are fine with whatever number of inputs they've got
-    bool fDryRun = privateSendClient.nLiquidityProvider == 0;
 
     for (int i = 0; i < privateSendClient.nPrivateSendRounds; i++) {
-        if (PrepareDenominate(i, i, strError, vecPSInOutPairs, vecPSInOutPairsTmp, fDryRun)) {
+        if (PrepareDenominate(i, i, strError, vecPSInOutPairs, vecPSInOutPairsTmp, true)) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::SubmitDenominate -- Running PrivateSend denominate for %d rounds, success\n", i);
-            if (!fDryRun) {
-                return SendDenominate(vecPSInOutPairsTmp, connman);
-            }
             vecInputsByRounds.emplace_back(i, vecPSInOutPairsTmp.size());
         } else {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::SubmitDenominate -- Running PrivateSend denominate for %d rounds, error: %s\n", i, strError);
@@ -1325,13 +1284,17 @@ bool CPrivateSendClientSession::SubmitDenominate(CConnman& connman)
 
 bool CPrivateSendClientSession::SelectDenominate(std::string& strErrorRet, std::vector<std::pair<CTxDSIn, CTxOut> >& vecPSInOutPairsRet)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) {
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
+
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+
+    if(!pwallet) {
         strErrorRet = "Wallet is not initialized";
         return false;
     }
 
-    if (pwalletMain->IsLocked()) {
+    if (pwallet->IsLocked(true)) {
         strErrorRet = "Wallet locked, unable to create transaction!";
         return false;
     }
@@ -1350,7 +1313,7 @@ bool CPrivateSendClientSession::SelectDenominate(std::string& strErrorRet, std::
     }
     std::vector<CAmount> vecStandardDenoms = CPrivateSend::GetStandardDenominations();
 
-    bool fSelected = pwalletMain->SelectPSInOutPairsByDenominations(nSessionDenom, vecStandardDenoms[vecBits.front()], CPrivateSend::GetMaxPoolAmount(), vecPSInOutPairsRet);
+    bool fSelected = pwallet->SelectPSInOutPairsByDenominations(nSessionDenom, vecStandardDenoms[vecBits.front()], CPrivateSend::GetMaxPoolAmount(), vecPSInOutPairsRet);
     if (!fSelected) {
         strErrorRet = "Can't select current denominated inputs";
         return false;
@@ -1361,8 +1324,13 @@ bool CPrivateSendClientSession::SelectDenominate(std::string& strErrorRet, std::
 
 bool CPrivateSendClientSession::PrepareDenominate(int nMinRounds, int nMaxRounds, std::string& strErrorRet, const std::vector<std::pair<CTxDSIn, CTxOut> >& vecPSInOutPairsIn, std::vector<std::pair<CTxDSIn, CTxOut> >& vecPSInOutPairsRet, bool fDryRun)
 {
-    auto pwalletMain = GetMainWallet();
-    CWallet* const pwallet = pwalletMain.get();
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+
+    if(!pwallet) {
+        strErrorRet = "Wallet is not initialized";
+        return false;
+    }
 
     std::vector<int> vecBits;
     if (!CPrivateSend::GetDenominationsBits(nSessionDenom, vecBits)) {
@@ -1371,7 +1339,7 @@ bool CPrivateSendClientSession::PrepareDenominate(int nMinRounds, int nMaxRounds
     }
 
     for (const auto& pair : vecPSInOutPairsIn) {
-        pwalletMain->LockCoin(pair.first.prevout);
+        pwallet->LockCoin(pair.first.prevout);
     }
 
     // NOTE: No need to randomize order of inputs because they were
@@ -1386,7 +1354,7 @@ bool CPrivateSendClientSession::PrepareDenominate(int nMinRounds, int nMaxRounds
     for (const auto& pair : vecPSInOutPairsIn) {
         if (pair.second.nRounds < nMinRounds || pair.second.nRounds > nMaxRounds) {
             // unlock unused coins
-            pwalletMain->UnlockCoin(pair.first.prevout);
+            pwallet->UnlockCoin(pair.first.prevout);
             continue;
         }
         bool fFound = false;
@@ -1418,14 +1386,14 @@ bool CPrivateSendClientSession::PrepareDenominate(int nMinRounds, int nMaxRounds
         }
         if (!fFound || fDryRun) {
             // unlock unused coins and if we are not going to mix right away
-            pwalletMain->UnlockCoin(pair.first.prevout);
+            pwallet->UnlockCoin(pair.first.prevout);
         }
     }
 
     if (nDenomResult != nSessionDenom) {
         // unlock used coins on failure
         for (const auto& pair : vecPSInOutPairsRet) {
-            pwalletMain->UnlockCoin(pair.first.prevout);
+            pwallet->UnlockCoin(pair.first.prevout);
         }
         keyHolderStorage.ReturnAll();
         strErrorRet = "Can't prepare current denominated outputs";
@@ -1438,11 +1406,16 @@ bool CPrivateSendClientSession::PrepareDenominate(int nMinRounds, int nMaxRounds
 // Create collaterals by looping through inputs grouped by addresses
 bool CPrivateSendClientSession::MakeCollateralAmounts(CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return false;
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
 
+    // NOTE: We do not allow txes larger than 100kB, so we have to limit number of inputs here.
+    // We still want to consume a lot of inputs to avoid creating only smaller denoms though.
+    // Knowing that each CTxIn is at least 148b big, 400 inputs should take 400 x ~148b = ~60kB.
+    // This still leaves more than enough room for another data of typical MakeCollateralAmounts tx.
     std::vector<CompactTallyItem> vecTally;
-    if (!pwalletMain->SelectCoinsGroupedByAddresses(vecTally, false, false)) {
+    if (!pwallet->SelectCoinsGroupedByAddresses(vecTally, false, false, true, 400)) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::MakeCollateralAmounts -- SelectCoinsGroupedByAddresses can't find any inputs!\n");
         return false;
     }
@@ -1472,17 +1445,18 @@ bool CPrivateSendClientSession::MakeCollateralAmounts(CConnman& connman)
 // Split up large inputs or create fee sized inputs
 bool CPrivateSendClientSession::MakeCollateralAmounts(const CompactTallyItem& tallyItem, bool fTryDenominated, CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return false;
-    CWallet* const pwallet = pwalletMain.get();
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+
+    LOCK2(cs_main, pwallet->cs_wallet);
 
     // denominated input is always a single one, so we can check its amount directly and return early
-    if (!fTryDenominated && tallyItem.vecOutPoints.size() == 1 && CPrivateSend::IsDenominatedAmount(tallyItem.nAmount))
+    if (!fTryDenominated && tallyItem.vecOutPoints.size() == 1 && CPrivateSend::IsDenominatedAmount(tallyItem.nAmount)) {
         return false;
+    }
 
-    mapValue_t mapValue;
     CTransactionRef wtx;
     CAmount nFeeRet = 0;
     int nChangePosRet = -1;
@@ -1505,18 +1479,23 @@ bool CPrivateSendClientSession::MakeCollateralAmounts(const CompactTallyItem& ta
     CCoinControl coinControl;
     coinControl.fAllowOtherInputs = false;
     coinControl.fAllowWatchOnly = false;
+    coinControl.nCoinType = AvailableCoinsType::ONLY_NONDENOMINATED;
     // send change to the same address so that we were able create more denoms out of it later
     coinControl.destChange = tallyItem.txdest;
-    for (const auto& outpoint : tallyItem.vecOutPoints)
+    for (const auto& outpoint : tallyItem.vecOutPoints) {
         coinControl.Select(outpoint);
+    }
 
-    bool fSuccess = pwallet->CreateTransaction(vecSend, wtx, reservekeyChange, nFeeRet, nChangePosRet, strFail, coinControl, true, ONLY_NONDENOMINATED);
+    bool fSuccess = pwallet->CreateTransaction(vecSend, wtx, reservekeyChange,
+        nFeeRet, nChangePosRet, strFail, coinControl);
     if (!fSuccess) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::MakeCollateralAmounts -- ONLY_NONDENOMINATED: %s\n", strFail);
         // If we failed then most likely there are not enough funds on this address.
         if (fTryDenominated) {
             // Try to also use denominated coins (we can't mix denominated without collaterals anyway).
-            if (!pwallet->CreateTransaction(vecSend, wtx, reservekeyChange, nFeeRet, nChangePosRet, strFail, coinControl, true, ALL_COINS)) {
+            coinControl.nCoinType = AvailableCoinsType::ALL_COINS;
+            if (!pwallet->CreateTransaction(vecSend, wtx, reservekeyChange,
+                    nFeeRet, nChangePosRet, strFail, coinControl)) {
                 LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::MakeCollateralAmounts -- ALL_COINS Error: %s\n", strFail);
                 reservekeyCollateral.ReturnKey();
                 return false;
@@ -1534,7 +1513,8 @@ bool CPrivateSendClientSession::MakeCollateralAmounts(const CompactTallyItem& ta
 
     // use the same nCachedLastSuccessBlock as for DS mixing to prevent race
     CValidationState state;
-    if (!pwallet->CommitTransaction(wtx, std::move(mapValue), {}, reservekeyChange, &connman, state)) {
+    mapValue_t mapValue;
+    if (!vpwallets[0]->CommitTransaction(wtx, mapValue, {}, reservekeyChange, &connman, state)) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::MakeCollateralAmounts -- CommitTransaction failed! Reason given: %s\n", state.GetRejectReason());
         return false;
     }
@@ -1547,17 +1527,16 @@ bool CPrivateSendClientSession::MakeCollateralAmounts(const CompactTallyItem& ta
 // Create denominations by looping through inputs grouped by addresses
 bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    if (!pwalletMain) return false;
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, vpwallets[0]->cs_wallet);
 
     // NOTE: We do not allow txes larger than 100kB, so we have to limit number of inputs here.
     // We still want to consume a lot of inputs to avoid creating only smaller denoms though.
     // Knowing that each CTxIn is at least 148b big, 400 inputs should take 400 x ~148b = ~60kB.
     // This still leaves more than enough room for another data of typical CreateDenominated tx.
     std::vector<CompactTallyItem> vecTally;
-    if (!pwalletMain->SelectCoinsGroupedByAddresses(vecTally, true, true, true, 400)) {
+    if (!vpwallets[0]->SelectCoinsGroupedByAddresses(vecTally, true, true, true, 400)) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- SelectCoinsGroupedByAddresses can't find any inputs!\n");
         return false;
     }
@@ -1567,7 +1546,7 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
         return a.nAmount > b.nAmount;
     });
 
-    bool fCreateMixingCollaterals = !pwalletMain->HasCollateralInputs();
+    bool fCreateMixingCollaterals = !vpwallets[0]->HasCollateralInputs();
 
     for (const auto& item : vecTally) {
         if (!CreateDenominated(nBalanceToDenominate, item, fCreateMixingCollaterals, connman)) continue;
@@ -1581,9 +1560,10 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
 // Create denominations
 bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, const CompactTallyItem& tallyItem, bool fCreateMixingCollaterals, CConnman& connman)
 {
-    auto pwalletMain = GetMainWallet();
-    CWallet* const pwallet = pwalletMain.get();
-    if (!pwalletMain) return false;
+    if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
+
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
 
     std::vector<CRecipient> vecSend;
     CKeyHolderStorage keyHolderStorageDenom;
@@ -1621,7 +1601,7 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
         }
 
         // find new denoms to skip if any (ignore the largest one)
-        if (nDenomValue != vecStandardDenoms.front() && pwalletMain->CountInputsWithAmount(nDenomValue) > privateSendClient.nPrivateSendDenoms) {
+        if (nDenomValue != vecStandardDenoms.front() && vpwallets[0]->CountInputsWithAmount(nDenomValue) > privateSendClient.nPrivateSendDenoms) {
             strAutoDenomResult = strprintf(_("Too many %f denominations, removing."), (float)nDenomValue / COIN);
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- %s\n", strAutoDenomResult);
             privateSendClient.AddSkippedDenom(nDenomValue);
@@ -1663,14 +1643,15 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
 
     // if we have anything left over, it will be automatically send back as change - there is no need to send it manually
 
-    mapValue_t mapValue;
     CCoinControl coinControl;
     coinControl.fAllowOtherInputs = false;
     coinControl.fAllowWatchOnly = false;
+    coinControl.nCoinType = AvailableCoinsType::ONLY_NONDENOMINATED;
     // send change to the same address so that we were able create more denoms out of it later
     coinControl.destChange = tallyItem.txdest;
-    for (const auto& outpoint : tallyItem.vecOutPoints)
+    for (const auto& outpoint : tallyItem.vecOutPoints) {
         coinControl.Select(outpoint);
+    }
 
     CTransactionRef wtx;
     CAmount nFeeRet = 0;
@@ -1679,7 +1660,8 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
     // make our change address
     CReserveKey reservekeyChange(pwallet);
 
-    bool fSuccess = pwallet->CreateTransaction(vecSend, wtx, reservekeyChange, nFeeRet, nChangePosRet, strFail, coinControl, true, ONLY_NONDENOMINATED);
+    bool fSuccess = vpwallets[0]->CreateTransaction(vecSend, wtx, reservekeyChange,
+        nFeeRet, nChangePosRet, strFail, coinControl);
     if (!fSuccess) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- Error: %s\n", strFail);
         keyHolderStorageDenom.ReturnAll();
@@ -1689,7 +1671,8 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
     keyHolderStorageDenom.KeepAll();
 
     CValidationState state;
-    if (!pwalletMain->CommitTransaction(wtx, mapValue, {}, reservekeyChange, &connman, state)) {
+    mapValue_t mapValue;
+    if (!GetWallets().front()->CommitTransaction(wtx, mapValue, {}, reservekeyChange, &connman, state)) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- CommitTransaction failed! Reason given: %s\n", state.GetRejectReason());
         return false;
     }
@@ -1727,11 +1710,10 @@ void CPrivateSendClientManager::UpdatedBlockTip(const CBlockIndex* pindex)
 
 void CPrivateSendClientManager::DoMaintenance(CConnman& connman)
 {
-    if (fLiteMode) return;       // disable all Dash specific functionality
+    if (!fEnablePrivateSend) return;
     if (fMasternodeMode) return; // no client-side mixing on masternodes
 
-    if (!masternodeSync.IsBlockchainSynced() || ShutdownRequested())
-        return;
+    if (!masternodeSync.IsBlockchainSynced() || ShutdownRequested()) return;
 
     static unsigned int nTick = 0;
     static unsigned int nDoAutoNextRun = nTick + PRIVATESEND_AUTO_TIMEOUT_MIN;
@@ -1743,4 +1725,55 @@ void CPrivateSendClientManager::DoMaintenance(CConnman& connman)
         DoAutomaticDenominating(connman);
         nDoAutoNextRun = nTick + PRIVATESEND_AUTO_TIMEOUT_MIN + GetRandInt(PRIVATESEND_AUTO_TIMEOUT_MAX - PRIVATESEND_AUTO_TIMEOUT_MIN);
     }
+}
+
+void CPrivateSendClientSession::GetJsonInfo(UniValue& obj) const
+{
+    obj.clear();
+    obj.setObject();
+    if (mixingMasternode != nullptr) {
+        assert(mixingMasternode->pdmnState);
+        obj.push_back(Pair("protxhash", mixingMasternode->proTxHash.ToString()));
+        obj.push_back(Pair("outpoint",  mixingMasternode->collateralOutpoint.ToStringShort()));
+        obj.push_back(Pair("service",   mixingMasternode->pdmnState->addr.ToString()));
+    }
+    CAmount amount{0};
+    if (nSessionDenom) {
+        // TODO: GetDenominationsToString has few issues:
+        // - it returns a string of denomination amounts concatenated via "+" if there are many of them
+        // - it uses FormatMoney which drops trailing zeros
+        // We no longer use multiple denominations in one session and this thing should be refactored
+        // together with other similar functions in CPrivatesend.
+        // For now, we just use a workaround here to convert a string into CAmount and convert it to a
+        // proper format via ValueFromAmount later.
+        ParseFixedPoint(CPrivateSend::GetDenominationsToString(nSessionDenom), 8, &amount);
+    }
+    obj.push_back(Pair("denomination",  ValueFromAmount(amount)));
+    obj.push_back(Pair("state",         GetStateString()));
+    obj.push_back(Pair("entries_count", GetEntriesCount()));
+}
+
+void CPrivateSendClientManager::GetJsonInfo(UniValue& obj) const
+{
+    LOCK(cs_deqsessions);
+    obj.clear();
+    obj.setObject();
+    obj.push_back(Pair("enabled",       fEnablePrivateSend));
+    obj.push_back(Pair("running",       fPrivateSendRunning));
+    obj.push_back(Pair("multisession",  fPrivateSendMultiSession));
+    obj.push_back(Pair("max_sessions",  nPrivateSendSessions));
+    obj.push_back(Pair("max_rounds",    nPrivateSendRounds));
+    obj.push_back(Pair("max_amount",    nPrivateSendAmount));
+    obj.push_back(Pair("max_denoms",    nPrivateSendDenoms));
+    obj.push_back(Pair("queue_size",    GetQueueSize()));
+
+    UniValue arrSessions(UniValue::VARR);
+    for (const auto& session : deqSessions) {
+        if (session.GetState() != POOL_STATE_IDLE) {
+            UniValue objSession(UniValue::VOBJ);
+            session.GetJsonInfo(objSession);
+            arrSessions.push_back(objSession);
+        }
+    }
+    obj.push_back(Pair("sessions",  arrSessions));
 }

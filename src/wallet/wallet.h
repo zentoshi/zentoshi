@@ -37,6 +37,8 @@
 #include <utility>
 #include <vector>
 
+extern std::vector<std::shared_ptr<CWallet>> vpwallets;
+
 /**
  * Settings
  */
@@ -341,7 +343,7 @@ public:
         READWRITE(nIndex);
     }
 
-    void SetMerkleBranch(const uint256& block_hash, int posInBlock);
+    void SetMerkleBranch(const CBlockIndex* pIndex, int posInBlock);
 
     /**
      * Return depth of transaction in blockchain:
@@ -767,7 +769,7 @@ private:
      * Abandoned state should probably be more carefully tracked via different
      * posInBlock signals or by checking mempool presence when necessary.
      */
-    bool AddToWalletIfInvolvingMe(const CTransactionRef& tx, const uint256& block_hash, int posInBlock, bool fUpdate) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    bool AddToWalletIfInvolvingMe(const CTransactionRef& tx, const CBlockIndex* pIndex, int posInBlock, bool fUpdate) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     std::set<COutPoint> setWalletUTXO;
 
     /* Mark a transaction (and its in-wallet descendants) as conflicting with a particular block. */
@@ -780,7 +782,7 @@ private:
 
     /* Used by TransactionAddedToMemorypool/BlockConnected/Disconnected/ScanForWalletTransactions.
      * Should be called with non-zero block_hash and posInBlock if this is for a transaction that is included in a block. */
-    void SyncTransaction(const CTransactionRef& tx, const uint256& block_hash, int posInBlock = 0, bool update_tx = true) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    void SyncTransaction(const CTransactionRef& tx, const CBlockIndex *pindex = nullptr, int posInBlock = 0)  EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     /* the HD chain data model (external chain counters) */
     CHDChain hdChain;
@@ -820,6 +822,10 @@ private:
 
     /** Internal database handle. */
     std::unique_ptr<WalletDatabase> database;
+
+    // Used to NotifyTransactionChanged of the previous block's coinbase when
+    // the next block comes in
+    uint256 hashPrevBestCoinbase;
 
     /**
      * The following is used to keep track of how far behind the wallet is
@@ -1054,8 +1060,8 @@ public:
     void LoadToWallet(const CWalletTx& wtxIn) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     void TransactionAddedToMempool(const CTransactionRef& tx) override;
     void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex *pindex, const std::vector<CTransactionRef>& vtxConflicted) override;
-    void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock) override;
-    int64_t RescanFromTime(int64_t startTime, const WalletRescanReserver& reserver, bool update);
+    void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected) override;
+    int64_t RescanFromTime(int64_t startTime, bool update);
 
     struct ScanResult {
         enum { SUCCESS, FAILURE, USER_ABORT } status = SUCCESS;
@@ -1072,8 +1078,7 @@ public:
         //! USER_ABORT.
         uint256 last_failed_block;
     };
-    ScanResult ScanForWalletTransactions(const uint256& first_block, const uint256& last_block, const WalletRescanReserver& reserver, bool fUpdate);
-    void TransactionRemovedFromMempool(const CTransactionRef &ptx) override;
+    CBlockIndex* ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions(interfaces::Chain::Lock& locked_chain) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) override EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     // ResendWalletTransactionsBefore may only be called if fBroadcastTransactions!
@@ -1268,6 +1273,12 @@ public:
     /** Keypool has new keys */
     boost::signals2::signal<void ()> NotifyCanGetAddressesChanged;
 
+    /** IS-lock received */
+    boost::signals2::signal<void ()> NotifyISLockReceived;
+
+    /** ChainLock received */
+    boost::signals2::signal<void (int height)> NotifyChainLockReceived;
+
     /** Inquire whether this wallet broadcasts transactions. */
     bool GetBroadcastTransactions() const { return fBroadcastTransactions; }
     /** Set whether this wallet broadcasts transactions. */
@@ -1373,6 +1384,9 @@ public:
 
     /** Add a KeyOriginInfo to the wallet */
     bool AddKeyOrigin(const CPubKey& pubkey, const KeyOriginInfo& info);
+
+    void NotifyTransactionLock(const CTransaction &tx, const llmq::CInstantSendLock& islock) override;
+    void NotifyChainLock(const CBlockIndex* pindexChainLock, const llmq::CChainLockSig& clsig) override;
 };
 
 /** A key allocated from the key pool. */

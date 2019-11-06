@@ -43,8 +43,7 @@ const char *CMPCTBLOCK="cmpctblock";
 const char *GETBLOCKTXN="getblocktxn";
 const char *BLOCKTXN="blocktxn";
 // Dash message types
-const char *TXLOCKREQUEST="ix";
-const char *TXLOCKVOTE="txlvote";
+const char *LEGACYTXLOCKREQUEST="ix";
 const char *SPORK="spork";
 const char *GETSPORKS="getsporks";
 const char *MASTERNODEPAYMENTVOTE="mnw";
@@ -100,8 +99,7 @@ static const char* ppszTypeName[] =
     "filtered block", // Should never occur
     // Dash message types
     // NOTE: include non-implmented here, we must keep this list in sync with enum in protocol.h
-    NetMsgType::TXLOCKREQUEST,
-    NetMsgType::TXLOCKVOTE,
+    NetMsgType::LEGACYTXLOCKREQUEST,
     NetMsgType::SPORK,
     NetMsgType::MASTERNODEPAYMENTVOTE,
     NetMsgType::MASTERNODEPAYMENTBLOCK, // reusing, was MNSCANERROR previousely, was NOT used in 12.0, we need this for inv
@@ -162,8 +160,7 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::BLOCKTXN,
     // Dash message types
     // NOTE: do NOT include non-implmented here, we want them to be "Unknown command" in ProcessMessage()
-    NetMsgType::TXLOCKREQUEST,
-    NetMsgType::TXLOCKVOTE,
+    NetMsgType::LEGACYTXLOCKREQUEST,
     NetMsgType::SPORK,
     NetMsgType::GETSPORKS,
     NetMsgType::SENDDSQUEUE,

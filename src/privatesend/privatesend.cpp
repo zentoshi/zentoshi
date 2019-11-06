@@ -17,6 +17,7 @@
 #include <validation.h>
 
 #include "llmq/quorums_instantsend.h"
+#include "llmq/quorums_chainlocks.h"
 
 #include <string>
 
@@ -63,7 +64,7 @@ bool CPrivateSendQueue::CheckSignature(const CBLSPublicKey& blsPubKey) const
     CBLSSignature sig;
     sig.SetBuf(vchSig);
     if (!sig.IsValid() || !sig.VerifyInsecure(blsPubKey, hash)) {
-        LogPrintf("CTxLockVote::CheckSignature -- VerifyInsecure() failed\n");
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendQueue::CheckSignature -- VerifyInsecure() failed\n");
         return false;
     }
 
@@ -74,10 +75,16 @@ bool CPrivateSendQueue::Relay(CConnman& connman)
 {
     connman.ForEachNode([&connman, this](CNode* pnode) {
         CNetMsgMaker msgMaker(pnode->GetSendVersion());
-        if (pnode->nVersion >= MIN_PRIVATESEND_PEER_PROTO_VERSION && pnode->fSendDSQueue)
+        if (pnode->nVersion >= MIN_PRIVATESEND_PEER_PROTO_VERSION && pnode->fSendDSQueue) {
             connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSQUEUE, (*this)));
+        }
     });
     return true;
+}
+
+bool CPrivateSendQueue::IsTimeOutOfBounds() const
+{
+    return GetAdjustedTime() - nTime > PRIVATESEND_QUEUE_TIMEOUT || nTime - GetAdjustedTime() > PRIVATESEND_QUEUE_TIMEOUT;
 }
 
 uint256 CPrivateSendBroadcastTx::GetSignatureHash() const
@@ -109,17 +116,42 @@ bool CPrivateSendBroadcastTx::CheckSignature(const CBLSPublicKey& blsPubKey) con
     CBLSSignature sig;
     sig.SetBuf(vchSig);
     if (!sig.IsValid() || !sig.VerifyInsecure(blsPubKey, hash)) {
-        LogPrintf("CTxLockVote::CheckSignature -- VerifyInsecure() failed\n");
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendBroadcastTx::CheckSignature -- VerifyInsecure() failed\n");
         return false;
     }
 
     return true;
 }
 
-bool CPrivateSendBroadcastTx::IsExpired(int nHeight)
+bool CPrivateSendBroadcastTx::IsExpired(const CBlockIndex* pindex)
 {
-    // expire confirmed DSTXes after ~1h since confirmation
-    return (nConfirmedHeight != -1) && (nHeight - nConfirmedHeight > 24);
+    // expire confirmed DSTXes after ~1h since confirmation or chainlocked confirmation
+    if (nConfirmedHeight == -1 || pindex->nHeight < nConfirmedHeight) return false; // not mined yet
+    if (pindex->nHeight - nConfirmedHeight > 24) return true; // mined more then an hour ago
+    return llmq::chainLocksHandler->HasChainLock(pindex->nHeight, *pindex->phashBlock);
+}
+
+bool CPrivateSendBroadcastTx::IsValidStructure()
+{
+    // some trivial checks only
+    if (tx->vin.size() != tx->vout.size()) {
+        return false;
+    }
+    if (tx->vin.size() < CPrivateSend::GetMinPoolParticipants()) {
+        return false;
+    }
+    if (tx->vin.size() > CPrivateSend::GetMaxPoolParticipants() * PRIVATESEND_ENTRY_MAX_SIZE) {
+        return false;
+    }
+    for (const auto& out : tx->vout) {
+        if (!CPrivateSend::IsDenominatedAmount(out.nValue)) {
+            return false;
+        }
+        if (!out.scriptPubKey.IsPayToPublicKeyHash()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void CPrivateSendBaseSession::SetNull()
@@ -147,13 +179,14 @@ void CPrivateSendBaseManager::CheckQueue()
     if (!lockDS) return; // it's ok to fail here, we run this quite frequently
 
     // check mixing queue objects for timeouts
-    std::vector<CPrivateSendQueue>::iterator it = vecPrivateSendQueue.begin();
+    auto it = vecPrivateSendQueue.begin();
     while (it != vecPrivateSendQueue.end()) {
-        if ((*it).IsExpired()) {
-            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseManager::%s -- Removing expired queue (%s)\n", __func__, (*it).ToString());
+        if ((*it).IsTimeOutOfBounds()) {
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseManager::%s -- Removing a queue (%s)\n", __func__, (*it).ToString());
             it = vecPrivateSendQueue.erase(it);
-        } else
+        } else {
             ++it;
+        }
     }
 }
 
@@ -164,7 +197,7 @@ bool CPrivateSendBaseManager::GetQueueItemAndTry(CPrivateSendQueue& dsqRet)
 
     for (auto& dsq : vecPrivateSendQueue) {
         // only try each queue once
-        if (dsq.fTried || dsq.IsExpired()) continue;
+        if (dsq.fTried || dsq.IsTimeOutOfBounds()) continue;
         dsq.fTried = true;
         dsqRet = dsq;
         return true;
@@ -266,7 +299,7 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
     {
         LOCK(cs_main);
         CValidationState validationState;
-        if (!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), false, NULL, false, maxTxFee, true)) {
+        if (!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), false, nullptr, false, maxTxFee, true)) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- didn't pass AcceptToMemoryPool()\n");
             return false;
         }
@@ -327,8 +360,9 @@ int CPrivateSend::GetDenominations(const std::vector<CTxOut>& vecTxOut, bool fSi
     std::vector<std::pair<CAmount, int> > vecDenomUsed;
 
     // make a list of denominations, with zero uses
-    for (const auto& nDenomValue : vecStandardDenominations)
+    for (const auto& nDenomValue : vecStandardDenominations) {
         vecDenomUsed.push_back(std::make_pair(nDenomValue, 0));
+    }
 
     // look for denominations and update uses to 1
     for (const auto& txout : vecTxOut) {
@@ -392,9 +426,9 @@ int CPrivateSend::GetDenominationsByAmounts(const std::vector<CAmount>& vecAmoun
 
 bool CPrivateSend::IsDenominatedAmount(CAmount nInputAmount)
 {
-    for (const auto& nDenomValue : vecStandardDenominations)
-        if (nInputAmount == nDenomValue)
-            return true;
+    for (const auto& nDenomValue : vecStandardDenominations) {
+        if (nInputAmount == nDenomValue) return true;
+    }
     return false;
 }
 
@@ -463,12 +497,12 @@ CPrivateSendBroadcastTx CPrivateSend::GetDSTX(const uint256& hash)
     return (it == mapDSTX.end()) ? CPrivateSendBroadcastTx() : it->second;
 }
 
-void CPrivateSend::CheckDSTXes(int nHeight)
+void CPrivateSend::CheckDSTXes(const CBlockIndex* pindex)
 {
     LOCK(cs_mapdstx);
-    std::map<uint256, CPrivateSendBroadcastTx>::iterator it = mapDSTX.begin();
+    auto it = mapDSTX.begin();
     while (it != mapDSTX.end()) {
-        if (it->second.IsExpired(nHeight)) {
+        if (it->second.IsExpired(pindex)) {
             mapDSTX.erase(it++);
         } else {
             ++it;
@@ -479,21 +513,46 @@ void CPrivateSend::CheckDSTXes(int nHeight)
 
 void CPrivateSend::UpdatedBlockTip(const CBlockIndex* pindex)
 {
-    if (pindex && !fLiteMode && masternodeSync.IsBlockchainSynced()) {
-        CheckDSTXes(pindex->nHeight);
+    if (pindex && masternodeSync.IsBlockchainSynced()) {
+        CheckDSTXes(pindex);
     }
 }
 
-void CPrivateSend::SyncTransaction(const CTransaction& tx, const CBlockIndex* pindex, int posInBlock)
+void CPrivateSend::UpdateDSTXConfirmedHeight(const CTransactionRef& tx, int nHeight)
 {
-    if (tx.IsCoinBase()) return;
+    AssertLockHeld(cs_mapdstx);
 
-    LOCK2(cs_main, cs_mapdstx);
+    auto it = mapDSTX.find(tx->GetHash());
+    if (it == mapDSTX.end()) {
+        return;
+    }
 
-    uint256 txHash = tx.GetHash();
-    if (!mapDSTX.count(txHash)) return;
+    it->second.SetConfirmedHeight(nHeight);
+    LogPrint(BCLog::PRIVATESEND, "CPrivateSend::%s -- txid=%s, nHeight=%d\n", __func__, tx->GetHash().ToString(), nHeight);
+}
 
-    // When tx is 0-confirmed or conflicted, posInBlock is SYNC_TRANSACTION_NOT_IN_BLOCK and nConfirmedHeight should be set to -1
-    mapDSTX[txHash].SetConfirmedHeight(posInBlock == CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK ? -1 : pindex->nHeight);
-    LogPrint(BCLog::PRIVATESEND, "CPrivateSend::SyncTransaction -- txid=%s\n", txHash.ToString());
+void CPrivateSend::TransactionAddedToMempool(const CTransactionRef& tx)
+{
+    LOCK(cs_mapdstx);
+    UpdateDSTXConfirmedHeight(tx, -1);
+}
+
+void CPrivateSend::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted)
+{
+    LOCK(cs_mapdstx);
+    for (const auto& tx : vtxConflicted) {
+        UpdateDSTXConfirmedHeight(tx, -1);
+    }
+
+    for (const auto& tx : pblock->vtx) {
+        UpdateDSTXConfirmedHeight(tx, pindex->nHeight);
+    }
+}
+
+void CPrivateSend::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected)
+{
+    LOCK(cs_mapdstx);
+    for (const auto& tx : pblock->vtx) {
+        UpdateDSTXConfirmedHeight(tx, -1);
+    }
 }

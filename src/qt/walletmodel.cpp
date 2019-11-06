@@ -24,7 +24,6 @@
 #include <wallet/coincontrol.h>
 #include <wallet/wallet.h>
 
-#include "instantx.h"
 #include "spork.h"
 #include "privatesend/privatesend-client.h"
 #include "llmq/quorums_instantsend.h"

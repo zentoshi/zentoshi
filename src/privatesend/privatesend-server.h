@@ -9,6 +9,7 @@
 #include "privatesend.h"
 
 class CPrivateSendServer;
+class UniValue;
 
 // The main object for accessing mixing
 extern CPrivateSendServer privateSendServer;
@@ -36,6 +37,8 @@ private:
     void ChargeFees(CConnman& connman);
     /// Rarely charge fees to pay miners
     void ChargeRandomFees(CConnman& connman);
+    /// Consume collateral in cases when peer misbehaved
+    void ConsumeCollateral(CConnman& connman, const CTransactionRef& txref);
 
     /// Check for process
     void CheckPool(CConnman& connman);
@@ -80,6 +83,8 @@ public:
     void CheckForCompleteQueue(CConnman& connman);
 
     void DoMaintenance(CConnman& connman);
+
+    void GetJsonInfo(UniValue& obj) const;
 };
 
 #endif

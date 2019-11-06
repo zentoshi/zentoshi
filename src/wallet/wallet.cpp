@@ -33,7 +33,7 @@
 #include <kernel.h>
 
 #include <governance/governance.h>
-#include <instantx.h>
+
 #include <privatesend/privatesend-client.h>
 #include <spork.h>
 
@@ -47,11 +47,12 @@
 #include <future>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/thread.hpp>
 
 static const size_t OUTPUT_GROUP_MAX_ENTRIES = 10;
 
 static CCriticalSection cs_wallets;
-static std::vector<std::shared_ptr<CWallet>> vpwallets GUARDED_BY(cs_wallets);
+std::vector<std::shared_ptr<CWallet>> vpwallets GUARDED_BY(cs_wallets);
 
 std::shared_ptr<CWallet> GetMainWallet()
 {
@@ -1078,19 +1079,32 @@ void CWallet::LoadToWallet(const CWalletTx& wtxIn)
     }
 }
 
-bool CWallet::AddToWalletIfInvolvingMe(const CTransactionRef& ptx, const uint256& block_hash, int posInBlock, bool fUpdate)
+/**
+ * Add a transaction to the wallet, or update it.  pIndex and posInBlock should
+ * be set when the transaction was known to be included in a block.  When
+ * pIndex == nullptr, then wallet state is not updated in AddToWallet, but
+ * notifications happen and cached balances are marked dirty.
+ *
+ * If fUpdate is true, existing transactions will be updated.
+ * TODO: One exception to this is that the abandoned state is cleared under the
+ * assumption that any further notification of a transaction that was considered
+ * abandoned is an indication that it is not safe to be considered abandoned.
+ * Abandoned state should probably be more carefully tracked via different
+ * posInBlock signals or by checking mempool presence when necessary.
+ */
+bool CWallet::AddToWalletIfInvolvingMe(const CTransactionRef& ptx, const CBlockIndex* pIndex, int posInBlock, bool fUpdate)
 {
     const CTransaction& tx = *ptx;
     {
         AssertLockHeld(cs_wallet);
 
-        if (!block_hash.IsNull()) {
+        if (pIndex != nullptr) {
             for (const CTxIn& txin : tx.vin) {
                 std::pair<TxSpends::const_iterator, TxSpends::const_iterator> range = mapTxSpends.equal_range(txin.prevout);
                 while (range.first != range.second) {
                     if (range.first->second != tx.GetHash()) {
-                        WalletLogPrintf("Transaction %s (in block %s) conflicts with wallet transaction %s (both spend %s:%i)\n", tx.GetHash().ToString(), block_hash.ToString(), range.first->second.ToString(), range.first->first.hash.ToString(), range.first->first.n);
-                        MarkConflicted(block_hash, range.first->second);
+                        LogPrintf("Transaction %s (in block %s) conflicts with wallet transaction %s (both spend %s:%i)\n", tx.GetHash().ToString(), pIndex->GetBlockHash().ToString(), range.first->second.ToString(), range.first->first.hash.ToString(), range.first->first.n);
+                        MarkConflicted(pIndex->GetBlockHash(), range.first->second);
                     }
                     range.first++;
                 }
@@ -1110,14 +1124,15 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransactionRef& ptx, const uint256
             // loop though all outputs
             for (const CTxOut& txout: tx.vout) {
                 // extract addresses and check if they match with an unused keypool key
-                for (const auto& keyid : GetAffectedKeys(txout.scriptPubKey, *this)) {
+                std::vector<CKeyID> vAffected;
+                for (const auto &keyid : GetAffectedKeys(txout.scriptPubKey, *this)) {
                     std::map<CKeyID, int64_t>::const_iterator mi = m_pool_key_to_index.find(keyid);
                     if (mi != m_pool_key_to_index.end()) {
-                        WalletLogPrintf("%s: Detected a used keypool key, mark all keypool key up to this key as used\n", __func__);
+                        LogPrintf("%s: Detected a used keypool key, mark all keypool key up to this key as used\n", __func__);
                         MarkReserveKeysAsUsed(mi->second);
 
                         if (!TopUpKeyPool()) {
-                            WalletLogPrintf("%s: Topping up keypool failed (locked wallet)\n", __func__);
+                            LogPrintf("%s: Topping up keypool failed (locked wallet)\n", __func__);
                         }
                     }
                 }
@@ -1126,8 +1141,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransactionRef& ptx, const uint256
             CWalletTx wtx(this, ptx);
 
             // Get merkle branch if transaction was found in a block
-            if (!block_hash.IsNull())
-                wtx.SetMerkleBranch(block_hash, posInBlock);
+            if (pIndex != nullptr)
+                wtx.SetMerkleBranch(pIndex, posInBlock);
 
             return AddToWallet(wtx, false);
         }
@@ -1260,38 +1275,32 @@ void CWallet::MarkConflicted(const uint256& hashBlock, const uint256& hashTx)
     }
 }
 
-void CWallet::SyncTransaction(const CTransactionRef& ptx, const uint256& block_hash, int posInBlock, bool update_tx) {
-    if (!AddToWalletIfInvolvingMe(ptx, block_hash, posInBlock, update_tx))
+void CWallet::SyncTransaction(const CTransactionRef& ptx, const CBlockIndex *pindex, int posInBlock) {
+    const CTransaction& tx = *ptx;
+
+    if (!AddToWalletIfInvolvingMe(ptx, pindex, posInBlock, true))
         return; // Not one of ours
 
     // If a transaction changes 'conflicted' state, that changes the balance
     // available of the outputs it spends. So force those to be
     // recomputed, also:
-    MarkInputsDirty(ptx);
+    for (const CTxIn& txin : tx.vin)
+    {
+        if (mapWallet.count(txin.prevout.hash))
+            mapWallet[txin.prevout.hash].MarkDirty();
+    }
+
+    fAnonymizableTallyCached = false;
+    fAnonymizableTallyCachedNonDenom = false;
 }
 
 void CWallet::TransactionAddedToMempool(const CTransactionRef& ptx) {
-    auto locked_chain = chain().lock();
-    LOCK(cs_wallet);
-    SyncTransaction(ptx, {} /* block hash */, 0 /* position in block */);
-
-    auto it = mapWallet.find(ptx->GetHash());
-    if (it != mapWallet.end()) {
-        it->second.fInMempool = true;
-    }
-}
-
-void CWallet::TransactionRemovedFromMempool(const CTransactionRef &ptx) {
-    LOCK(cs_wallet);
-    auto it = mapWallet.find(ptx->GetHash());
-    if (it != mapWallet.end()) {
-        it->second.fInMempool = false;
-    }
+    LOCK2(cs_main, cs_wallet);
+    SyncTransaction(ptx);
 }
 
 void CWallet::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex *pindex, const std::vector<CTransactionRef>& vtxConflicted) {
-    auto locked_chain = chain().lock();
-    LOCK(cs_wallet);
+    LOCK2(cs_main, cs_wallet);
     // TODO: Temporarily ensure that mempool removals are notified before
     // connected transactions.  This shouldn't matter, but the abandoned
     // state of transactions in our wallet is currently cleared when we
@@ -1300,52 +1309,80 @@ void CWallet::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const 
     // to abandon a transaction and then have it inadvertently cleared by
     // the notification that the conflicted transaction was evicted.
 
-    // NOTE: For reference - do not attempt to stake on these types of address.
-    // if(witnessEnabled && m_default_address_type != OutputType::P2SH_SEGWIT)
-    //    m_default_address_type = OutputType::P2SH_SEGWIT;
-
     for (const CTransactionRef& ptx : vtxConflicted) {
-        SyncTransaction(ptx, {} /* block hash */, 0 /* position in block */);
-        TransactionRemovedFromMempool(ptx);
+        SyncTransaction(ptx);
     }
     for (size_t i = 0; i < pblock->vtx.size(); i++) {
-        SyncTransaction(pblock->vtx[i], pindex->GetBlockHash(), i);
-        TransactionRemovedFromMempool(pblock->vtx[i]);
+        SyncTransaction(pblock->vtx[i], pindex, i);
     }
 
-    m_last_block_processed = pindex->GetBlockHash();
-}
-
-void CWallet::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock) {
-    auto locked_chain = chain().lock();
-    LOCK(cs_wallet);
-
-    for (const CTransactionRef& ptx : pblock->vtx) {
-        SyncTransaction(ptx, {} /* block hash */, 0 /* position in block */);
-    }
-}
-
-void CWallet::BlockUntilSyncedToCurrentChain() {
-    AssertLockNotHeld(cs_main);
-    AssertLockNotHeld(cs_wallet);
-
-    {
-        // Skip the queue-draining stuff if we know we're caught up with
-        // chainActive.Tip()...
-        // We could also take cs_wallet here, and call m_last_block_processed
-        // protected by cs_wallet instead of cs_main, but as long as we need
-        // cs_main here anyway, it's easier to just call it cs_main-protected.
-        auto locked_chain = chain().lock();
-
-        if (!m_last_block_processed.IsNull() && locked_chain->isPotentialTip(m_last_block_processed)) {
-            return;
+    // The GUI expects a NotifyTransactionChanged when a coinbase tx
+    // which is in our wallet moves from in-the-best-block to
+    // 2-confirmations (as it only displays them at that time).
+    // We do that here.
+    if (hashPrevBestCoinbase.IsNull()) {
+        // Immediately after restart we have no idea what the coinbase
+        // transaction from the previous block is.
+        // For correctness we scan over the entire wallet, looking for
+        // the previous block's coinbase, just in case it is ours, so
+        // that we can notify the UI that it should now be displayed.
+        if (pindex->pprev) {
+            for (const std::pair<uint256, CWalletTx>& p : mapWallet) {
+                if (p.second.IsCoinBase() && p.second.hashBlock == pindex->pprev->GetBlockHash()) {
+                    NotifyTransactionChanged(this, p.first, CT_UPDATED);
+                    break;
+                }
+            }
+        }
+    } else {
+        std::map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(hashPrevBestCoinbase);
+        if (mi != mapWallet.end()) {
+            NotifyTransactionChanged(this, hashPrevBestCoinbase, CT_UPDATED);
         }
     }
 
-    // ...otherwise put a callback in the validation interface queue and wait
+    hashPrevBestCoinbase = pblock->vtx[0]->GetHash();
+
+    // reset cache to make sure no longer immature coins are included
+    fAnonymizableTallyCached = false;
+    fAnonymizableTallyCachedNonDenom = false;
+}
+
+void CWallet::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected) {
+    LOCK2(cs_main, cs_wallet);
+
+    for (const CTransactionRef& ptx : pblock->vtx) {
+        // NOTE: do NOT pass pindex here
+        SyncTransaction(ptx);
+    }
+
+    // reset cache to make sure no longer mature coins are excluded
+    fAnonymizableTallyCached = false;
+    fAnonymizableTallyCachedNonDenom = false;
+}
+
+void CWallet::BlockUntilSyncedToCurrentChain() {
+    AssertLockNotHeld(cs_wallet);
+    // Skip the queue-draining stuff if we know we're caught up with
+    // ::ChainActive().Tip(), otherwise put a callback in the validation interface queue and wait
     // for the queue to drain enough to execute it (indicating we are caught up
     // at least with the time we entered this function).
-    SyncWithValidationInterfaceQueue();
+    uint256 last_block_hash = WITH_LOCK(cs_wallet, return m_last_block_processed);
+}
+
+isminetype CWallet::IsMine(const CTxIn &txin) const
+{
+    {
+        LOCK(cs_wallet);
+        std::map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.hash);
+        if (mi != mapWallet.end())
+        {
+            const CWalletTx& prev = (*mi).second;
+            if (txin.prevout.n < prev.tx->vout.size())
+                return IsMine(prev.tx->vout[txin.prevout.n]);
+        }
+    }
+    return ISMINE_NO;
 }
 
 int CWallet::GetRealOutpointPrivateSendRounds(const COutPoint& outpoint, int nRounds) const
@@ -1446,21 +1483,6 @@ bool CWallet::IsDenominated(const COutPoint& outpoint) const
     }
 
     return false;
-}
-
-isminetype CWallet::IsMine(const CTxIn &txin) const
-{
-    {
-        LOCK(cs_wallet);
-        std::map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.hash);
-        if (mi != mapWallet.end())
-        {
-            const CWalletTx& prev = (*mi).second;
-            if (txin.prevout.n < prev.tx->vout.size())
-                return IsMine(prev.tx->vout[txin.prevout.n]);
-        }
-    }
-    return ISMINE_NO;
 }
 
 // Note that this function doesn't distinguish between a 0-valued input,
@@ -1898,151 +1920,77 @@ int CWalletTx::GetRequestCount() const
  * @return Earliest timestamp that could be successfully scanned from. Timestamp
  * returned will be higher than startTime if relevant blocks could not be read.
  */
-int64_t CWallet::RescanFromTime(int64_t startTime, const WalletRescanReserver& reserver, bool update)
+int64_t CWallet::RescanFromTime(int64_t startTime, bool update)
 {
+    AssertLockHeld(cs_main);
+    AssertLockHeld(cs_wallet);
+
     // Find starting block. May be null if nCreateTime is greater than the
     // highest blockchain timestamp, in which case there is nothing that needs
     // to be scanned.
-    uint256 start_block;
-    {
-        auto locked_chain = chain().lock();
-        const Optional<int> start_height = locked_chain->findFirstBlockWithTime(startTime - TIMESTAMP_WINDOW, &start_block);
-        const Optional<int> tip_height = locked_chain->getHeight();
-        WalletLogPrintf("%s: Rescanning last %i blocks\n", __func__, tip_height && start_height ? *tip_height - *start_height + 1 : 0);
-    }
+    CBlockIndex* const startBlock = chainActive.FindEarliestAtLeast(startTime - TIMESTAMP_WINDOW);
+    LogPrintf("%s: Rescanning last %i blocks\n", __func__, startBlock ? chainActive.Height() - startBlock->nHeight + 1 : 0);
 
-    if (!start_block.IsNull()) {
-        // TODO: this should take into account failure by ScanResult::USER_ABORT
-        ScanResult result = ScanForWalletTransactions(start_block, {} /* stop_block */, reserver, update);
-        if (result.status == ScanResult::FAILURE) {
-            int64_t time_max;
-            if (!chain().findBlock(result.last_failed_block, nullptr /* block */, nullptr /* time */, &time_max)) {
-                throw std::logic_error("ScanForWalletTransactions returned invalid block hash");
-            }
-            return time_max + TIMESTAMP_WINDOW + 1;
+    if (startBlock) {
+        const CBlockIndex* const failedBlock = ScanForWalletTransactions(startBlock, update);
+        if (failedBlock) {
+            return failedBlock->GetBlockTimeMax() + TIMESTAMP_WINDOW + 1;
         }
     }
     return startTime;
 }
 
 /**
- * Scan the block chain (starting in start_block) for transactions
+ * Scan the block chain (starting in pindexStart) for transactions
  * from or to us. If fUpdate is true, found transactions that already
  * exist in the wallet will be updated.
  *
- * @param[in] start_block Scan starting block. If block is not on the active
- *                        chain, the scan will return SUCCESS immediately.
- * @param[in] stop_block  Scan ending block. If block is not on the active
- *                        chain, the scan will continue until it reaches the
- *                        chain tip.
- *
- * @return ScanResult returning scan information and indicating success or
- *         failure. Return status will be set to SUCCESS if scan was
- *         successful. FAILURE if a complete rescan was not possible (due to
- *         pruning or corruption). USER_ABORT if the rescan was aborted before
- *         it could complete.
- *
- * @pre Caller needs to make sure start_block (and the optional stop_block) are on
- * the main chain after to the addition of any new keys you want to detect
- * transactions for.
+ * Returns null if scan was successful. Otherwise, if a complete rescan was not
+ * possible (due to pruning or corruption), returns pointer to the most recent
+ * block that could not be scanned.
  */
-CWallet::ScanResult CWallet::ScanForWalletTransactions(const uint256& start_block, const uint256& stop_block, const WalletRescanReserver& reserver, bool fUpdate)
+CBlockIndex* CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
     int64_t nNow = GetTime();
+    const CChainParams& chainParams = Params();
 
-    assert(reserver.isReserved());
-
-    uint256 block_hash = start_block;
-    ScanResult result;
-
-    WalletLogPrintf("Rescan started from block %s...\n", start_block.ToString());
-
+    CBlockIndex* pindex = pindexStart;
+    CBlockIndex* ret = nullptr;
     {
+        LOCK2(cs_main, cs_wallet);
         fAbortRescan = false;
-        ShowProgress(strprintf("%s " + _("Rescanning..."), GetDisplayName()), 0); // show rescan progress in GUI as dialog or on splashscreen, if -rescan on startup
-        uint256 tip_hash;
-        // The way the 'block_height' is initialized is just a workaround for the gcc bug #47679 since version 4.6.0.
-        Optional<int> block_height = MakeOptional(false, int());
-        double progress_begin;
-        double progress_end;
+        fScanningWallet = true;
+
+        ShowProgress(_("Rescanning..."), 0); // show rescan progress in GUI as dialog or on splashscreen, if -rescan on startup
+        double dProgressStart = GuessVerificationProgress(chainParams.TxData(), pindex);
+        double dProgressTip = GuessVerificationProgress(chainParams.TxData(), chainActive.Tip());
+        while (pindex && !fAbortRescan)
         {
-            auto locked_chain = chain().lock();
-            if (Optional<int> tip_height = locked_chain->getHeight()) {
-                tip_hash = locked_chain->getBlockHash(*tip_height);
-            }
-            block_height = locked_chain->getBlockHeight(block_hash);
-            progress_begin = chain().guessVerificationProgress(block_hash);
-            progress_end = chain().guessVerificationProgress(stop_block.IsNull() ? tip_hash : stop_block);
-        }
-        double progress_current = progress_begin;
-        while (block_height && !fAbortRescan && !ShutdownRequested()) {
-            if (*block_height % 100 == 0 && progress_end - progress_begin > 0.0) {
-                ShowProgress(strprintf("%s " + _("Rescanning..."), GetDisplayName()), std::max(1, std::min(99, (int)((progress_current - progress_begin) / (progress_end - progress_begin) * 100))));
-            }
+            if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
+                ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((GuessVerificationProgress(chainParams.TxData(), pindex) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
             if (GetTime() >= nNow + 60) {
                 nNow = GetTime();
-                WalletLogPrintf("Still rescanning. At block %d. Progress=%f\n", *block_height, progress_current);
+                LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->nHeight, GuessVerificationProgress(chainParams.TxData(), pindex));
             }
 
             CBlock block;
-            if (chain().findBlock(block_hash, &block) && !block.IsNull()) {
-                auto locked_chain = chain().lock();
-                LOCK(cs_wallet);
-                if (!locked_chain->getBlockHeight(block_hash)) {
-                    // Abort scan if current block is no longer active, to prevent
-                    // marking transactions as coming from the wrong block.
-                    // TODO: This should return success instead of failure, see
-                    // https://github.com/bitcoin/bitcoin/pull/14711#issuecomment-458342518
-                    result.last_failed_block = block_hash;
-                    result.status = ScanResult::FAILURE;
-                    break;
-                }
+            if (ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
                 for (size_t posInBlock = 0; posInBlock < block.vtx.size(); ++posInBlock) {
-                    SyncTransaction(block.vtx[posInBlock], block_hash, posInBlock, fUpdate);
+                    AddToWalletIfInvolvingMe(block.vtx[posInBlock], pindex, posInBlock, fUpdate);
                 }
-                // scan succeeded, record block as most recent successfully scanned
-                result.last_scanned_block = block_hash;
-                result.last_scanned_height = *block_height;
             } else {
-                // could not scan block, keep scanning but record this block as the most recent failure
-                result.last_failed_block = block_hash;
-                result.status = ScanResult::FAILURE;
+                ret = pindex;
             }
-            if (block_hash == stop_block) {
-                break;
-            }
-            {
-                auto locked_chain = chain().lock();
-                Optional<int> tip_height = locked_chain->getHeight();
-                if (!tip_height || *tip_height <= block_height || !locked_chain->getBlockHeight(block_hash)) {
-                    // break successfully when rescan has reached the tip, or
-                    // previous block is no longer on the chain due to a reorg
-                    break;
-                }
-
-                // increment block and verification progress
-                block_hash = locked_chain->getBlockHash(++*block_height);
-                progress_current = chain().guessVerificationProgress(block_hash);
-
-                // handle updated tip hash
-                const uint256 prev_tip_hash = tip_hash;
-                tip_hash = locked_chain->getBlockHash(*tip_height);
-                if (stop_block.IsNull() && prev_tip_hash != tip_hash) {
-                    // in case the tip has changed, update progress max
-                    progress_end = chain().guessVerificationProgress(tip_hash);
-                }
-            }
+            pindex = chainActive.Next(pindex);
         }
-        ShowProgress(strprintf("%s " + _("Rescanning..."), GetDisplayName()), 100); // hide progress dialog in GUI
-        if (block_height && fAbortRescan) {
-            WalletLogPrintf("Rescan aborted at block %d. Progress=%f\n", *block_height, progress_current);
-            result.status = ScanResult::USER_ABORT;
-        } else if (block_height && ShutdownRequested()) {
-            WalletLogPrintf("Rescan interrupted by shutdown request at block %d. Progress=%f\n", *block_height, progress_current);
-            result.status = ScanResult::USER_ABORT;
+        if (pindex && fAbortRescan) {
+            LogPrintf("Rescan aborted at block %d. Progress=%f\n", pindex->nHeight, GuessVerificationProgress(chainParams.TxData(), pindex));
         }
+        ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
+
+        fScanningWallet = false;
     }
-    return result;
+    return ret;
 }
 
 void CWallet::ReacceptWalletTransactions(interfaces::Chain::Lock& locked_chain)
@@ -3517,8 +3465,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
         // There is also no need for an extra fee anymore.
         fUseInstantSend = false;
     }
-    CAmount nFeePay = fUseInstantSend ? CTxLockRequest().GetMinFee(true) : 0;
-
+    
     CAmount nValue = 0;
     int nChangePosRequest = nChangePosInOut;
     unsigned int nSubtractFeeFromAmount = 0;
@@ -3629,7 +3576,6 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
             CFeeRate nFeeRateNeeded = GetMinimumFeeRate(*this, coin_control, ::mempool, ::feeEstimator, &feeCalc);
 
             nFeeRet = 0;
-            if(nFeePay > 0) nFeeRet = nFeePay;
             bool pick_new_inputs = true;
             CAmount nValueIn = 0;
 
@@ -5453,6 +5399,7 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
     LOCK(walletInstance->cs_wallet);
 
     int rescan_height = 0;
+    CBlockIndex *pindexRescan = chainActive.Genesis();
     if (!gArgs.GetBoolArg("-rescan", false))
     {
         WalletBatch batch(*walletInstance->database);
@@ -5470,20 +5417,18 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
     } else {
         walletInstance->m_last_block_processed.SetNull();
     }
-
-    if (tip_height && *tip_height != rescan_height)
+    if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
         //We can't rescan beyond non-pruned blocks, stop and throw an error
         //this might happen if a user uses an old wallet within a pruned node
         // or if he ran -disablewallet for a longer time, then decided to re-enable
         if (fPruneMode)
         {
-            int block_height = *tip_height;
-            while (block_height > 0 && locked_chain->haveBlockOnDisk(block_height - 1) && rescan_height != block_height) {
-                --block_height;
-            }
+            CBlockIndex *block = chainActive.Tip();
+            while (block && block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA) && block->pprev->nTx > 0 && pindexRescan != block)
+                block = block->pprev;
 
-            if (rescan_height != block_height) {
+            if (pindexRescan != block) {
                 InitError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
                 return nullptr;
             }
@@ -5494,22 +5439,14 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
 
         // No need to read and scan block if block was created before
         // our wallet birthday (as adjusted for block time variability)
-        if (walletInstance->nTimeFirstKey) {
-            if (Optional<int> first_block = locked_chain->findFirstBlockWithTimeAndHeight(walletInstance->nTimeFirstKey - TIMESTAMP_WINDOW, rescan_height)) {
-                rescan_height = *first_block;
-            }
+        while (pindexRescan && walletInstance->nTimeFirstKey && (pindexRescan->GetBlockTime() < (walletInstance->nTimeFirstKey - TIMESTAMP_WINDOW))) {
+            pindexRescan = chainActive.Next(pindexRescan);
         }
 
         nStart = GetTimeMillis();
-        {
-            WalletRescanReserver reserver(walletInstance.get());
-            if (!reserver.reserve() || (ScanResult::SUCCESS != walletInstance->ScanForWalletTransactions(locked_chain->getBlockHash(rescan_height), {} /* stop block */, reserver, true /* update */).status)) {
-                InitError(_("Failed to rescan the wallet during initialization"));
-                return nullptr;
-            }
-        }
-        walletInstance->WalletLogPrintf("Rescan completed in %15dms\n", GetTimeMillis() - nStart);
-        walletInstance->ChainStateFlushed(locked_chain->getTipLocator());
+        walletInstance->ScanForWalletTransactions(pindexRescan, true);
+        LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
+        walletInstance->SetBestChain(chainActive.GetLocator());
         walletInstance->database->IncrementUpdateCounter();
 
         // Restore wallet transaction metadata after -zapwallettxes=1
@@ -5676,6 +5613,29 @@ bool AutoBackupWallet(std::shared_ptr<CWallet> wallet, const std::string& strWal
     return true;
 }
 
+void CWallet::NotifyTransactionLock(const CTransaction &tx, const llmq::CInstantSendLock& islock)
+{
+    LOCK(cs_wallet);
+    // Only notify UI if this transaction is in this wallet
+    uint256 txHash = tx.GetHash();
+    std::map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txHash);
+    if (mi != mapWallet.end()){
+        NotifyTransactionChanged(this, txHash, CT_UPDATED);
+        NotifyISLockReceived();
+        // notify an external script
+        std::string strCmd = gArgs.GetArg("-instantsendnotify", "");
+        if (!strCmd.empty()) {
+            boost::replace_all(strCmd, "%s", txHash.GetHex());
+            boost::thread t(runCommand, strCmd); // thread runs free
+        }
+    }
+}
+
+void CWallet::NotifyChainLock(const CBlockIndex* pindexChainLock, const llmq::CChainLockSig& clsig)
+{
+    NotifyChainLockReceived(pindexChainLock->nHeight);
+}
+
 CKeyPool::CKeyPool()
 {
     nTime = GetTime();
@@ -5697,10 +5657,10 @@ CWalletKey::CWalletKey(int64_t nExpires)
     nTimeExpires = nExpires;
 }
 
-void CMerkleTx::SetMerkleBranch(const uint256& block_hash, int posInBlock)
+void CMerkleTx::SetMerkleBranch(const CBlockIndex* pindex, int posInBlock)
 {
     // Update the tx's hashBlock
-    hashBlock = block_hash;
+    hashBlock = pindex->GetBlockHash();
 
     // set the position of the transaction in the block
     nIndex = posInBlock;

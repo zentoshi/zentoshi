@@ -31,6 +31,8 @@
 #include <thread>
 #include <memory>
 #include <condition_variable>
+#include <unordered_set>
+#include <queue>
 
 #ifndef WIN32
 #include <arpa/inet.h>
@@ -246,7 +248,7 @@ public:
 
     bool IsMasternodeOrDisconnectRequested(const CService& addr);
 
-    void PushMessage(CNode* pnode, CSerializedNetMsg&& msg);
+    void PushMessage(CNode* pnode, CSerializedNetMsg&& msg, bool allowOptimisticSend = false); // LOLOL we just drop the boolean
 
     template<typename Condition, typename Callable>
     bool ForEachNodeContinueIf(const Condition& cond, Callable&& func)
@@ -829,6 +831,8 @@ public:
     std::vector<CInv> vInventoryOtherToSend GUARDED_BY(cs_inventory);
     CCriticalSection cs_inventory;
     std::unordered_set<uint256, StaticSaltedHasher> setAskFor;
+    std::unordered_set<uint256, StaticSaltedHasher> setAskForInQueue;
+    std::priority_queue<std::pair<int64_t, CInv>, std::vector<std::pair<int64_t, CInv>>, std::greater<>> queueAskFor;
     std::vector<std::pair<int64_t, CInv>> vecAskFor;
     std::multimap<int64_t, CInv> mapAskFor;
     int64_t nNextInvSend{0};

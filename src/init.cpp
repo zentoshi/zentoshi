@@ -60,13 +60,13 @@
 #include <dsnotificationinterface.h>
 #include <flat-database.h>
 #include <governance/governance.h>
+
 #include <masternode-meta.h>
 #include <masternode-payments.h>
 #include <masternode-sync.h>
 #include <masternode-utils.h>
 #include <messagesigner.h>
 #include <netfulfilledman.h>
-#include <instantx.h>
 #ifdef ENABLE_WALLET
 #include <privatesend/privatesend-client.h>
 #endif // ENABLE_WALLET
@@ -283,11 +283,6 @@ void Shutdown(InitInterfaces& interfaces)
         flatdb3.Dump(governance);
         CFlatDB<CNetFulfilledRequestManager> flatdb4("netfulfilled.dat", "magicFulfilledCache");
         flatdb4.Dump(netfulfilledman);
-        if(fEnableInstantSend)
-        {
-            CFlatDB<CInstantSend> flatdb5("instantsend.dat", "magicInstantSendCache");
-            flatdb5.Dump(instantsend);
-        }
         CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
         flatdb6.Dump(sporkManager);
     }
@@ -360,7 +355,7 @@ void Shutdown(InitInterfaces& interfaces)
     if (pdsNotificationInterface) {
         UnregisterValidationInterface(pdsNotificationInterface);
         delete pdsNotificationInterface;
-        pdsNotificationInterface = NULL;
+        pdsNotificationInterface = nullptr;
     }
     if (fMasternodeMode) {
         UnregisterValidationInterface(activeMasternodeManager);
@@ -382,7 +377,6 @@ void Shutdown(InitInterfaces& interfaces)
     interfaces.chain_clients.clear();
     UnregisterAllValidationInterfaces();
     GetMainSignals().UnregisterBackgroundSignalScheduler();
-    GetMainSignals().UnregisterWithMempoolSignals(mempool);
     globalVerifyHandle.reset();
     ECC_Stop();
     LogPrintf("%s: done\n", __func__);
@@ -1443,7 +1437,6 @@ bool AppInitMain(InitInterfaces& interfaces)
     threadGroup.create_thread(std::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
 
     GetMainSignals().RegisterBackgroundSignalScheduler(scheduler);
-    GetMainSignals().RegisterWithMempoolSignals(mempool);
 
     // Create client interfaces for wallets that are supposed to be loaded
     // according to -wallet and -disablewallet options. This only constructs
@@ -1909,6 +1902,12 @@ bool AppInitMain(InitInterfaces& interfaces)
         return InitError(_("You can not start a masternode in lite mode."));
 
     if(fMasternodeMode) {
+#ifdef ENABLE_WALLET
+        if (!vpwallets.empty()) {
+            return InitError(_("You can not start a masternode with wallet enabled."));
+        }
+#endif //ENABLE_WALLET
+
         LogPrintf("MASTERNODE:\n");
 
         std::string strMasterNodeBLSPrivKey = gArgs.GetArg("-masternodeblsprivkey", "");
@@ -1940,34 +1939,32 @@ bool AppInitMain(InitInterfaces& interfaces)
     // ********************************************************* Step 11b: setup PrivateSend
 
 #ifdef ENABLE_WALLET
-    privateSendClient.nLiquidityProvider = std::min(std::max((int)gArgs.GetArg("-liquidityprovider", DEFAULT_PRIVATESEND_LIQUIDITY), MIN_PRIVATESEND_LIQUIDITY), MAX_PRIVATESEND_LIQUIDITY);
     int nMaxRounds = MAX_PRIVATESEND_ROUNDS;
-    if(privateSendClient.nLiquidityProvider) {
-        // special case for liquidity providers only, normal clients should use default value
-        privateSendClient.SetMinBlocksToWait(privateSendClient.nLiquidityProvider * 15);
-        nMaxRounds = std::numeric_limits<int>::max();
-    }
 
-    privateSendClient.fEnablePrivateSend = gArgs.GetBoolArg("-enableprivatesend", false);
+    if (vpwallets.empty()) {
+        privateSendClient.fEnablePrivateSend = privateSendClient.fPrivateSendRunning = false;
+    } else {
+        privateSendClient.fEnablePrivateSend = gArgs.GetBoolArg("-enableprivatesend", !fLiteMode);
+        privateSendClient.fPrivateSendRunning = vpwallets[0]->IsLocked() ? false : gArgs.GetBoolArg("-privatesendautostart", DEFAULT_PRIVATESEND_AUTOSTART);
+    }
     privateSendClient.fPrivateSendMultiSession = gArgs.GetBoolArg("-privatesendmultisession", DEFAULT_PRIVATESEND_MULTISESSION);
     privateSendClient.nPrivateSendSessions = std::min(std::max((int)gArgs.GetArg("-privatesendsessions", DEFAULT_PRIVATESEND_SESSIONS), MIN_PRIVATESEND_SESSIONS), MAX_PRIVATESEND_SESSIONS);
     privateSendClient.nPrivateSendRounds = std::min(std::max((int)gArgs.GetArg("-privatesendrounds", DEFAULT_PRIVATESEND_ROUNDS), MIN_PRIVATESEND_ROUNDS), nMaxRounds);
     privateSendClient.nPrivateSendAmount = std::min(std::max((int)gArgs.GetArg("-privatesendamount", DEFAULT_PRIVATESEND_AMOUNT), MIN_PRIVATESEND_AMOUNT), MAX_PRIVATESEND_AMOUNT);
     privateSendClient.nPrivateSendDenoms = std::min(std::max((int)gArgs.GetArg("-privatesenddenoms", DEFAULT_PRIVATESEND_DENOMS), MIN_PRIVATESEND_DENOMS), MAX_PRIVATESEND_DENOMS);
 
-    LogPrint(BCLog::PRIVATESEND, "PrivateSend liquidityprovider: %d\n", privateSendClient.nLiquidityProvider);
-    LogPrint(BCLog::PRIVATESEND, "PrivateSend rounds: %d\n", privateSendClient.nPrivateSendRounds);
-    LogPrint(BCLog::PRIVATESEND, "PrivateSend amount: %d\n", privateSendClient.nPrivateSendAmount);
-    LogPrint(BCLog::PRIVATESEND, "PrivateSend denoms: %d\n", privateSendClient.nPrivateSendDenoms);
+    if (privateSendClient.fEnablePrivateSend) {
+        LogPrintf("PrivateSend: autostart=%d, multisession=%d, "
+            "sessions=%d, rounds=%d, amount=%d, denoms=%d\n",
+            privateSendClient.fPrivateSendRunning, privateSendClient.fPrivateSendMultiSession,
+            privateSendClient.nPrivateSendSessions, privateSendClient.nPrivateSendRounds,
+            privateSendClient.nPrivateSendAmount, privateSendClient.nPrivateSendDenoms);
+    }
 #endif // ENABLE_WALLET
 
     CPrivateSend::InitStandardDenominations();
 
-    // ********************************************************* Step 11c: setup InstantSend
-
-    fEnableInstantSend = gArgs.GetBoolArg("-enableinstantsend", 1);
-
-    // ********************************************************* Step 11d: Load cache data
+    // ********************************************************* Step 11c: Load cache data
 
     // LOAD SERIALIZED DAT FILES INTO DATA CACHES FOR INTERNAL USE
 
@@ -1996,16 +1993,6 @@ bool AppInitMain(InitInterfaces& interfaces)
         CFlatDB<CNetFulfilledRequestManager> flatdb4(strDBName, "magicFulfilledCache");
         if(!flatdb4.Load(netfulfilledman)) {
             return InitError(_("Failed to load fulfilled requests cache from") + "\n" + (pathDB / strDBName).string());
-        }
-
-        if(fEnableInstantSend)
-        {
-            strDBName = "instantsend.dat";
-            uiInterface.InitMessage(_("Loading InstantSend data cache..."));
-            CFlatDB<CInstantSend> flatdb5(strDBName, "magicInstantSendCache");
-            if(!flatdb5.Load(instantsend)) {
-                return InitError(_("Failed to load InstantSend data cache from") + "\n" + (pathDB / strDBName).string());
-            }
         }
     }
 

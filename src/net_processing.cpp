@@ -28,6 +28,7 @@
 #include <scheduler.h>
 #include <shutdown.h>
 #include <tinyformat.h>
+#include <txdb.h>
 #include <txmempool.h>
 #include <ui_interface.h>
 #include <util/system.h>
@@ -37,7 +38,7 @@
 
 #include <spork.h>
 #include <governance/governance.h>
-#include <instantx.h>
+
 #include <masternode-payments.h>
 #include <masternode-sync.h>
 #include <masternode-meta.h>
@@ -902,38 +903,6 @@ PeerLogicValidation::PeerLogicValidation(CConnman* connmanIn, BanMan* banman, CS
     scheduler.scheduleEvery(std::bind(&PeerLogicValidation::CheckForStaleTipAndEvictPeers, this, consensusParams), EXTRA_PEER_CHECK_INTERVAL * 1000);
 }
 
-void PeerLogicValidation::SyncTransaction(const CTransaction& tx, const CBlockIndex* pindex, int nPosInBlock) {
-    if (nPosInBlock == CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK)
-        return;
-
-    LOCK(g_cs_orphans);
-
-    std::vector<uint256> vOrphanErase;
-    // Which orphan pool entries must we evict?
-    for (size_t j = 0; j < tx.vin.size(); j++) {
-        auto itByPrev = mapOrphanTransactionsByPrev.find(tx.vin[j].prevout);
-        if (itByPrev == mapOrphanTransactionsByPrev.end()) continue;
-        for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi) {
-            const CTransaction& orphanTx = *(*mi)->second.tx;
-            const uint256& orphanHash = orphanTx.GetHash();
-            vOrphanErase.push_back(orphanHash);
-        }
-    }
-
-    // Erase orphan transactions include or precluded by this block
-    if (vOrphanErase.size()) {
-        int nErased = 0;
-        BOOST_FOREACH(uint256 &orphanHash, vOrphanErase) {
-            nErased += EraseOrphanTx(orphanHash);
-        }
-        LogPrint(BCLog::MEMPOOL, "Erased %d orphan tx included or conflicted by block\n", nErased);
-    }
-}
-
-/**
- * Evict orphan txn pool entries (EraseOrphanTx) based on a newly connected
- * block. Also save the time of the last tip update.
- */
 void PeerLogicValidation::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted) {
     LOCK(g_cs_orphans);
 
@@ -1105,26 +1074,36 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     {
     case MSG_TX:
     case MSG_WITNESS_TX:
-    {
-        assert(recentRejects);
-        if (chainActive.Tip()->GetBlockHash() != hashRecentRejectsChainTip)
+    case MSG_LEGACY_TXLOCK_REQUEST: // we treat legacy IX messages as TX messages
         {
-            // If the chain tip has changed previously rejected transactions
-            // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
-            // or a double-spend. Reset the rejects filter and give those
-            // txs a second chance.
-            hashRecentRejectsChainTip = chainActive.Tip()->GetBlockHash();
-            recentRejects->reset();
+            assert(recentRejects);
+            if (chainActive.Tip()->GetBlockHash() != hashRecentRejectsChainTip)
+            {
+                // If the chain tip has changed previously rejected transactions
+                // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
+                // or a double-spend. Reset the rejects filter and give those
+                // txs a second chance.
+                hashRecentRejectsChainTip = chainActive.Tip()->GetBlockHash();
+                recentRejects->reset();
+            }
+
+            {
+                LOCK(g_cs_orphans);
+                if (mapOrphanTransactions.count(inv.hash)) return true;
+            }
+
+            // When we receive an islock for a previously rejected transaction, we have to
+            // drop the first-seen tx (which such a locked transaction was conflicting with)
+            // and re-request the locked transaction (which did not make it into the mempool
+            // previously due to txn-mempool-conflict rule). This means that we must ignore
+            // recentRejects filter for such locked txes here.
+            return (recentRejects->contains(inv.hash) && !llmq::quorumInstantSendManager->IsLocked(inv.hash)) ||
+                   mempool.exists(inv.hash) ||
+                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) || // Best effort: only try output 0 and 1
+                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1)) ||
+                   (fTxIndex && pblocktree->HasTxIndex(inv.hash));
         }
-        {
-            LOCK(g_cs_orphans);
-            if (mapOrphanTransactions.count(inv.hash)) return true;
-        }
-        return recentRejects->contains(inv.hash) ||
-                mempool.exists(inv.hash) ||
-                pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) ||
-                pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1));
-    }
+
     case MSG_BLOCK:
     case MSG_WITNESS_BLOCK:
         return LookupBlockIndex(inv.hash) != nullptr;
@@ -1138,10 +1117,7 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
         We're going to be asking many nodes upfront for the full inventory list, so we'll get duplicates of these.
         We want to only update the time on new hits, so that we can time out appropriately if needed.
     */
-    case MSG_TXLOCK_REQUEST:
-        return instantsend.AlreadyHave(inv.hash);
-    case MSG_TXLOCK_VOTE:
-        return instantsend.AlreadyHave(inv.hash);
+
     case MSG_SPORK:
         {
             CSporkMessage spork;
@@ -1410,22 +1386,6 @@ void static ProcessGetData(CNode* pfrom, const CChainParams& chainparams, CConnm
                         connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::TX, *txinfo.tx));
                         push = true;
                     }
-                }
-            }
-
-            if (!push && inv.type == MSG_TXLOCK_REQUEST) {
-                CTxLockRequest txLockRequest;
-                if(instantsend.GetTxLockRequest(inv.hash, txLockRequest)) {
-                    connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::TXLOCKREQUEST, txLockRequest));
-                    push = true;
-                }
-            }
-
-            if (!push && inv.type == MSG_TXLOCK_VOTE) {
-                CTxLockVote vote;
-                if(instantsend.GetTxLockVote(inv.hash, vote)) {
-                    connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::TXLOCKVOTE, vote));
-                    push = true;
                 }
             }
 
@@ -2089,7 +2049,9 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                       (fLogIPs ? strprintf(", peeraddr=%s", pfrom->addr.ToString()) : ""));
         }
 
-        CMNAuth::PushMNAUTH(pfrom, *connman);
+        if (pfrom->nVersion >= LLMQS_PROTO_VERSION) {
+            CMNAuth::PushMNAUTH(pfrom, *connman);
+        }
 
         if (pfrom->nVersion >= SENDHEADERS_VERSION) {
             // Tell our peer we prefer to receive headers rather than inv's
@@ -2110,6 +2072,23 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
             nCMPCTBLOCKVersion = 1;
             connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
+        }
+
+        if (pfrom->nVersion >= SENDDSQUEUE_PROTO_VERSION) {
+            // Tell our peer that he should send us PrivateSend queue messages
+            connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::SENDDSQUEUE, true));
+        } else {
+            // older nodes do not support SENDDSQUEUE and expect us to always send PrivateSend queue messages
+            // TODO we can remove this compatibility code in 0.15.0
+            pfrom->fSendDSQueue = true;
+        }
+
+        if (pfrom->nVersion >= LLMQS_PROTO_VERSION) {
+            // Tell our peer that we're interested in plain LLMQ recovered signatures.
+            // Otherwise the peer would only announce/send messages resulting from QRECSIG,
+            // e.g. InstantSend locks or ChainLocks. SPV nodes should not send this message
+            // as they are usually only interested in the higher level messages
+            connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::QSENDRECSIGS, true));
         }
 
         // Tell our peer that we're interested in plain LLMQ recovered signatures.
@@ -2212,6 +2191,22 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
     }
 
+
+    else if (strCommand == NetMsgType::SENDDSQUEUE)
+    {
+        bool b;
+        vRecv >> b;
+        pfrom->fSendDSQueue = b;
+    }
+
+
+    else if (strCommand == NetMsgType::QSENDRECSIGS) {
+        bool b;
+        vRecv >> b;
+        pfrom->fSendRecSigs = b;
+    }
+
+
     else if (strCommand == NetMsgType::INV)
     {
         std::vector<CInv> vInv;
@@ -2235,6 +2230,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         for (CInv &inv : vInv)
         {
+            if(!inv.IsKnownType()) {
+                LogPrint(BCLog::NET, "got inv of unknown type %d: %s peer=%d\n", inv.type, inv.hash.ToString(), pfrom->GetId());
+                continue;
+            }
+
             if (interruptMsgProc)
                 return true;
 
@@ -2497,7 +2497,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     }
 
 
-    else if (strCommand == NetMsgType::TX || strCommand == NetMsgType::DSTX || strCommand == NetMsgType::TXLOCKREQUEST)
+    else if (strCommand == NetMsgType::TX || strCommand == NetMsgType::DSTX || strCommand == NetMsgType::LEGACYTXLOCKREQUEST)
     {
         // Stop processing the transaction early if
         // We are in blocks only mode and peer is either not whitelisted or whitelistrelay is off
@@ -2510,7 +2510,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         std::deque<COutPoint> vWorkQueue;
         std::vector<uint256> vEraseQueue;
         CTransactionRef ptx;
-        CTxLockRequest txLockRequest;
         CPrivateSendBroadcastTx dstx;
         int nInvType = MSG_TX;
         bool fCanAutoLock = false;
@@ -2518,17 +2517,9 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         // Read data and assign inv type
         if(strCommand == NetMsgType::TX) {
             vRecv >> ptx;
-            txLockRequest = CTxLockRequest(ptx);
-            fCanAutoLock = llmq::IsInstantSendEnabled() && CInstantSend::CanAutoLock() && txLockRequest.IsSimple();
-        } else if(strCommand == NetMsgType::TXLOCKREQUEST) {
-            vRecv >> txLockRequest;
-            ptx = txLockRequest.tx;
-            nInvType = MSG_TXLOCK_REQUEST;
-            if (llmq::IsInstantSendEnabled()) {
-                // the new system does not require explicit lock requests
-                // changing the inv type to MSG_TX also results in re-broadcasting the TX as normal TX
-                nInvType = MSG_TX;
-            }
+        } else if(strCommand == NetMsgType::LEGACYTXLOCKREQUEST) {
+            // we keep processing the legacy IX message here but revert to handling it as a regular TX
+            vRecv >> ptx;
         } else if (strCommand == NetMsgType::DSTX) {
             vRecv >> dstx;
             ptx = dstx.tx;
@@ -2544,19 +2535,13 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
 
         // Process custom logic, no matter if tx will be accepted to mempool later or not
-        if (nInvType == MSG_TXLOCK_REQUEST || fCanAutoLock) {
-            if(!instantsend.ProcessTxLockRequest(txLockRequest, *connman)) {
-                LogPrint(BCLog::INSTANTSEND, "TXLOCKREQUEST -- failed %s\n", txLockRequest.GetHash().ToString());
-                // Should not really happen for "fCanAutoLock == true" but just in case:
-                if (!fCanAutoLock) {
+        if (nInvType == MSG_DSTX) {
+            uint256 hashTx = tx.GetHash();
+            if (!dstx.IsValidStructure()) {
+                LogPrint(BCLog::PRIVATESEND, "DSTX -- Invalid DSTX structure: %s\n", hashTx.ToString());
                     // Fail only for "true" IS here
                     return false;
                 }
-                // Fallback for normal txes to process as usual
-                fCanAutoLock = false;
-            }
-        } else if (nInvType == MSG_DSTX) {
-            uint256 hashTx = tx.GetHash();
             if(CPrivateSend::GetDSTX(hashTx)) {
                 LogPrint(BCLog::PRIVATESEND, "DSTX -- Already have %s, skipping...\n", hashTx.ToString());
                 return true; // not an error
@@ -2596,11 +2581,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 LogPrint(BCLog::PRIVATESEND, "DSTX -- Masternode transaction accepted, txid=%s, peer=%d\n",
                         tx.GetHash().ToString(), pfrom->GetId());
                 CPrivateSend::AddDSTX(dstx);
-            } else if (nInvType == MSG_TXLOCK_REQUEST || fCanAutoLock) {
-                LogPrintf("TXLOCKREQUEST -- Transaction Lock Request accepted, txid=%s, peer=%d\n",
-                        tx.GetHash().ToString(), pfrom->GetId());
-                instantsend.AcceptLockRequest(txLockRequest);
-                instantsend.Vote(tx.GetHash(), *connman);
             }
 
             mempool.check(pcoinsTip.get());
@@ -3416,7 +3396,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             privateSendClient.ProcessMessage(pfrom, strCommand, vRecv, *connman);
 #endif // ENABLE_WALLET
             privateSendServer.ProcessMessage(pfrom, strCommand, vRecv, *connman);
-            instantsend.ProcessMessage(pfrom, strCommand, vRecv, *connman);
             sporkManager.ProcessSpork(pfrom, strCommand, vRecv, *connman);
             masternodeSync.ProcessMessage(pfrom, strCommand, vRecv);
             governance.ProcessMessage(pfrom, strCommand, vRecv, *connman);
@@ -3661,6 +3640,8 @@ void PeerLogicValidation::EvictExtraOutboundPeers(int64_t time_in_seconds)
         LOCK(cs_main);
 
         connman->ForEachNode([&](CNode* pnode) {
+            // Don't disconnect masternodes just because they were slow in block announcement
+            if (pnode->fMasternode) return;
             // Ignore non-outbound peers, or nodes marked for disconnect already
             if (!IsOutboundDisconnectionCandidate(pnode) || pnode->fDisconnect) return;
             CNodeState *state = State(pnode->GetId());
@@ -4054,8 +4035,11 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
                         if (!pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     }
                     pto->filterInventoryKnown.insert(hash);
+
+                    LogPrint(BCLog::NET, "SendMessages -- queued inv: %s  index=%d peer=%d\n", inv.ToString(), vInv.size(), pto->GetId());
                     vInv.push_back(inv);
                     if (vInv.size() == MAX_INV_SZ) {
+                        LogPrint(BCLog::NET, "SendMessages -- pushing inv's: count=%d peer=%d\n", vInv.size(), pto->GetId());
                         connman->PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                         vInv.clear();
                     }
@@ -4233,20 +4217,28 @@ bool PeerLogicValidation::SendMessages(CNode* pto)
         //
         // Message: getdata (non-blocks)
         //
-        while (!pto->mapAskFor.empty() && (*pto->mapAskFor.begin()).first <= nNow)
+        while (!pto->queueAskFor.empty() && pto->queueAskFor.top().first <= nNow)
         {
-            const CInv& inv = (*pto->mapAskFor.begin()).second;
+            const CInv& inv = pto->queueAskFor.top().second;
+            auto jt = pto->setAskForInQueue.find(inv.hash);
+            if (jt == pto->setAskForInQueue.end()) {
+                pto->queueAskFor.pop();
+                continue;
+            }
+
             if (!AlreadyHave(inv))
             {
-                LogPrint(BCLog::NET, "Requesting %s peer=%d\n", inv.ToString(), pto->GetId());
+                LogPrint(BCLog::NET, "SendMessages -- GETDATA -- requesting inv = %s peer=%d\n", inv.ToString(), pto->GetId());
                 vGetData.push_back(inv);
                 if (vGetData.size() >= 1000)
                 {
                     connman->PushMessage(pto, msgMaker.Make(NetMsgType::GETDATA, vGetData));
+                    LogPrint(BCLog::NET, "SendMessages -- GETDATA -- pushed size = %lu peer=%d\n", vGetData.size(), pto->GetId());
                     vGetData.clear();
                 }
             } else {
                 //If we're not going to ask, don't expect a response.
+                LogPrint(BCLog::NET, "SendMessages -- GETDATA -- already have inv = %s peer=%d\n", inv.ToString(), pto->GetId());
                 pto->setAskFor.erase(inv.hash);
             }
             pto->mapAskFor.erase(pto->mapAskFor.begin());

@@ -272,6 +272,10 @@ void CQuorumBlockProcessor::UpgradeDB()
     if (chainActive.Height() >= Params().GetConsensus().DIP0003EnforcementHeight) {
         auto pindex = chainActive[Params().GetConsensus().DIP0003EnforcementHeight];
         while (pindex) {
+            if (fPruneMode && !(pindex->nStatus & BLOCK_HAVE_DATA)) {
+                // Too late, we already pruned blocks we needed to reprocess commitments
+                throw std::runtime_error(std::string(__func__) + ": Quorum Commitments DB upgrade failed, you need to re-download the blockchain");
+            }
             CBlock block;
             bool r = ReadBlockFromDisk(block, pindex, Params().GetConsensus());
             assert(r);
@@ -286,7 +290,7 @@ void CQuorumBlockProcessor::UpgradeDB()
                     continue;
                 }
                 auto quorumIndex = mapBlockIndex.at(qc.quorumHash);
-                evoDb.GetRawDB().Write(std::make_pair(DB_MINED_COMMITMENT, std::make_pair((uint8_t)qc.llmqType, qc.quorumHash)), std::make_pair(qc, pindex->GetBlockHash()));
+                evoDb.GetRawDB().Write(std::make_pair(DB_MINED_COMMITMENT, std::make_pair(qc.llmqType, qc.quorumHash)), std::make_pair(qc, pindex->GetBlockHash()));
                 evoDb.GetRawDB().Write(BuildInversedHeightKey((Consensus::LLMQType)qc.llmqType, pindex->nHeight), quorumIndex->nHeight);
             }
 
@@ -382,7 +386,7 @@ bool CQuorumBlockProcessor::HasMinedCommitment(Consensus::LLMQType llmqType, con
         }
     }
 
-    auto key = std::make_pair(DB_MINED_COMMITMENT, std::make_pair((uint8_t)llmqType, quorumHash));
+    auto key = std::make_pair(DB_MINED_COMMITMENT, std::make_pair(llmqType, quorumHash));
     bool ret = evoDb.Exists(key);
 
     LOCK(minableCommitmentsCs);
@@ -392,7 +396,7 @@ bool CQuorumBlockProcessor::HasMinedCommitment(Consensus::LLMQType llmqType, con
 
 bool CQuorumBlockProcessor::GetMinedCommitment(Consensus::LLMQType llmqType, const uint256& quorumHash, CFinalCommitment& retQc, uint256& retMinedBlockHash)
 {
-    auto key = std::make_pair(DB_MINED_COMMITMENT, std::make_pair((uint8_t)llmqType, quorumHash));
+    auto key = std::make_pair(DB_MINED_COMMITMENT, std::make_pair(llmqType, quorumHash));
     std::pair<CFinalCommitment, uint256> p;
     if (!evoDb.Read(key, p)) {
         return false;
@@ -420,7 +424,7 @@ std::vector<const CBlockIndex*> CQuorumBlockProcessor::GetMinedCommitmentsUntilB
         if (!dbIt->GetKey(curKey) || curKey >= lastKey) {
             break;
         }
-        if (std::get<0>(curKey) != DB_MINED_COMMITMENT_BY_INVERSED_HEIGHT || std::get<1>(curKey) != (uint8_t)llmqType) {
+        if (std::get<0>(curKey) != DB_MINED_COMMITMENT_BY_INVERSED_HEIGHT || std::get<1>(curKey) != llmqType) {
             break;
         }
 
