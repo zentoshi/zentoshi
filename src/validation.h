@@ -54,6 +54,8 @@ struct ChainTxData;
 struct PrecomputedTransactionData;
 struct LockPoints;
 
+/** Timeout to elapse before using hardcoded DNS seeds */
+static const int DNS_WAIT_TIMEOUT = 5;
 /** Default for accepting alerts from the P2P network. */
 static const bool DEFAULT_ALERTS = true;
 /** Default for -whitelistrelay. */
