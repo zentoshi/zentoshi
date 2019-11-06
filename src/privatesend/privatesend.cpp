@@ -233,7 +233,7 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
         nValueOut += txout.nValue;
 
         if (!txout.scriptPubKey.IsPayToPublicKeyHash() && !txout.scriptPubKey.IsUnspendable()) {
-            LogPrintf("CPrivateSend::IsCollateralValid -- Invalid Script, txCollateral=%s", txCollateral.ToString());
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- Invalid Script, txCollateral=%s", txCollateral.ToString());
             return false;
         }
     }

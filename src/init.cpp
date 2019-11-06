@@ -1955,10 +1955,10 @@ bool AppInitMain(InitInterfaces& interfaces)
     privateSendClient.nPrivateSendAmount = std::min(std::max((int)gArgs.GetArg("-privatesendamount", DEFAULT_PRIVATESEND_AMOUNT), MIN_PRIVATESEND_AMOUNT), MAX_PRIVATESEND_AMOUNT);
     privateSendClient.nPrivateSendDenoms = std::min(std::max((int)gArgs.GetArg("-privatesenddenoms", DEFAULT_PRIVATESEND_DENOMS), MIN_PRIVATESEND_DENOMS), MAX_PRIVATESEND_DENOMS);
 
-    LogPrintf("PrivateSend liquidityprovider: %d\n", privateSendClient.nLiquidityProvider);
-    LogPrintf("PrivateSend rounds: %d\n", privateSendClient.nPrivateSendRounds);
-    LogPrintf("PrivateSend amount: %d\n", privateSendClient.nPrivateSendAmount);
-    LogPrintf("PrivateSend denoms: %d\n", privateSendClient.nPrivateSendDenoms);
+    LogPrint(BCLog::PRIVATESEND, "PrivateSend liquidityprovider: %d\n", privateSendClient.nLiquidityProvider);
+    LogPrint(BCLog::PRIVATESEND, "PrivateSend rounds: %d\n", privateSendClient.nPrivateSendRounds);
+    LogPrint(BCLog::PRIVATESEND, "PrivateSend amount: %d\n", privateSendClient.nPrivateSendAmount);
+    LogPrint(BCLog::PRIVATESEND, "PrivateSend denoms: %d\n", privateSendClient.nPrivateSendDenoms);
 #endif // ENABLE_WALLET
 
     CPrivateSend::InitStandardDenominations();

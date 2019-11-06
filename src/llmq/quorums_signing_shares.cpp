@@ -236,7 +236,7 @@ void CSigSharesManager::ProcessMessage(CNode* pfrom, const std::string& strComma
         std::vector<CSigSesAnn> msgs;
         vRecv >> msgs;
         if (msgs.size() > MAX_MSGS_CNT_QSIGSESANN) {
-            LogPrintf("CSigSharesManager::%s -- too many announcements in QSIGSESANN message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_CNT_QSIGSESANN, pfrom->GetId());
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- too many announcements in QSIGSESANN message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_CNT_QSIGSESANN, pfrom->GetId());
             BanNode(pfrom->GetId());
             return;
         }
@@ -250,7 +250,7 @@ void CSigSharesManager::ProcessMessage(CNode* pfrom, const std::string& strComma
         std::vector<CSigSharesInv> msgs;
         vRecv >> msgs;
         if (msgs.size() > MAX_MSGS_CNT_QSIGSHARESINV) {
-            LogPrintf("CSigSharesManager::%s -- too many invs in QSIGSHARESINV message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_CNT_QSIGSHARESINV, pfrom->GetId());
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- too many invs in QSIGSHARESINV message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_CNT_QSIGSHARESINV, pfrom->GetId());
             BanNode(pfrom->GetId());
             return;
         }
@@ -264,7 +264,7 @@ void CSigSharesManager::ProcessMessage(CNode* pfrom, const std::string& strComma
         std::vector<CSigSharesInv> msgs;
         vRecv >> msgs;
         if (msgs.size() > MAX_MSGS_CNT_QGETSIGSHARES) {
-            LogPrintf("CSigSharesManager::%s -- too many invs in QGETSIGSHARES message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_CNT_QGETSIGSHARES, pfrom->GetId());
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- too many invs in QGETSIGSHARES message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_CNT_QGETSIGSHARES, pfrom->GetId());
             BanNode(pfrom->GetId());
             return;
         }
@@ -282,7 +282,7 @@ void CSigSharesManager::ProcessMessage(CNode* pfrom, const std::string& strComma
             totalSigsCount += bs.sigShares.size();
         }
         if (totalSigsCount > MAX_MSGS_TOTAL_BATCHED_SIGS) {
-            LogPrintf("CSigSharesManager::%s -- too many sigs in QBSIGSHARES message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_TOTAL_BATCHED_SIGS, pfrom->GetId());
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- too many sigs in QBSIGSHARES message. cnt=%d, max=%d, node=%d\n", __func__, msgs.size(), MAX_MSGS_TOTAL_BATCHED_SIGS, pfrom->GetId());
             BanNode(pfrom->GetId());
             return;
         }
@@ -490,12 +490,12 @@ bool CSigSharesManager::PreVerifyBatchedSigShares(NodeId nodeId, const CSigShare
         }
 
         if (quorumMember >= session.quorum->members.size()) {
-            LogPrintf("CSigSharesManager::%s -- quorumMember out of bounds\n", __func__);
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- quorumMember out of bounds\n", __func__);
             retBan = true;
             return false;
         }
         if (!session.quorum->qc.validMembers[quorumMember]) {
-            LogPrintf("CSigSharesManager::%s -- quorumMember not valid\n", __func__);
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- quorumMember not valid\n", __func__);
             retBan = true;
             return false;
         }
@@ -603,7 +603,7 @@ bool CSigSharesManager::ProcessPendingSigShares(CConnman& connman)
             if (!pubKeyShare.IsValid()) {
                 // this should really not happen (we already ensured we have the quorum vvec,
                 // so we should also be able to create all pubkey shares)
-                LogPrintf("CSigSharesManager::%s -- pubKeyShare is invalid, which should not be possible here");
+                LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- pubKeyShare is invalid, which should not be possible here");
                 assert(false);
             }
 
@@ -623,7 +623,7 @@ bool CSigSharesManager::ProcessPendingSigShares(CConnman& connman)
         auto& v = p.second;
 
         if (batchVerifier.badSources.count(nodeId)) {
-            LogPrintf("CSigSharesManager::%s -- invalid sig shares from other node, banning peer=%d\n",
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- invalid sig shares from other node, banning peer=%d\n",
                      __func__, nodeId);
             // this will also cause re-requesting of the shares that were sent by this node
             BanNode(nodeId);
@@ -751,7 +751,7 @@ void CSigSharesManager::TryRecoverSig(const CQuorumCPtr& quorum, const uint256& 
     cxxtimer::Timer t(true);
     CBLSSignature recoveredSig;
     if (!recoveredSig.Recover(sigSharesForRecovery, idsForRecovery)) {
-        LogPrintf("CSigSharesManager::%s -- failed to recover signature. id=%s, msgHash=%s, time=%d\n", __func__,
+        LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- failed to recover signature. id=%s, msgHash=%s, time=%d\n", __func__,
                   id.ToString(), msgHash.ToString(), t.count());
         return;
     }
@@ -775,7 +775,7 @@ void CSigSharesManager::TryRecoverSig(const CQuorumCPtr& quorum, const uint256& 
         bool valid = recoveredSig.VerifyInsecure(quorum->qc.quorumPublicKey, signHash);
         if (!valid) {
             // this should really not happen as we have verified all signature shares before
-            LogPrintf("CSigSharesManager::%s -- own recovered signature is invalid. id=%s, msgHash=%s\n", __func__,
+            LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- own recovered signature is invalid. id=%s, msgHash=%s\n", __func__,
                       id.ToString(), msgHash.ToString());
             return;
         }
@@ -1424,7 +1424,7 @@ void CSigSharesManager::Sign(const CQuorumCPtr& quorum, const uint256& id, const
 
     sigShare.sigShare.Set(skShare.Sign(signHash));
     if (!sigShare.sigShare.Get().IsValid()) {
-        LogPrintf("CSigSharesManager::%s -- failed to sign sigShare. signHash=%s, id=%s, msgHash=%s, time=%s\n", __func__,
+        LogPrint(BCLog::QUORUM, "CSigSharesManager::%s -- failed to sign sigShare. signHash=%s, id=%s, msgHash=%s, time=%s\n", __func__,
                   signHash.ToString(), sigShare.id.ToString(), sigShare.msgHash.ToString(), t.count());
         return;
     }

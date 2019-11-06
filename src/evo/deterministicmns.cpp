@@ -330,14 +330,14 @@ void CDeterministicMNList::PoSePunish(const uint256& proTxHash, int penalty, boo
     newState->nPoSePenalty = std::min(maxPenalty, newState->nPoSePenalty);
 
     if (debugLogs) {
-        LogPrintf("CDeterministicMNList::%s -- punished MN %s, penalty %d->%d (max=%d)\n",
+        LogPrint(BCLog::MASTERNODE, "CDeterministicMNList::%s -- punished MN %s, penalty %d->%d (max=%d)\n",
                   __func__, proTxHash.ToString(), dmn->pdmnState->nPoSePenalty, newState->nPoSePenalty, maxPenalty);
     }
 
     if (newState->nPoSePenalty >= maxPenalty && newState->nPoSeBanHeight == -1) {
         newState->nPoSeBanHeight = nHeight;
         if (debugLogs) {
-            LogPrintf("CDeterministicMNList::%s -- banned MN %s at height %d\n",
+            LogPrint(BCLog::MASTERNODE, "CDeterministicMNList::%s -- banned MN %s at height %d\n",
                       __func__, proTxHash.ToString(), nHeight);
         }
     }
@@ -541,7 +541,7 @@ bool CDeterministicMNManager::ProcessBlock(const CBlock& block, const CBlockInde
         evoDb.Write(std::make_pair(DB_LIST_DIFF, newList.GetBlockHash()), diff);
         if ((nHeight % SNAPSHOT_LIST_PERIOD) == 0 || oldList.GetHeight() == -1) {
             evoDb.Write(std::make_pair(DB_LIST_SNAPSHOT, newList.GetBlockHash()), newList);
-            LogPrintf("CDeterministicMNManager::%s -- Wrote snapshot. nHeight=%d, mapCurMNs.allMNsCount=%d\n",
+            LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- Wrote snapshot. nHeight=%d, mapCurMNs.allMNsCount=%d\n",
                 __func__, nHeight, newList.GetAllMNsCount());
         }
     }
@@ -554,11 +554,11 @@ bool CDeterministicMNManager::ProcessBlock(const CBlock& block, const CBlockInde
 
     if (nHeight == consensusParams.DIP0003EnforcementHeight) {
         if (!consensusParams.DIP0003EnforcementHash.IsNull() && consensusParams.DIP0003EnforcementHash != pindex->GetBlockHash()) {
-            LogPrintf("CDeterministicMNManager::%s -- DIP3 enforcement block has wrong hash: hash=%s, expected=%s, nHeight=%d\n", __func__,
+            LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- DIP3 enforcement block has wrong hash: hash=%s, expected=%s, nHeight=%d\n", __func__,
                     pindex->GetBlockHash().ToString(), consensusParams.DIP0003EnforcementHash.ToString(), nHeight);
             return _state.DoS(100, false, REJECT_INVALID, "bad-dip3-enf-block");
         }
-        LogPrintf("CDeterministicMNManager::%s -- DIP3 is enforced now. nHeight=%d\n", __func__, nHeight);
+        LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- DIP3 is enforced now. nHeight=%d\n", __func__, nHeight);
     }
 
     LOCK(cs);
@@ -599,7 +599,7 @@ bool CDeterministicMNManager::UndoBlock(const CBlock& block, const CBlockIndex* 
 
     const auto& consensusParams = Params().GetConsensus();
     if (nHeight == consensusParams.DIP0003EnforcementHeight) {
-        LogPrintf("CDeterministicMNManager::%s -- DIP3 is not enforced anymore. nHeight=%d\n", __func__, nHeight);
+        LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- DIP3 is not enforced anymore. nHeight=%d\n", __func__, nHeight);
     }
 
     return true;
@@ -686,7 +686,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
                 // and the new one is added like a completely fresh one, which is also at the bottom of the payment list
                 newList.RemoveMN(replacedDmn->proTxHash);
                 if (debugLogs) {
-                    LogPrintf("CDeterministicMNManager::%s -- MN %s removed from list because collateral was used for a new ProRegTx. collateralOutpoint=%s, nHeight=%d, mapCurMNs.allMNsCount=%d\n",
+                    LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s removed from list because collateral was used for a new ProRegTx. collateralOutpoint=%s, nHeight=%d, mapCurMNs.allMNsCount=%d\n",
                               __func__, replacedDmn->proTxHash.ToString(), dmn->collateralOutpoint.ToStringShort(), nHeight, newList.GetAllMNsCount());
                 }
             }
@@ -714,7 +714,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
             newList.AddMN(dmn);
 
             if (debugLogs) {
-                LogPrintf("CDeterministicMNManager::%s -- MN %s added at height %d: %s\n",
+                LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s added at height %d: %s\n",
                     __func__, tx.GetHash().ToString(), nHeight, proTx.ToString());
             }
         } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_SERVICE) {
@@ -743,7 +743,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
                     newState->nPoSeRevivedHeight = nHeight;
 
                     if (debugLogs) {
-                        LogPrintf("CDeterministicMNManager::%s -- MN %s revived at height %d\n",
+                        LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s revived at height %d\n",
                             __func__, proTx.proTxHash.ToString(), nHeight);
                     }
                 }
@@ -751,7 +751,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
 
             newList.UpdateMN(proTx.proTxHash, newState);
             if (debugLogs) {
-                LogPrintf("CDeterministicMNManager::%s -- MN %s updated at height %d: %s\n",
+                LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s updated at height %d: %s\n",
                     __func__, proTx.proTxHash.ToString(), nHeight, proTx.ToString());
             }
         } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REGISTRAR) {
@@ -777,7 +777,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
             newList.UpdateMN(proTx.proTxHash, newState);
 
             if (debugLogs) {
-                LogPrintf("CDeterministicMNManager::%s -- MN %s updated at height %d: %s\n",
+                LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s updated at height %d: %s\n",
                     __func__, proTx.proTxHash.ToString(), nHeight, proTx.ToString());
             }
         } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REVOKE) {
@@ -798,7 +798,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
             newList.UpdateMN(proTx.proTxHash, newState);
 
             if (debugLogs) {
-                LogPrintf("CDeterministicMNManager::%s -- MN %s revoked operator key at height %d: %s\n",
+                LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s revoked operator key at height %d: %s\n",
                     __func__, proTx.proTxHash.ToString(), nHeight, proTx.ToString());
             }
         } else if (tx.nType == TRANSACTION_QUORUM_COMMITMENT) {
@@ -831,7 +831,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, const C
                 newList.RemoveMN(dmn->proTxHash);
 
                 if (debugLogs) {
-                    LogPrintf("CDeterministicMNManager::%s -- MN %s removed from list because collateral was spent. collateralOutpoint=%s, nHeight=%d, mapCurMNs.allMNsCount=%d\n",
+                    LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- MN %s removed from list because collateral was spent. collateralOutpoint=%s, nHeight=%d, mapCurMNs.allMNsCount=%d\n",
                               __func__, dmn->proTxHash.ToString(), dmn->collateralOutpoint.ToStringShort(), nHeight, newList.GetAllMNsCount());
                 }
             }
@@ -996,7 +996,7 @@ bool CDeterministicMNManager::UpgradeDiff(CDBBatch& batch, const CBlockIndex* pi
 {
     CDataStream oldDiffData(SER_DISK, CLIENT_VERSION);
     if (!evoDb.GetRawDB().ReadDataStream(std::make_pair(DB_LIST_DIFF, pindexNext->GetBlockHash()), oldDiffData)) {
-        LogPrintf("CDeterministicMNManager::%s -- no diff found for %s\n", __func__, pindexNext->GetBlockHash().ToString());
+        LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- no diff found for %s\n", __func__, pindexNext->GetBlockHash().ToString());
         newMNList = curMNList;
         newMNList.SetBlockHash(pindexNext->GetBlockHash());
         newMNList.SetHeight(pindexNext->nHeight);
@@ -1057,7 +1057,7 @@ void CDeterministicMNManager::UpgradeDBIfNeeded()
     // process is cancelled in-between. But if the new version sees that the old EVODB_BEST_BLOCK is already removed,
     // then we must assume that the upgrade process was already running before but was interrupted.
     if (chainActive.Height() > 1 && !evoDb.GetRawDB().Exists(std::string("b_b"))) {
-        LogPrintf("CDeterministicMNManager::%s -- ERROR, upgrade process was interrupted and can't be continued. You need to reindex now.\n", __func__);
+        LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- ERROR, upgrade process was interrupted and can't be continued. You need to reindex now.\n", __func__);
     }
     evoDb.GetRawDB().Erase(std::string("b_b"));
 
@@ -1069,7 +1069,7 @@ void CDeterministicMNManager::UpgradeDBIfNeeded()
         return;
     }
 
-    LogPrintf("CDeterministicMNManager::%s -- upgrading DB to use compact diffs\n", __func__);
+    LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- upgrading DB to use compact diffs\n", __func__);
 
     CDBBatch batch(evoDb.GetRawDB());
 
@@ -1094,7 +1094,7 @@ void CDeterministicMNManager::UpgradeDBIfNeeded()
 
     evoDb.GetRawDB().WriteBatch(batch);
 
-    LogPrintf("CDeterministicMNManager::%s -- done upgrading\n", __func__);
+    LogPrint(BCLog::MASTERNODE, "CDeterministicMNManager::%s -- done upgrading\n", __func__);
 
     // Writing EVODB_BEST_BLOCK (which is b_b2 now) marks the DB as upgraded
     auto dbTx = evoDb.BeginTransaction();

@@ -55,7 +55,7 @@ CRecoveredSigsDb::CRecoveredSigsDb(CDBWrapper& _db) :
 // This converts time values in "rs_t" from host endiannes to big endiannes, which is required to have proper ordering of the keys
 void CRecoveredSigsDb::ConvertInvalidTimeKeys()
 {
-    LogPrintf("CRecoveredSigsDb::%s -- converting invalid rs_t keys\n", __func__);
+    LogPrint(BCLog::QUORUM, "CRecoveredSigsDb::%s -- converting invalid rs_t keys\n", __func__);
 
     std::unique_ptr<CDBIterator> pcursor(db.NewIterator());
 
@@ -83,14 +83,14 @@ void CRecoveredSigsDb::ConvertInvalidTimeKeys()
 
     db.WriteBatch(batch);
 
-    LogPrintf("CRecoveredSigsDb::%s -- converted %d invalid rs_t keys\n", __func__, cnt);
+    LogPrint(BCLog::QUORUM, "CRecoveredSigsDb::%s -- converted %d invalid rs_t keys\n", __func__, cnt);
 }
 
 // This adds rs_vt keys for every rs_v entry to the DB. The time in the key is set to the current time.
 // This causes cleanup of all these votes a week later.
 void CRecoveredSigsDb::AddVoteTimeKeys()
 {
-    LogPrintf("CRecoveredSigsDb::%s -- adding rs_vt keys with current time\n", __func__);
+    LogPrint(BCLog::QUORUM, "CRecoveredSigsDb::%s -- adding rs_vt keys with current time\n", __func__);
 
     auto curTime = GetAdjustedTime();
 
@@ -122,7 +122,7 @@ void CRecoveredSigsDb::AddVoteTimeKeys()
 
     db.WriteBatch(batch);
 
-    LogPrintf("CRecoveredSigsDb::%s -- added %d rs_vt entries\n", __func__, cnt);
+    LogPrint(BCLog::QUORUM, "CRecoveredSigsDb::%s -- added %d rs_vt entries\n", __func__, cnt);
 }
 
 bool CRecoveredSigsDb::HasRecoveredSig(Consensus::LLMQType llmqType, const uint256& id, const uint256& msgHash)

@@ -275,7 +275,7 @@ std::set<uint256> CGovernanceObject::RemoveInvalidVotes(const COutPoint& mnOutpo
         for (auto& h : removedVotes) {
             removedStr += strprintf("  %s\n", h.ToString());
         }
-        LogPrintf("CGovernanceObject::%s -- Removed %d invalid votes for %s from MN %s:\n%s", __func__, removedVotes.size(), nParentHash.ToString(), mnOutpoint.ToString(), removedStr);
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::%s -- Removed %d invalid votes for %s from MN %s:\n%s", __func__, removedVotes.size(), nParentHash.ToString(), mnOutpoint.ToString(), removedStr);
         fDirtyCache = true;
     }
 
@@ -338,7 +338,7 @@ bool CGovernanceObject::CheckSignature(const CBLSPublicKey& pubKey) const
     CBLSSignature sig;
     sig.SetBuf(vchSig);
     if (!sig.VerifyInsecure(pubKey, GetSignatureHash())) {
-        LogPrintf("CGovernanceObject::CheckSignature -- VerifyInsecure() failed\n");
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::CheckSignature -- VerifyInsecure() failed\n");
         return false;
     }
     return true;
@@ -548,19 +548,19 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
 
     if (!GetTransaction(nCollateralHash, txCollateral, Params().GetConsensus(), nBlockHash, true)) {
         strError = strprintf("Can't find collateral tx %s", nCollateralHash.ToString());
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::IsCollateralValid -- %s\n", strError);
         return false;
     }
 
     if (nBlockHash == uint256()) {
         strError = strprintf("Collateral tx %s is not mined yet", txCollateral->ToString());
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::IsCollateralValid -- %s\n", strError);
         return false;
     }
 
     if (txCollateral->vout.size() < 1) {
         strError = strprintf("tx vout size less than 1 | %d", txCollateral->vout.size());
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::IsCollateralValid -- %s\n", strError);
         return false;
     }
 
@@ -578,7 +578,7 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
                     output.ToString(), output.nValue, ScriptToAsmStr(output.scriptPubKey, false));
         if (!output.scriptPubKey.IsPayToPublicKeyHash() && !output.scriptPubKey.IsUnspendable()) {
             strError = strprintf("Invalid Script %s", txCollateral->ToString());
-            LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+            LogPrint(BCLog::GOBJECT, "CGovernanceObject::IsCollateralValid -- %s\n", strError);
             return false;
         }
         if (output.scriptPubKey == findScript && output.nValue >= nMinFee) {
@@ -588,7 +588,7 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
 
     if (!foundOpReturn) {
         strError = strprintf("Couldn't find opReturn %s in %s", nExpectedHash.ToString(), txCollateral->ToString());
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::IsCollateralValid -- %s\n", strError);
         return false;
     }
 
@@ -614,7 +614,7 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
         } else {
             strError += ", rejected -- try again later";
         }
-        LogPrintf("CGovernanceObject::IsCollateralValid -- %s\n", strError);
+        LogPrint(BCLog::GOBJECT, "CGovernanceObject::IsCollateralValid -- %s\n", strError);
 
         return false;
     }
@@ -744,7 +744,7 @@ void CGovernanceObject::CheckOrphanVotes(CConnman& connman)
         }
         CGovernanceException exception;
         if (!ProcessVote(nullptr, vote, exception, connman)) {
-            LogPrintf("CGovernanceObject::CheckOrphanVotes -- Failed to add orphan vote: %s\n", exception.what());
+            LogPrint(BCLog::GOBJECT, "CGovernanceObject::CheckOrphanVotes -- Failed to add orphan vote: %s\n", exception.what());
         } else {
             vote.Relay(connman);
             fRemove = true;

@@ -31,7 +31,7 @@ struct CLogCategoryActive
 
 namespace BCLog {
 
-    enum LogFlags : uint32_t {
+    enum LogFlags : int64_t {
         NONE         = 0,
         NET          = (1 <<  0),
         TOR          = (1 <<  1),
@@ -64,7 +64,8 @@ namespace BCLog {
         PRIVATESEND  = (1 << 28),
         QUORUM       = (1 << 29),
         CHAINLOCKS   = (1 << 30),
-        ALL          = ~(uint32_t)0,
+        GOVERNANCE   = (1 << 31),
+        ALL          = ~(int64_t)0,
     };
 
     class Logger

@@ -110,10 +110,10 @@ bool CGovernanceTriggerManager::AddNewTrigger(uint256 nHash)
         CSuperblock_sptr pSuperblockTmp(new CSuperblock(nHash));
         pSuperblock = pSuperblockTmp;
     } catch (std::exception& e) {
-        LogPrintf("CGovernanceTriggerManager::AddNewTrigger -- Error creating superblock: %s\n", e.what());
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceTriggerManager::AddNewTrigger -- Error creating superblock: %s\n", e.what());
         return false;
     } catch (...) {
-        LogPrintf("CGovernanceTriggerManager::AddNewTrigger: Unknown Error creating superblock\n");
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceTriggerManager::AddNewTrigger: Unknown Error creating superblock\n");
         return false;
     }
 

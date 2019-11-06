@@ -100,10 +100,10 @@ public:
             nAmount = nAmountIn;
             fValid = true;
         } catch (std::exception& e) {
-            LogPrintf("CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d, what = %s\n",
+            LogPrint(BCLog::GOVERNANCE, "CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d, what = %s\n",
                 addrIn.ToString(), nAmountIn, e.what());
         } catch (...) {
-            LogPrintf("CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d\n",
+            LogPrint(BCLog::GOVERNANCE, "CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d\n",
                 addrIn.ToString(), nAmountIn);
         }
     }

@@ -21,7 +21,7 @@ std::string CGovernanceVoting::ConvertOutcomeToString(vote_outcome_enum_t nOutco
 
     const auto& it = mapOutcomeString.find(nOutcome);
     if (it == mapOutcomeString.end()) {
-        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown outcome %d\n", __func__, nOutcome);
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown outcome %d\n", __func__, nOutcome);
         return "error";
     }
     return it->second;
@@ -37,7 +37,7 @@ std::string CGovernanceVoting::ConvertSignalToString(vote_signal_enum_t nSignal)
 
     const auto& it = mapSignalsString.find(nSignal);
     if (it == mapSignalsString.end()) {
-        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown signal %d\n", __func__, nSignal);
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown signal %d\n", __func__, nSignal);
         return "none";
     }
     return it->second;
@@ -54,7 +54,7 @@ vote_outcome_enum_t CGovernanceVoting::ConvertVoteOutcome(const std::string& str
 
     const auto& it = mapStringOutcome.find(strVoteOutcome);
     if (it == mapStringOutcome.end()) {
-        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown outcome %s\n", __func__, strVoteOutcome);
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown outcome %s\n", __func__, strVoteOutcome);
         return VOTE_OUTCOME_NONE;
     }
     return it->second;
@@ -71,7 +71,7 @@ vote_signal_enum_t CGovernanceVoting::ConvertVoteSignal(const std::string& strVo
 
     const auto& it = mapStrVoteSignals.find(strVoteSignal);
     if (it == mapStrVoteSignals.end()) {
-        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown signal %s\n", __func__, strVoteSignal);
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown signal %s\n", __func__, strVoteSignal);
         return VOTE_SIGNAL_NONE;
     }
     return it->second;
@@ -168,12 +168,12 @@ bool CGovernanceVote::Sign(const CKey& key, const CKeyID& keyID)
         uint256 hash = GetSignatureHash();
 
         if (!CHashSigner::SignHash(hash, key, vchSig)) {
-            LogPrintf("CGovernanceVote::Sign -- SignHash() failed\n");
+            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- SignHash() failed\n");
             return false;
         }
 
         if (!CHashSigner::VerifyHash(hash, keyID, vchSig, strError)) {
-            LogPrintf("CGovernanceVote::Sign -- VerifyHash() failed, error: %s\n", strError);
+            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- VerifyHash() failed, error: %s\n", strError);
             return false;
         }
     } else {
@@ -181,12 +181,12 @@ bool CGovernanceVote::Sign(const CKey& key, const CKeyID& keyID)
                                  std::to_string(nVoteSignal) + "|" + std::to_string(nVoteOutcome) + "|" + std::to_string(nTime);
 
         if (!CMessageSigner::SignMessage(strMessage, vchSig, key)) {
-            LogPrintf("CGovernanceVote::Sign -- SignMessage() failed\n");
+            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- SignMessage() failed\n");
             return false;
         }
 
         if (!CMessageSigner::VerifyMessage(keyID, vchSig, strMessage, strError)) {
-            LogPrintf("CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
+            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
             return false;
         }
     }
@@ -243,12 +243,12 @@ bool CGovernanceVote::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
 
 
     if(!CMessageSigner::SignMessage(strMessage, vchSig, keyMasternode)) {
-        LogPrintf("CGovernanceVote::Sign -- SignMessage() failed\n");
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- SignMessage() failed\n");
         return false;
     }
 
     if(!CMessageSigner::VerifyMessage(pubKeyMasternode.GetID(), vchSig, strMessage, strError)) {
-        LogPrintf("CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
         return false;
     }
 
@@ -272,7 +272,7 @@ bool CGovernanceVote::CheckSignature(const CBLSPublicKey& pubKey) const
     CBLSSignature sig;
     sig.SetBuf(vchSig);
     if (!sig.VerifyInsecure(pubKey, hash)) {
-        LogPrintf("CGovernanceVote::CheckSignature -- VerifyInsecure() failed\n");
+        LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::CheckSignature -- VerifyInsecure() failed\n");
         return false;
     }
     return true;

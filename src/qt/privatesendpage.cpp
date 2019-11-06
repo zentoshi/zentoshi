@@ -385,10 +385,10 @@ void PrivateSendPage::privateSendStatus()
                                    "saved in some safe place</span>!") + "<br><br>" +
                                 tr("Note: You can turn this message off in options.");
             ui->labelPrivateSendEnabled->setToolTip(strWarn);
-            LogPrintf("PrivateSendPage::privateSendStatus -- Very low number of keys left since last automatic backup, warning user and trying to create new backup...\n");
+            LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- Very low number of keys left since last automatic backup, warning user and trying to create new backup...\n");
             QMessageBox::warning(this, tr("ShadowSend"), strWarn, QMessageBox::Ok, QMessageBox::Ok);
         } else {
-            LogPrintf("PrivateSendPage::privateSendStatus -- Very low number of keys left since last automatic backup, skipping warning and trying to create new backup...\n");
+            LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- Very low number of keys left since last automatic backup, skipping warning and trying to create new backup...\n");
         }
 
         std::string strBackupWarning;
@@ -399,7 +399,7 @@ void PrivateSendPage::privateSendStatus()
         if(!AutoBackupWallet(pwallet, "", strBackupWarning, strBackupError)) {
             if (!strBackupWarning.empty()) {
                 // It's still more or less safe to continue but warn user anyway
-                LogPrintf("PrivateSendPage::privateSendStatus -- WARNING! Something went wrong on automatic backup: %s\n", strBackupWarning);
+                LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- WARNING! Something went wrong on automatic backup: %s\n", strBackupWarning);
 
                 QMessageBox::warning(this, tr("ShadowSend"),
                     tr("WARNING! Something went wrong on automatic backup") + ":<br><br>" + strBackupWarning.c_str(),
@@ -407,7 +407,7 @@ void PrivateSendPage::privateSendStatus()
             }
             if (!strBackupError.empty()) {
                 // Things are really broken, warn user and stop mixing immediately
-                LogPrintf("PrivateSendPage::privateSendStatus -- ERROR! Failed to create automatic backup: %s\n", strBackupError);
+                LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- ERROR! Failed to create automatic backup: %s\n", strBackupError);
 
                 QMessageBox::warning(this, tr("ShadowSend"),
                     tr("ERROR! Failed to create automatic backup") + ":<br><br>" + strBackupError.c_str() + "<br>" +
@@ -450,7 +450,7 @@ void PrivateSendPage::privateSendStatus()
     QString s = tr("Last ShadowSend message:\n") + strStatus;
 
     if(s != ui->labelPrivateSendLastMessage->text())
-        LogPrintf("PrivateSendPage::privateSendStatus -- Last ShadowSend message: %s\n", strStatus.toStdString());
+        LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- Last ShadowSend message: %s\n", strStatus.toStdString());
 
     ui->labelPrivateSendLastMessage->setText(s);
 
