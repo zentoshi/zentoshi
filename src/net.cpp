@@ -22,7 +22,7 @@
 #include <util/strencodings.h>
 #include <validation.h>
 
-#include <instantx.h>
+
 #include <masternode-sync.h>
 #include <privatesend/privatesend.h>
 #include "llmq/quorums_instantsend.h"
@@ -2766,21 +2766,11 @@ void CConnman::RelayTransaction(const CTransaction& tx)
     int nInv = MSG_TX;
     if (CPrivateSend::GetDSTX(hash)) {
         nInv = MSG_DSTX;
-    } else if (llmq::IsInstantSendEnabled() && instantsend.HasTxLockRequest(hash)) {
-        nInv = MSG_TXLOCK_REQUEST;
     }
     CInv inv(nInv, hash);
     LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
+    for (CNode* pnode : vNodes)
     {
-        if (nInv == MSG_TXLOCK_REQUEST) {
-            // Additional filtering for lock requests.
-            // Make it here because lock request processing
-            // differs from simple tx processing in PushInventory
-            // and tx info will not be available there.
-            LOCK(pnode->cs_filter);
-            if(pnode->pfilter && !pnode->pfilter->IsRelevantAndUpdate(tx)) continue;
-        }
         pnode->PushInventory(inv);
     }
 }
@@ -3051,7 +3041,7 @@ bool CConnman::NodeFullyConnected(const CNode* pnode)
     return pnode && pnode->fSuccessfullyConnected && !pnode->fDisconnect;
 }
 
-void CConnman::PushMessage(CNode* pnode, CSerializedNetMsg&& msg)
+void CConnman::PushMessage(CNode* pnode, CSerializedNetMsg&& msg, bool allowOptimisticSend)
 {
     size_t nMessageSize = msg.data.size();
     size_t nTotalSize = nMessageSize + CMessageHeader::HEADER_SIZE;

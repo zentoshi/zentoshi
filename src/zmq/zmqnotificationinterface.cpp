@@ -158,6 +158,23 @@ void CZMQNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindexNew, co
     }
 }
 
+void CZMQNotificationInterface::NotifyChainLock(const CBlockIndex *pindex, const llmq::CChainLockSig& clsig)
+{
+    for (std::list<CZMQAbstractNotifier*>::iterator i = notifiers.begin(); i!=notifiers.end(); )
+    {
+        CZMQAbstractNotifier *notifier = *i;
+        if (notifier->NotifyChainLock(pindex, clsig))
+        {
+            i++;
+        }
+        else
+        {
+            notifier->Shutdown();
+            i = notifiers.erase(i);
+        }
+    }
+}
+
 void CZMQNotificationInterface::TransactionAddedToMempool(const CTransactionRef& ptx)
 {
     // Used by BlockConnected and BlockDisconnected as well, because they're
@@ -187,11 +204,28 @@ void CZMQNotificationInterface::BlockConnected(const std::shared_ptr<const CBloc
     }
 }
 
-void CZMQNotificationInterface::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock)
+void CZMQNotificationInterface::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected)
 {
     for (const CTransactionRef& ptx : pblock->vtx) {
         // Do a normal notify for each transaction removed in block disconnection
         TransactionAddedToMempool(ptx);
+    }
+}
+
+void CZMQNotificationInterface::NotifyTransactionLock(const CTransaction &tx, const llmq::CInstantSendLock& islock)
+{
+    for (std::list<CZMQAbstractNotifier*>::iterator i = notifiers.begin(); i!=notifiers.end(); )
+    {
+        CZMQAbstractNotifier *notifier = *i;
+        if (notifier->NotifyTransactionLock(tx, islock))
+        {
+            i++;
+        }
+        else
+        {
+            notifier->Shutdown();
+            i = notifiers.erase(i);
+        }
     }
 }
 

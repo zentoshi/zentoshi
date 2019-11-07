@@ -160,7 +160,6 @@ BITCOIN_CORE_H = \
   interfaces/handler.h \
   interfaces/node.h \
   interfaces/wallet.h \
-  instantx.h \
   key.h \
   key_io.h \
   keystore.h \
@@ -318,7 +317,6 @@ libzentoshi_server_a_SOURCES = \
   interfaces/handler.cpp \
   interfaces/node.cpp \
   init.cpp \
-  instantx.cpp \
   kernel.cpp \
   dbwrapper.cpp \
   governance/governance.cpp \

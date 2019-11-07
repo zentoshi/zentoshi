@@ -171,6 +171,8 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
     // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability)
     if (::GetSerializeSize(tx) * WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)
         return state.DoS(100, false, REJECT_INVALID, "bad-txns-oversize");
+    if (tx.vExtraPayload.size() > MAX_TX_EXTRA_PAYLOAD)
+        return state.DoS(100, false, REJECT_INVALID, "bad-txns-payload-oversize");
 
     // Check for negative or overflow output values
     CAmount nValueOut = 0;

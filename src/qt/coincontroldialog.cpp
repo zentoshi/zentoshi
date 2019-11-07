@@ -27,7 +27,7 @@
 #include <wallet/fees.h>
 #include <wallet/wallet.h>
 
-#include <instantx.h>
+
 #include <privatesend/privatesend-client.h>
 
 #include <QApplication>
@@ -474,14 +474,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
 
         // Bytes
         CTxDestination address;
-        int witnessversion = 0;
-        std::vector<unsigned char> witnessprogram;
-        if (out.txout.scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram))
-        {
-            nBytesInputs += (32 + 4 + 1 + (107 / WITNESS_SCALE_FACTOR) + 4);
-            fWitness = true;
-        }
-        else if(ExtractDestination(out.txout.scriptPubKey, address))
+        if(ExtractDestination(out.txout.scriptPubKey, address))
         {
             CPubKey pubkey;
             CKeyID *keyid = boost::get<CKeyID>(&address);
@@ -518,10 +511,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
                 nBytes -= 34;
 
         // Fee
-        nPayFee = coinControl()->nMinimumTotalFee;
-
-        // InstantSend Fee
-        if (coinControl()->fUseInstantSend) nPayFee = std::max(nPayFee, CTxLockRequest(txDummy).GetMinFee(true));
+        nPayFee = model->wallet().getMinimumFee(nBytes, *coinControl(), nullptr, nullptr);
 
         if (nPayAmount > 0)
         {

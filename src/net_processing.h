@@ -29,26 +29,13 @@ private:
 public:
     PeerLogicValidation(CConnman* connman, BanMan* banman, CScheduler &scheduler, bool enable_bip61);
 
-    /**
-     * Overridden from CValidationInterface.
-     */
     void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexConnected, const std::vector<CTransactionRef>& vtxConflicted) override;
-    /**
-     * Overridden from CValidationInterface.
-     */
     void UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) override;
-    /**
-     * Overridden from CValidationInterface.
-     */
     void BlockChecked(const CBlock& block, const CValidationState& state) override;
-    /**
-     * Overridden from CValidationInterface.
-     */
     void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& pblock) override;
-    virtual void SyncTransaction(const CTransaction& tx, const CBlockIndex* pindex, int nPosInBlock) override;
-    /** Initialize a peer by adding it to mapNodeState and pushing a message requesting its version */
+
+
     void InitializeNode(CNode* pnode) override;
-    /** Handle removal of a peer by updating various state and removing it from mapNodeState */
     void FinalizeNode(NodeId nodeid, bool& fUpdateConnectionTime) override;
     /**
     * Process protocol messages received from a given node

@@ -238,7 +238,9 @@ bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& bloc
         return false;
     }
 
-    mnListDiffRet.cbTx = block.vtx[0];
+    bool isProofOfStake = !block.IsProofOfWork();
+    const auto& coinbaseTransaction = block.vtx[isProofOfStake];
+    mnListDiffRet.cbTx = block.vtx[isProofOfStake];
 
     std::vector<uint256> vHashes;
     std::vector<bool> vMatch(block.vtx.size(), false);

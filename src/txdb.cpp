@@ -238,6 +238,10 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
     return WriteBatch(batch, true);
 }
 
+bool CBlockTreeDB::HasTxIndex(const uint256& txid) {
+    return Exists(std::make_pair(DB_TXINDEX, txid));
+}
+
 bool CBlockTreeDB::ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) {
     return Read(std::make_pair(DB_TXINDEX, txid), pos);
 }
@@ -298,13 +302,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->nStakeTime       = diskindex.nStakeTime;
                 pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
 
-                if (diskindex.nHeight==0 &&
-                    *(uint32_t*)&pindexNew->phashBlock[0]!=(0x9894352f))*(int*)0=0;
-
-                // Bitcoin: Disable PoW Sanity check while loading block index from disk.
-                //if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
-                //    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
-
                 pcursor->Next();
             } else {
                 return error("%s: failed to read value", __func__);
@@ -363,7 +360,7 @@ public:
         vout.assign(vAvail.size(), CTxOut());
         for (unsigned int i = 0; i < vAvail.size(); i++) {
             if (vAvail[i])
-                ::Unserialize(s, CTxOutCompressor(vout[i]));
+                ::Unserialize(s, REF(CTxOutCompressor(vout[i])));
         }
         // coinbase height
         ::Unserialize(s, VARINT(nHeight));

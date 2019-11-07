@@ -29,7 +29,7 @@ static const int MIN_PRIVATESEND_PEER_PROTO_VERSION = 70213;
 static const size_t PRIVATESEND_ENTRY_MAX_SIZE = 9;
 
 // pool responses
-enum PoolMessage {
+enum PoolMessage : int32_t {
     ERR_ALREADY_HAVE,
     ERR_DENOM,
     ERR_ENTRIES_FULL,
@@ -52,12 +52,14 @@ enum PoolMessage {
     MSG_NOERR,
     MSG_SUCCESS,
     MSG_ENTRIES_ADDED,
+    ERR_SIZE_MISMATCH,
     MSG_POOL_MIN = ERR_ALREADY_HAVE,
-    MSG_POOL_MAX = MSG_ENTRIES_ADDED
+    MSG_POOL_MAX = ERR_SIZE_MISMATCH
 };
+template<> struct is_serializable_enum<PoolMessage> : std::true_type {};
 
 // pool states
-enum PoolState {
+enum PoolState : int32_t {
     POOL_STATE_IDLE,
     POOL_STATE_QUEUE,
     POOL_STATE_ACCEPTING_ENTRIES,
@@ -67,11 +69,51 @@ enum PoolState {
     POOL_STATE_MIN = POOL_STATE_IDLE,
     POOL_STATE_MAX = POOL_STATE_SUCCESS
 };
+template<> struct is_serializable_enum<PoolState> : std::true_type {};
 
 // status update message constants
-enum PoolStatusUpdate {
+enum PoolStatusUpdate : int32_t {
     STATUS_REJECTED,
     STATUS_ACCEPTED
+};
+template<> struct is_serializable_enum<PoolStatusUpdate> : std::true_type {};
+
+class CPrivateSendStatusUpdate
+{
+public:
+    int nSessionID;
+    PoolState nState;
+    int nEntriesCount; // deprecated, kept for backwards compatibility
+    PoolStatusUpdate nStatusUpdate;
+    PoolMessage nMessageID;
+
+    CPrivateSendStatusUpdate() :
+        nSessionID(0),
+        nState(POOL_STATE_IDLE),
+        nEntriesCount(0),
+        nStatusUpdate(STATUS_ACCEPTED),
+        nMessageID(MSG_NOERR) {};
+
+    CPrivateSendStatusUpdate(int nSessionID, PoolState nState, int nEntriesCount, PoolStatusUpdate nStatusUpdate, PoolMessage nMessageID) :
+        nSessionID(nSessionID),
+        nState(nState),
+        nEntriesCount(nEntriesCount),
+        nStatusUpdate(nStatusUpdate),
+        nMessageID(nMessageID) {};
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
+        READWRITE(nSessionID);
+        READWRITE(nState);
+        if (s.GetVersion() <= 70215) {
+            READWRITE(nEntriesCount);
+        }
+        READWRITE(nStatusUpdate);
+        READWRITE(nMessageID);
+    }
 };
 
 /** Holds an mixing input
@@ -229,8 +271,8 @@ public:
 
     bool Relay(CConnman& connman);
 
-    /// Is this queue expired?
-    bool IsExpired() { return GetAdjustedTime() - nTime > PRIVATESEND_QUEUE_TIMEOUT; }
+    /// Check if a queue is too old or too far into the future
+    bool IsTimeOutOfBounds() const;
 
     std::string ToString() const
     {
@@ -309,7 +351,8 @@ public:
     bool CheckSignature(const CBLSPublicKey& blsPubKey) const;
 
     void SetConfirmedHeight(int nConfirmedHeightIn) { nConfirmedHeight = nConfirmedHeightIn; }
-    bool IsExpired(int nHeight);
+    bool IsExpired(const CBlockIndex* pindex);
+    bool IsValidStructure();
 };
 
 // base class
@@ -384,7 +427,7 @@ private:
 
     static CCriticalSection cs_mapdstx;
 
-    static void CheckDSTXes(int nHeight);
+    static void CheckDSTXes(const CBlockIndex* pindex);
 
 public:
     static void InitStandardDenominations();
@@ -420,7 +463,12 @@ public:
     static CPrivateSendBroadcastTx GetDSTX(const uint256& hash);
 
     static void UpdatedBlockTip(const CBlockIndex* pindex);
-    static void SyncTransaction(const CTransaction& tx, const CBlockIndex* pindex, int posInBlock);
+
+    static void UpdateDSTXConfirmedHeight(const CTransactionRef& tx, int nHeight);
+    static void TransactionAddedToMempool(const CTransactionRef& tx);
+    static void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted);
+    static void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected);
+
 };
 
 #endif

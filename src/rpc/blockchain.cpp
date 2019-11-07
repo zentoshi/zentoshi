@@ -11,7 +11,7 @@
 #include <checkpoints.h>
 #include <coins.h>
 #include <consensus/validation.h>
-#include <instantx.h>
+
 #include <core_io.h>
 #include <hash.h>
 #include <index/txindex.h>

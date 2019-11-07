@@ -8,7 +8,7 @@
 #include <consensus/consensus.h>
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
-#include <instantx.h>
+
 #include <validation.h>
 #include <policy/policy.h>
 #include <policy/fees.h>
@@ -1325,7 +1325,7 @@ int CTxMemPool::Expire(int64_t time) {
     setEntries toremove;
     while (it != mapTx.get<entry_time>().end() && it->GetTime() < time) {
         // locked txes do not expire until mined and have sufficient confirmations
-        if (instantsend.IsLockedInstantSendTransaction(it->GetTx().GetHash()) || llmq::quorumInstantSendManager->IsLocked(it->GetTx().GetHash())) {
+        if (llmq::quorumInstantSendManager->IsLocked(it->GetTx().GetHash())) {
             it++;
             continue;
         }

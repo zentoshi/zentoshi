@@ -38,6 +38,7 @@ public:
         READWRITE(sig);
     }
 
+    bool IsNull() const;
     std::string ToString() const;
 };
 
@@ -85,12 +86,15 @@ public:
 
     bool AlreadyHave(const CInv& inv);
     bool GetChainLockByHash(const uint256& hash, CChainLockSig& ret);
+    CChainLockSig GetBestChainLock();
 
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
     void ProcessNewChainLock(NodeId from, const CChainLockSig& clsig, const uint256& hash);
     void AcceptedBlockHeader(const CBlockIndex* pindexNew);
     void UpdatedBlockTip(const CBlockIndex* pindexNew);
-    void SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex, int posInBlock);
+    void TransactionAddedToMempool(const CTransactionRef& tx);
+    void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted);
+    void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected);
     void CheckActiveState();
     void TrySignChainTip();
     void EnforceBestChainLock();

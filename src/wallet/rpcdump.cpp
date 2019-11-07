@@ -100,7 +100,7 @@ static const int64_t TIMESTAMP_MIN = 0;
 
 static void RescanWallet(CWallet& wallet, const WalletRescanReserver& reserver, int64_t time_begin = TIMESTAMP_MIN, bool update = true)
 {
-    int64_t scanned_time = wallet.RescanFromTime(time_begin, reserver, update);
+    int64_t scanned_time = wallet.RescanFromTime(time_begin, update);
     if (wallet.IsAbortingRescan()) {
         throw JSONRPCError(RPC_MISC_ERROR, "Rescan aborted by user.");
     } else if (scanned_time > time_begin) {
@@ -1492,7 +1492,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
         }
     }
     if (fRescan && fRunScan && requests.size()) {
-        int64_t scannedTime = pwallet->RescanFromTime(nLowestTimestamp, reserver, true /* update */);
+        int64_t scannedTime = pwallet->RescanFromTime(nLowestTimestamp, true);
         {
             auto locked_chain = pwallet->chain().lock();
             LOCK(pwallet->cs_wallet);

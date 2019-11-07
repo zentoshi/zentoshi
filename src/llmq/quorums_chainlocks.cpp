@@ -24,6 +24,11 @@ static const std::string CLSIG_REQUESTID_PREFIX = "clsig";
 
 CChainLocksHandler* chainLocksHandler;
 
+bool CChainLockSig::IsNull() const
+{
+    return nHeight == -1 && blockHash == uint256();
+}
+
 std::string CChainLockSig::ToString() const
 {
     return strprintf("CChainLockSig(nHeight=%d, blockHash=%s)", nHeight, blockHash.ToString());
@@ -73,6 +78,12 @@ bool CChainLocksHandler::GetChainLockByHash(const uint256& hash, llmq::CChainLoc
     return true;
 }
 
+CChainLockSig CChainLocksHandler::GetBestChainLock()
+{
+    LOCK(cs);
+    return bestChainLock;
+}
+
 void CChainLocksHandler::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
     if (!sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED)) {
@@ -102,7 +113,7 @@ void CChainLocksHandler::ProcessNewChainLock(NodeId from, const llmq::CChainLock
             return;
         }
 
-        if (bestChainLock.nHeight != -1 && clsig.nHeight <= bestChainLock.nHeight) {
+        if (!bestChainLock.IsNull() && clsig.nHeight <= bestChainLock.nHeight) {
             // no need to process/relay older CLSIGs
             return;
         }
@@ -110,7 +121,7 @@ void CChainLocksHandler::ProcessNewChainLock(NodeId from, const llmq::CChainLock
 
     uint256 requestId = ::SerializeHash(std::make_pair(CLSIG_REQUESTID_PREFIX, clsig.nHeight));
     uint256 msgHash = clsig.blockHash;
-    if (!quorumSigningManager->VerifyRecoveredSig(Params().GetConsensus().llmqChainLocks, clsig.nHeight, requestId, msgHash, clsig.sig)) {
+    if (!quorumSigningManager->VerifyRecoveredSig(Params().GetConsensus().llmqTypeChainLocks, clsig.nHeight, requestId, msgHash, clsig.sig)) {
         LogPrint(BCLog::CHAINLOCKS, "CChainLocksHandler::%s -- invalid CLSIG (%s), peer=%d\n", __func__, clsig.ToString(), from);
         if (from != -1) {
             LOCK(cs_main);
@@ -343,41 +354,61 @@ void CChainLocksHandler::TrySignChainTip()
         lastSignedMsgHash = msgHash;
     }
 
-    quorumSigningManager->AsyncSignIfMember(Params().GetConsensus().llmqChainLocks, requestId, msgHash);
+    quorumSigningManager->AsyncSignIfMember(Params().GetConsensus().llmqTypeChainLocks, requestId, msgHash);
 }
 
-void CChainLocksHandler::SyncTransaction(const CTransaction& tx, const CBlockIndex* pindex, int posInBlock)
+void CChainLocksHandler::TransactionAddedToMempool(const CTransactionRef& tx)
+{
+    if (tx->IsCoinBase() || tx->vin.empty()) {
+        return;
+    }
+
+    if (!masternodeSync.IsBlockchainSynced()) {
+        return;
+    }
+
+    LOCK(cs);
+    int64_t curTime = GetAdjustedTime();
+    txFirstSeenTime.emplace(tx->GetHash(), curTime);
+}
+
+void CChainLocksHandler::BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted)
 {
     if (!masternodeSync.IsBlockchainSynced()) {
         return;
     }
 
-    bool handleTx = true;
-    if (tx.IsCoinBase() || tx.vin.empty()) {
-        handleTx = false;
-    }
+    // We listen for BlockConnected so that we can collect all TX ids of all included TXs of newly received blocks
+    // We need this information later when we try to sign a new tip, so that we can determine if all included TXs are
+    // safe.
 
     LOCK(cs);
 
-    if (handleTx) {
-        int64_t curTime = GetAdjustedTime();
-        txFirstSeenTime.emplace(tx.GetHash(), curTime);
+    auto it = blockTxs.find(pindex->GetBlockHash());
+    if (it == blockTxs.end()) {
+        // we must create this entry even if there are no lockable transactions in the block, so that TrySignChainTip
+        // later knows about this block
+        it = blockTxs.emplace(pindex->GetBlockHash(), std::make_shared<std::unordered_set<uint256, StaticSaltedHasher>>()).first;
+    }
+    auto& txids = *it->second;
+
+    int64_t curTime = GetAdjustedTime();
+
+    for (const auto& tx : pblock->vtx) {
+        if (tx->IsCoinBase() || tx->vin.empty()) {
+            continue;
+        }
+
+        txids.emplace(tx->GetHash());
+        txFirstSeenTime.emplace(tx->GetHash(), curTime);
     }
 
-    // We listen for SyncTransaction so that we can collect all TX ids of all included TXs of newly received blocks
-    // We need this information later when we try to sign a new tip, so that we can determine if all included TXs are
-    // safe.
-    if (pindex && posInBlock != CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK) {
-        auto it = blockTxs.find(pindex->GetBlockHash());
-        if (it == blockTxs.end()) {
-            // we want this to be run even if handleTx == false, so that the coinbase TX triggers creation of an empty entry
-            it = blockTxs.emplace(pindex->GetBlockHash(), std::make_shared<std::unordered_set<uint256, StaticSaltedHasher>>()).first;
-        }
-        if (handleTx) {
-            auto& txs = *it->second;
-            txs.emplace(tx.GetHash());
-        }
-    }
+}
+
+void CChainLocksHandler::BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected)
+{
+    LOCK(cs);
+    blockTxs.erase(pindexDisconnected->GetBlockHash());
 }
 
 CChainLocksHandler::BlockTxs::mapped_type CChainLocksHandler::GetBlockTxs(const uint256& blockHash)
@@ -488,7 +519,7 @@ void CChainLocksHandler::EnforceBestChainLock()
         // and invalidate each of them.
         while (pindex && !chainActive.Contains(pindex)) {
             // Invalidate all blocks that have the same prevBlockHash but are not equal to blockHash
-            auto itp = mapBlockIndex.equal_range(pindex->pprev->GetBlockHash());
+            auto itp = mapPrevBlockIndex.equal_range(pindex->pprev->GetBlockHash());
             for (auto jt = itp.first; jt != itp.second; ++jt) {
                 if (jt->second == pindex) {
                     continue;
@@ -527,7 +558,7 @@ void CChainLocksHandler::EnforceBestChainLock()
     }
 
     if (pindexNotify) {
-        GetMainSignals().NotifyChainLock(pindexNotify);
+        GetMainSignals().NotifyChainLock(pindexNotify, clsig);
     }
 }
 
