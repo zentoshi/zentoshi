@@ -56,6 +56,7 @@ private:
 
     int nDisplayUnit;
     bool fShowAdvancedPSUI;
+    int cachedNumISLocks;
 
     std::unique_ptr<TransactionFilterProxy> filter;
 

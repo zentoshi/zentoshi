@@ -51,15 +51,9 @@ PrivateSendPage::PrivateSendPage(const PlatformStyle *platformStyle, QWidget *pa
     QIcon icon = platformStyle->SingleColorIcon(":/icons/warning");
     icon.addPixmap(icon.pixmap(QSize(64,64), QIcon::Normal), QIcon::Disabled); // also set the disabled icon because we are using a disabled QPushButton to work around missing HiDPI support of QLabel (https://bugreports.qt.io/browse/QTBUG-42503)
 
-    // start with displaying the "out of sync" warnings
-    showOutOfSyncWarning(true);
-
-    // that's it for litemode
-    if(fLiteMode) return;
-
     // Disable any PS UI for masternode or when autobackup is disabled or failed for whatever reason
     if(fMasternodeMode || nWalletBackups <= 0){
-        // DisablePrivateSendCompletely();
+        DisablePrivateSendCompletely();
         if (nWalletBackups <= 0) {
             ui->labelPrivateSendEnabled->setToolTip(tr("Automatic backups are disabled, no mixing available!"));
         }
@@ -179,8 +173,8 @@ void PrivateSendPage::setWalletModel(WalletModel *model)
         updateWatchOnlyLabels(wallet.haveWatchOnly());
         connect(model, SIGNAL(notifyWatchonlyChanged(bool)), this, SLOT(updateWatchOnlyLabels(bool)));
 
-        // that's it for litemode
-        if(fLiteMode) return;
+        if(!privateSendClient.fEnablePrivateSend) return;
+
         connect(model->getOptionsModel(), SIGNAL(privateSendRoundsChanged()), this, SLOT(updatePrivateSendProgress()));
         connect(model->getOptionsModel(), SIGNAL(privateSentAmountChanged()), this, SLOT(updatePrivateSendProgress()));
         connect(model->getOptionsModel(), SIGNAL(advancedPSUIChanged(bool)), this, SLOT(updateAdvancedPSUI(bool)));
@@ -217,8 +211,6 @@ void PrivateSendPage::updateAlerts(const QString &warnings)
 
 void PrivateSendPage::showOutOfSyncWarning(bool fShow)
 {
-    ui->labelWalletStatus->setVisible(fShow);
-    ui->labelPrivateSendSyncStatus->setVisible(fShow);
 }
 
 void PrivateSendPage::updatePrivateSendProgress()
@@ -230,7 +222,6 @@ void PrivateSendPage::updatePrivateSendProgress()
 
     if(m_balances.balance == 0)
     {
-
         ui->privateSendProgress->setValue(0);
         ui->privateSendProgress->setToolTip(tr("No inputs detected"));
 
@@ -352,7 +343,7 @@ void PrivateSendPage::privateSendStatus()
     nLastDSProgressBlockTime = GetTimeMillis();
 
     QString strKeysLeftText(tr("keys left: %1").arg(walletModel->wallet().getKeysLeftSinceAutoBackup()));
-    if(walletModel->wallet().getKeysLeftSinceAutoBackup() < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+    if(vpwallets[0]->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
         strKeysLeftText = "<span style='color:red;'>" + strKeysLeftText + "</span>";
     }
     ui->labelPrivateSendEnabled->setToolTip(strKeysLeftText);
@@ -374,52 +365,9 @@ void PrivateSendPage::privateSendStatus()
         return;
     }
 
-    // Warn user that wallet is running out of keys
-    // NOTE: we do NOT warn user and do NOT create autobackups if mixing is not running
-    if (nWalletBackups > 0 && walletModel->wallet().getKeysLeftSinceAutoBackup() < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
-        QSettings settings;
-        if(settings.value("fLowKeysWarning").toBool()) {
-            QString strWarn =   tr("Very low number of keys left since last automatic backup!") + "<br><br>" +
-                                tr("We are about to create a new automatic backup for you, however "
-                                   "<span style='color:red;'> you should always make sure you have backups "
-                                   "saved in some safe place</span>!") + "<br><br>" +
-                                tr("Note: You can turn this message off in options.");
-            ui->labelPrivateSendEnabled->setToolTip(strWarn);
-            LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- Very low number of keys left since last automatic backup, warning user and trying to create new backup...\n");
-            QMessageBox::warning(this, tr("ShadowSend"), strWarn, QMessageBox::Ok, QMessageBox::Ok);
-        } else {
-            LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- Very low number of keys left since last automatic backup, skipping warning and trying to create new backup...\n");
-        }
-
-        std::string strBackupWarning;
-        std::string strBackupError;
-        std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
-        std::shared_ptr<CWallet> pwallet = (wallets.size() > 0) ? wallets[0] : nullptr;
-
-        if(!AutoBackupWallet(pwallet, "", strBackupWarning, strBackupError)) {
-            if (!strBackupWarning.empty()) {
-                // It's still more or less safe to continue but warn user anyway
-                LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- WARNING! Something went wrong on automatic backup: %s\n", strBackupWarning);
-
-                QMessageBox::warning(this, tr("ShadowSend"),
-                    tr("WARNING! Something went wrong on automatic backup") + ":<br><br>" + strBackupWarning.c_str(),
-                    QMessageBox::Ok, QMessageBox::Ok);
-            }
-            if (!strBackupError.empty()) {
-                // Things are really broken, warn user and stop mixing immediately
-                LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- ERROR! Failed to create automatic backup: %s\n", strBackupError);
-
-                QMessageBox::warning(this, tr("ShadowSend"),
-                    tr("ERROR! Failed to create automatic backup") + ":<br><br>" + strBackupError.c_str() + "<br>" +
-                    tr("Mixing is disabled, please close your wallet and fix the issue!"),
-                    QMessageBox::Ok, QMessageBox::Ok);
-            }
-        }
-    }
-
+    // Construct status string
     QString strEnabled = privateSendClient.fEnablePrivateSend ? tr("Enabled") : tr("Disabled");
-    // Show how many keys left in advanced PS UI mode only
-    if(fShowAdvancedPSUI) strEnabled += ", " + strKeysLeftText;
+    strEnabled += ", " + strKeysLeftText;
     ui->labelPrivateSendEnabled->setText(strEnabled);
 
     if(nWalletBackups == -1) {
