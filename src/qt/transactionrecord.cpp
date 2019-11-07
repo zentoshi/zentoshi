@@ -19,8 +19,6 @@
  */
 bool TransactionRecord::showTransaction()
 {
-    // There are currently no cases where we hide transactions, but
-    // we may want to use this in the future for things like RBF.
     return true;
 }
 
@@ -66,7 +64,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const interface
             isminetype mine = wtx.txout_is_mine[1];
             sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
             sub.address = CBitcoinAddress(address).ToString();
-            sub.credit = nCredit - nDebit;
+            sub.credit = wtx.tx->GetValueOut() - nDebit;
             sub.type = TransactionRecord::StakeMint;
 
         }
@@ -197,6 +195,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const interface
 
 void TransactionRecord::updateStatus(const interfaces::WalletTxStatus& wtx, int numBlocks, int64_t block_time)
 {
+    AssertLockHeld(cs_main);
     // Determine transaction status
 
     // Sort order, unrecorded transactions sort to the top
@@ -222,7 +221,8 @@ void TransactionRecord::updateStatus(const interfaces::WalletTxStatus& wtx, int 
         }
     }
     // For generated transactions, determine maturity
-    else if(type == TransactionRecord::Generated)
+    else if(type == TransactionRecord::Generated || type == TransactionRecord::StakeMint
+            || type == TransactionRecord::MNReward)
     {
         if (wtx.blocks_to_maturity > 0)
         {
