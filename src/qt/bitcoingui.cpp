@@ -236,6 +236,11 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     connect(timerStakingIcon, SIGNAL(timeout()), this, SLOT(setStakingStatus()));
     timerStakingIcon->start(2500);
     setStakingStatus();
+
+    QTimer* timerQuorumStatusIcon = new QTimer();
+    connect(timerQuorumStatusIcon, SIGNAL(timeout()), this, SLOT(setQuorumFeatures()));
+    timerQuorumStatusIcon->start(2500);
+    setQuorumFeatures();
 }
 
 BitcoinGUI::~BitcoinGUI()
@@ -1063,7 +1068,6 @@ void BitcoinGUI::updateNetworkState()
     // Don't word-wrap this (fixed-width) tooltip
     tooltip = QString("<nobr>") + tooltip + QString("</nobr>");
     connectionsControl->setToolTip(tooltip);
-
     connectionsControl->setPixmap(platformStyle->SingleColorIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
 }
 
@@ -1075,6 +1079,12 @@ void BitcoinGUI::setNumConnections(int count)
 void BitcoinGUI::setNetworkActive(bool networkActive)
 {
     updateNetworkState();
+}
+
+void BitcoinGUI::setQuorumFeatures()
+{
+    setQuorumStatus(sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED));
+    setChainLockStatus(sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED));
 }
 
 void BitcoinGUI::updateHeadersSyncProgressLabel()
@@ -1483,11 +1493,11 @@ void BitcoinGUI::setStakingStatus()
     if (nLastCoinStakeSearchInterval) {
         labelStakingIcon->show();
         labelStakingIcon->setPixmap(QIcon(QString(":/icons/staking_active")).pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-        labelStakingIcon->setToolTip(tr("Staking is active\n"));
+        labelStakingIcon->setToolTip(tr("Staking is active"));
     } else {
         labelStakingIcon->show();
         labelStakingIcon->setPixmap(QIcon(QString(":/icons/staking_inactive")).pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-        labelStakingIcon->setToolTip(tr("Staking is inactive\n"));
+        labelStakingIcon->setToolTip(tr("Staking is inactive"));
     }
 }
 
@@ -1548,8 +1558,6 @@ void BitcoinGUI::updateWalletStatus()
     WalletModel * const walletModel = walletView->getWalletModel();
     setEncryptionStatus(walletModel->getEncryptionStatus());
     setHDStatus(walletModel->privateKeysDisabled(), walletModel->wallet().hdEnabled());
-    setQuorumStatus(sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED));
-    setChainLockStatus(sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED));
 }
 #endif // ENABLE_WALLET
 

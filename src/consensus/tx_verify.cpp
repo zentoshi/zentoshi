@@ -13,6 +13,7 @@
 #include <chain.h>
 #include <coins.h>
 #include <util/moneystr.h>
+#include <util/system.h>
 
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
@@ -164,9 +165,9 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
     }
 
     // Basic checks that don't depend on any context
-    if (tx.vin.empty())
+    if (tx.vin.empty() && !allowEmptyTxInOut)
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty())
+    if (tx.vout.empty() && !allowEmptyTxInOut)
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-vout-empty");
     // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability)
     if (::GetSerializeSize(tx) * WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)

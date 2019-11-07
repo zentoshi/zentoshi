@@ -149,8 +149,15 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
 
-    bool fDIP0003Active_context = sporkManager.IsSporkActive(SPORK_15_DETERMINISTIC_MNS_ENABLED);
-    bool fDIP0008Active_context = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED);
+    // This looks slightly dim, but the key is that once it is active - it remains active.
+    bool fDIP0003Active_context = sporkManager.IsSporkActive(SPORK_15_DETERMINISTIC_MNS_ENABLED) ||
+                                  (nHeight >= chainparams.GetConsensus().DIP0003Height &&
+                                   VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE);
+    bool fDIP0008Active_context = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED) ||
+                                  (nHeight >= chainparams.GetConsensus().DIP0008Height &&
+                                   VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE);
+
+    LogPrintf("BlockAssembler::CreateNewBlock - DIP0003 %s DIP0008 %s\n", fDIP0003Active_context ? "true" : "false", fDIP0008Active_context ? "true" : "false");
 
     pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus(), chainparams.BIP9CheckMasternodesUpgraded());
     // -regtest only: allow overriding block.nVersion with
@@ -243,6 +250,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     }
 
+    CCbTx cbTx;
+    if (fDIP0003Active_context)
+        cbTx.nVersion = 2;
+
     CValidationState state;
     if (!fDIP0003Active_context) {
         coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
@@ -251,8 +262,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
         coinbaseTx.nVersion = 3;
         coinbaseTx.nType = TRANSACTION_COINBASE;
-
-        CCbTx cbTx;
 
         if (fDIP0008Active_context) {
             cbTx.nVersion = 2;

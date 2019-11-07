@@ -112,6 +112,9 @@ UniValue blockheaderToJSON(const CBlockIndex* tip, const CBlockIndex* blockindex
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
     result.pushKV("nTx", (uint64_t)blockindex->nTx);
 
+    result.pushKV("proofType", (blockindex->nNonce == 0) ? "PoS" : "PoW");
+    result.pushKV("proofHash", (blockindex->nNonce == 0) ? blockindex->hashProofOfStake.GetHex() : blockindex->GetBlockHash().GetHex());
+
     if (blockindex->pprev)
         result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
     if (pnext)
@@ -152,6 +155,9 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* tip, const CBlockIn
     result.pushKV("difficulty", GetDifficulty(block.nBits));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
     result.pushKV("nTx", (uint64_t)blockindex->nTx);
+
+    result.pushKV("proofType", (blockindex->nNonce == 0) ? "PoS" : "PoW");
+    result.pushKV("proofHash", (blockindex->nNonce == 0) ? block.GetHash().GetHex() : block.GetPoWHash().GetHex());
 
     if (blockindex->pprev)
         result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());

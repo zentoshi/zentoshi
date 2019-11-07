@@ -230,6 +230,8 @@ Q_SIGNALS:
     void consoleShown(RPCConsole* console);
 
 public Q_SLOTS:
+    /** Update relevant status icons */
+    void setQuorumFeatures();
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
     /** Set network state shown in the UI */

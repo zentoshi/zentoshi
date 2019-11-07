@@ -186,6 +186,7 @@ public:
         consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+        consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
@@ -351,6 +352,7 @@ public:
         consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+        consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
@@ -506,6 +508,7 @@ public:
         consensus.DIP0003Height = 1048576; // TODO
         consensus.DIP0003EnforcementHeight = 1048576; // TODO
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
+        consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
