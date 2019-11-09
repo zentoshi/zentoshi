@@ -1,3 +1,5 @@
+// Copyright (c) 2019 Zentoshi LLC
+
 #ifndef GOVERNANCELIST_H
 #define GOVERNANCELIST_H
 
