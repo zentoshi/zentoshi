@@ -193,6 +193,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     m_last_block_weight = nBlockWeight;
 
     // Create coinbase transaction.
+    CMutableTransaction coinstakeTx;
     CMutableTransaction coinbaseTx;
     coinbaseTx.vin.resize(1);
     coinbaseTx.vin[0].prevout.SetNull();
@@ -209,7 +210,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         assert(pwallet);
         boost::this_thread::interruption_point();
         pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), fProofOfStake);
-        CMutableTransaction coinstakeTx;
         int64_t nSearchTime = pblock->nTime;
         bool fStakeFound = false;
         if (nSearchTime >= nLastCoinStakeSearchTime)
@@ -218,7 +218,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
             if (pwallet->CreateCoinStake(*pwallet, pblock->nBits, blockReward, coinstakeTx, nTxNewTime, vwtxPrev, fIncludeWitness)) {
                 pblock->nTime = nTxNewTime;
                 coinbaseTx.vout[0].SetEmpty();
-                FillBlockPayments(coinstakeTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
                 pblock->vtx.emplace_back(MakeTransactionRef(coinstakeTx));
                 fStakeFound = true;
             }
@@ -251,27 +250,18 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     }
 
     CCbTx cbTx;
+    CValidationState state;
     if (fDIP0003Active_context)
         cbTx.nVersion = 2;
 
-    CValidationState state;
     if (!fDIP0003Active_context) {
         coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
     } else {
         coinbaseTx.vin[0].scriptSig = CScript() << OP_RETURN;
-
         coinbaseTx.nVersion = 3;
         coinbaseTx.nType = TRANSACTION_COINBASE;
-
-        if (fDIP0008Active_context) {
-            cbTx.nVersion = 2;
-        } else {
-            cbTx.nVersion = 1;
-        }
-
         cbTx.nHeight = nHeight;
 
-        CValidationState state;
         if (!CalcCbTxMerkleRootMNList(*pblock, pindexPrev, cbTx.merkleRootMNList, state)) {
             throw std::runtime_error(strprintf("%s: CalcCbTxMerkleRootMNList failed: %s", __func__, FormatStateMessage(state)));
         }
@@ -285,6 +275,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     }
 
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
+    FillBlockPayments(coinstakeTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
     if (fIncludeWitness)
         pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
     pblocktemplate->vTxFees[0] = -nFees;
