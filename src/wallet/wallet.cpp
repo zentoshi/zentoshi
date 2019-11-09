@@ -2647,12 +2647,8 @@ static bool IsCorrectType(CAmount nAmount, AvailableCoinsType nCoinType)
         if (!CPrivateSend::IsCollateralAmount(nAmount))
             found = !CPrivateSend::IsDenominatedAmount(nAmount);
     } else if(nCoinType == ONLY_MASTERNODE_COLLATERAL) {
-        for(int i=0; i<Params().CollateralLevels(); i++) {
-            if(nAmount == (Params().ValidCollateralAmounts()[i] * COIN)) {
-                found = true;
-                break;
-            }
-        }
+        if (nAmount == Params().CollateralAmount())
+            found = true;
     } else if(nCoinType == ONLY_PRIVATESEND_COLLATERAL) {
         found = CPrivateSend::IsCollateralAmount(nAmount);
     } else {
@@ -3296,7 +3292,7 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
             if(fAnonymizable) {
                 // ignore collaterals
                 if(CPrivateSend::IsCollateralAmount(wtx.tx->vout[i].nValue)) continue;
-                if(fMasternodeMode && wtx.tx->vout[i].nValue == 1000*COIN) continue;
+                if(fMasternodeMode && wtx.tx->vout[i].nValue == Params().CollateralAmount()) continue;
                 // ignore outputs that are 10 times smaller then the smallest denomination
                 // otherwise they will just lead to higher fee / lower priority
                 if(wtx.tx->vout[i].nValue <= nSmallestDenom/10) continue;
@@ -3360,7 +3356,7 @@ bool CWallet::SelectPrivateCoins(CAmount nValueMin, CAmount nValueMax, std::vect
         if(out.tx->tx->vout[out.i].nValue < nValueMin/10) continue;
         //do not allow collaterals to be selected
         if(CPrivateSend::IsCollateralAmount(out.tx->tx->vout[out.i].nValue)) continue;
-        if(fMasternodeMode && out.tx->tx->vout[out.i].nValue == 1000*COIN) continue; //masternode input
+        if(fMasternodeMode && out.tx->tx->vout[out.i].nValue == Params().CollateralAmount()) continue; //masternode input
 
         if(nValueRet + out.tx->tx->vout[out.i].nValue <= nValueMax){
             CTxIn txin = CTxIn(out.tx->GetHash(),out.i);

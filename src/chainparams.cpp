@@ -297,7 +297,7 @@ public:
         fRequireStandard = true;
         fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
-        nCollateralLevels = { 5000 };
+        nCollateral = 5000 * COIN;
         fAllowMultipleAddressesFromGroup = true;
         fAllowMultiplePorts = false;
 
@@ -456,7 +456,7 @@ public:
         fRequireStandard = true;
         fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
-        nCollateralLevels = { 5000 };
+        nCollateral = 5000 * COIN;
         fAllowMultipleAddressesFromGroup = true;
         fAllowMultiplePorts = false;
 
@@ -615,7 +615,7 @@ public:
         fRequireStandard = true;
         fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
-        nCollateralLevels = { 0 };
+        nCollateral = 5000 * COIN;
         fAllowMultipleAddressesFromGroup = false;
         fAllowMultiplePorts = false;
 

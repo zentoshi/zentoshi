@@ -107,8 +107,7 @@ public:
     int MinSporkKeys() const { return nMinSporkKeys; }
     bool BIP9CheckMasternodesUpgraded() const { return fBIP9CheckMasternodesUpgraded; }
     std::string SporkPubKey() const { return strSporkPubKey; }
-    int CollateralLevels() const { return nCollateralLevels.size(); }
-    const std::vector<CAmount> ValidCollateralAmounts() const { return nCollateralLevels; }
+    CAmount CollateralAmount() const { return nCollateral; }
 protected:
     CChainParams() {}
 
@@ -145,7 +144,7 @@ protected:
     bool fBIP9CheckMasternodesUpgraded;
     std::string strSporkPubKey;
     int nMaxReorganizationDepth;
-    std::vector<CAmount> nCollateralLevels;
+    CAmount nCollateral;
 };
 
 /**
