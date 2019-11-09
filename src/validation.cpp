@@ -1139,8 +1139,7 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
     if (nPrevHeight < 1)
         return 2500000 * COIN;
 
-    return (nBudgetPerBlock + nStandardReward -
-           (fSuperblockPartOnly ? nBudgetPerBlock : nStandardReward));
+    return fSuperblockPartOnly ? nBudgetPerBlock : nStandardReward;
 }
 
 CAmount GetBlockSubsidy(int nPrevHeight, const Consensus::Params& consensusParams, bool fSuperblockPartOnly)
@@ -2114,7 +2113,8 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     // Check expected generation including budget/superblock
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->pprev->nHeight, chainparams.GetConsensus());
     std::string strError = "";
-    if (!IsBlockValueValid(block, nHeight, blockReward, strError)) {
+    if (!IsBlockValueValid(block, nHeight, blockReward, strError) &&
+        sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED)) {
         return state.DoS(0, error("ConnectBlock(ZENTOSHI): %s", strError), REJECT_INVALID, "bad-cb-amount");
     }
 
