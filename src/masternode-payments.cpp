@@ -103,7 +103,7 @@ bool IsBlockValueValid(const CBlock& block, int nBlockHeight, CAmount blockRewar
         return IsOldBudgetBlockValueValid(block, nBlockHeight, blockReward, strErrorRet);
     }
 
-    if(fDebug) LogPrintf("block.vtx[%d]->GetValueOut() %lld <= blockReward %lld\n", isProofOfStake, block.vtx[isProofOfStake]->GetValueOut(), blockReward);
+    LogPrint(BCLog::MNPAYMENTS, "          -- block.vtx[%d]->GetValueOut() %lld <= blockReward %lld\n", isProofOfStake, block.vtx[isProofOfStake]->GetValueOut(), blockReward);
 
     CAmount nSuperblockMaxValue =  blockReward + CSuperblock::GetPaymentsLimit(nBlockHeight);
     bool isSuperblockMaxValueMet = (block.vtx[isProofOfStake]->GetValueOut() <= nSuperblockMaxValue);

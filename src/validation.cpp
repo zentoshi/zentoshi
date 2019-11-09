@@ -1131,9 +1131,14 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex
 
 CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params& consensusParams, bool fSuperblockPartOnly)
 {
+    const CAmount nBudgetPerBlock = 2 * COIN;
+    const CAmount nStandardReward = 2 * COIN;
+
     if (nPrevHeight < 1)
         return 2500000 * COIN;
-    return 2 * COIN;
+
+    return (nBudgetPerBlock + nStandardReward -
+           (fSuperblockPartOnly ? nBudgetPerBlock : nStandardReward));
 }
 
 CAmount GetBlockSubsidy(int nPrevHeight, const Consensus::Params& consensusParams, bool fSuperblockPartOnly)
@@ -2100,24 +2105,35 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     pindex->nMoneySupply = nMoneySupplyPrev + nValueOut - nValueIn;
     pindex->nMint = pindex->nMoneySupply - nMoneySupplyPrev;
 
+    int nHeight = pindex->nHeight;
     bool isProofOfStake = !block.IsProofOfWork();
     const auto& coinbaseTransaction = block.vtx[isProofOfStake];
 
-    // Check PoW expected generation
-    CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight-1, chainparams.GetConsensus());
-    if (block.IsProofOfWork() && block.vtx[0]->GetValueOut() > blockReward) {
-        return state.DoS(10, error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
-                                   block.vtx[0]->GetValueOut(), blockReward), REJECT_INVALID, "bad-cb-amount");
+    // Check expected generation including budget/superblock
+    CAmount blockReward = nFees + GetBlockSubsidy(pindex->pprev->nHeight, chainparams.GetConsensus());
+    std::string strError = "";
+    if (!IsBlockValueValid(block, nHeight, blockReward, strError)) {
+        return state.DoS(0, error("ConnectBlock(ZENTOSHI): %s", strError), REJECT_INVALID, "bad-cb-amount");
     }
 
-    // Check PoS expected mint
-    if (block.IsProofOfStake() && pindex->nMint > blockReward) {
-        return state.DoS(10, error("ConnectBlock(): PoS reward pays too much (actual=%d vs limit=%d)",
-                                   FormatMoney(pindex->nMint), blockReward), REJECT_INVALID, "bad-cb-amount");
+    // Fallback methods
+    if(!sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED))
+    {
+	    // Check PoW expected generation
+	    if (block.IsProofOfWork() && block.vtx[0]->GetValueOut() > blockReward) {
+	        return state.DoS(10, error("ConnectBlock(ZENTOSHI): coinbase pays too much (actual=%d vs limit=%d)",
+	                                   block.vtx[0]->GetValueOut(), blockReward), REJECT_INVALID, "bad-cb-amount");
+	    }
+
+	    // Check PoS expected mint
+	    if (block.IsProofOfStake() && pindex->nMint > blockReward) {
+	        return state.DoS(10, error("ConnectBlock(ZENTOSHI): PoS reward pays too much (actual=%d vs limit=%d)",
+	                                   FormatMoney(pindex->nMint), blockReward), REJECT_INVALID, "bad-cb-amount");
+	    }
     }
 
     // Check block payout recipients
-    if (!IsBlockPayeeValid(*block.vtx[isProofOfStake], pindex->nHeight, blockReward)) {
+    if (!IsBlockPayeeValid(*block.vtx[isProofOfStake], nHeight, blockReward)) {
         mapRejectedBlocks.insert(std::make_pair(block.GetHash(), GetTime()));
         return state.DoS(0, error("ConnectBlock(ZENTOSHI): couldn't find masternode or superblock payments"),
                                   REJECT_INVALID, "bad-cb-payee");
