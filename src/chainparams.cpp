@@ -182,6 +182,8 @@ public:
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP65Height = consensus.nFirstPoSBlock;
         consensus.BIP66Height = consensus.nFirstPoSBlock;
+        consensus.CSVHeight = FROMGENESIS;
+        consensus.SegwitHeight = FROMGENESIS;
         consensus.DIP0001Height = FROMGENESIS;
         consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
         consensus.DIP0003EnforcementHeight = 1048576;
@@ -209,7 +211,7 @@ public:
         // Deployment of BIP68, BIP112, and BIP113.
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1462060800; // May 1st, 2016
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1493596800;   // May 1st, 2017
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
@@ -348,6 +350,8 @@ public:
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP65Height = consensus.nFirstPoSBlock;
         consensus.BIP66Height = consensus.nFirstPoSBlock;
+        consensus.CSVHeight = FROMGENESIS;
+        consensus.SegwitHeight = FROMGENESIS;
         consensus.DIP0001Height = FROMGENESIS;
         consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
         consensus.DIP0003EnforcementHeight = 1048576;
@@ -504,6 +508,8 @@ public:
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = consensus.nFirstPoSBlock;
         consensus.BIP66Height = consensus.nFirstPoSBlock;
+        consensus.CSVHeight = FROMGENESIS;
+        consensus.SegwitHeight = FROMGENESIS;
         consensus.DIP0001Height = 1048576; // TODO
         consensus.DIP0003Height = 1048576; // TODO
         consensus.DIP0003EnforcementHeight = 1048576; // TODO
