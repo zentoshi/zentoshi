@@ -161,6 +161,16 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
+    }
+};
+
+/**
+ * Testnet
+ */
+class CTestNetParams : public CChainParams {
+public:
+    CTestNetParams() {
+        strNetworkID = "test";
 
         consensus.nFirstPoSBlock = 50;
         consensus.nMasternodePaymentsStartBlock = consensus.nFirstPoSBlock;
@@ -283,165 +293,6 @@ public:
         bech32_hrp = "zenx";
         nExtCoinType = 5;
 
-        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
-
-        // long living quorum params
-        consensus.llmqs[Consensus::LLMQ_5_60] = llmq5_60;
-        consensus.llmqs[Consensus::LLMQ_50_60] = llmq50_60;
-        consensus.llmqs[Consensus::LLMQ_400_60] = llmq400_60;
-        consensus.llmqs[Consensus::LLMQ_400_85] = llmq400_85;
-        consensus.llmqTypeChainLocks = Consensus::LLMQ_400_60;
-        consensus.llmqTypeInstantSend = Consensus::LLMQ_50_60;
-
-        fMiningRequiresPeers = true;
-        fDefaultConsistencyChecks = false;
-        fRequireStandard = true;
-        fRequireRoutableExternalIP = true;
-        fMineBlocksOnDemand = false;
-        nCollateral = 5000 * COIN;
-        fAllowMultipleAddressesFromGroup = true;
-        fAllowMultiplePorts = false;
-
-        nPoolMinParticipants = 3;
-        nPoolMaxParticipants = 5;
-        nFulfilledRequestExpireTime = 60*60;
-        vSporkAddresses = {"ZXoR9MgySWXAkoWvso96pcog5J7VXiGPHm"};
-        nMinSporkKeys = 1;
-        fBIP9CheckMasternodesUpgraded = true;
-        consensus.fLLMQAllowDummyCommitments = false;
-
-        checkpointData = {
-            { { 0, consensus.hashGenesisBlock }, }
-        };
-
-        chainTxData = ChainTxData{
-        };
-
-        /* disable fallback fee on mainnet */
-        m_fallback_fee_enabled = true;
-    }
-};
-
-/**
- * Testnet
- */
-class CTestNetParams : public CChainParams {
-public:
-    CTestNetParams() {
-        strNetworkID = "test";
-
-        consensus.nFirstPoSBlock = 100;
-        consensus.nMasternodePaymentsStartBlock = consensus.nFirstPoSBlock;
-        consensus.nMasternodePaymentsIncreaseBlock = consensus.nFirstPoSBlock;
-        consensus.nMasternodePaymentsIncreasePeriod = 576*30;
-        consensus.nInstantSendConfirmationsRequired = 6;
-        consensus.nInstantSendKeepLock = 24;
-        consensus.nInstantSendSigsRequired = 6;
-        consensus.nInstantSendSigsTotal = 10;
-        consensus.nBudgetPaymentsStartBlock = consensus.nFirstPoSBlock * 2;
-        consensus.nBudgetPaymentsCycleBlocks = 16616;
-        consensus.nBudgetPaymentsWindowBlocks = 100;
-        consensus.nSuperblockStartBlock = 500;
-        consensus.nSuperblockStartHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.nSuperblockCycle = 16616;
-        consensus.nGovernanceMinQuorum = 10;
-        consensus.nGovernanceFilterElements = 20000;
-        consensus.nMasternodeMinimumConfirmations = 15;
-        consensus.BIP34Height = FROMGENESIS;
-        consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.BIP65Height = consensus.nFirstPoSBlock;
-        consensus.BIP66Height = consensus.nFirstPoSBlock;
-        consensus.CSVHeight = FROMGENESIS;
-        consensus.SegwitHeight = FROMGENESIS;
-        consensus.DIP0001Height = FROMGENESIS;
-        consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
-        consensus.DIP0003EnforcementHeight = 1048576;
-        consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-        consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
-        consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
-        consensus.nPowTargetTimespan = 60;
-        consensus.nPowTargetSpacing = 60;
-        consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
-        consensus.nPosTargetTimespan = consensus.nPowTargetTimespan;
-        consensus.nStakeMinAge = 60 * 5;
-        consensus.nStakeMaxAge = 60 * 60 * 24 * 30;
-        consensus.nModifierInterval = 60 * 20;
-        consensus.nCoinbaseMaturity = 20;
-        consensus.fPowAllowMinDifficultyBlocks = false;
-        consensus.fPowNoRetargeting = false;
-        consensus.nRuleChangeActivationThreshold = 50;
-        consensus.nMinerConfirmationWindow = 100;
-
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999;   // December 31, 2008
-
-        // Deployment of BIP68, BIP112, and BIP113.
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1462060800; // May 1st, 2016
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1493596800;   // May 1st, 2017
-
-        // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1572790000; // Nov 1st, 2019
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1604180000;   // Nov 1st, 2020
-
-        // Deployment of DIP0001
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nWindowSize = 100;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nThreshold = 50;
-
-        // Deployment of DIP0003
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0003].bit = 3;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0003].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0003].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0003].nWindowSize = 100;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0003].nThreshold = 50;
-
-        // Deployment of DIP0008
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0008].bit = 4;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0008].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0008].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0008].nWindowSize = 100;
-        consensus.vDeployments[Consensus::DEPLOYMENT_DIP0008].nThreshold = 10;
-
-        // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-
-        // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
-
-        /**
-         * The message start string is designed to be unlikely to occur in normal data.
-         * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-         * a large 32-bit integer with any alignment.
-         */
-        pchMessageStart[0] = 0x0f;
-        pchMessageStart[1] = 0x0f;
-        pchMessageStart[2] = 0x0f;
-        pchMessageStart[3] = 0x0f;
-        vAlertPubKey = ParseHex("048240a8748a80a286b270ba126705ced4f2ce5a7847b3610ea3c06513150dade2a8512ed5ea86320824683fc0818f0ac019214973e677acd1244f6d0571fc5103");
-        nDefaultPort = 49152;
-        nPruneAfterHeight = 100000;
-        m_assumed_blockchain_size = 1;
-        m_assumed_chain_state_size = 0.5;
-        nMaxReorganizationDepth = 100;
-
-        genesis = CreateGenesisBlock(1572820000, 458, 0x1f7fff00, 1, 0 * COIN);
-        consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("6105113d0e4fedcd435e22d950912fbb4e68e219752436cfc77ce9949894352f"));
-
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,80);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,142);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,208);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
-        bech32_hrp = "zenx";
-        nExtCoinType = 5;
-
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
         // long living quorum params
@@ -449,8 +300,8 @@ public:
         consensus.llmqs[Consensus::LLMQ_50_60] = llmq50_60;
         consensus.llmqs[Consensus::LLMQ_400_60] = llmq400_60;
         consensus.llmqs[Consensus::LLMQ_400_85] = llmq400_85;
-        consensus.llmqTypeChainLocks = Consensus::LLMQ_50_60;
-        consensus.llmqTypeInstantSend = Consensus::LLMQ_50_60;
+        consensus.llmqTypeChainLocks = Consensus::LLMQ_5_60;
+        consensus.llmqTypeInstantSend = Consensus::LLMQ_5_60;
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
@@ -459,7 +310,7 @@ public:
         fMineBlocksOnDemand = false;
         nCollateral = 5000 * COIN;
         fAllowMultipleAddressesFromGroup = true;
-        fAllowMultiplePorts = false;
+        fAllowMultiplePorts = true;
 
         nPoolMinParticipants = 3;
         nPoolMaxParticipants = 5;
@@ -689,6 +540,9 @@ const CChainParams &Params() {
 
 std::unique_ptr<CChainParams> CreateChainParams(const std::string& chain)
 {
+    ///////////////////////////////////////////////////////////
+    return std::unique_ptr<CChainParams>(new CTestNetParams());
+    ///////////////////////////////////////////////////////////
     if (chain == CBaseChainParams::MAIN)
         return std::unique_ptr<CChainParams>(new CMainParams());
     else if (chain == CBaseChainParams::TESTNET)
