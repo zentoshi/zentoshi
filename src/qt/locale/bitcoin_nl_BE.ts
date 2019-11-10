@@ -66,12 +66,12 @@
         <translation>Adressen verkrijgen</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Dit zijn uw Bitcoin adressen om betalingen te verzenden. Controleer altijd het bedrag en het ontvang adres voordat u Bitcoins verstuurd.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Dit zijn uw Zentoshi adressen om betalingen te verzenden. Controleer altijd het bedrag en het ontvang adres voordat u Zentoshis verstuurd.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>Dit zijn uw Bitcoin adressen om betalingen te verzenden. Het is aangeraden om een nieuw ontvang adres te gebruiken voor iedere transactie.</translation>
+        <source>These are your Zentoshi addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
+        <translation>Dit zijn uw Zentoshi adressen om betalingen te verzenden. Het is aangeraden om een nieuw ontvang adres te gebruiken voor iedere transactie.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
