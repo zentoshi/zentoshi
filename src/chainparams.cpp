@@ -161,6 +161,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
+    }
 };
 
 /**
@@ -252,7 +253,6 @@ public:
         pchMessageStart[1] = 0x0f;
         pchMessageStart[2] = 0x0f;
         pchMessageStart[3] = 0x0f;
-        vAlertPubKey = ParseHex("048240a8748a80a286b270ba126705ced4f2ce5a7847b3610ea3c06513150dade2a8512ed5ea86320824683fc0818f0ac019214973e677acd1244f6d0571fc5103");
         nDefaultPort = 49152;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 1;

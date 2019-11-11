@@ -28,7 +28,7 @@ class CDKGPendingMessages;
 class CDKGContribution
 {
 public:
-    Consensus::LLMQType llmqType;
+    uint8_t  llmqType;
     uint256 quorumHash;
     uint256 proTxHash;
     BLSVerificationVectorPtr vvec;
@@ -80,7 +80,7 @@ public:
 class CDKGComplaint
 {
 public:
-    Consensus::LLMQType llmqType;
+    uint8_t  llmqType;
     uint256 quorumHash;
     uint256 proTxHash;
     std::vector<bool> badMembers;
@@ -115,7 +115,7 @@ public:
 class CDKGJustification
 {
 public:
-    Consensus::LLMQType llmqType;
+    uint8_t  llmqType;
     uint256 quorumHash;
     uint256 proTxHash;
     std::vector<std::pair<uint32_t, CBLSSecretKey>> contributions;
@@ -149,7 +149,7 @@ public:
 class CDKGPrematureCommitment
 {
 public:
-    Consensus::LLMQType llmqType;
+    uint8_t llmqType;
     uint256 quorumHash;
     uint256 proTxHash;
     std::vector<bool> validMembers;
@@ -231,7 +231,6 @@ class CDKGSession
 {
     friend class CDKGSessionHandler;
     friend class CDKGSessionManager;
-    friend class CDKGLogger;
 
 private:
     const Consensus::LLMQParams& params;

@@ -118,6 +118,14 @@ private:
     PeerTableModel *peerTableModel;
     BanTableModel *banTableModel;
 
+    QTimer *pollTimer;
+
+    // The cache for mn list is not technically needed because CDeterministicMNManager
+    // caches it internally for recent blocks but it's not enough to get consistent
+    // representation of the list in UI during initial sync/reindex, so we cache it here too.
+    mutable CCriticalSection cs_mnlinst; // protects mnListCached
+    CDeterministicMNList mnListCached;
+
     //! A thread to interact with m_node asynchronously
     QThread* const m_thread;
 

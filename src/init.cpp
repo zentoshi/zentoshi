@@ -42,7 +42,6 @@
 #include <rpc/util.h>
 #include <script/standard.h>
 #include <script/sigcache.h>
-#include <script/ismine.h>
 #include <scheduler.h>
 #include <shutdown.h>
 #include <timedata.h>
@@ -254,18 +253,6 @@ void Shutdown(InitInterfaces& interfaces)
     // CScheduler/checkqueue threadGroup
     threadGroup.interrupt_all();
     threadGroup.join_all();
-
-    if (!fLiteMode) {
-        // STORE DATA CACHES INTO SERIALIZED DAT FILES
-        CFlatDB<CMasternodeMetaMan> flatdb1("mncache.dat", "magicMasternodeCache");
-        flatdb1.Dump(mmetaman);
-        CFlatDB<CGovernanceManager> flatdb3("governance.dat", "magicGovernanceCache");
-        flatdb3.Dump(governance);
-        CFlatDB<CNetFulfilledRequestManager> flatdb4("netfulfilled.dat", "magicFulfilledCache");
-        flatdb4.Dump(netfulfilledman);
-        CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
-        flatdb6.Dump(sporkManager);
-    }
 
     // After the threads that potentially access these pointers have been stopped,
     // destruct and reset all to nullptr.
@@ -642,7 +629,7 @@ std::string LicenseInfo()
     const std::string URL_SOURCE_CODE = "<https://github.com/zentoshi/zentoshi>";
     const std::string URL_WEBSITE = "<https://zentoshi.com>";
 
-    return CopyrightHolders(strprintf(_("Copyright (C) %i"), COPYRIGHT_YEAR) + " ") + "\n" +
+    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i").translated, 2009, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
            strprintf(_("Please contribute if you find %s useful. "
                        "Visit %s for further information about the software.").translated,
@@ -816,7 +803,7 @@ static void ThreadImport(std::vector<fs::path> vImportFiles)
 
     // force UpdatedBlockTip to initialize nCachedBlockHeight for DS, MN payments and budgets
     // but don't call it directly to prevent triggering of other listeners like zmq etc.
-    // GetMainSignals().UpdatedBlockTip(chainActive.Tip());
+    // GetMainSignals().UpdatedBlockTip(::ChainActive().Tip());
     pdsNotificationInterface->InitializeCurrentBlockTip();
 
     if (fMasternodeMode) {
@@ -1587,14 +1574,14 @@ bool AppInitMain(InitInterfaces& interfaces)
     LogPrintf("fLiteMode %d\n", fLiteMode);
 
     if(fLiteMode) {
-        InitWarning(_("You are starting in lite mode, most Zentoshi-specific functionality is disabled."));
+        InitWarning(_("You are starting in lite mode, most Zentoshi-specific functionality is disabled.").translated);
     }
 
     if (!fLiteMode) {
-        uiInterface.InitMessage(_("Loading sporks cache..."));
+        uiInterface.InitMessage(_("Loading sporks cache...").translated);
         CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
         if (!flatdb6.Load(sporkManager)) {
-            return InitError(_("Failed to load sporks cache from") + "\n" + (GetDataDir() / "sporks.dat").string());
+            return InitError(_("Failed to load sporks cache from").translated + "\n" + (GetDataDir() / "sporks.dat").string());
         }
     }
 
@@ -1636,20 +1623,12 @@ bool AppInitMain(InitInterfaces& interfaces)
     LogPrintf("* Using %.1f MiB for chain state database\n", nCoinDBCache * (1.0 / 1024 / 1024));
     LogPrintf("* Using %.1f MiB for in-memory UTXO set (plus up to %.1f MiB of unused mempool space)\n", nCoinCacheUsage * (1.0 / 1024 / 1024), nMempoolSizeMax * (1.0 / 1024 / 1024));
 
-    // ********************************************************* Step 8: start indexers
-    if (gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
-        auto txindex_db = MakeUnique<TxIndexDB>(nTxIndexCache, false, fReindex);
-        g_txindex = MakeUnique<TxIndex>(std::move(txindex_db));
-    }
-
     bool fLoaded = false;
     while (!fLoaded && !ShutdownRequested()) {
         bool fReset = fReindex;
         std::string strLoadError;
 
         uiInterface.InitMessage(_("Loading block index...").translated);
-
-        LOCK(cs_main);
 
         do {
             const int64_t load_block_index_start_time = GetTimeMillis();
@@ -1659,9 +1638,6 @@ bool AppInitMain(InitInterfaces& interfaces)
                 // This statement makes ::ChainstateActive() usable.
                 g_chainstate = MakeUnique<CChainState>();
                 UnloadBlockIndex();
-                pcoinsTip.reset();
-                pcoinsdbview.reset();
-                pcoinscatcher.reset();
 
                 // new CBlockTreeDB tries to delete the existing file, which
                 // fails if it's still open from the previous loop. Close it first:
@@ -1673,9 +1649,6 @@ bool AppInitMain(InitInterfaces& interfaces)
                 evoDb = new CEvoDB(nEvoDbCache, false, fReindex || fReindexChainState);
                 deterministicMNManager = new CDeterministicMNManager(*evoDb);
                 pblocktree.reset(new CBlockTreeDB(nBlockTreeDBCache, false, fReset));
-                pcoinsdbview.reset(new CCoinsViewDB(nCoinDBCache, false, fReset || fReindexChainState));
-                pcoinscatcher.reset(new CCoinsViewErrorCatcher(pcoinsdbview.get()));
-                pcoinsTip.reset(new CCoinsViewCache(pcoinscatcher.get()));
                 llmq::InitLLMQSystem(*evoDb, &scheduler, false, fReindex || fReindexChainState);
 
                 if (fReset) {
@@ -1683,12 +1656,6 @@ bool AppInitMain(InitInterfaces& interfaces)
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();
-                } else {
-                    // If necessary, upgrade from older database format.
-                    if (!pcoinsdbview->Upgrade()) {
-                        strLoadError = _("Error upgrading chainstate database");
-                        break;
-                    }
                 }
 
                 if (ShutdownRequested()) break;
@@ -1707,18 +1674,12 @@ bool AppInitMain(InitInterfaces& interfaces)
                 // (we're likely using a testnet datadir, or the other way around).
                 if (!::BlockIndex().empty() &&
                         !LookupBlockIndex(chainparams.GetConsensus().hashGenesisBlock)) {
-                    return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
+                        return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?").translated);
+                }
 
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!LoadBlockIndex(chainparams)) {
-                    strLoadError = _("Error initializing block database");
-                    break;
-                }
-
-                // Check for changed -txindex state
-                if (fTxIndex != gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
-                    strLoadError = _("You need to rebuild the database using -reindex-chainstate to change -txindex");
-                    break;
+                    return InitError(_("Error initializing block database").translated);
                 }
 
                 // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks
@@ -1739,9 +1700,6 @@ bool AppInitMain(InitInterfaces& interfaces)
 
                 // At this point we're either in reindex or we've loaded a useful
                 // block tree into BlockIndex()!
-                pcoinsdbview.reset(new CCoinsViewDB(nCoinDBCache, false, fReset || fReindexChainState));
-                pcoinscatcher.reset(new CCoinsViewErrorCatcher(pcoinsdbview.get()));
-                pcoinscatcher->AddReadErrCallback([]() {
 
                 ::ChainstateActive().InitCoinsDB(
                     /* cache_size_bytes */ nCoinDBCache,
@@ -1867,6 +1825,11 @@ bool AppInitMain(InitInterfaces& interfaces)
         mempool.ReadFeeEstimates(est_filein);
     fFeeEstimatesInitialized = true;
 
+    // ********************************************************* Step 8: start indexers
+    if (gArgs.GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
+        g_txindex = MakeUnique<TxIndex>(nTxIndexCache, false, fReindex);
+        g_txindex->Start();
+    }
 
     for (const auto& filter_type : g_enabled_filter_types) {
         InitBlockFilterIndex(filter_type, filter_index_cache, false, fReindex);
@@ -1947,12 +1910,12 @@ bool AppInitMain(InitInterfaces& interfaces)
     fMasternodeMode = gArgs.GetBoolArg("-masternode", false);
 
     if(fLiteMode && fMasternodeMode)
-        return InitError(_("You can not start a masternode in lite mode."));
+        return InitError(_("You can not start a masternode in lite mode.").translated);
 
     if(fMasternodeMode) {
 #ifdef ENABLE_WALLET
         if (!vpwallets.empty()) {
-            return InitError(_("You can not start a masternode with wallet enabled."));
+            return InitError(_("You can not start a masternode with wallet enabled.").translated);
         }
 #endif //ENABLE_WALLET
 
@@ -1968,10 +1931,10 @@ bool AppInitMain(InitInterfaces& interfaces)
                 activeMasternodeInfo.blsPubKeyOperator = std::make_unique<CBLSPublicKey>(activeMasternodeInfo.blsKeyOperator->GetPublicKey());
                 LogPrintf("  blsPubKeyOperator: %s\n", keyOperator.GetPublicKey().ToString());
             } else {
-                return InitError(_("Invalid masternodeblsprivkey. Please see documentation."));
+                return InitError(_("Invalid masternodeblsprivkey. Please see documentation.").translated);
             }
         } else {
-            return InitError(_("You must specify a masternodeblsprivkey in the configuration. Please see documentation for help."));
+            return InitError(_("You must specify a masternodeblsprivkey in the configuration. Please see documentation for help.").translated);
         }
 
         // Create and register activeMasternodeManager, will init later in ThreadImport
@@ -2022,25 +1985,25 @@ bool AppInitMain(InitInterfaces& interfaces)
         std::string strDBName;
 
         strDBName = "mncache.dat";
-        uiInterface.InitMessage(_("Loading masternode cache..."));
+        uiInterface.InitMessage(_("Loading masternode cache...").translated);
         CFlatDB<CMasternodeMetaMan> flatdb1(strDBName, "magicMasternodeCache");
         if(!flatdb1.Load(mmetaman)) {
-            return InitError(_("Failed to load masternode cache from") + "\n" + (pathDB / strDBName).string());
+            return InitError(_("Failed to load masternode cache.").translated);
         }
 
         strDBName = "governance.dat";
-        uiInterface.InitMessage(_("Loading governance cache..."));
+        uiInterface.InitMessage(_("Loading governance cache...").translated);
         CFlatDB<CGovernanceManager> flatdb3(strDBName, "magicGovernanceCache");
         if(!flatdb3.Load(governance)) {
-            return InitError(_("Failed to load governance cache from") + "\n" + (pathDB / strDBName).string());
+            return InitError(_("Failed to load governance cache.").translated);
         }
         governance.InitOnLoad();
 
         strDBName = "netfulfilled.dat";
-        uiInterface.InitMessage(_("Loading fulfilled requests cache..."));
+        uiInterface.InitMessage(_("Loading fulfilled requests cache...").translated);
         CFlatDB<CNetFulfilledRequestManager> flatdb4(strDBName, "magicFulfilledCache");
         if(!flatdb4.Load(netfulfilledman)) {
-            return InitError(_("Failed to load fulfilled requests cache from") + "\n" + (pathDB / strDBName).string());
+            return InitError(_("Failed to load fulfilled requests cache.").translated);
         }
     }
 

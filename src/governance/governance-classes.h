@@ -89,22 +89,22 @@ public:
     {
     }
 
-    CGovernancePayment(CBitcoinAddress addrIn, CAmount nAmountIn) :
+    CGovernancePayment(CTxDestination addrIn, CAmount nAmountIn) :
         fValid(false),
         script(),
         nAmount(0)
     {
         try {
-            CTxDestination dest = addrIn.Get();
+            CTxDestination dest = addrIn;
             script = GetScriptForDestination(dest);
             nAmount = nAmountIn;
             fValid = true;
         } catch (std::exception& e) {
             LogPrint(BCLog::GOVERNANCE, "CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d, what = %s\n",
-                addrIn.ToString(), nAmountIn, e.what());
+                EncodeDestination(addrIn), nAmountIn, e.what());
         } catch (...) {
             LogPrint(BCLog::GOVERNANCE, "CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d\n",
-                addrIn.ToString(), nAmountIn);
+                EncodeDestination(addrIn), nAmountIn);
         }
     }
 

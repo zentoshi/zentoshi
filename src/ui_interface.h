@@ -13,6 +13,7 @@
 
 class CBlockIndex;
 class CDeterministicMNList;
+class uint256;
 
 namespace boost {
 namespace signals2 {
@@ -106,7 +107,7 @@ public:
     /**
      * Status bar alerts changed.
      */
-    ADD_SIGNALS_DECL_WRAPPER(NotifyAlertChanged, void, const uint256 &hash, ChangeType status);
+    ADD_SIGNALS_DECL_WRAPPER(NotifyAlertChanged, void, );
 
     /** A wallet has been loaded. */
     ADD_SIGNALS_DECL_WRAPPER(LoadWallet, void, std::unique_ptr<interfaces::Wallet>& wallet);

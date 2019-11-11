@@ -88,7 +88,11 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>ZentoshiGUI</name>
+    <name>BitcoinGUI</name>
+    <message>
+        <source>Proxy is &lt;b&gt;enabled&lt;/b&gt;: %1</source>
+        <translation>%1 اتصال نشط بشبكة البيتكوين</translation>
+    </message>
     <message>
         <source>No wallets available</source>
         <translation>المحفظة الرقمية غير متوفرة</translation>

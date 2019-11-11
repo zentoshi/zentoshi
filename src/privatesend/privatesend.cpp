@@ -6,6 +6,7 @@
 
 #include <activemasternode.h>
 #include <consensus/validation.h>
+#include <interfaces/wallet.h>
 #include <masternode-payments.h>
 #include <masternode-sync.h>
 #include <messagesigner.h>
@@ -295,11 +296,12 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
     }
 
     LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- %s", txCollateral.ToString());
-
     {
         LOCK(cs_main);
         CValidationState validationState;
-        if (!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), false, nullptr, false, maxTxFee, true)) {
+        std::unique_ptr<interfaces::Wallet> wallet;
+        auto maxFee = wallet->getDefaultMaxTxFee();
+        if (!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), nullptr, nullptr, false, maxFee, true)) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- didn't pass AcceptToMemoryPool()\n");
             return false;
         }
@@ -436,51 +438,51 @@ std::string CPrivateSend::GetMessageByID(PoolMessage nMessageID)
 {
     switch (nMessageID) {
     case ERR_ALREADY_HAVE:
-        return _("Already have that input.");
+        return ("Already have that input.");
     case ERR_DENOM:
-        return _("No matching denominations found for mixing.");
+        return ("No matching denominations found for mixing.");
     case ERR_ENTRIES_FULL:
-        return _("Entries are full.");
+        return ("Entries are full.");
     case ERR_EXISTING_TX:
-        return _("Not compatible with existing transactions.");
+        return ("Not compatible with existing transactions.");
     case ERR_FEES:
-        return _("Transaction fees are too high.");
+        return ("Transaction fees are too high.");
     case ERR_INVALID_COLLATERAL:
-        return _("Collateral not valid.");
+        return ("Collateral not valid.");
     case ERR_INVALID_INPUT:
-        return _("Input is not valid.");
+        return ("Input is not valid.");
     case ERR_INVALID_SCRIPT:
-        return _("Invalid script detected.");
+        return ("Invalid script detected.");
     case ERR_INVALID_TX:
-        return _("Transaction not valid.");
+        return ("Transaction not valid.");
     case ERR_MAXIMUM:
-        return _("Entry exceeds maximum size.");
+        return ("Entry exceeds maximum size.");
     case ERR_MN_LIST:
-        return _("Not in the Masternode list.");
+        return ("Not in the Masternode list.");
     case ERR_MODE:
-        return _("Incompatible mode.");
+        return ("Incompatible mode.");
     case ERR_NON_STANDARD_PUBKEY:
-        return _("Non-standard public key detected.");
+        return ("Non-standard public key detected.");
     case ERR_NOT_A_MN:
-        return _("This is not a Masternode."); // not used
+        return ("This is not a Masternode."); // not used
     case ERR_QUEUE_FULL:
-        return _("Masternode queue is full.");
+        return ("Masternode queue is full.");
     case ERR_RECENT:
-        return _("Last PrivateSend was too recent.");
+        return ("Last PrivateSend was too recent.");
     case ERR_SESSION:
-        return _("Session not complete!");
+        return ("Session not complete!");
     case ERR_MISSING_TX:
-        return _("Missing input transaction information.");
+        return ("Missing input transaction information.");
     case ERR_VERSION:
-        return _("Incompatible version.");
+        return ("Incompatible version.");
     case MSG_NOERR:
-        return _("No errors detected.");
+        return ("No errors detected.");
     case MSG_SUCCESS:
-        return _("Transaction created successfully.");
+        return ("Transaction created successfully.");
     case MSG_ENTRIES_ADDED:
-        return _("Your entries added successfully.");
+        return ("Your entries added successfully.");
     default:
-        return _("Unknown response.");
+        return ("Unknown response.");
     }
 }
 

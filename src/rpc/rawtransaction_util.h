@@ -9,6 +9,8 @@
 
 #include <univalue.h>
 
+#include <map>
+
 class FillableSigningProvider;
 class UniValue;
 struct CMutableTransaction;

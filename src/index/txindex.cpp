@@ -2,19 +2,18 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <chainparams.h>
 #include <index/txindex.h>
-#include <init.h>
 #include <shutdown.h>
-#include <tinyformat.h>
 #include <ui_interface.h>
 #include <util/system.h>
 #include <util/translation.h>
 #include <validation.h>
-#include <warnings.h>
 
-constexpr int64_t SYNC_LOG_INTERVAL = 30; // seconds
-constexpr int64_t SYNC_LOCATOR_WRITE_INTERVAL = 30; // seconds
+#include <boost/thread.hpp>
+
+constexpr char DB_BEST_BLOCK = 'B';
+constexpr char DB_TXINDEX = 't';
+constexpr char DB_TXINDEX_BLOCK = 'T';
 
 std::unique_ptr<TxIndex> g_txindex;
 
@@ -225,11 +224,13 @@ bool TxIndex::DB::MigrateData(CBlockTreeDB& block_tree_db, const CBlockLocator& 
     return true;
 }
 
-TxIndex::TxIndex(std::unique_ptr<TxIndexDB> db) :
-    m_db(std::move(db))
+TxIndex::TxIndex(size_t n_cache_size, bool f_memory, bool f_wipe)
+    : m_db(MakeUnique<TxIndex::DB>(n_cache_size, f_memory, f_wipe))
 {}
 
-TxIndex::~TxIndex()
+TxIndex::~TxIndex() {}
+
+bool TxIndex::Init()
 {
     LOCK(cs_main);
 
@@ -243,11 +244,28 @@ TxIndex::~TxIndex()
     return BaseIndex::Init();
 }
 
+bool TxIndex::WriteBlock(const CBlock& block, const CBlockIndex* pindex)
+{
+    // Exclude genesis block transaction because outputs are not spendable.
+    if (pindex->nHeight == 0) return true;
+
+    CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
+    std::vector<std::pair<uint256, CDiskTxPos>> vPos;
+    vPos.reserve(block.vtx.size());
+    for (const auto& tx : block.vtx) {
+        vPos.emplace_back(tx->GetHash(), pos);
+        pos.nTxOffset += ::GetSerializeSize(*tx, CLIENT_VERSION);
+    }
+    return m_db->WriteTxs(vPos);
+}
+
+BaseIndex::DB& TxIndex::GetDB() const { return *m_db; }
+
 bool TxIndex::FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRef& tx) const
 {
     CDiskTxPos postx;
     if (!m_db->ReadTxPos(tx_hash, postx)) {
-        return error("%s: failed to read tx pos", __func__);
+        return false;
     }
 
     CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
@@ -257,7 +275,9 @@ bool TxIndex::FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRe
     CBlockHeader header;
     try {
         file >> header;
-        fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+        if (fseek(file.Get(), postx.nTxOffset, SEEK_CUR)) {
+            return error("%s: fseek(...) failed", __func__);
+        }
         file >> tx;
     } catch (const std::exception& e) {
         return error("%s: Deserialize or I/O error - %s", __func__, e.what());
@@ -267,9 +287,4 @@ bool TxIndex::FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRe
     }
     block_hash = header.GetHash();
     return true;
-}
-
-bool TxIndex::WriteIndex(const std::vector<TxIndex::IndexEntry> &list)
-{
-    return m_db->WriteTxs(list);
 }

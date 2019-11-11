@@ -5,6 +5,7 @@
 #ifndef SALTEDHASHER_H
 #define SALTEDHASHER_H
 
+#include "crypto/siphash.h"
 #include "hash.h"
 #include "uint256.h"
 

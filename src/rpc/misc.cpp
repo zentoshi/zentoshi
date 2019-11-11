@@ -7,14 +7,18 @@
 #include <crypto/ripemd160.h>
 #include <key_io.h>
 #include <httpserver.h>
+#include <masternode-sync.h>
 #include <outputtype.h>
 #include <rpc/blockchain.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
 #include <script/descriptor.h>
+#include <spork.h>
 #include <util/system.h>
 #include <util/strencodings.h>
 #include <util/validation.h>
+#include <wallet/wallet.h>
+#include <wallet/rpcwallet.h>
 
 #include <stdint.h>
 #include <tuple>
@@ -39,13 +43,13 @@ UniValue spork(const JSONRPCRequest& request)
         if (strCommand == "show") {
             UniValue ret(UniValue::VOBJ);
             for (const auto& sporkDef : sporkDefs) {
-                ret.push_back(Pair(sporkDef.name, sporkManager.GetSporkValue(sporkDef.sporkId)));
+                ret.pushKV(sporkDef.name, sporkManager.GetSporkValue(sporkDef.sporkId));
             }
             return ret;
         } else if(strCommand == "active"){
             UniValue ret(UniValue::VOBJ);
             for (const auto& sporkDef : sporkDefs) {
-                ret.push_back(Pair(sporkDef.name, sporkManager.IsSporkActive(sporkDef.sporkId)));
+                ret.pushKV(sporkDef.name, sporkManager.IsSporkActive(sporkDef.sporkId));
             }
             return ret;
         }
@@ -116,13 +120,13 @@ UniValue mnsync(const JSONRPCRequest& request)
 
     if(strMode == "status") {
         UniValue objStatus(UniValue::VOBJ);
-        objStatus.push_back(Pair("AssetID", masternodeSync.GetAssetID()));
-        objStatus.push_back(Pair("AssetName", masternodeSync.GetAssetName()));
-        objStatus.push_back(Pair("AssetStartTime", masternodeSync.GetAssetStartTime()));
-        objStatus.push_back(Pair("Attempt", masternodeSync.GetAttempt()));
-        objStatus.push_back(Pair("IsBlockchainSynced", masternodeSync.IsBlockchainSynced()));
-        objStatus.push_back(Pair("IsSynced", masternodeSync.IsSynced()));
-        objStatus.push_back(Pair("IsFailed", masternodeSync.IsFailed()));
+        objStatus.pushKV("AssetID", masternodeSync.GetAssetID());
+        objStatus.pushKV("AssetName", masternodeSync.GetAssetName());
+        objStatus.pushKV("AssetStartTime", masternodeSync.GetAssetStartTime());
+        objStatus.pushKV("Attempt", masternodeSync.GetAttempt());
+        objStatus.pushKV("IsBlockchainSynced", masternodeSync.IsBlockchainSynced());
+        objStatus.pushKV("IsSynced", masternodeSync.IsSynced());
+        objStatus.pushKV("IsFailed", masternodeSync.IsFailed());
         return objStatus;
     }
 
@@ -139,99 +143,6 @@ UniValue mnsync(const JSONRPCRequest& request)
         return "success";
     }
     return "failure";
-}
-
-#ifdef ENABLE_WALLET
-class DescribeAddressVisitor : public boost::static_visitor<UniValue>
-{
-public:
-    CWallet * const pwallet;
-
-    DescribeAddressVisitor(CWallet *_pwallet) : pwallet(_pwallet) {}
-
-    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
-
-    UniValue operator()(const CKeyID &keyID) const {
-        UniValue obj(UniValue::VOBJ);
-        CPubKey vchPubKey;
-        obj.push_back(Pair("isscript", false));
-        if (pwallet && pwallet->GetPubKey(keyID, vchPubKey)) {
-            obj.push_back(Pair("pubkey", HexStr(vchPubKey)));
-            obj.push_back(Pair("iscompressed", vchPubKey.IsCompressed()));
-        }
-        return obj;
-    }
-
-    FlatSigningProvider key_provider;
-    auto desc = Parse(desc_str, key_provider, /* require_checksum = */ true);
-    if (!desc) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Invalid descriptor"));
-    }
-};
-#endif
-
-/**
- * Used by addmultisigaddress / createmultisig:
- */
-CScript _createmultisig_redeemScript(CWallet * const pwallet, const UniValue& params)
-{
-    int nRequired = params[0].get_int();
-    const UniValue& keys = params[1].get_array();
-
-    // Gather public keys
-    if (nRequired < 1)
-        throw std::runtime_error("a multisignature address must require at least one key to redeem");
-    if ((int)keys.size() < nRequired)
-        throw std::runtime_error(
-            strprintf("not enough keys supplied "
-                      "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
-    if (keys.size() > 16)
-        throw std::runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
-    std::vector<CPubKey> pubkeys;
-    pubkeys.resize(keys.size());
-    for (unsigned int i = 0; i < keys.size(); i++)
-    {
-        const std::string& ks = keys[i].get_str();
-#ifdef ENABLE_WALLET
-        // Case 1: Dash address and we have full public key:
-        CBitcoinAddress address(ks);
-        if (pwallet && address.IsValid()) {
-            CKeyID keyID;
-            if (!address.GetKeyID(keyID))
-                throw std::runtime_error(
-                    strprintf("%s does not refer to a key",ks));
-            CPubKey vchPubKey;
-            if (!pwallet->GetPubKey(keyID, vchPubKey)) {
-                throw std::runtime_error(
-                    strprintf("no full public key for address %s",ks));
-            }
-            if (!vchPubKey.IsFullyValid())
-                throw std::runtime_error(" Invalid public key: "+ks);
-            pubkeys[i] = vchPubKey;
-        }
-
-        // Case 2: hex public key
-        else
-#endif
-        if (IsHex(ks))
-        {
-            CPubKey vchPubKey(ParseHex(ks));
-            if (!vchPubKey.IsFullyValid())
-                throw std::runtime_error(" Invalid public key: "+ks);
-            pubkeys[i] = vchPubKey;
-        }
-        else
-        {
-            throw std::runtime_error(" Invalid public key: "+ks);
-        }
-    }
-    CScript result = GetScriptForMultisig(nRequired, pubkeys);
-
-    if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
-        throw std::runtime_error(
-                strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
-
-    return result;
 }
 
 static UniValue createmultisig(const JSONRPCRequest& request)
@@ -385,8 +296,9 @@ UniValue deriveaddresses(const JSONRPCRequest& request)
     UniValue addresses(UniValue::VARR);
 
     for (int i = range_begin; i <= range_end; ++i) {
+        FlatSigningProvider provider;
         std::vector<CScript> scripts;
-        if (!desc->Expand(i, provider, scripts, provider)) {
+        if (!desc->Expand(i, key_provider, scripts, provider)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Cannot derive script without private keys"));
         }
 
@@ -437,13 +349,15 @@ static UniValue verifymessage(const JSONRPCRequest& request)
     std::string strSign     = request.params[1].get_str();
     std::string strMessage  = request.params[2].get_str();
 
-    CBitcoinAddress addr(strAddress);
-    if (!addr.IsValid())
+    CTxDestination destination = DecodeDestination(strAddress);
+    if (!IsValidDestination(destination)) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
+    }
 
     const PKHash *pkhash = boost::get<PKHash>(&destination);
     if (!pkhash) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
+    }
 
     bool fInvalid = false;
     std::vector<unsigned char> vchSig = DecodeBase64(strSign.c_str(), &fInvalid);
@@ -486,13 +400,10 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
     std::string strPrivkey = request.params[0].get_str();
     std::string strMessage = request.params[1].get_str();
 
-    CBitcoinSecret vchSecret;
-    bool fGood = vchSecret.SetString(strPrivkey);
-    if (!fGood)
+    CKey key = DecodeSecret(strPrivkey);
+    if (!key.IsValid()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
-    CKey key = vchSecret.GetKey();
-    if (!key.IsValid())
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
+    }
 
     CHashWriter ss(SER_GETHASH, 0);
     ss << strMessageMagic;
@@ -502,7 +413,7 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
     if (!key.SignCompact(ss.GetHash(), vchSig))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
 
-    return EncodeBase64(&vchSig[0], vchSig.size());
+    return EncodeBase64(vchSig.data(), vchSig.size());
 }
 
 UniValue setmocktime(const JSONRPCRequest& request)
@@ -526,7 +437,7 @@ UniValue setmocktime(const JSONRPCRequest& request)
     // ensure all call sites of GetTime() are accessing this safely.
     LOCK(cs_main);
 
-    RPCTypeCheck(request.params, boost::assign::list_of(UniValue::VNUM));
+    RPCTypeCheck(request.params, {UniValue::VNUM});
     SetMockTime(request.params[0].get_int64());
 
     return NullUniValue;
@@ -536,12 +447,12 @@ static UniValue RPCLockedMemoryInfo()
 {
     LockedPool::Stats stats = LockedPoolManager::Instance().stats();
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("used", uint64_t(stats.used)));
-    obj.push_back(Pair("free", uint64_t(stats.free)));
-    obj.push_back(Pair("total", uint64_t(stats.total)));
-    obj.push_back(Pair("locked", uint64_t(stats.locked)));
-    obj.push_back(Pair("chunks_used", uint64_t(stats.chunks_used)));
-    obj.push_back(Pair("chunks_free", uint64_t(stats.chunks_free)));
+    obj.pushKV("used", uint64_t(stats.used));
+    obj.pushKV("free", uint64_t(stats.free));
+    obj.pushKV("total", uint64_t(stats.total));
+    obj.pushKV("locked", uint64_t(stats.locked));
+    obj.pushKV("chunks_used", uint64_t(stats.chunks_used));
+    obj.pushKV("chunks_free", uint64_t(stats.chunks_free));
     return obj;
 }
 
@@ -570,7 +481,7 @@ UniValue getmemoryinfo(const JSONRPCRequest& request)
             + HelpExampleRpc("getmemoryinfo", "")
         );
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("locked", RPCLockedMemoryInfo()));
+    obj.pushKV("locked", RPCLockedMemoryInfo());
     return obj;
 }
 
@@ -614,7 +525,7 @@ UniValue getstakingstatus(const JSONRPCRequest& request)
     if (pwallet) {
         obj.pushKV("walletunlocked", !pwallet->IsLocked());
         obj.pushKV("mintablecoins", pwallet->MintableCoins());
-        obj.pushKV("enoughcoins", pwallet->GetBalance() > 0);
+        obj.pushKV("enoughcoins", pwallet->MintableCoins());
     }
     obj.pushKV("mnsync", masternodeSync.IsSynced());
 
@@ -639,7 +550,7 @@ static const CRPCCommand commands[] =
 
     /* Dash features */
     { "zentoshi",           "mnsync",                 &mnsync,                 {} },
-    { "zentoshi",           "spork",                   &spork,                    {"mode"} },
+    { "zentoshi",           "spork",                  &spork,                  {"mode"} },
 
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            {"timestamp"}},
@@ -652,3 +563,4 @@ void RegisterMiscRPCCommands(CRPCTable &t)
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
+

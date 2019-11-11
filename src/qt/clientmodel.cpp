@@ -15,6 +15,7 @@
 #include <net.h>
 #include <netbase.h>
 #include <util/system.h>
+#include <validation.h>
 
 #include "masternode-sync.h"
 #include "privatesend/privatesend.h"
@@ -112,7 +113,7 @@ void ClientModel::refreshMasternodeList()
 int ClientModel::getNumBlocks() const
 {
     LOCK(cs_main);
-    return chainActive.Height();
+    return ::ChainActive().Height();
 }
 
 int ClientModel::getHeaderTipHeight() const
@@ -159,7 +160,7 @@ void ClientModel::updateAlert()
 
 bool ClientModel::inInitialBlockDownload() const
 {
-    return IsInitialBlockDownload();
+    return ::ChainstateActive().IsInitialBlockDownload();
 }
 
 enum BlockSource ClientModel::getBlockSource() const

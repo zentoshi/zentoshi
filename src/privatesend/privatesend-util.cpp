@@ -7,22 +7,23 @@
 CKeyHolder::CKeyHolder(CWallet* pwallet) :
     reserveKey(pwallet)
 {
-    reserveKey.GetReservedKey(pubKey, false);
+    CTxDestination pubKey;
+    reserveKey.GetReservedDestination(OutputType::LEGACY, pubKey, false);
 }
 
 void CKeyHolder::KeepKey()
 {
-    reserveKey.KeepKey();
+    reserveKey.KeepDestination();
 }
 
 void CKeyHolder::ReturnKey()
 {
-    reserveKey.ReturnKey();
+    reserveKey.ReturnDestination();
 }
 
 CScript CKeyHolder::GetScriptForDestination() const
 {
-    return ::GetScriptForDestination(pubKey.GetID());
+    return ::GetScriptForDestination(PKHash(pubKey));
 }
 
 

@@ -19,6 +19,7 @@
 #include <util/translation.h>
 #include <wallet/rpcwallet.h>
 #include <wallet/wallet.h>
+#include <validation.h>
 
 #include <fstream>
 #include <stdint.h>
@@ -100,7 +101,7 @@ static const int64_t TIMESTAMP_MIN = 0;
 
 static void RescanWallet(CWallet& wallet, const WalletRescanReserver& reserver, int64_t time_begin = TIMESTAMP_MIN, bool update = true)
 {
-    int64_t scanned_time = wallet.RescanFromTime(time_begin, update);
+    int64_t scanned_time = wallet.RescanFromTime(time_begin, reserver, update);
     if (wallet.IsAbortingRescan()) {
         throw JSONRPCError(RPC_MISC_ERROR, "Rescan aborted by user.");
     } else if (scanned_time > time_begin) {
@@ -606,13 +607,6 @@ UniValue importwallet(const JSONRPCRequest& request)
                 continue;
             CKey key = DecodeSecret(vstr[0]);
             if (key.IsValid()) {
-                CPubKey pubkey = key.GetPubKey();
-                assert(key.VerifyPubKey(pubkey));
-                CKeyID keyid = pubkey.GetID();
-                if (pwallet->HaveKey(keyid)) {
-                    LogPrintf("Skipping import of %s (key already present)\n", EncodeDestination(keyid));
-                    continue;
-                }
                 int64_t nTime = DecodeDumpTime(vstr[1]);
                 std::string strLabel;
                 bool fLabel = true;
@@ -809,15 +803,15 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     // produce output
     file << strprintf("# Wallet dump created by Dash Core %s\n", CLIENT_BUILD);
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
-    file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
-    file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
+    file << strprintf("# * Best block at time of backup was %i (%s),\n", ::ChainActive().Height(), ::ChainActive().Tip()->GetBlockHash().ToString());
+    file << strprintf("#   mined on %s\n", EncodeDumpTime(::ChainActive().Tip()->GetBlockTime()));
     file << "\n";
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("dashcoreversion", CLIENT_BUILD));
-    obj.push_back(Pair("lastblockheight", chainActive.Height()));
-    obj.push_back(Pair("lastblockhash", chainActive.Tip()->GetBlockHash().ToString()));
-    obj.push_back(Pair("lastblocktime", EncodeDumpTime(chainActive.Tip()->GetBlockTime())));
+    obj.pushKV("dashcoreversion", CLIENT_BUILD);
+    obj.pushKV("lastblockheight", ::ChainActive().Height());
+    obj.pushKV("lastblockhash", ::ChainActive().Tip()->GetBlockHash().ToString());
+    obj.pushKV("lastblocktime", EncodeDumpTime(::ChainActive().Tip()->GetBlockTime()));
 
     // add the base58check encoded extended master if the wallet uses HD
     CKeyID seed_id = pwallet->GetHDChain().seed_id;
@@ -1468,3 +1462,4 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
 
     return response;
 }
+

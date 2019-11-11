@@ -88,7 +88,7 @@ public:
     template<typename Stream>
     void Unserialize(Stream &s) {
         uint32_t code = 0;
-        ::Unserialize(s, VARINT(code));
+        ::Unserialize(s, code);
         std::bitset<32> bitset(code);
         fCoinBase = bitset[31];
         fCoinStake = bitset[30];

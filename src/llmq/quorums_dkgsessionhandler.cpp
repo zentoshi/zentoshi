@@ -458,7 +458,7 @@ void CDKGSessionHandler::HandleDKGRound()
     const CBlockIndex* pindexQuorum;
     {
         LOCK(cs_main);
-        pindexQuorum = mapBlockIndex.at(curQuorumHash);
+        pindexQuorum = ::BlockIndex().at(curQuorumHash);
     }
 
     if (!InitNewQuorum(pindexQuorum)) {

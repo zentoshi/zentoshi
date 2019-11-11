@@ -155,10 +155,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // This looks slightly dim, but the key is that once it is active - it remains active.
     bool fDIP0003Active_context = sporkManager.IsSporkActive(SPORK_15_DETERMINISTIC_MNS_ENABLED) ||
                                   (nHeight >= chainparams.GetConsensus().DIP0003Height &&
-                                   VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE);
+                                   VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE);
     bool fDIP0008Active_context = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED) ||
                                   (nHeight >= chainparams.GetConsensus().DIP0008Height &&
-                                   VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE);
+                                   VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE);
 
     LogPrintf("BlockAssembler::CreateNewBlock - DIP0003 %s DIP0008 %s\n", fDIP0003Active_context ? "true" : "false", fDIP0008Active_context ? "true" : "false");
 
@@ -577,7 +577,7 @@ static bool ProcessBlockFound(const std::shared_ptr<const CBlock> &pblock, const
     // Found a solution
     {
         LOCK(cs_main);
-        if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
+        if (pblock->hashPrevBlock != ::ChainActive().Tip()->GetBlockHash())
             return error("ProcessBlockFound -- generated block is stale");
     }
 
@@ -596,7 +596,8 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
     RenameThread("zentoshi-miner");
 
     unsigned int nExtraNonce = 0;
-    std::shared_ptr<CReserveScript> coinbaseScript;
+
+    CScript coinbaseScript;
     pwallet->GetScriptForMining(coinbaseScript);
 
     while (true) {
@@ -607,19 +608,19 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
             // Throw an error if no script was provided.  This can happen
             // due to some internal error but also if the keypool is empty.
             // In the latter case, already the pointer is NULL.
-            if (!coinbaseScript || coinbaseScript->reserveScript.empty())
+            if (coinbaseScript.empty())
                 throw std::runtime_error("No coinbase script available (mining requires a wallet)");
 
             do {
                 bool fvNodesEmpty = connman.GetNodeCount(CConnman::CONNECTIONS_ALL) == 0;
-                if (!fvNodesEmpty && !IsInitialBlockDownload() && masternodeSync.IsSynced())
+                if (!fvNodesEmpty && ::ChainstateActive().IsInitialBlockDownload() && masternodeSync.IsSynced())
                     break;
                 MilliSleep(1000);
             } while (true);
 
             if(fProofOfStake)
             {
-                if (chainActive.Tip()->nHeight+1 < chainparams.GetConsensus().nFirstPoSBlock ||
+                if (::ChainActive().Tip()->nHeight+1 < chainparams.GetConsensus().nFirstPoSBlock ||
                     pwallet->IsLocked() || !masternodeSync.IsSynced())
                 {
                     nLastCoinStakeSearchInterval = 0;
@@ -632,11 +633,11 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
             // Create new block
             //
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-            CBlockIndex* pindexPrev = chainActive.Tip();
+            CBlockIndex* pindexPrev = ::ChainActive().Tip();
             if(!pindexPrev) break;
 
             BlockAssembler assembler(chainparams);
-            auto pblocktemplate = assembler.CreateNewBlock(coinbaseScript->reserveScript, pwallet, fProofOfStake);
+            auto pblocktemplate = assembler.CreateNewBlock(coinbaseScript, pwallet, fProofOfStake);
             if (!pblocktemplate.get())
             {
                 LogPrintf("zentoshiminer -- Failed to find a coinstake\n");
@@ -696,7 +697,6 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
                         LogPrintf("zentoshiminer:\n  proof-of-work found\n  hash: %s\n  target: %s\n", hash.GetHex(), hashTarget.GetHex());
                         ProcessBlockFound(pblock, chainparams);
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
-                        coinbaseScript->KeepScript();
                         break;
                     }
                     pblock->nNonce += 1;
@@ -743,7 +743,7 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
                     break;
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                     break;
-                if (pindexPrev != chainActive.Tip())
+                if (pindexPrev != ::ChainActive().Tip())
                     break;
 
                 // Update nTime every few seconds

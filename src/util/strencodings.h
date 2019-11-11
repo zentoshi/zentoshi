@@ -11,7 +11,6 @@
 
 #include <attributes.h>
 
-#include <iterator>
 #include <cstdint>
 #include <iterator>
 #include <string>

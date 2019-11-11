@@ -77,10 +77,11 @@ struct CNodeStateStats {
 
 /** Get statistics from node state */
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
+bool IsBanned(NodeId nodeid);
 
 /** Increase a node's misbehavior score. */
 void Misbehaving(NodeId nodeid, int howmuch, const std::string& message="");
-bool IsBanned(NodeId nodeid);
+
 /** Relay transaction to every node */
 void RelayTransaction(const uint256&, const CConnman& connman);
 

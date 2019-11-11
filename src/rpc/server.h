@@ -42,6 +42,10 @@ void SetRPCWarmupFinished();
 /* returns the current warmup state.  */
 bool RPCIsInWarmup(std::string *outStatus);
 
+double ParseDoubleV(const UniValue& v, const std::string &strName);
+int32_t ParseInt32V(const UniValue& v, const std::string &strName);
+bool ParseBoolV(const UniValue& v, const std::string &strName);
+
 /** Opaque base class for timers returned by NewTimerFunc.
  * This provides no methods at the moment, but makes sure that delete
  * cleans up the whole state.

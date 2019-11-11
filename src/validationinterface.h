@@ -17,7 +17,6 @@ class CBlock;
 class CBlockIndex;
 struct CBlockLocator;
 class CConnman;
-class CReserveScript;
 class CTransaction;
 class CValidationInterface;
 class CValidationState;
@@ -25,10 +24,9 @@ class CGovernanceVote;
 class CGovernanceObject;
 class CDeterministicMNList;
 class CDeterministicMNListDiff;
+class ReserveDestination;
 class uint256;
 class CScheduler;
-class CTxMemPool;
-enum class MemPoolRemovalReason;
 
 namespace llmq {
     class CChainLockSig;

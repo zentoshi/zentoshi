@@ -242,7 +242,7 @@ public:
     virtual std::unique_ptr<Handler> handleNotifyNetworkActiveChanged(NotifyNetworkActiveChangedFn fn) = 0;
 
     //! Register handler for notify alert messages.
-    using NotifyAlertChangedFn = std::function<void(const uint256&, ChangeType)>;
+    using NotifyAlertChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleNotifyAlertChanged(NotifyAlertChangedFn fn) = 0;
 
     //! Register handler for ban list messages.

@@ -137,8 +137,8 @@ void CSporkManager::ProcessSpork(CNode* pfrom, const std::string& strCommand, CD
         {
             LOCK(cs_main);
             connman.RemoveAskFor(hash);
-            if(!chainActive.Tip()) return;
-            strLogMsg = strprintf("SPORK -- hash: %s id: %d value: %10d bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.nValue, chainActive.Height(), pfrom->GetId());
+            if(!::ChainActive().Tip()) return;
+            strLogMsg = strprintf("SPORK -- hash: %s id: %d value: %10d bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.nValue, ::ChainActive().Height(), pfrom->GetId());
         }
 
         if (spork.nTimeSigned > GetAdjustedTime() + 2 * 60 * 60) {
@@ -285,14 +285,13 @@ bool CSporkManager::GetSporkByHash(const uint256& hash, CSporkMessage &sporkRet)
 }
 
 bool CSporkManager::SetSporkAddress(const std::string& strAddress) {
-    LOCK(cs);
-    CBitcoinAddress address(strAddress);
-    CKeyID keyid;
-    if (!address.IsValid() || !address.GetKeyID(keyid)) {
+    CTxDestination address = DecodeDestination(strAddress);
+    const PKHash *keyID = boost::get<PKHash>(&address);
+    if (!IsValidDestination(address) || !keyID) {
         LogPrint(BCLog::SPORK, "CSporkManager::SetSporkAddress -- Failed to parse spork address\n");
         return false;
     }
-    setSporkPubKeyIDs.insert(keyid);
+    setSporkPubKeyIDs.insert(CKeyID(*keyID));
     return true;
 }
 

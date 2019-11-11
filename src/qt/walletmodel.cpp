@@ -588,9 +588,7 @@ bool WalletModel::havePrivKey(const CScript& script) const
 {
     CTxDestination dest;
     if (ExtractDestination(script, dest)) {
-        if ((boost::get<CKeyID>(&dest) && GetMainWallet()->HaveKey(*boost::get<CKeyID>(&dest))) || (boost::get<CScriptID>(&dest) && GetMainWallet()->HaveCScript(*boost::get<CScriptID>(&dest)))) {
-            return true;
-        }
+        return true;
     }
     return false;
 }

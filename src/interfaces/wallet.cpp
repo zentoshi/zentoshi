@@ -106,7 +106,7 @@ public:
         return m_wallet->EncryptWallet(wallet_passphrase);
     }
     bool isCrypted() override { return m_wallet->IsCrypted(); }
-    bool lock() override { return m_wallet->Lock(true); }
+    bool lock() override { return m_wallet->Lock(); }
     bool unlock(const SecureString& wallet_passphrase, bool stakingOnly) override { return m_wallet->Unlock(wallet_passphrase, stakingOnly); }
     bool isLocked() override { return m_wallet->IsLocked(); }
     bool isLockedForStaking() override { return m_wallet->fWalletUnlockStakingOnly; }
