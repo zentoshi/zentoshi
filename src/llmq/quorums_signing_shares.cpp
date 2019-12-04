@@ -10,9 +10,10 @@
 #include <banman.h>
 #include <bls/bls_batchverifier.h>
 #include <init.h>
-#include <util/system.h>
+#include <net.h>
 #include <net_processing.h>
 #include <netmessagemaker.h>
+#include <util/system.h>
 #include <validation.h>
 
 #include <cxxtimer.hpp>

@@ -16,9 +16,7 @@ extern CCriticalSection cs_main;
 class CBlock;
 class CBlockIndex;
 struct CBlockLocator;
-class CBlockIndex;
 class CConnman;
-class CReserveScript;
 class CTransaction;
 class CValidationInterface;
 class CValidationState;
@@ -26,10 +24,9 @@ class CGovernanceVote;
 class CGovernanceObject;
 class CDeterministicMNList;
 class CDeterministicMNListDiff;
+class ReserveDestination;
 class uint256;
 class CScheduler;
-class CTxMemPool;
-enum class MemPoolRemovalReason;
 
 namespace llmq {
     class CChainLockSig;
@@ -149,7 +146,7 @@ protected:
     virtual bool UpdatedTransaction(const uint256 &hash) { return false;}
     virtual void Inventory(const uint256 &hash) {}
     /** Tells listeners to broadcast their data. */
-    virtual void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) {}
+    virtual void ResendWalletTransactions(CConnman* connman) {}
     /**
      * Notifies listeners of a block validation result.
      * If the provided CValidationState IsValid, the provided block

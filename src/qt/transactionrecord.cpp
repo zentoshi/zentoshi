@@ -5,11 +5,9 @@
 #include <qt/transactionrecord.h>
 
 #include <chain.h>
-#include <consensus/consensus.h>
 #include <interfaces/wallet.h>
 #include <key_io.h>
-#include <timedata.h>
-#include <validation.h>
+#include <wallet/ismine.h>
 
 #include <stdint.h>
 
@@ -51,7 +49,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const interface
                         if (mine) {
                             sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
                             sub.type = TransactionRecord::MNReward;
-                            sub.address = CBitcoinAddress(outAddress).ToString();
+                            sub.address = EncodeDestination(outAddress);
                             sub.credit = wtx.tx->vout[i].nValue;
                         }
                     }
@@ -63,7 +61,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const interface
             //stake reward
             isminetype mine = wtx.txout_is_mine[1];
             sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
-            sub.address = CBitcoinAddress(address).ToString();
+            sub.address = EncodeDestination(address);
             sub.credit = wtx.tx->GetValueOut() - nDebit;
             sub.type = TransactionRecord::StakeMint;
 

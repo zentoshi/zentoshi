@@ -33,7 +33,7 @@ CQuorumManager* quorumManager;
 static uint256 MakeQuorumKey(const CQuorum& q)
 {
     CHashWriter hw(SER_NETWORK, 0);
-    hw << q.params.type;
+    hw << (uint8_t)q.params.type;
     hw << q.qc.quorumHash;
     for (const auto& dmn : q.members) {
         hw << dmn->proTxHash;
@@ -302,7 +302,7 @@ std::vector<CQuorumCPtr> CQuorumManager::ScanQuorums(Consensus::LLMQType llmqTyp
     const CBlockIndex* pindex;
     {
         LOCK(cs_main);
-        pindex = chainActive.Tip();
+        pindex = ::ChainActive().Tip();
     }
     return ScanQuorums(llmqType, pindex, maxCount);
 }
@@ -360,9 +360,9 @@ CQuorumCPtr CQuorumManager::GetQuorum(Consensus::LLMQType llmqType, const uint25
     CBlockIndex* pindexQuorum;
     {
         LOCK(cs_main);
-        auto quorumIt = mapBlockIndex.find(quorumHash);
+        auto quorumIt = ::BlockIndex().find(quorumHash);
 
-        if (quorumIt == mapBlockIndex.end()) {
+        if (quorumIt == ::BlockIndex().end()) {
             LogPrint(BCLog::LLMQ, "CQuorumManager::%s -- block %s not found", __func__, quorumHash.ToString());
             return nullptr;
         }

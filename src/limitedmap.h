@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <map>
+#include <unordered_map>
 
 /** STL-like map container that only keeps the N elements with the highest value. */
 template <typename K, typename V>

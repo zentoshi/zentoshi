@@ -119,13 +119,15 @@ private:
     BanTableModel *banTableModel;
 
     QTimer *pollTimer;
-    QTimer *pollMnTimer;
 
-      // The cache for mn list is not technically needed because CDeterministicMNManager
+    // The cache for mn list is not technically needed because CDeterministicMNManager
     // caches it internally for recent blocks but it's not enough to get consistent
     // representation of the list in UI during initial sync/reindex, so we cache it here too.
     mutable CCriticalSection cs_mnlinst; // protects mnListCached
     CDeterministicMNList mnListCached;
+
+    //! A thread to interact with m_node asynchronously
+    QThread* const m_thread;
 
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();
@@ -149,7 +151,6 @@ Q_SIGNALS:
     void showProgress(const QString &title, int nProgress);
 
 public Q_SLOTS:
-    void updateTimer();
     void updateNumConnections(int numConnections);
     void updateNetworkActive(bool networkActive);
     void updateAlert();

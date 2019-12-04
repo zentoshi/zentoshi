@@ -7,13 +7,14 @@
 
 #include <privatesend/privatesend-util.h>
 #include <privatesend/privatesend.h>
+#include <wallet/wallet.h>
 
 #include "evo/deterministicmns.h"
 
 class CPrivateSendClientManager;
 class CConnman;
 class CNode;
-
+class UniValue;
 
 static const int MIN_PRIVATESEND_SESSIONS = 1;
 static const int MIN_PRIVATESEND_ROUNDS = 2;

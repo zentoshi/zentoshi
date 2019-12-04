@@ -27,12 +27,12 @@ CSigningManager* quorumSigningManager;
 UniValue CRecoveredSig::ToJson() const
 {
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("llmqType", (int)llmqType));
-    ret.push_back(Pair("quorumHash", quorumHash.ToString()));
-    ret.push_back(Pair("id", id.ToString()));
-    ret.push_back(Pair("msgHash", msgHash.ToString()));
-    ret.push_back(Pair("sig", sig.Get().ToString()));
-    ret.push_back(Pair("hash", sig.Get().GetHash().ToString()));
+    ret.pushKV("llmqType", (int)llmqType);
+    ret.pushKV("quorumHash", quorumHash.ToString());
+    ret.pushKV("id", id.ToString());
+    ret.pushKV("msgHash", msgHash.ToString());
+    ret.pushKV("sig", sig.Get().ToString());
+    ret.pushKV("hash", sig.Get().GetHash().ToString());
     return ret;
 }
 
@@ -207,12 +207,12 @@ bool CRecoveredSigsDb::ReadRecoveredSig(Consensus::LLMQType llmqType, const uint
 bool CRecoveredSigsDb::GetRecoveredSigByHash(const uint256& hash, CRecoveredSig& ret)
 {
     auto k1 = std::make_tuple(std::string("rs_h"), hash);
-    std::pair<Consensus::LLMQType, uint256> k2;
+    std::pair<uint8_t, uint256> k2;
     if (!db.Read(k1, k2)) {
         return false;
     }
 
-    return ReadRecoveredSig(k2.first, k2.second, ret);
+    return ReadRecoveredSig((Consensus::LLMQType)k2.first, k2.second, ret);
 }
 
 bool CRecoveredSigsDb::GetRecoveredSigById(Consensus::LLMQType llmqType, const uint256& id, CRecoveredSig& ret)
@@ -795,7 +795,7 @@ bool CSigningManager::AsyncSignIfMember(Consensus::LLMQType llmqType, const uint
     int tipHeight;
     {
         LOCK(cs_main);
-        tipHeight = chainActive.Height();
+        tipHeight = ::ChainActive().Height();
     }
 
     // This might end up giving different results on different members
@@ -876,10 +876,10 @@ std::vector<CQuorumCPtr> CSigningManager::GetActiveQuorumSet(Consensus::LLMQType
     {
         LOCK(cs_main);
         int startBlockHeight = signHeight - SIGN_HEIGHT_OFFSET;
-        if (startBlockHeight > chainActive.Height()) {
+        if (startBlockHeight > ::ChainActive().Height()) {
             return {};
         }
-        pindexStart = chainActive[startBlockHeight];
+        pindexStart = ::ChainActive()[startBlockHeight];
     }
 
     return quorumManager->ScanQuorums(llmqType, pindexStart, poolSize);
@@ -896,7 +896,7 @@ CQuorumCPtr CSigningManager::SelectQuorumForSigning(Consensus::LLMQType llmqType
     scores.reserve(quorums.size());
     for (size_t i = 0; i < quorums.size(); i++) {
         CHashWriter h(SER_NETWORK, 0);
-        h << llmqType;
+        h << (uint8_t)llmqType;
         h << quorums[i]->qc.quorumHash;
         h << selectionHash;
         scores.emplace_back(h.GetHash(), i);
@@ -919,3 +919,4 @@ bool CSigningManager::VerifyRecoveredSig(Consensus::LLMQType llmqType, int signe
 }
 
 }
+

@@ -5,31 +5,39 @@
 #ifndef BITCOIN_INDEX_TXINDEX_H
 #define BITCOIN_INDEX_TXINDEX_H
 
-#include <primitives/block.h>
-#include <primitives/transaction.h>
-#include <threadinterrupt.h>
+#include <chain.h>
+#include <index/base.h>
 #include <txdb.h>
-#include <uint256.h>
-#include <validationinterface.h>
-
-class CBlockIndex;
 
 /**
  * TxIndex is used to look up transactions included in the blockchain by hash.
  * The index is written to a LevelDB database and records the filesystem
  * location of each transaction by transaction hash.
  */
-class TxIndex final : public CValidationInterface
+class TxIndex final : public BaseIndex
 {
+protected:
+    class DB;
+
 private:
-    const std::unique_ptr<TxIndexDB> m_db;
+    const std::unique_ptr<DB> m_db;
+
+protected:
+    /// Override base class init to migrate from old database.
+    bool Init() override;
+
+    bool WriteBlock(const CBlock& block, const CBlockIndex* pindex) override;
+
+    BaseIndex::DB& GetDB() const override;
+
+    const char* GetName() const override { return "txindex"; }
 
 public:
-    /// Constructs the TxIndex, which becomes available to be queried.
-    explicit TxIndex(std::unique_ptr<TxIndexDB> db);
+    /// Constructs the index, which becomes available to be queried.
+    explicit TxIndex(size_t n_cache_size, bool f_memory = false, bool f_wipe = false);
 
-    /// Destructor interrupts sync thread if running and blocks until it exits.
-    ~TxIndex();
+    // Destructor is declared because this class contains a unique_ptr to an incomplete type.
+    virtual ~TxIndex() override;
 
     /// Look up a transaction by hash.
     ///
@@ -38,8 +46,6 @@ public:
     /// @param[out]  tx  The transaction itself.
     /// @return  true if transaction is found, false otherwise
     bool FindTx(const uint256& tx_hash, uint256& block_hash, CTransactionRef& tx) const;
-    using IndexEntry = std::pair<uint256, CDiskTxPos>;
-    bool WriteIndex(const std::vector<IndexEntry> &list);
 };
 
 /// The global transaction index, used in GetTransaction. May be null.

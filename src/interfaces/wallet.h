@@ -7,7 +7,6 @@
 
 #include <amount.h>                    // For CAmount
 #include <pubkey.h>                    // For CKeyID and CScriptID (definitions needed in CTxDestination instantiation)
-#include <script/ismine.h>             // For isminefilter, isminetype
 #include <script/standard.h>           // For CTxDestination
 #include <support/allocators/secure.h> // For SecureString
 #include <ui_interface.h>              // For ChangeType
@@ -27,14 +26,16 @@ class CCoinControl;
 class CFeeRate;
 class CKey;
 class CWallet;
+enum isminetype : unsigned int;
 enum class FeeReason;
+typedef uint8_t isminefilter;
+
 enum class OutputType;
 struct CRecipient;
 
 namespace interfaces {
 
 class Handler;
-class PendingWalletTx;
 struct WalletAddress;
 struct WalletBalances;
 struct WalletTx;
@@ -81,8 +82,8 @@ public:
     //! Get wallet name.
     virtual std::string getWalletName() = 0;
 
-    // Get key from pool.
-    virtual bool getKeyFromPool(bool internal, CPubKey& pub_key) = 0;
+    // Get a new address.
+    virtual bool getNewDestination(const OutputType type, const std::string label, CTxDestination& dest) = 0;
 
     //! Get public key.
     virtual bool getPubKey(const CKeyID& address, CPubKey& pub_key) = 0;
@@ -137,7 +138,7 @@ public:
     virtual void listLockedCoins(std::vector<COutPoint>& outputs) = 0;
 
     //! Create transaction.
-    virtual std::unique_ptr<PendingWalletTx> createTransaction(const std::vector<CRecipient>& recipients,
+    virtual CTransactionRef createTransaction(const std::vector<CRecipient>& recipients,
         const CCoinControl& coin_control,
         bool sign,
         int& change_pos,
@@ -154,6 +155,12 @@ public:
     virtual CAmount GetNormalizedAnonymizedBalance() = 0;
     virtual float GetAverageAnonymizedRounds() = 0;
     virtual int64_t getKeysLeftSinceAutoBackup() = 0;
+
+    //! Commit transaction.
+    virtual bool commitTransaction(CTransactionRef tx,
+        WalletValueMap value_map,
+        WalletOrderForm order_form,
+        std::string& reject_reason) = 0;
 
     //! Return whether transaction can be abandoned.
     virtual bool transactionCanBeAbandoned(const uint256& txid) = 0;
@@ -269,6 +276,9 @@ public:
     // Get default change type.
     virtual OutputType getDefaultChangeType() = 0;
 
+    //! Get max tx fee.
+    virtual CAmount getDefaultMaxTxFee() = 0;
+
     // Remove wallet.
     virtual void remove() = 0;
 
@@ -305,24 +315,6 @@ public:
     virtual std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) = 0;
 
     mutable CCriticalSection cs_wallet;
-};
-
-//! Tracking object returned by CreateTransaction and passed to CommitTransaction.
-class PendingWalletTx
-{
-public:
-    virtual ~PendingWalletTx() {}
-
-    //! Get transaction data.
-    virtual const CTransaction& get() = 0;
-
-    //! Get virtual transaction size.
-    virtual int64_t getVirtualSize() = 0;
-
-    //! Send pending transaction and commit to wallet.
-    virtual bool commit(WalletValueMap value_map,
-        WalletOrderForm order_form,
-        std::string& reject_reason) = 0;
 };
 
 //! Information about one wallet address.

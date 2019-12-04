@@ -258,7 +258,7 @@ std::string GetRequiredPaymentsString(int nBlockHeight, const CDeterministicMNCP
         CTxDestination dest;
         if (!ExtractDestination(payee->pdmnState->scriptPayout, dest))
             assert(false);
-        strPayee = CBitcoinAddress(dest).ToString();
+        strPayee =  EncodeDestination(dest);
     }
     if (CSuperblockManager::IsSuperblockTriggered(nBlockHeight)) {
         strPayee += ", " + CSuperblockManager::GetRequiredPaymentsString(nBlockHeight);
@@ -275,12 +275,12 @@ std::map<int, std::string> GetRequiredPaymentsStrings(int nStartHeight, int nEnd
     }
 
     LOCK(cs_main);
-    int nChainTipHeight = chainActive.Height();
+    int nChainTipHeight = ::ChainActive().Height();
 
     bool doProjection = false;
     for(int h = nStartHeight; h < nEndHeight; h++) {
         if (h <= nChainTipHeight) {
-            auto payee = deterministicMNManager->GetListForBlock(chainActive[h - 1]).GetMNPayee();
+            auto payee = deterministicMNManager->GetListForBlock(::ChainActive()[h - 1]).GetMNPayee();
             mapPayments.emplace(h, GetRequiredPaymentsString(h, payee));
         } else {
             doProjection = true;
@@ -318,9 +318,7 @@ bool CMasternodePayments::GetMasternodeTxOuts(int nBlockHeight, CAmount blockRew
     for (const auto& txout : voutMasternodePaymentsRet) {
         CTxDestination address1;
         ExtractDestination(txout.scriptPubKey, address1);
-        CBitcoinAddress address2(address1);
-
-        LogPrint(BCLog::MNPAYMENTS, "CMasternodePayments::%s -- Masternode payment %lld to %s\n", __func__, txout.nValue, address2.ToString());
+        LogPrint(BCLog::MNPAYMENTS, "CMasternodePayments::%s -- Masternode payment %lld to %s\n", __func__, txout.nValue, EncodeDestination(address1));
     }
 
     return true;
@@ -335,7 +333,7 @@ bool CMasternodePayments::GetBlockTxOuts(int nBlockHeight, CAmount blockReward, 
     const CBlockIndex* pindex;
     {
         LOCK(cs_main);
-        pindex = chainActive[nBlockHeight - 1];
+        pindex = ::ChainActive()[nBlockHeight - 1];
     }
     uint256 proTxHash;
     auto dmnPayee = deterministicMNManager->GetListForBlock(pindex).GetMNPayee();
@@ -399,7 +397,7 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
             CTxDestination dest;
             if (!ExtractDestination(txout.scriptPubKey, dest))
                 assert(false);
-            LogPrint(BCLog::MNPAYMENTS, "CMasternodePayments::%s -- ERROR failed to find expected payee %s in block at height %s\n", __func__, CBitcoinAddress(dest).ToString(), nBlockHeight);
+            LogPrint(BCLog::MNPAYMENTS, "CMasternodePayments::%s -- ERROR failed to find expected payee %s in block at height %s\n", __func__, EncodeDestination(dest), nBlockHeight);
             return false;
         }
     }

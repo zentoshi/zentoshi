@@ -8,6 +8,7 @@
 #include <consensus/validation.h>
 #include <core_io.h>
 #include <init.h>
+#include <interfaces/wallet.h>
 #include <masternode-meta.h>
 #include <masternode-sync.h>
 #include <net_processing.h>
@@ -383,8 +384,10 @@ void CPrivateSendServer::CommitFinalTransaction(CConnman& connman)
         // See if the transaction is valid
         TRY_LOCK(cs_main, lockMain);
         CValidationState validationState;
+        std::unique_ptr<interfaces::Wallet> wallet;
+        auto maxFee = wallet->getDefaultMaxTxFee();
         mempool.PrioritiseTransaction(hashTx, 0.1 * COIN);
-        if (!lockMain || !AcceptToMemoryPool(mempool, validationState, finalTransaction, false, nullptr, false, maxTxFee, true)) {
+        if (!lockMain || !AcceptToMemoryPool(mempool, validationState, finalTransaction, nullptr, nullptr, false, maxFee, true)) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendServer::CommitFinalTransaction -- AcceptToMemoryPool() error: Transaction not valid\n");
             SetNull();
             // not much we can do in this case, just notify clients
@@ -515,7 +518,7 @@ void CPrivateSendServer::ConsumeCollateral(CConnman& connman, const CTransaction
 {
     LOCK(cs_main);
     CValidationState validationState;
-    if (!AcceptToMemoryPool(mempool, validationState, txref, false, nullptr)) {
+    if (!AcceptToMemoryPool(mempool, validationState, txref, nullptr, nullptr, false, 0)) {
         LogPrint(BCLog::PRIVATESEND, "%s -- AcceptToMemoryPool failed\n", __func__);
     } else {
         connman.RelayTransaction(*txref);
@@ -949,12 +952,12 @@ void CPrivateSendServer::GetJsonInfo(UniValue& obj) const
 {
     obj.clear();
     obj.setObject();
-    obj.push_back(Pair("queue_size",    GetQueueSize()));
+    obj.pushKV("queue_size",    GetQueueSize());
     CAmount amount{0};
     if (nSessionDenom) {
         ParseFixedPoint(CPrivateSend::GetDenominationsToString(nSessionDenom), 8, &amount);
     }
-    obj.push_back(Pair("denomination",  ValueFromAmount(amount)));
-    obj.push_back(Pair("state",         GetStateString()));
-    obj.push_back(Pair("entries_count", GetEntriesCount()));
+    obj.pushKV("denomination",  ValueFromAmount(amount));
+    obj.pushKV("state",         GetStateString());
+    obj.pushKV("entries_count", GetEntriesCount());
 }

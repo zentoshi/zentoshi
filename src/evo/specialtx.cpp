@@ -23,7 +23,7 @@ bool CheckSpecialTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVali
         return true;
 
     if (pindexPrev && pindexPrev->nHeight + 1 < Params().GetConsensus().DIP0003Height) {
-        return state.DoS(10, false, REJECT_INVALID, "bad-tx-type");
+        return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-tx-type");
     }
 
     switch (tx.nType) {
@@ -41,7 +41,7 @@ bool CheckSpecialTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVali
         return llmq::CheckLLMQCommitment(tx, pindexPrev, state);
     }
 
-    return state.DoS(10, false, REJECT_INVALID, "bad-tx-type-check");
+    return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-tx-type-check");
 }
 
 bool ProcessSpecialTx(const CTransaction& tx, const CBlockIndex* pindex, CValidationState& state)
@@ -62,7 +62,7 @@ bool ProcessSpecialTx(const CTransaction& tx, const CBlockIndex* pindex, CValida
         return true; // handled per block
     }
 
-    return state.DoS(100, false, REJECT_INVALID, "bad-tx-type-proc");
+    return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-tx-type-proc");
 }
 
 bool UndoSpecialTx(const CTransaction& tx, const CBlockIndex* pindex)

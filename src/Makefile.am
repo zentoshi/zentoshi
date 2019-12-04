@@ -44,7 +44,6 @@ LIBBITCOINCONSENSUS=libzentoshiconsensus.la
 endif
 if ENABLE_WALLET
 LIBBITCOIN_WALLET=libzentoshi_wallet.a
-LIBBITCOIN_WALLET_TOOL=libzentoshi_wallet_tool.a
 endif
 
 LIBBITCOIN_CRYPTO= $(LIBBITCOIN_CRYPTO_BASE)
@@ -101,7 +100,6 @@ BITCOIN_CORE_H = \
   addrdb.h \
   activemasternode.h \
   addrman.h \
-  alert.h \
   attributes.h \
   banman.h \
   base58.h \
@@ -116,7 +114,6 @@ BITCOIN_CORE_H = \
   chainparams.h \
   chainparamsbase.h \
   chainparamsseeds.h \
-  checkpoints.h \
   checkqueue.h \
   clientversion.h \
   coins.h \
@@ -127,6 +124,7 @@ BITCOIN_CORE_H = \
   compat/sanity.h \
   compressor.h \
   consensus/consensus.h \
+  consensus/tx_check.h \
   consensus/tx_verify.h \
   core_io.h \
   core_memusage.h \
@@ -142,6 +140,7 @@ BITCOIN_CORE_H = \
   evo/specialtx.h \
   dsnotificationinterface.h \
   fs.h \
+  flatfile.h \
   flat-database.h \
   governance/governance.h \
   governance/governance-classes.h \
@@ -153,6 +152,7 @@ BITCOIN_CORE_H = \
   httprpc.h \
   httpserver.h \
   index/base.h \
+  index/blockfilterindex.h \
   index/txindex.h \
   indirectmap.h \
   init.h \
@@ -189,11 +189,15 @@ BITCOIN_CORE_H = \
   messagesigner.h \
   miner.h \
   net.h \
+  net_permissions.h \
   net_processing.h \
   netaddress.h \
   netbase.h \
   netfulfilledman.h \
   netmessagemaker.h \
+  node/coin.h \
+  node/coinstats.h \
+  node/psbt.h \
   node/transaction.h \
   noui.h \
   optional.h \
@@ -202,6 +206,7 @@ BITCOIN_CORE_H = \
   policy/fees.h \
   policy/policy.h \
   policy/rbf.h \
+  policy/settings.h \
   pow.h \
   protocol.h \
   psbt.h \
@@ -214,19 +219,19 @@ BITCOIN_CORE_H = \
   reverselock.h \
   rpc/blockchain.h \
   rpc/client.h \
-  rpc/mining.h \
   rpc/protocol.h \
-  rpc/server.h \
-  rpc/rawtransaction.h \
+  rpc/rawtransaction_util.h \
   rpc/register.h \
+  rpc/request.h \
+  rpc/server.h \
   rpc/util.h \
   saltedhasher.h \
   scheduler.h \
   script/descriptor.h \
-  script/ismine.h \
   script/keyorigin.h \
   script/sigcache.h \
   script/sign.h \
+  script/signingprovider.h \
   script/standard.h \
   shutdown.h \
   streams.h \
@@ -250,10 +255,18 @@ BITCOIN_CORE_H = \
   unordered_lru_cache.h \
   util/bip32.h \
   util/bytevectorhash.h \
+  util/error.h \
+  util/fees.h \
   util/system.h \
   util/memory.h \
   util/moneystr.h \
+  util/rbf.h \
+  util/string.h \
+  util/threadnames.h \
   util/time.h \
+  util/translation.h \
+  util/url.h \
+  util/validation.h \
   validation.h \
   validationinterface.h \
   versionbits.h \
@@ -264,6 +277,8 @@ BITCOIN_CORE_H = \
   wallet/db.h \
   wallet/feebumper.h \
   wallet/fees.h \
+  wallet/ismine.h \
+  wallet/load.h \
   wallet/psbtwallet.h \
   wallet/rpcwallet.h \
   wallet/wallet.h \
@@ -286,20 +301,22 @@ obj/build.h: FORCE
 libzentoshi_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: shared between zentoshid and zentoshi-qt
+# Contains code accessing mempool and chain state that is meant to be separated
+# from wallet and gui code (see node/README.md). Shared code should go in
+# libbitcoin_common or libbitcoin_util libraries, instead.
 libzentoshi_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libzentoshi_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_server_a_SOURCES = \
   activemasternode.cpp \
+  addrdb.cpp \
   addrman.cpp \
   addrdb.cpp \
-  alert.cpp \
   banman.cpp \
   bloom.cpp \
   blocksigner.cpp \
   blockencodings.cpp \
   blockfilter.cpp \
   chain.cpp \
-  checkpoints.cpp \
   consensus/tx_verify.cpp \
   dsnotificationinterface.cpp \
   evo/cbtx.cpp \
@@ -309,12 +326,13 @@ libzentoshi_server_a_SOURCES = \
   evo/providertx.cpp \
   evo/simplifiedmns.cpp \
   evo/specialtx.cpp \
+  flatfile.cpp \
   httprpc.cpp \
   httpserver.cpp \
   index/base.cpp \
+  index/blockfilterindex.cpp \
   index/txindex.cpp \
   interfaces/chain.cpp \
-  interfaces/handler.cpp \
   interfaces/node.cpp \
   init.cpp \
   kernel.cpp \
@@ -348,6 +366,9 @@ libzentoshi_server_a_SOURCES = \
   net.cpp \
   netfulfilledman.cpp \
   net_processing.cpp \
+  node/coin.cpp \
+  node/coinstats.cpp \
+  node/psbt.cpp \
   node/transaction.cpp \
   noui.cpp \
   outputtype.cpp \
@@ -356,8 +377,8 @@ libzentoshi_server_a_SOURCES = \
   privatesend/privatesend-server.cpp \
   privatesend/privatesend-util.cpp \
   policy/fees.cpp \
-  policy/policy.cpp \
   policy/rbf.cpp \
+  policy/settings.cpp \
   pow.cpp \
   rest.cpp \
   rpc/blockchain.cpp \
@@ -370,9 +391,7 @@ libzentoshi_server_a_SOURCES = \
   rpc/rpcevo.cpp \
   rpc/rpcquorums.cpp \
   rpc/server.cpp \
-  rpc/util.cpp \
   script/sigcache.cpp \
-  script/ismine.cpp \
   shutdown.cpp \
   spork.cpp \
   timedata.cpp \
@@ -385,12 +404,15 @@ libzentoshi_server_a_SOURCES = \
   versionbits.cpp \
   $(BITCOIN_CORE_H)
 
+if ENABLE_WALLET
+libzentoshi_server_a_SOURCES += wallet/init.cpp
+endif
 if !ENABLE_WALLET
 libzentoshi_server_a_SOURCES += dummywallet.cpp
 endif
 
 if ENABLE_ZMQ
-libzentoshi_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libzentoshi_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
 libzentoshi_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_zmq_a_SOURCES = \
   zmq/zmqabstractnotifier.cpp \
@@ -412,6 +434,8 @@ libzentoshi_wallet_a_SOURCES = \
   wallet/feebumper.cpp \
   wallet/fees.cpp \
   wallet/init.cpp \
+  wallet/ismine.cpp \
+  wallet/load.cpp \
   wallet/psbtwallet.cpp \
   wallet/rpcdump.cpp \
   wallet/rpcwallet.cpp \
@@ -419,12 +443,6 @@ libzentoshi_wallet_a_SOURCES = \
   wallet/walletdb.cpp \
   wallet/walletutil.cpp \
   wallet/coinselection.cpp \
-  $(BITCOIN_CORE_H)
-
-libzentoshi_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libzentoshi_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libzentoshi_wallet_tool_a_SOURCES = \
-  wallet/wallettool.cpp \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
@@ -435,13 +453,19 @@ crypto_libzentoshi_crypto_base_a_SOURCES = \
   crypto/aes.h \
   crypto/balloon.c \
   crypto/balloon.h \
+  crypto/chacha_poly_aead.h \
+  crypto/chacha_poly_aead.cpp \
   crypto/chacha20.h \
   crypto/chacha20.cpp \
   crypto/common.h \
+  crypto/hkdf_sha256_32.cpp \
+  crypto/hkdf_sha256_32.h \
   crypto/hmac_sha256.cpp \
   crypto/hmac_sha256.h \
   crypto/hmac_sha512.cpp \
   crypto/hmac_sha512.h \
+  crypto/poly1305.h \
+  crypto/poly1305.cpp \
   crypto/ripemd160.cpp \
   crypto/ripemd160.h \
   crypto/sha1.cpp \
@@ -487,6 +511,7 @@ libzentoshi_consensus_a_SOURCES = \
   consensus/merkle.cpp \
   consensus/merkle.h \
   consensus/params.h \
+  consensus/tx_check.cpp \
   consensus/validation.h \
   hash.cpp \
   hash.h \
@@ -521,6 +546,7 @@ libzentoshi_common_a_SOURCES = \
   amount.cpp \
   base58.cpp \
   bech32.cpp \
+  bloom.cpp \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
@@ -528,17 +554,22 @@ libzentoshi_common_a_SOURCES = \
   core_write.cpp \
   key.cpp \
   key_io.cpp \
-  keystore.cpp \
+  merkleblock.cpp \
   netaddress.cpp \
   netbase.cpp \
+  net_permissions.cpp \
+  outputtype.cpp \
   policy/feerate.cpp \
-  psbt.cpp \
+  policy/policy.cpp \
   protocol.cpp \
   saltedhasher.cpp \
+  psbt.cpp \
+  rpc/rawtransaction_util.cpp \
+  rpc/util.cpp \
   scheduler.cpp \
   script/descriptor.cpp \
-  script/ismine.cpp \
   script/sign.cpp \
+  script/signingprovider.cpp \
   script/standard.cpp \
   util/system.cpp \
   versionbits.cpp \
@@ -560,22 +591,31 @@ libzentoshi_util_a_SOURCES = \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
+  compat/glibc_sanity_fdelt.cpp \
   compat/glibc_sanity.cpp \
   compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
   fs.cpp \
+  interfaces/handler.cpp \
   logging.cpp \
   random.cpp \
-  rpc/protocol.cpp \
+  rpc/request.cpp \
   support/cleanse.cpp \
   sync.cpp \
   threadinterrupt.cpp \
   util/bip32.cpp \
   util/bytevectorhash.cpp \
+  util/error.cpp \
+  util/fees.cpp \
   util/system.cpp \
   util/moneystr.cpp \
+  util/rbf.cpp \
+  util/threadnames.cpp \
   util/strencodings.cpp \
+  util/string.cpp \
   util/time.cpp \
+  util/url.cpp \
+  util/validation.cpp \
   $(BITCOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
@@ -603,6 +643,8 @@ if TARGET_WINDOWS
 zentoshid_SOURCES += zentoshid-res.rc
 endif
 
+# Libraries below may be listed more than once to resolve circular dependencies (see
+# https://eli.thegreenplace.net/2013/07/09/library-order-in-static-linking#circular-dependency)
 zentoshid_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_WALLET) \
@@ -659,35 +701,11 @@ zentoshi_tx_LDADD = \
 
 zentoshi_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 
-# zentoshi-wallet binary #
-#zentoshi_wallet_SOURCES = zentoshi-wallet.cpp
-#zentoshi_wallet_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-#zentoshi_wallet_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-#zentoshi_wallet_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
-
-#if TARGET_WINDOWS
-#zentoshi_wallet_SOURCES += zentoshi-wallet-res.rc
-#endif
-
-#zentoshi_wallet_LDADD = \
-# $(LIBBITCOIN_WALLET_TOOL) \
-# $(LIBBITCOIN_WALLET) \
-# $(LIBBITCOIN_SERVER) \
-# $(LIBBITCOIN_COMMON) \
-# $(LIBBITCOIN_CONSENSUS) \
-# $(LIBBITCOIN_UTIL) \
-# $(LIBBITCOIN_CRYPTO) \
-# $(LIBLEVELDB) \
-# $(LIBLEVELDB_SSE42) \
-# $(LIBMEMENV) \
-# $(LIBSECP256K1)
-
-#zentoshi_wallet_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(BLS_LIBS)
-
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/bitcoinconsensus.h
-libzentoshiconsensus_la_SOURCES = $(crypto_libzentoshi_crypto_base_a_SOURCES) $(libzentoshi_consensus_a_SOURCES)
+
+libzentoshiconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libzentoshi_crypto_base_a_SOURCES) $(libzentoshi_consensus_a_SOURCES)
 
 if GLIBC_BACK_COMPAT
   libzentoshiconsensus_la_SOURCES += compat/glibc_compat.cpp
@@ -757,13 +775,13 @@ clean-local:
 check-symbols: $(bin_PROGRAMS)
 if GLIBC_BACK_COMPAT
 	@echo "Checking glibc back compat..."
-	$(AM_V_at) READELF=$(READELF) CPPFILT=$(CPPFILT) $(top_srcdir)/contrib/devtools/symbol-check.py < $(bin_PROGRAMS)
+	$(AM_V_at) READELF=$(READELF) CPPFILT=$(CPPFILT) $(PYTHON) $(top_srcdir)/contrib/devtools/symbol-check.py < $(bin_PROGRAMS)
 endif
 
 check-security: $(bin_PROGRAMS)
 if HARDEN
 	@echo "Checking binary security..."
-	$(AM_V_at) READELF=$(READELF) OBJDUMP=$(OBJDUMP) $(top_srcdir)/contrib/devtools/security-check.py < $(bin_PROGRAMS)
+	$(AM_V_at) READELF=$(READELF) OBJDUMP=$(OBJDUMP) $(PYTHON) $(top_srcdir)/contrib/devtools/security-check.py < $(bin_PROGRAMS)
 endif
 
 if ENABLE_BIP70

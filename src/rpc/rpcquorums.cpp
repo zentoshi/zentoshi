@@ -3,7 +3,12 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "chainparams.h"
+#include "protocol.h"
+#include "rpc/rawtransaction_util.h"
+#include "rpc/server.h"
+#include "rpc/util.h"
 #include "server.h"
+#include "util/strencodings.h"
 #include "validation.h"
 
 #include "llmq/quorums.h"
@@ -53,12 +58,12 @@ UniValue quorum_list(const JSONRPCRequest& request)
     for (auto& p : Params().GetConsensus().llmqs) {
         UniValue v(UniValue::VARR);
 
-        auto quorums = llmq::quorumManager->ScanQuorums(p.first, chainActive.Tip(), count > -1 ? count : p.second.signingActiveQuorumCount);
+        auto quorums = llmq::quorumManager->ScanQuorums(p.first, ::ChainActive().Tip(), count > -1 ? count : p.second.signingActiveQuorumCount);
         for (auto& q : quorums) {
             v.push_back(q->qc.quorumHash.ToString());
         }
 
-        ret.push_back(Pair(p.second.name, v));
+        ret.pushKV(p.second.name, v);
     }
 
 
@@ -80,33 +85,33 @@ UniValue BuildQuorumInfo(const llmq::CQuorumCPtr& quorum, bool includeMembers, b
 {
     UniValue ret(UniValue::VOBJ);
 
-    ret.push_back(Pair("height", quorum->pindexQuorum->nHeight));
-    ret.push_back(Pair("type", quorum->params.name));
-    ret.push_back(Pair("quorumHash", quorum->qc.quorumHash.ToString()));
-    ret.push_back(Pair("minedBlock", quorum->minedBlockHash.ToString()));
+    ret.pushKV("height", quorum->pindexQuorum->nHeight);
+    ret.pushKV("type", quorum->params.name);
+    ret.pushKV("quorumHash", quorum->qc.quorumHash.ToString());
+    ret.pushKV("minedBlock", quorum->minedBlockHash.ToString());
 
     if (includeMembers) {
         UniValue membersArr(UniValue::VARR);
         for (size_t i = 0; i < quorum->members.size(); i++) {
             auto& dmn = quorum->members[i];
             UniValue mo(UniValue::VOBJ);
-            mo.push_back(Pair("proTxHash", dmn->proTxHash.ToString()));
-            mo.push_back(Pair("valid", quorum->qc.validMembers[i]));
+            mo.pushKV("proTxHash", dmn->proTxHash.ToString());
+            mo.pushKV("valid", quorum->qc.validMembers[i]);
             if (quorum->qc.validMembers[i]) {
                 CBLSPublicKey pubKey = quorum->GetPubKeyShare(i);
                 if (pubKey.IsValid()) {
-                    mo.push_back(Pair("pubKeyShare", pubKey.ToString()));
+                    mo.pushKV("pubKeyShare", pubKey.ToString());
                 }
             }
             membersArr.push_back(mo);
         }
 
-        ret.push_back(Pair("members", membersArr));
+        ret.pushKV("members", membersArr);
     }
-    ret.push_back(Pair("quorumPublicKey", quorum->qc.quorumPublicKey.ToString()));
+    ret.pushKV("quorumPublicKey", quorum->qc.quorumPublicKey.ToString());
     CBLSSecretKey skShare = quorum->GetSkShare();
     if (includeSkShare && skShare.IsValid()) {
-        ret.push_back(Pair("secretKeyShare", skShare.ToString()));
+        ret.pushKV("secretKeyShare", skShare.ToString());
     }
     return ret;
 }
@@ -171,7 +176,7 @@ UniValue quorum_dkgstatus(const JSONRPCRequest& request)
     auto ret = status.ToJson(detailLevel);
 
     LOCK(cs_main);
-    int tipHeight = chainActive.Height();
+    int tipHeight = ::ChainActive().Height();
 
     UniValue minableCommitments(UniValue::VOBJ);
     for (const auto& p : Params().GetConsensus().llmqs) {
@@ -180,11 +185,11 @@ UniValue quorum_dkgstatus(const JSONRPCRequest& request)
         if (llmq::quorumBlockProcessor->GetMinableCommitment(params.type, tipHeight, fqc)) {
             UniValue obj(UniValue::VOBJ);
             fqc.ToJson(obj);
-            minableCommitments.push_back(Pair(params.name, obj));
+            minableCommitments.pushKV(params.name, obj);
         }
     }
 
-    ret.push_back(Pair("minableCommitments", minableCommitments));
+    ret.pushKV("minableCommitments", minableCommitments);
 
     return ret;
 }
@@ -219,7 +224,7 @@ UniValue quorum_memberof(const JSONRPCRequest& request)
     const CBlockIndex* pindexTip;
     {
         LOCK(cs_main);
-        pindexTip = chainActive.Tip();
+        pindexTip = ::ChainActive().Tip();
     }
 
     auto mnList = deterministicMNManager->GetListForBlock(pindexTip);
@@ -240,8 +245,8 @@ UniValue quorum_memberof(const JSONRPCRequest& request)
         for (auto& quorum : quorums) {
             if (quorum->IsMember(dmn->proTxHash)) {
                 auto json = BuildQuorumInfo(quorum, false, false);
-                json.push_back(Pair("isValidMember", quorum->IsValidMember(dmn->proTxHash)));
-                json.push_back(Pair("memberIndex", quorum->GetMemberIndex(dmn->proTxHash)));
+                json.pushKV("isValidMember", quorum->IsValidMember(dmn->proTxHash));
+                json.pushKV("memberIndex", quorum->GetMemberIndex(dmn->proTxHash));
                 result.push_back(json);
             }
         }
@@ -433,3 +438,4 @@ void RegisterQuorumsRPCCommands(CRPCTable &tableRPC)
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
+

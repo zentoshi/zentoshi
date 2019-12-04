@@ -5,10 +5,11 @@
 #ifndef BITCOIN_INTERFACES_NODE_H
 #define BITCOIN_INTERFACES_NODE_H
 
-#include <addrdb.h>       // For banmap_t
-#include <amount.h>       // For CAmount
-#include <net.h>          // For CConnman::NumConnections
-#include <netaddress.h>   // For Network
+#include <addrdb.h>     // For banmap_t
+#include <amount.h>     // For CAmount
+#include <net.h>        // For CConnman::NumConnections
+#include <netaddress.h> // For Network
+#include <support/allocators/secure.h> // For SecureString
 #include <ui_interface.h> // For ChangeType
 
 #include <functional>
@@ -28,6 +29,7 @@ class RPCTimerInterface;
 class UniValue;
 class proxyType;
 struct CNodeStateStats;
+enum class WalletCreationStatus;
 
 namespace interfaces {
 class Handler;
@@ -39,8 +41,14 @@ class Node
 public:
     virtual ~Node() {}
 
+    //! Send init error.
+    virtual void initError(const std::string& message) = 0;
+
     //! Set command line arguments.
     virtual bool parseParameters(int argc, const char* const argv[], std::string& error) = 0;
+
+    //! Set a command line argument
+    virtual void forceSetArg(const std::string& arg, const std::string& value) = 0;
 
     //! Set a command line argument if it doesn't already have a value
     virtual bool softSetArg(const std::string& arg, const std::string& value) = 0;
@@ -148,6 +156,9 @@ public:
     //! Is initial block download.
     virtual bool isInitialBlockDownload() = 0;
 
+    //! Is -addresstype set.
+    virtual bool isAddressTypeSet() = 0;
+
     //! Get reindex.
     virtual bool getReindex() = 0;
 
@@ -159,9 +170,6 @@ public:
 
     //! Get network active.
     virtual bool getNetworkActive() = 0;
-
-    //! Get max tx fee.
-    virtual CAmount getMaxTxFee() = 0;
 
     //! Estimate smart fee.
     virtual CFeeRate estimateSmartFee(int num_blocks, bool conservative, int* returned_target = nullptr) = 0;
@@ -198,6 +206,9 @@ public:
     //! with handleLoadWallet.
     virtual std::unique_ptr<Wallet> loadWallet(const std::string& name, std::string& error, std::string& warning) = 0;
 
+    //! Create a wallet from file
+    virtual WalletCreationStatus createWallet(const SecureString& passphrase, uint64_t wallet_creation_flags, const std::string& name, std::string& error, std::string& warning, std::unique_ptr<Wallet>& result) = 0;
+
     //! Register handler for init messages.
     using InitMessageFn = std::function<void(const std::string& message)>;
     virtual std::unique_ptr<Handler> handleInitMessage(InitMessageFn fn) = 0;
@@ -231,7 +242,7 @@ public:
     virtual std::unique_ptr<Handler> handleNotifyNetworkActiveChanged(NotifyNetworkActiveChangedFn fn) = 0;
 
     //! Register handler for notify alert messages.
-    using NotifyAlertChangedFn = std::function<void(const uint256&, ChangeType)>;
+    using NotifyAlertChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleNotifyAlertChanged(NotifyAlertChangedFn fn) = 0;
 
     //! Register handler for ban list messages.
