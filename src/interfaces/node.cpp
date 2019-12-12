@@ -320,6 +320,10 @@ public:
     {
         return MakeHandler(::uiInterface.NotifyAdditionalDataSyncProgressChanged_connect(fn));
     }
+    std::unique_ptr<Handler> handleNotifyMasternodeListChanged(NotifyMasternodeListChangedFn fn) override
+    {
+        return MakeHandler(::uiInterface.NotifyMasternodeListChanged_connect(fn));
+    }
     InitInterfaces m_interfaces;
 };
 
