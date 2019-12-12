@@ -188,6 +188,7 @@ public:
         consensus.nSuperblockCycle = 16616;
         consensus.nGovernanceMinQuorum = 10;
         consensus.nGovernanceFilterElements = 20000;
+        consensus.nMasternodeCollateral = 5000 * COIN;
         consensus.nMasternodeMinimumConfirmations = 15;
         consensus.BIP34Height = FROMGENESIS;
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
@@ -295,7 +296,6 @@ public:
         fRequireStandard = true;
         fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
-        nCollateral = 5000 * COIN;
         fAllowMultipleAddressesFromGroup = true;
         fAllowMultiplePorts = true;
 
@@ -340,6 +340,7 @@ public:
         consensus.nSuperblockCycle = 16616;
         consensus.nGovernanceMinQuorum = 10;
         consensus.nGovernanceFilterElements = 20000;
+        consensus.nMasternodeCollateral = 5000 * COIN;
         consensus.nMasternodeMinimumConfirmations = 15;
         consensus.BIP34Height = consensus.nFirstPoSBlock;
         consensus.BIP34Hash = uint256();
@@ -447,7 +448,6 @@ public:
         fRequireStandard = true;
         fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
-        nCollateral = 5000 * COIN;
         fAllowMultipleAddressesFromGroup = false;
         fAllowMultiplePorts = false;
 

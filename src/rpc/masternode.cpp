@@ -21,6 +21,7 @@
 #include "util/moneystr.h"
 #include "txmempool.h"
 
+#include "wallet/coincontrol.h"
 #include "wallet/rpcwallet.h"
 
 #include "evo/specialtx.h"
@@ -322,13 +323,14 @@ UniValue masternode_outputs(const JSONRPCRequest& request)
 
     // Find possible candidates
     std::vector<COutput> vPossibleCoins;
-    pwallet->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_MASTERNODE_COLLATERAL);
+    LOCK2(cs_main, pwallet->cs_wallet);
+    pwallet->AvailableCoins(vPossibleCoins, true);
 
     UniValue obj(UniValue::VOBJ);
-    for (const auto& out : vPossibleCoins) {
-        obj.pushKV(out.tx->GetHash().ToString(), strprintf("%d", out.i));
+    for(COutput& out : vPossibleCoins) {
+        if (out.tx->tx->vout[out.i].nValue == Params().GetConsensus().MasternodeCollateral())
+            obj.pushKV(out.tx->GetHash().ToString(), strprintf("%d", out.i));
     }
-
     return obj;
 }
 

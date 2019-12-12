@@ -419,7 +419,7 @@ UniValue protx_register(const JSONRPCRequest& request)
 
     size_t paramIdx = 1;
 
-    CAmount collateralAmount = Params().CollateralAmount();
+    CAmount collateralAmount = Params().GetConsensus().MasternodeCollateral();
 
     CMutableTransaction tx;
     tx.nVersion = 3;
