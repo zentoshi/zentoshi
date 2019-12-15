@@ -3,7 +3,7 @@
 #include "qt/governancelist.h"
 #include "qt/forms/ui_governancelist.h"
 
-#include "activemasternode.h"
+#include <masternode/activemasternode.h>
 #include "consensus/validation.h"
 #include <governance/governance.h>
 #include <governance/governance-vote.h>
@@ -11,7 +11,7 @@
 #include <governance/governance-validators.h>
 #include <init.h>
 #include <qt/governancedialog.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <messagesigner.h>
 #include <qt/clientmodel.h>
 #include <validation.h>

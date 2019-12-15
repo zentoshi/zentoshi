@@ -38,13 +38,47 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout_2">
-     <item row="0" column="2">
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item row="0" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <property name="bottomMargin">
         <number>9</number>
        </property>
        <item>
-        <spacer name="horizontalSpacer_7">
+        <widget class="QLabel" name="labelBalances">
+         <property name="text">
+          <string>Balances</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="labelWalletStatus">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>:/icons/warning</normaloff>
+           <disabledoff>:/icons/warning</disabledoff>:/icons/warning</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="flat" stdset="0">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -56,6 +90,13 @@
          </property>
         </spacer>
        </item>
+      </layout>
+     </item>
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <property name="bottomMargin">
+        <number>9</number>
+       </property>
       </layout>
      </item>
      <item row="1" column="0">
@@ -402,76 +443,6 @@
         </item>
        </layout>
       </widget>
-     </item>
-     <item row="0" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <property name="bottomMargin">
-        <number>9</number>
-       </property>
-       <item>
-        <widget class="QLabel" name="labelBalances">
-         <property name="text">
-          <string>Balances</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="labelWalletStatus">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="toolTip">
-          <string>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>:/icons/warning</normaloff>
-           <disabledoff>:/icons/warning</disabledoff>:/icons/warning</iconset>
-         </property>
-         <property name="iconSize">
-          <size>
-           <width>24</width>
-           <height>24</height>
-          </size>
-         </property>
-         <property name="flat" stdset="0">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-     <item row="0" column="1" rowspan="2">
-      <spacer name="horizontalSpacer_4">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeType">
-        <enum>QSizePolicy::Fixed</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>10</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>

@@ -573,11 +573,6 @@ void RPCConsole::setClientModel(ClientModel *model)
 #ifdef ENABLE_WALLET
     wallet_enabled = WalletModel::isWalletEnabled();
 #endif // ENABLE_WALLET
-    if (model && !wallet_enabled) {
-        // Show warning, for example if this is a prerelease version
-        connect(model, &ClientModel::alertsChanged, this, &RPCConsole::updateAlerts);
-        updateAlerts(model->getStatusBarWarnings());
-    }
 
     ui->trafficGraph->setClientModel(model);
     if (model && clientModel->getPeerTableModel() && clientModel->getBanTableModel()) {
@@ -592,10 +587,14 @@ void RPCConsole::setClientModel(ClientModel *model)
         updateNetworkState();
         connect(model, &ClientModel::networkActiveChanged, this, &RPCConsole::setNetworkActive);
 
+        connect(model, SIGNAL(masternodeListChanged()), this, SLOT(updateMasternodeCount()));
+        clientModel->refreshMasternodeList();
+
         updateTrafficStats(node.getTotalBytesRecv(), node.getTotalBytesSent());
         connect(model, &ClientModel::bytesChanged, this, &RPCConsole::updateTrafficStats);
 
         connect(model, &ClientModel::mempoolSizeChanged, this, &RPCConsole::setMempoolSize);
+        connect(model, SIGNAL(islockCountChanged(size_t)), this, SLOT(setInstantSendLockCount(size_t)));
 
         // set up peer table
         ui->peerWidget->setModel(model->getPeerTableModel());
@@ -884,9 +883,16 @@ void RPCConsole::setNumBlocks(int count, const QDateTime& blockDate, double nVer
     }
 }
 
-void RPCConsole::setMasternodeCount(const QString &strMasternodes)
+void RPCConsole::updateMasternodeCount()
 {
-    ui->masternodeCount->setText(strMasternodes);
+    if (!clientModel) {
+        return;
+    }
+    auto mnList = clientModel->getMasternodeList();
+    QString strMasternodeCount = tr("Total: %1 (Enabled: %2)")
+        .arg(QString::number(mnList.GetAllMNsCount()))
+        .arg(QString::number(mnList.GetValidMNsCount()));
+    ui->masternodeCount->setText(strMasternodeCount);
 }
 
 void RPCConsole::setMempoolSize(long numberOfTxs, size_t dynUsage)
@@ -897,6 +903,11 @@ void RPCConsole::setMempoolSize(long numberOfTxs, size_t dynUsage)
         ui->mempoolSize->setText(QString::number(dynUsage/1000.0, 'f', 2) + " KB");
     else
         ui->mempoolSize->setText(QString::number(dynUsage/1000000.0, 'f', 2) + " MB");
+}
+
+void RPCConsole::setInstantSendLockCount(size_t count)
+{
+    ui->instantSendLockCount->setText(QString::number(count));
 }
 
 void RPCConsole::on_lineEdit_returnPressed()
@@ -1292,8 +1303,3 @@ QString RPCConsole::tabTitle(TabTypes tab_type) const
     return ui->tabWidget->tabText(tab_type);
 }
 
-void RPCConsole::updateAlerts(const QString& warnings)
-{
-    this->ui->label_alerts->setVisible(!warnings.isEmpty());
-    this->ui->label_alerts->setText(warnings);
-}

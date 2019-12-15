@@ -11,7 +11,7 @@
 #include <chain.h>
 #include <util/system.h>
 #include <util/validation.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <net_processing.h>
 #include <scheduler.h>
 #include <spork.h>

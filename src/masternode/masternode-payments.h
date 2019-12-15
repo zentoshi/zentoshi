@@ -5,13 +5,13 @@
 #ifndef MASTERNODE_PAYMENTS_H
 #define MASTERNODE_PAYMENTS_H
 
-#include "util/system.h"
-#include "core_io.h"
-#include "key.h"
-#include "net_processing.h"
-#include "util/strencodings.h"
+#include <util/system.h>
+#include <core_io.h>
+#include <key.h>
+#include <net_processing.h>
+#include <util/strencodings.h>
 
-#include "evo/deterministicmns.h"
+#include <evo/deterministicmns.h>
 
 class CMasternodePayments;
 

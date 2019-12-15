@@ -28,6 +28,7 @@ class Coin;
 class RPCTimerInterface;
 class UniValue;
 class proxyType;
+class CDeterministicMNList;
 struct CNodeStateStats;
 enum class WalletCreationStatus;
 
@@ -262,6 +263,11 @@ public:
     //! Register handler for additional sync events.
     using NotifyAdditionalDataSyncProgressChangedFn = std::function<void(double nProgress)>;
     virtual std::unique_ptr<Handler> handleNotifyAdditionalDataSyncProgressChanged(NotifyAdditionalDataSyncProgressChangedFn fn) = 0;
+
+    //! Register handler for masternodelist update
+    using NotifyMasternodeListChangedFn =
+        std::function<void(const CDeterministicMNList& newList)>;
+    virtual std::unique_ptr<Handler> handleNotifyMasternodeListChanged(NotifyMasternodeListChangedFn fn) = 0;
 };
 
 //! Return implementation of Node interface.

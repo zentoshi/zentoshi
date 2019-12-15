@@ -2,15 +2,15 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "masternode-utils.h"
+#include <masternode/masternode-utils.h>
 
-#include "init.h"
-#include "masternode-sync.h"
+#include <init.h>
+#include <masternode/masternode-sync.h>
 #ifdef ENABLE_WALLET
 #include <privatesend/privatesend-client.h>
 #endif
-#include "shutdown.h"
-#include "validation.h"
+#include <shutdown.h>
+#include <validation.h>
 
 struct CompareScoreMN
 {

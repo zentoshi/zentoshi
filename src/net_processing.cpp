@@ -6,7 +6,7 @@
 
 #include <net_processing.h>
 
-#include <activemasternode.h>
+#include <masternode/activemasternode.h>
 #include <addrman.h>
 #include <banman.h>
 #include <arith_uint256.h>
@@ -38,9 +38,9 @@
 #include <spork.h>
 #include <governance/governance.h>
 
-#include <masternode-payments.h>
-#include <masternode-sync.h>
-#include <masternode-meta.h>
+#include <masternode/masternode-payments.h>
+#include <masternode/masternode-sync.h>
+#include <masternode/masternode-meta.h>
 #ifdef ENABLE_WALLET
 #include <privatesend/privatesend-client.h>
 #endif // ENABLE_WALLET

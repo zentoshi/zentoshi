@@ -35,8 +35,8 @@
 #include <wallet/wallet.h>
 
 #include <governance/governance-classes.h>
-#include <masternode-sync.h>
-#include <masternode-payments.h>
+#include <masternode/masternode-sync.h>
+#include <masternode/masternode-payments.h>
 
 #include <memory>
 #include <stdint.h>
