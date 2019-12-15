@@ -98,7 +98,7 @@ endif
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrdb.h \
-  activemasternode.h \
+  masternode/activemasternode.h \
   addrman.h \
   attributes.h \
   banman.h \
@@ -180,10 +180,10 @@ BITCOIN_CORE_H = \
   llmq/quorums_signing.h \
   llmq/quorums_signing_shares.h \
   llmq/quorums_utils.h \
-  masternode-meta.h \
-  masternode-payments.h \
-  masternode-sync.h \
-  masternode-utils.h \
+  masternode/masternode-meta.h \
+  masternode/masternode-payments.h \
+  masternode/masternode-sync.h \
+  masternode/masternode-utils.h \
   memusage.h \
   merkleblock.h \
   messagesigner.h \
@@ -307,7 +307,7 @@ libzentoshi_util_a-clientversion.$(OBJEXT): obj/build.h
 libzentoshi_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libzentoshi_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_server_a_SOURCES = \
-  activemasternode.cpp \
+  masternode/activemasternode.cpp \
   addrdb.cpp \
   addrman.cpp \
   addrdb.cpp \
@@ -356,10 +356,10 @@ libzentoshi_server_a_SOURCES = \
   llmq/quorums_signing.cpp \
   llmq/quorums_signing_shares.cpp \
   llmq/quorums_utils.cpp \
-  masternode-meta.cpp \
-  masternode-payments.cpp \
-  masternode-sync.cpp \
-  masternode-utils.cpp \
+  masternode/masternode-meta.cpp \
+  masternode/masternode-payments.cpp \
+  masternode/masternode-sync.cpp \
+  masternode/masternode-utils.cpp \
   merkleblock.cpp \
   messagesigner.cpp \
   miner.cpp \
@@ -731,6 +731,7 @@ CLEANFILES += *.gcda *.gcno
 CLEANFILES += compat/*.gcda compat/*.gcno
 CLEANFILES += consensus/*.gcda consensus/*.gcno
 CLEANFILES += crypto/*.gcda crypto/*.gcno
+CLEANFILES += governance/*.gcdo masternode/*.gcno
 CLEANFILES += policy/*.gcda policy/*.gcno
 CLEANFILES += primitives/*.gcda primitives/*.gcno
 CLEANFILES += script/*.gcda script/*.gcno

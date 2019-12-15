@@ -8,9 +8,9 @@
 #include <core_io.h>
 #include <init.h>
 #include <key_io.h>
-#include <masternode-payments.h>
-#include <masternode-sync.h>
-#include <masternode-meta.h>
+#include <masternode/masternode-payments.h>
+#include <masternode/masternode-sync.h>
+#include <masternode/masternode-meta.h>
 #include <netmessagemaker.h>
 #include <script/sign.h>
 #include <shutdown.h>

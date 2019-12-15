@@ -6,7 +6,7 @@
 #include <qt/governancedialog.h>
 #include <qt/forms/ui_governancedialog.h>
 
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <governance/governance.h>
 #include <governance/governance-vote.h>
 #include <governance/governance-classes.h>

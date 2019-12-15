@@ -6,7 +6,7 @@
 #include <llmq/quorums_signing_shares.h>
 #include <llmq/quorums_utils.h>
 
-#include <activemasternode.h>
+#include <masternode/activemasternode.h>
 #include <banman.h>
 #include <bls/bls_batchverifier.h>
 #include <init.h>

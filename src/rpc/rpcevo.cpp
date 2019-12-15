@@ -116,6 +116,8 @@ static CKey ParsePrivKey(CWallet* pwallet, const std::string &strKeyOrAddress, b
         keyId = GetKeyForDestination(*pwallet, address);
         if (keyId.IsNull())
             throw std::runtime_error(strprintf("non-wallet or invalid address %s", strKeyOrAddress));
+        if (!pwallet->GetKey(keyId, key))
+            throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strKeyOrAddress + " is not known");
         return key;
 #else//ENABLE_WALLET
         throw std::runtime_error("addresses not supported in no-wallet builds");
@@ -211,14 +213,12 @@ static void FundSpecialTx(CWallet* pwallet, CMutableTransaction& tx, const Speci
     }
 
     CTransactionRef wtx;
-    ReserveDestination reservekey(pwallet);
-    CAmount nFee;
-    int nChangePos = -1;
-    std::string strFailReason;
+    CAmount nFeeRequired;
+    int nChangePosRet = -1;
+    std::string strError;
 
-    if (!pwallet->CreateTransaction(vecSend, wtx, /*reservekeyChange,*/nFee, nChangePos, strFailReason, coinControl, false, ALL_COINS, false, tx.vExtraPayload.size())) {
-        throw JSONRPCError(RPC_INTERNAL_ERROR, strFailReason);
-    }
+    if (!pwallet->CreateTransaction(vecSend, wtx, nFeeRequired, nChangePosRet, strError, coinControl, false))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, strError);
 
     tx.vin = wtx->vin;
     tx.vout = wtx->vout;
@@ -446,7 +446,7 @@ UniValue protx_register(const JSONRPCRequest& request)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("invalid hash or index: %s-%d", collateralHash.ToString(), collateralIndex));
         }
 
-        ptx.collateralOutpoint = COutPoint(collateralHash, (uint32_t)collateralIndex);
+        ptx.collateralOutpoint = COutPoint(collateralHash, collateralIndex);
         paramIdx += 2;
 
         // TODO unlock on failure
@@ -494,8 +494,8 @@ UniValue protx_register(const JSONRPCRequest& request)
     CTxDestination fundAddress = payoutAddress;
     if (request.params.size() > paramIdx + 6) {
         fundAddress = DecodeDestination(request.params[paramIdx + 6].get_str());
-        if (IsValidDestination(fundAddress))
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Dash address: ") + request.params[paramIdx + 6].get_str());
+        if (!IsValidDestination(fundAddress))
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zentoshi address: ") + request.params[paramIdx + 6].get_str());
     }
 
     FundSpecialTx(pwallet, tx, ptx, fundAddress);
@@ -663,7 +663,7 @@ UniValue protx_update_service(const JSONRPCRequest& request)
     if (request.params.size() >= 6) {
         CTxDestination feeSourceAddress = DecodeDestination(request.params[5].get_str());
         if (!IsValidDestination(feeSourceAddress))
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Dash address: ") + request.params[5].get_str());
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zentoshi address: ") + request.params[5].get_str());
         feeSource = feeSourceAddress;
     } else {
         if (ptx.scriptOperatorPayout != CScript()) {
@@ -759,7 +759,7 @@ UniValue protx_update_registrar(const JSONRPCRequest& request)
     if (request.params.size() > 5) {
         feeSourceAddress = DecodeDestination(request.params[5].get_str());
         if (!IsValidDestination(feeSourceAddress))
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Dash address: ") + request.params[5].get_str());
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zentoshi address: ") + request.params[5].get_str());
     }
 
     FundSpecialTx(pwallet, tx, ptx, feeSourceAddress);
@@ -834,7 +834,7 @@ UniValue protx_revoke(const JSONRPCRequest& request)
     if (request.params.size() > 4) {
         CTxDestination feeSourceAddress = DecodeDestination(request.params[4].get_str());
         if (!IsValidDestination(feeSourceAddress))
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Dash address: ") + request.params[4].get_str());
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zentoshi address: ") + request.params[4].get_str());
         FundSpecialTx(pwallet, tx, ptx, feeSourceAddress);
     } else if (dmn->pdmnState->scriptOperatorPayout != CScript()) {
         // Using funds from previousely specified operator payout address

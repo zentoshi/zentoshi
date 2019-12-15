@@ -4,7 +4,7 @@
 
 #include <governance/governance-vote.h>
 #include <governance/governance-object.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <messagesigner.h>
 #include <spork.h>
 #include <util/system.h>

@@ -58,15 +58,15 @@
 #include <validationinterface.h>
 #include <walletinitinterface.h>
 
-#include <activemasternode.h>
+#include <masternode/activemasternode.h>
 #include <dsnotificationinterface.h>
 #include <flat-database.h>
 #include <governance/governance.h>
 
-#include <masternode-meta.h>
-#include <masternode-payments.h>
-#include <masternode-sync.h>
-#include <masternode-utils.h>
+#include <masternode/masternode-meta.h>
+#include <masternode/masternode-payments.h>
+#include <masternode/masternode-sync.h>
+#include <masternode/masternode-utils.h>
 #include <messagesigner.h>
 #include <netfulfilledman.h>
 #ifdef ENABLE_WALLET

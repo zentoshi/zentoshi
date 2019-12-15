@@ -7,7 +7,7 @@
 #include <crypto/ripemd160.h>
 #include <key_io.h>
 #include <httpserver.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <outputtype.h>
 #include <rpc/blockchain.h>
 #include <rpc/server.h>

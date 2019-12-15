@@ -1,11 +1,11 @@
 #include <qt/masternodelist.h>
 #include <qt/forms/ui_masternodelist.h>
 
-#include <activemasternode.h>
+#include <masternode/activemasternode.h>
 #include <clientversion.h>
 #include <init.h>
 #include <key_io.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <netbase.h>
 #include <qt/clientmodel.h>
 #include <qt/guiutil.h>

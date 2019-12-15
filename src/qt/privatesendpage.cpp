@@ -20,7 +20,7 @@
 
 #include <shutdown.h>
 
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <privatesend/privatesend-client.h>
 
 #include <QAbstractItemDelegate>

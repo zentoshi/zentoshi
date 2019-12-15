@@ -8,7 +8,7 @@
 #include <llmq/quorums_init.h>
 #include <llmq/quorums_utils.h>
 
-#include <activemasternode.h>
+#include <masternode/activemasternode.h>
 #include <chainparams.h>
 #include <init.h>
 #include <net_processing.h>
