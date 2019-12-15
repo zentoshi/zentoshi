@@ -40,7 +40,7 @@
 #include <interfaces/node.h>
 #include <ui_interface.h>
 #include <util/system.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <qt/masternodelist.h>
 #include <miner.h>
 
@@ -753,7 +753,6 @@ void BitcoinGUI::addWallet(WalletModel* walletModel)
     if (!walletFrame) return;
     const QString display_name = walletModel->getDisplayName();
     setWalletActionsEnabled(true);
-    rpcConsole->addWallet(walletModel);
     walletFrame->addWallet(walletModel);
     m_wallet_selector->addItem(display_name, QVariant::fromValue(walletModel));
     if (m_wallet_selector->count() == 2) {
@@ -775,7 +774,6 @@ void BitcoinGUI::removeWallet(WalletModel* walletModel)
         m_wallet_selector_label_action->setVisible(false);
         m_wallet_selector_action->setVisible(false);
     }
-    rpcConsole->removeWallet(walletModel);
     appTitleBar->removeWallet(walletModel);
     walletFrame->removeWallet(walletModel);
     updateWindowTitle();

@@ -66,7 +66,7 @@ public:
         s >> VARINT(nSize);
         if (nSize < nSpecialScripts) {
             std::vector<unsigned char> vch(GetSpecialScriptSize(nSize), 0x00);
-            s >> REF(MakeSpan(vch));
+            s >> MakeSpan(vch);
             DecompressScript(script, nSize, vch);
             return;
         }
@@ -77,7 +77,7 @@ public:
             s.ignore(nSize);
         } else {
             script.resize(nSize);
-            s >> REF(MakeSpan(script));
+            s >> MakeSpan(script);
         }
     }
 };

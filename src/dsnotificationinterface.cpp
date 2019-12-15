@@ -5,8 +5,8 @@
 #include <chainparams.h>
 #include <dsnotificationinterface.h>
 #include <governance/governance.h>
-#include <masternode-payments.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-payments.h>
+#include <masternode/masternode-sync.h>
 #include <privatesend/privatesend.h>
 #ifdef ENABLE_WALLET
 #include <privatesend/privatesend-client.h>

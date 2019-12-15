@@ -18,7 +18,7 @@
 #include <hash.h>
 #include <key_io.h>
 #include <validation.h>
-#include <masternode-payments.h>
+#include <masternode/masternode-payments.h>
 #include <net.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
@@ -33,7 +33,7 @@
 #include <validationinterface.h>
 #include <wallet/wallet.h>
 #include <blocksigner.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <versionbits.h>
 
 #include "evo/specialtx.h"
@@ -221,6 +221,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
             if (pwallet->CreateCoinStake(*pwallet, pblock->nBits, blockReward, coinstakeTx, nTxNewTime, vwtxPrev, fIncludeWitness)) {
                 pblock->nTime = nTxNewTime;
                 coinbaseTx.vout[0].SetEmpty();
+                FillBlockPayments(coinstakeTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
                 pblock->vtx.emplace_back(MakeTransactionRef(coinstakeTx));
                 fStakeFound = true;
             }
@@ -252,19 +253,25 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     }
 
-    CCbTx cbTx;
-    CValidationState state;
-    if (fDIP0003Active_context)
-        cbTx.nVersion = 2;
-
     if (!fDIP0003Active_context) {
         coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
     } else {
         coinbaseTx.vin[0].scriptSig = CScript() << OP_RETURN;
+
         coinbaseTx.nVersion = 3;
         coinbaseTx.nType = TRANSACTION_COINBASE;
+
+        CCbTx cbTx;
+
+        if (fDIP0008Active_context) {
+            cbTx.nVersion = 2;
+        } else {
+            cbTx.nVersion = 1;
+        }
+
         cbTx.nHeight = nHeight;
 
+        CValidationState state;
         if (!CalcCbTxMerkleRootMNList(*pblock, pindexPrev, cbTx.merkleRootMNList, state)) {
             throw std::runtime_error(strprintf("%s: CalcCbTxMerkleRootMNList failed: %s", __func__, FormatStateMessage(state)));
         }
@@ -277,7 +284,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         SetTxPayload(coinbaseTx, cbTx);
     }
 
-    FillBlockPayments(fProofOfStake ? coinstakeTx : coinbaseTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
+    if (!fProofOfStake)
+        FillBlockPayments(coinbaseTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     if (fIncludeWitness)
         pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
@@ -291,6 +299,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     pblock->nNonce         = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
+    CValidationState state;
     if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false)) {
         throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
     }

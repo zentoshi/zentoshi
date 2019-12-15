@@ -12,7 +12,7 @@
 #include <txmempool.h>
 #include <util/system.h>
 #include <util/validation.h>
-#include <masternode-sync.h>
+#include <masternode/masternode-sync.h>
 #include <net_processing.h>
 #include <spork.h>
 #include <validation.h>

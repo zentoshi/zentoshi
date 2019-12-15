@@ -2,7 +2,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "activemasternode.h"
+#include <masternode/activemasternode.h>
 #include "base58.h"
 #include "clientversion.h"
 #include "init.h"
@@ -10,8 +10,8 @@
 #include "netbase.h"
 #include "rpc/protocol.h"
 #include "validation.h"
-#include "masternode-payments.h"
-#include "masternode-sync.h"
+#include <masternode/masternode-payments.h>
+#include <masternode/masternode-sync.h>
 #ifdef ENABLE_WALLET
 #include "privatesend/privatesend-client.h"
 #endif // ENABLE_WALLET
@@ -21,6 +21,7 @@
 #include "util/moneystr.h"
 #include "txmempool.h"
 
+#include "wallet/coincontrol.h"
 #include "wallet/rpcwallet.h"
 
 #include "evo/specialtx.h"
@@ -146,13 +147,13 @@ void masternode_list_help()
             "  json           - Print info in JSON format (can be additionally filtered, partial match)\n"
             "  lastpaidblock  - Print the last block height a node was paid on the network\n"
             "  lastpaidtime   - Print the last time a node was paid on the network\n"
-            "  owneraddress   - Print the masternode owner Dash address\n"
-            "  payee          - Print the masternode payout Dash address (can be additionally filtered,\n"
+            "  owneraddress   - Print the masternode owner Zentoshi address\n"
+            "  payee          - Print the masternode payout Zentoshi address (can be additionally filtered,\n"
             "                   partial match)\n"
             "  pubKeyOperator - Print the masternode operator public key\n"
             "  status         - Print masternode status: ENABLED / POSE_BANNED\n"
             "                   (can be additionally filtered, partial match)\n"
-            "  votingaddress  - Print the masternode voting Dash address\n"
+            "  votingaddress  - Print the masternode voting Zentoshi address\n"
         );
 }
 
@@ -322,13 +323,14 @@ UniValue masternode_outputs(const JSONRPCRequest& request)
 
     // Find possible candidates
     std::vector<COutput> vPossibleCoins;
-    pwallet->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_MASTERNODE_COLLATERAL);
+    LOCK2(cs_main, pwallet->cs_wallet);
+    pwallet->AvailableCoins(vPossibleCoins, true);
 
     UniValue obj(UniValue::VOBJ);
-    for (const auto& out : vPossibleCoins) {
-        obj.pushKV(out.tx->GetHash().ToString(), strprintf("%d", out.i));
+    for(COutput& out : vPossibleCoins) {
+        if (out.tx->tx->vout[out.i].nValue == Params().GetConsensus().MasternodeCollateral())
+            obj.pushKV(out.tx->GetHash().ToString(), strprintf("%d", out.i));
     }
-
     return obj;
 }
 

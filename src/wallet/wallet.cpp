@@ -3491,7 +3491,7 @@ bool CWallet::SelectPSInOutPairsByDenominations(int nDenom, CAmount nValueMin, C
     return nValueTotal >= nValueMin && nDenom == nDenomResult;
 }
 
-bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTallyRet, bool fSkipDenominated, bool fAnonymizable, bool fSkipUnconfirmed, int nMaxOupointsPerAddress) const
+bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTallyRet, bool fSkipDenominated, bool fAnonymizable, bool fSkipUnconfirmed, int nMaxOutpointsPerAddress) const
 {
     auto locked_chain = chain().lock();
     LOCK2(cs_main, cs_wallet);
@@ -3499,7 +3499,7 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
     isminefilter filter = ISMINE_SPENDABLE;
 
     // try to use cache for already confirmed anonymizable inputs, no cache should be used when the limit is specified
-    if(nMaxOupointsPerAddress != -1 && fAnonymizable && fSkipUnconfirmed) {
+    if(nMaxOutpointsPerAddress != -1 && fAnonymizable && fSkipUnconfirmed) {
         if(fSkipDenominated && fAnonymizableTallyCachedNonDenom) {
             vecTallyRet = vecAnonymizableTallyCachedNonDenom;
             LogPrint(BCLog::SELECTCOINS, "SelectCoinsGroupedByAddresses - using cache for non-denom inputs %d\n", vecTallyRet.size());
@@ -3537,7 +3537,7 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
             if(!(mine & filter)) continue;
 
             auto itTallyItem = mapTally.find(txdest);
-            if (nMaxOupointsPerAddress != -1 && itTallyItem != mapTally.end() && itTallyItem->second.vecOutPoints.size() >= nMaxOupointsPerAddress) continue;
+            if (nMaxOutpointsPerAddress != -1 && itTallyItem != mapTally.end() && itTallyItem->second.vecOutPoints.size() >= nMaxOutpointsPerAddress) continue;
 
             if(IsSpent(*locked_chain, outpoint.hash, i) || IsLockedCoin(outpoint.hash, i)) continue;
 
@@ -3546,7 +3546,7 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
             if(fAnonymizable) {
                 // ignore collaterals
                 if(CPrivateSend::IsCollateralAmount(wtx.tx->vout[i].nValue)) continue;
-                if(fMasternodeMode && wtx.tx->vout[i].nValue == Params().CollateralAmount()) continue;
+                if(fMasternodeMode && wtx.tx->vout[i].nValue == Params().GetConsensus().MasternodeCollateral()) continue;
                 // ignore outputs that are 10 times smaller then the smallest denomination
                 // otherwise they will just lead to higher fee / lower priority
                 if(wtx.tx->vout[i].nValue <= nSmallestDenom/10) continue;
@@ -3572,7 +3572,7 @@ bool CWallet::SelectCoinsGroupedByAddresses(std::vector<CompactTallyItem>& vecTa
     }
 
     // cache already confirmed anonymizable entries for later use, no cache should be saved when the limit is specified
-    if(nMaxOupointsPerAddress != -1 && fAnonymizable && fSkipUnconfirmed) {
+    if(nMaxOutpointsPerAddress != -1 && fAnonymizable && fSkipUnconfirmed) {
         if(fSkipDenominated) {
             vecAnonymizableTallyCachedNonDenom = vecTallyRet;
             fAnonymizableTallyCachedNonDenom = true;
@@ -3610,7 +3610,7 @@ bool CWallet::SelectPrivateCoins(CAmount nValueMin, CAmount nValueMax, std::vect
         if(out.tx->tx->vout[out.i].nValue < nValueMin/10) continue;
         //do not allow collaterals to be selected
         if(CPrivateSend::IsCollateralAmount(out.tx->tx->vout[out.i].nValue)) continue;
-        if(fMasternodeMode && out.tx->tx->vout[out.i].nValue == Params().CollateralAmount()) continue; //masternode input
+        if(fMasternodeMode && out.tx->tx->vout[out.i].nValue == Params().GetConsensus().MasternodeCollateral()) continue; //masternode input
 
         if(nValueRet + out.tx->tx->vout[out.i].nValue <= nValueMax){
             CTxIn txin = CTxIn(out.tx->GetHash(),out.i);
@@ -4250,7 +4250,7 @@ bool CWallet::CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeS
     for(unsigned int i = 0; i < nHashDrift; ++i)
     {
         nTryTime = nTimeTx - i;
-        bool fValidStake = CheckStakeKernelHash(nBits, blockFrom, nTxPrevOffset, txPrev, prevout, nTryTime, hashProofOfStake, true, false);
+        bool fValidStake = CheckStakeKernelHash(nBits, ::ChainActive().Tip(), blockFrom, nTxPrevOffset, txPrev, prevout, nTryTime, hashProofOfStake, true, false);
         if (fValidStake)
         {
             //Double check that this will pass time requirements
