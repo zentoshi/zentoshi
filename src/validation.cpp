@@ -3867,7 +3867,7 @@ static bool ContextualCheckBlock(const CBlock& block, CValidationState& state, c
     if (block.IsProofOfStake())
     {
         uint256 hash = block.GetHash();
-        if(!CheckProofOfStake(block, hashProofOfStake))
+        if(!CheckProofOfStake(block, hashProofOfStake, pindexPrev))
            return state.Invalid(ValidationInvalidReason::CONSENSUS, error("CheckBlock(): check proof-of-stake failed for block %s\n", hash.ToString().c_str()));
 
         if(hashProofOfStake == uint256())
@@ -4194,7 +4194,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
 	if(block.GetHash() == hashProofOfStake)
 	   return state.Invalid(ValidationInvalidReason::CONSENSUS, error("CheckBlock(): invalid proof of stake block\n"));
 
-        if(!CheckProofOfStake(block, hashProofOfStake))
+        if(!CheckProofOfStake(block, hashProofOfStake, pindexPrev))
            return state.Invalid(ValidationInvalidReason::CONSENSUS, error("CheckBlock(): check proof-of-stake failed for block %s\n", hashProofOfStake.ToString().c_str()));
 
         uint256 hash = block.GetHash();
