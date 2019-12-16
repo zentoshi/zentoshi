@@ -28,16 +28,9 @@ static bool CheckService(const uint256& proTxHash, const ProTx& proTx, CValidati
     if (Params().NetworkIDString() != CBaseChainParams::REGTEST && !proTx.addr.IsRoutable()) {
         return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-protx-addr");
     }
-
-    int mainnetDefaultPort = Params().GetDefaultPort();
-    if (Params().NetworkIDString() == CBaseChainParams::MAIN) {
-        if (proTx.addr.GetPort() != mainnetDefaultPort) {
-            return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-protx-addr-port");
-        }
-    } else if (proTx.addr.GetPort() == mainnetDefaultPort) {
+    if (proTx.addr.GetPort() != Params().GetDefaultPort()) {
         return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-protx-addr-port");
     }
-
     if (!proTx.addr.IsIPv4()) {
         return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-protx-addr");
     }
@@ -188,12 +181,6 @@ bool CheckProRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValid
         if (mnList.HasUniqueProperty(ptx.keyIDOwner) || mnList.HasUniqueProperty(ptx.pubKeyOperator)) {
             return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_DUPLICATE, "bad-protx-dup-key");
         }
-
-        if (!deterministicMNManager->IsDIP3Enforced(pindexPrev->nHeight)) {
-            if (ptx.keyIDOwner != ptx.keyIDVoting) {
-                return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-protx-key-not-same");
-            }
-        }
     }
 
     if (!CheckInputsHash(tx, ptx, state)) {
@@ -331,12 +318,6 @@ bool CheckProUpRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVal
             auto otherDmn = mnList.GetUniquePropertyMN(ptx.pubKeyOperator);
             if (ptx.proTxHash != otherDmn->proTxHash) {
                 return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_DUPLICATE, "bad-protx-dup-key");
-            }
-        }
-
-        if (!deterministicMNManager->IsDIP3Enforced(pindexPrev->nHeight)) {
-            if (dmn->pdmnState->keyIDOwner != ptx.keyIDVoting) {
-                return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-protx-key-not-same");
             }
         }
 
