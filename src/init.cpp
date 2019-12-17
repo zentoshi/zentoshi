@@ -605,7 +605,7 @@ void SetupServerArgs()
     gArgs.AddArg("-rpcworkqueue=<n>", strprintf("Set the depth of the work queue to service RPC calls (default: %d)", DEFAULT_HTTP_WORKQUEUE), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::RPC);
     gArgs.AddArg("-server", "Accept command line and JSON-RPC commands", ArgsManager::ALLOW_ANY, OptionsCategory::RPC);
 
-    gArgs.AddArg("-sporkkey", "Private key to send spork messages", false, OptionsCategory::OPTIONS);
+    gArgs.AddArg("-sporkkey", "Private key to send spork messages", ArgsManager::ALLOW_ANY, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-staking", "Enable staking while working with wallet, default is 1", true, OptionsCategory::OPTIONS);
     gArgs.AddArg("-masternode=<n>", "Enable the client to act as a masternode (0-1, default: false", false, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-mnconf=<file>", "Specify masternode configuration file (default: masternode.conf)", false, OptionsCategory::MASTERNODE);
@@ -2104,14 +2104,14 @@ bool AppInitMain(InitInterfaces& interfaces)
     SetRPCWarmupFinished();
     uiInterface.InitMessage(_("Done loading").translated);
 
+    for (const auto& client : interfaces.chain_clients) {
+        client->start(scheduler);
+    }
+
 #ifdef ENABLE_WALLET
     if(gArgs.GetBoolArg("-staking", true))
         threadGroup.create_thread(boost::bind(&ThreadStakeMinter, boost::ref(chainparams), boost::ref(*g_connman.get()), GetWallets().front()));
 #endif
-
-    for (const auto& client : interfaces.chain_clients) {
-        client->start(scheduler);
-    }
 
     scheduler.scheduleEvery([]{
         g_banman->DumpBanlist();

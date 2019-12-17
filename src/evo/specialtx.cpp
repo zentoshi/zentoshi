@@ -22,10 +22,6 @@ bool CheckSpecialTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVali
     if (tx.nVersion != 3 || tx.nType == TRANSACTION_NORMAL)
         return true;
 
-    if (pindexPrev && pindexPrev->nHeight + 1 < Params().GetConsensus().DIP0003Height) {
-        return state.Invalid(ValidationInvalidReason::PROTX_BAD, false, REJECT_INVALID, "bad-tx-type");
-    }
-
     switch (tx.nType) {
     case TRANSACTION_PROVIDER_REGISTER:
         return CheckProRegTx(tx, pindexPrev, state);
