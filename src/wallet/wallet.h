@@ -1079,14 +1079,9 @@ private:
      */
     uint256 m_last_block_processed GUARDED_BY(cs_wallet);
 
-    /* Staking functions */
-    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript,
-                               unsigned int nBits, const CBlock& blockFrom,
-                               unsigned int nTxPrevOffset, const CTransactionRef &txPrev,
-                               const COutPoint& prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const;
-    void FillCoinStakePayments(CMutableTransaction &transaction,
-                               const CScript &kernelScript,
-                               const COutPoint &stakePrevout, CAmount blockReward) const;
+    //! Staking related functions
+    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript, unsigned int nBits, const CBlock& blockFrom, unsigned int nTxPrevOffset, const CTransactionRef &txPrev, const COutPoint& prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const;
+    void FillCoinStakePayments(CMutableTransaction &transaction, const CScript &kernelScript, const COutPoint &stakePrevout, CAmount blockReward) const;
 
     //! Fetches a key from the keypool
     bool GetKeyFromPool(CPubKey &key, bool internal = false);
@@ -1404,7 +1399,7 @@ public:
      */
     bool CreateTransaction(interfaces::Chain::Lock& locked_chain, const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, const CCoinControl& coin_control, bool sign = true, AvailableCoinsType nCoinType = ALL_COINS, bool fUseInstantSend = false, int nExtraPayloadSize = 0);
     bool CreateTransaction(const std::vector<CRecipient>& vecSend, CTransactionRef& tx, CAmount& nFeeRet, int& nChangePosInOut, std::string& strFailReason, const CCoinControl& coin_control, bool sign = true, AvailableCoinsType nCoinType = ALL_COINS, bool fUseInstantSend = false, int nExtraPayloadSize = 0);
-    bool CreateCoinStake(const FillableSigningProvider& keystore, unsigned int nBits, CAmount blockReward, CMutableTransaction& txNew, unsigned int& nTxNewTime, std::vector<const CWalletTx *> &vwtxPrev, bool fGenerateSegwit);
+    bool CreateCoinStake(unsigned int nBits, CAmount blockReward, CMutableTransaction& txNew, unsigned int& nTxNewTime, std::vector<const CWalletTx *> &vwtxPrev, bool fGenerateSegwit);
     bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, CValidationState& state);
     bool CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::vector<std::pair<std::string, std::string>> orderForm, std::string fromAccount, ReserveDestination& reservekey, CConnman* connman, CValidationState& state, std::string strCommand = NetMsgType::TX);
     bool CreateCollateralTransaction(CMutableTransaction& txCollateral, std::string& strReason);

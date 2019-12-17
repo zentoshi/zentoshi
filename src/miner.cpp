@@ -152,13 +152,11 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
 
-    // This looks slightly dim, but the key is that once it is active - it remains active.
+    // toggle if set by spork or by activation bit
     bool fDIP0003Active_context = sporkManager.IsSporkActive(SPORK_15_DETERMINISTIC_MNS_ENABLED) ||
-                                  (nHeight >= chainparams.GetConsensus().DIP0003Height &&
-                                   VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE);
+                                  VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE;
     bool fDIP0008Active_context = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED) ||
-                                  (nHeight >= chainparams.GetConsensus().DIP0008Height &&
-                                   VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE);
+                                  VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE;
 
     LogPrintf("BlockAssembler::CreateNewBlock - DIP0003 %s DIP0008 %s\n", fDIP0003Active_context ? "true" : "false", fDIP0008Active_context ? "true" : "false");
 
@@ -205,20 +203,17 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     CAmount blockReward = GetBlockSubsidy(pindexPrev->nHeight, Params().GetConsensus());
     std::vector<const CWalletTx*> vwtxPrev;
 
-    bool fTryStaking = (fProofOfStake &&
-                        !sporkManager.IsSporkActive(SPORK_25_POS_DISABLED_FLAG) &&
-                        (nHeight >= chainparams.GetConsensus().nFirstPoSBlock));
-    if(fTryStaking)
-    {
+    bool fTryStaking = fProofOfStake && !sporkManager.IsSporkActive(SPORK_25_POS_DISABLED_FLAG) && (nHeight >= chainparams.GetConsensus().nFirstPoSBlock);
+
+    if(fTryStaking) {
         assert(pwallet);
         boost::this_thread::interruption_point();
         pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), fProofOfStake);
         int64_t nSearchTime = pblock->nTime;
         bool fStakeFound = false;
-        if (nSearchTime >= nLastCoinStakeSearchTime)
-        {
+        if (nSearchTime >= nLastCoinStakeSearchTime) {
             unsigned int nTxNewTime = 0;
-            if (pwallet->CreateCoinStake(*pwallet, pblock->nBits, blockReward, coinstakeTx, nTxNewTime, vwtxPrev, fIncludeWitness)) {
+            if (pwallet->CreateCoinStake(pblock->nBits, blockReward, coinstakeTx, nTxNewTime, vwtxPrev, fIncludeWitness)) {
                 pblock->nTime = nTxNewTime;
                 coinbaseTx.vout[0].SetEmpty();
                 FillBlockPayments(coinstakeTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
@@ -598,14 +593,13 @@ static bool ProcessBlockFound(const std::shared_ptr<const CBlock> &pblock, const
     return true;
 }
 
-void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bool fProofOfStake, std::shared_ptr<CWallet> pwallet)
+void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, std::shared_ptr<CWallet> pwallet, bool fProofOfStake)
 {
     LogPrintf("zentoshiminer -- started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("zentoshi-miner");
 
     unsigned int nExtraNonce = 0;
-
     CScript coinbaseScript;
     pwallet->GetScriptForMining(coinbaseScript);
 
@@ -621,17 +615,17 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
                 throw std::runtime_error("No coinbase script available (mining requires a wallet)");
 
             do {
+                if (!chainparams.MiningRequiresPeers())
+                    break;
                 bool fvNodesEmpty = connman.GetNodeCount(CConnman::CONNECTIONS_ALL) == 0;
-                if (!fvNodesEmpty && ::ChainstateActive().IsInitialBlockDownload() && masternodeSync.IsSynced())
+                if (!fvNodesEmpty || !::ChainstateActive().IsInitialBlockDownload() || !masternodeSync.IsSynced())
                     break;
                 MilliSleep(1000);
             } while (true);
 
-            if(fProofOfStake)
-            {
+            if(fProofOfStake) {
                 if (::ChainActive().Tip()->nHeight+1 < chainparams.GetConsensus().nFirstPoSBlock ||
-                    pwallet->IsLocked() || !masternodeSync.IsSynced())
-                {
+                    pwallet->IsLocked() || !masternodeSync.IsSynced()) {
                     nLastCoinStakeSearchInterval = 0;
                     MilliSleep(5000);
                     continue;
@@ -647,8 +641,7 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
 
             BlockAssembler assembler(chainparams);
             auto pblocktemplate = assembler.CreateNewBlock(coinbaseScript, pwallet, fProofOfStake);
-            if (!pblocktemplate.get())
-            {
+            if (!pblocktemplate.get()) {
                 LogPrintf("zentoshiminer -- Failed to find a coinstake\n");
                 MilliSleep(5000);
                 continue;
@@ -659,10 +652,8 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, bo
             LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(), ::GetSerializeSize(*pblock));
 
             //Sign block
-            if (fProofOfStake)
-            {
+            if (fProofOfStake) {
                 LogPrintf("CPUMiner : proof-of-stake block found %s \n", pblock->GetHash().ToString().c_str());
-
                 if (!SignBlock(*pblock, *pwallet)) {
                     LogPrintf("ZentoshiMiner(): Signing new block failed \n");
                     throw std::runtime_error(strprintf("%s: SignBlock failed", __func__));
@@ -791,7 +782,7 @@ void GenerateZentoshis(bool fGenerate, int nThreads, const CChainParams& chainpa
 
     minerThreads = new boost::thread_group();
     for (int i = 0; i < nThreads; i++)
-        minerThreads->create_thread(boost::bind(&ZentoshiMiner, boost::cref(chainparams), boost::ref(connman), false, pwallet));
+        minerThreads->create_thread(boost::bind(&ZentoshiMiner, boost::cref(chainparams), boost::ref(connman), pwallet, false));
 }
 
 void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman, std::shared_ptr<CWallet> pwallet)
@@ -799,7 +790,7 @@ void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman, std::
     boost::this_thread::interruption_point();
     LogPrintf("ThreadStakeMinter started\n");
     try {
-        ZentoshiMiner(chainparams, connman, true, pwallet);
+        ZentoshiMiner(chainparams, connman, pwallet, true);
         boost::this_thread::interruption_point();
     } catch (std::exception& e) {
         LogPrintf("ThreadStakeMinter() exception %s\n", e.what());

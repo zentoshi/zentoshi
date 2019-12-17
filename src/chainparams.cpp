@@ -202,7 +202,7 @@ public:
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("07fff00000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
