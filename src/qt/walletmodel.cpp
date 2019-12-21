@@ -595,7 +595,7 @@ bool WalletModel::havePrivKey(const CScript& script) const
 
 void WalletModel::listProTxCoins(std::vector<COutPoint>& vOutpts)
 {
-    LOCK2(cs_main, m_wallet->cs_wallet);
+    // LOCK2(cs_main, m_wallet->cs_wallet);
     GetMainWallet()->ListProTxCoins(vOutpts);
 }
 

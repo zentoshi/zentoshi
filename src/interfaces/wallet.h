@@ -313,8 +313,6 @@ public:
     //! Register handler for keypool changed messages.
     using CanGetAddressesChangedFn = std::function<void()>;
     virtual std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) = 0;
-
-    mutable CCriticalSection cs_wallet;
 };
 
 //! Information about one wallet address.

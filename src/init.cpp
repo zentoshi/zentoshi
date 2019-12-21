@@ -240,6 +240,11 @@ void Shutdown(InitInterfaces& interfaces)
     }
     StopMapPort();
 
+    // fRPCInWarmup should be `false` if we completed the loading sequence
+    // before a shutdown request was received
+    std::string statusmessage;
+    bool fRPCInWarmup = RPCIsInWarmup(&statusmessage);
+
     // Because these depend on each-other, we make sure that neither can be
     // using the other before destroying them.
     if (peerLogic) UnregisterValidationInterface(peerLogic.get());
@@ -261,6 +266,18 @@ void Shutdown(InitInterfaces& interfaces)
     g_banman.reset();
     g_txindex.reset();
     DestroyAllBlockFilterIndexes();
+
+    if (!fLiteMode && !fRPCInWarmup) {
+        // STORE DATA CACHES INTO SERIALIZED DAT FILES
+        CFlatDB<CMasternodeMetaMan> flatdb1("mncache.dat", "magicMasternodeCache");
+        flatdb1.Dump(mmetaman);
+        CFlatDB<CGovernanceManager> flatdb3("governance.dat", "magicGovernanceCache");
+        flatdb3.Dump(governance);
+        CFlatDB<CNetFulfilledRequestManager> flatdb4("netfulfilled.dat", "magicFulfilledCache");
+        flatdb4.Dump(netfulfilledman);
+        CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
+        flatdb6.Dump(sporkManager);
+    }
 
     if (::mempool.IsLoaded() && gArgs.GetArg("-persistmempool", DEFAULT_PERSIST_MEMPOOL)) {
         DumpMempool(::mempool);

@@ -46,7 +46,7 @@ public:
     template<typename Stream>
     void Unserialize(Stream &s) {
         unsigned int nCode = 0;
-        ::Unserialize(s, VARINT(nCode));
+        ::Unserialize(s, REF(VARINT(nCode)));
         txout->nHeight = nCode / 4;
         txout->fCoinBase = nCode & 1;
         txout->fCoinStake = nCode & 2;
@@ -55,7 +55,7 @@ public:
             // a transaction's outputs. Non-final spends were indicated with
             // height = 0.
             unsigned int nVersionDummy;
-            ::Unserialize(s, VARINT(nVersionDummy));
+            ::Unserialize(s, REF(VARINT(nVersionDummy)));
         }
         ::Unserialize(s, REF(CTxOutCompressor(REF(txout->out))));
     }

@@ -36,6 +36,7 @@
 #include <deque>
 #include <map>
 #include <memory>
+#include <unordered_set>
 #include <set>
 #include <stdexcept>
 #include <stdint.h>
@@ -72,7 +73,7 @@ enum class WalletCreationStatus {
 WalletCreationStatus CreateWallet(interfaces::Chain& chain, const SecureString& passphrase, uint64_t wallet_creation_flags, const std::string& name, std::string& error, std::string& warning, std::shared_ptr<CWallet>& result);
 
 //! Default for -keypool
-static const unsigned int DEFAULT_KEYPOOL_SIZE = 2000;
+static const unsigned int DEFAULT_KEYPOOL_SIZE = 1000;
 //! -paytxfee default
 constexpr CAmount DEFAULT_PAY_TX_FEE = 0;
 //! -fallbackfee default
@@ -409,84 +410,17 @@ struct COutputEntry
  * a CWalletTx, but the deserialized values are discarded.**/
 class CMerkleTx
 {
-private:
-  /** Constant used in hashBlock to indicate tx has been abandoned */
-    static const uint256 ABANDON_HASH;
-
 public:
-    CTransactionRef tx;
-    uint256 hashBlock;
-
-    /* An nIndex == -1 means that hashBlock (in nonzero) refers to the earliest
-     * block in the chain we know this or any in-wallet dependency conflicts
-     * with. Older clients interpret nIndex == -1 as unconfirmed for backward
-     * compatibility.
-     */
-    int nIndex;
-
-    CMerkleTx()
+    template<typename Stream>
+    void Unserialize(Stream& s)
     {
-        SetTx(MakeTransactionRef());
-        Init();
-    }
-
-    explicit CMerkleTx(CTransactionRef arg)
-    {
-        SetTx(std::move(arg));
-        Init();
-    }
-
-    /** Helper conversion operator to allow passing CMerkleTx where CTransaction is expected.
-     *  TODO: adapt callers and remove this operator. */
-    operator const CTransaction&() const { return *tx; }
-
-    void Init()
-    {
-        hashBlock = uint256();
-        nIndex = -1;
-    }
-
-    void SetTx(CTransactionRef arg)
-    {
-        tx = std::move(arg);
-    }
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
         CTransactionRef tx;
         uint256 hashBlock;
         std::vector<uint256> vMerkleBranch;
         int nIndex;
+
+        s >> tx >> hashBlock >> vMerkleBranch >> nIndex;
     }
-
-    void SetMerkleBranch(const CBlockIndex* pIndex, int posInBlock);
-
-    /**
-     * Return depth of transaction in blockchain:
-     * <0  : conflicts with a transaction this deep in the blockchain
-     *  0  : in memory pool, waiting to be included in a block
-     * >=1 : this many blocks deep in the main chain
-     */
-    int GetDepthInMainChain(interfaces::Chain::Lock& locked_chain) const;
-    bool IsInMainChain(interfaces::Chain::Lock& locked_chain) const { return GetDepthInMainChain(locked_chain) > 0; }
-    bool IsLockedByInstantSend() const;
-
-    /**
-     * @return number of blocks to maturity for this transaction:
-     *  0 : is not a coinbase transaction, or is a mature coinbase transaction
-     * >0 : is a coinbase transaction which matures in this many blocks
-     */
-    int GetBlocksToMaturity(interfaces::Chain::Lock& locked_chain) const;
-    bool hashUnset() const { return (hashBlock.IsNull() || hashBlock == ABANDON_HASH); }
-    bool isAbandoned() const { return (hashBlock == ABANDON_HASH); }
-    void setAbandoned() { hashBlock = ABANDON_HASH; }
-
-    const uint256& GetHash() const { return tx->GetHash(); }
-    bool IsCoinBase() const { return tx->IsCoinBase(); }
-    bool IsCoinStake() const { return tx->IsCoinStake(); }
-    bool IsImmatureCoinBase(interfaces::Chain::Lock& locked_chain) const;
 };
 
 //Get the marginal bytes of spending the specified output
@@ -496,10 +430,15 @@ int CalculateMaximumSignedInputSize(const CTxOut& txout, const CWallet* pwallet,
  * A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
  */
-class CWalletTx : public CMerkleTx
+class CWalletTx
 {
 private:
     const CWallet* pwallet;
+
+    /** Constant used in hashBlock to indicate tx has been abandoned, only used at
+     * serialization/deserialization to avoid ambiguity with conflicted.
+     */
+    static const uint256 ABANDON_HASH;
 
 public:
     /**
@@ -769,7 +708,6 @@ public:
 
     void GetAmounts(std::list<COutputEntry>& listReceived,
                     std::list<COutputEntry>& listSent, CAmount& nFee, const isminefilter& filter) const;
-    int GetRequestCount() const;
 
     bool IsFromMe(const isminefilter& filter) const
     {
@@ -806,6 +744,8 @@ public:
      */
     int GetDepthInMainChain(interfaces::Chain::Lock& locked_chain) const;
     bool IsInMainChain(interfaces::Chain::Lock& locked_chain) const { return GetDepthInMainChain(locked_chain) > 0; }
+    bool IsChainLocked() const;
+    bool IsLockedByInstantSend() const;
 
     /**
      * @return number of blocks to maturity for this transaction:
@@ -827,6 +767,7 @@ public:
     void setConfirmed() { m_confirm.status = CWalletTx::CONFIRMED; }
     const uint256& GetHash() const { return tx->GetHash(); }
     bool IsCoinBase() const { return tx->IsCoinBase(); }
+    bool IsCoinStake() const { return tx->IsCoinStake(); }
     bool IsImmatureCoinBase(interfaces::Chain::Lock& locked_chain) const;
 };
 
@@ -1080,7 +1021,7 @@ private:
     uint256 m_last_block_processed GUARDED_BY(cs_wallet);
 
     //! Staking related functions
-    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript, unsigned int nBits, const CBlock& blockFrom, unsigned int nTxPrevOffset, const CTransactionRef &txPrev, const COutPoint& prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const;
+    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript, unsigned int nBits, const CBlock& blockFrom, const CTransactionRef &txPrev, const COutPoint& prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const;
     void FillCoinStakePayments(CMutableTransaction &transaction, const CScript &kernelScript, const COutPoint &stakePrevout, CAmount blockReward) const;
 
     //! Fetches a key from the keypool

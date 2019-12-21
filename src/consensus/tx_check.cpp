@@ -48,21 +48,24 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
         }
     }
 
-    if (tx.IsCoinBase())
-    {
+    // Adjust the coinbase scriptsig length tests to accommodate DIP0003
+    if (tx.IsCoinBase()) {
         size_t minCbSize = 2;
         if (tx.nType == TRANSACTION_COINBASE) {
             // With the introduction of CbTx, coinbase scripts are not required anymore to hold a valid block height
             minCbSize = 1;
         }
-        if (tx.vin[0].scriptSig.size() < minCbSize || tx.vin[0].scriptSig.size() > 100)
+        if (tx.vin[0].scriptSig.size() < minCbSize || tx.vin[0].scriptSig.size() > 100) {
             return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-cb-length");
+        }
     }
     else
     {
-        for (const auto& txin : tx.vin)
-            if (txin.prevout.IsNull())
+        for (const auto& txin : tx.vin) {
+            if (txin.prevout.IsNull()) {
                 return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-txns-prevout-null");
+            }
+        }
     }
 
     return true;

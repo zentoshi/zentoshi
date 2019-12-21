@@ -33,6 +33,7 @@
 #include <validation.h>
 #include <validationinterface.h>
 
+
 #include <numeric>
 #include <stdint.h>
 
@@ -178,12 +179,10 @@ static UniValue getrawtransaction(const JSONRPCRequest& request)
         in_active_chain = ::ChainActive().Contains(blockindex);
     }
 
-//  TODO - Adapt this locking mechanism properly
-//
-//  bool f_txindex_ready = false;
-//  if (g_txindex && !blockindex) {
-//      f_txindex_ready = g_txindex->BlockUntilSyncedToCurrentChain();
-//  }
+    bool f_txindex_ready = false;
+    if (g_txindex && !blockindex) {
+        f_txindex_ready = g_txindex->BlockUntilSyncedToCurrentChain();
+    }
 
     CTransactionRef tx;
     uint256 hash_block;
@@ -196,6 +195,8 @@ static UniValue getrawtransaction(const JSONRPCRequest& request)
             errmsg = "No such transaction found in the provided block";
         } else if (!g_txindex) {
             errmsg = "No such mempool transaction. Use -txindex or provide a block hash to enable blockchain transaction queries";
+        } else if (!f_txindex_ready) {
+            errmsg = "No such mempool transaction. Blockchain transactions are still in the process of being indexed";
         } else {
             errmsg = "No such mempool or blockchain transaction";
         }
@@ -268,11 +269,11 @@ static UniValue gettxoutproof(const JSONRPCRequest& request)
         }
     }
 
-//  TODO - Adapt this locking mechanism properly
-//
-//  if (g_txindex && !pblockindex) {
-//      g_txindex->BlockUntilSyncedToCurrentChain();
-//  }
+
+    // Allow txindex to catch up if we need to query it and before we acquire cs_main.
+    if (g_txindex && !pblockindex) {
+        g_txindex->BlockUntilSyncedToCurrentChain();
+    }
 
     LOCK(cs_main);
 

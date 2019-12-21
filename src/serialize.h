@@ -355,10 +355,21 @@ uint64_t ReadCompactSize(Stream& is)
  * negative numbers in a backwards compatible way, and additional modes could be
  * added to support different varint formats (e.g. zigzag encoding).
  */
+enum class VarIntMode { DEFAULT, NONNEGATIVE_SIGNED };
 
-template<typename I>
+template <VarIntMode Mode, typename I>
+struct CheckVarIntMode {
+    constexpr CheckVarIntMode()
+    {
+        //static_assert(Mode != VarIntMode::DEFAULT || std::is_unsigned<I>::value, "Unsigned type required with mode DEFAULT.");
+        static_assert(Mode != VarIntMode::NONNEGATIVE_SIGNED || std::is_signed<I>::value, "Signed type required with mode NONNEGATIVE_SIGNED.");
+    }
+};
+
+template<VarIntMode Mode, typename I>
 inline unsigned int GetSizeOfVarInt(I n)
 {
+    CheckVarIntMode<Mode, I>();
     int nRet = 0;
     while(true) {
         nRet++;
@@ -372,9 +383,10 @@ inline unsigned int GetSizeOfVarInt(I n)
 template<typename I>
 inline void WriteVarInt(CSizeComputer& os, I n);
 
-template<typename Stream, typename I>
+template<typename Stream, VarIntMode Mode, typename I>
 void WriteVarInt(Stream& os, I n)
 {
+    CheckVarIntMode<Mode, I>();
     unsigned char tmp[(sizeof(n)*8+6)/7];
     int len=0;
     while(true) {
@@ -389,28 +401,54 @@ void WriteVarInt(Stream& os, I n)
     } while(len--);
 }
 
-template<typename Stream, typename I>
+template<typename Stream, VarIntMode Mode, typename I>
 I ReadVarInt(Stream& is)
 {
+    CheckVarIntMode<Mode, I>();
     I n = 0;
     while(true) {
         unsigned char chData = ser_readdata8(is);
+        if (n > (std::numeric_limits<I>::max() >> 7)) {
+           throw std::ios_base::failure("ReadVarInt(): size too large");
+        }
         n = (n << 7) | (chData & 0x7F);
-        if (chData & 0x80)
+        if (chData & 0x80) {
+            if (n == std::numeric_limits<I>::max()) {
+                throw std::ios_base::failure("ReadVarInt(): size too large");
+            }
             n++;
-        else
+        } else {
             return n;
+        }
     }
 }
 
-#define FLATDATA(obj) REF(CFlatData((char*)&(obj), (char*)&(obj) + sizeof(obj)))
-#define FIXEDBITSET(obj, size) REF(CFixedBitSet(REF(obj), (size)))
-#define DYNBITSET(obj) REF(CDynamicBitSet(REF(obj)))
+#define VARINT(obj, ...) WrapVarInt<__VA_ARGS__>(REF(obj))
+#define COMPACTSIZE(obj) CCompactSize(REF(obj))
+#define LIMITED_STRING(obj,n) LimitedString< n >(REF(obj))
+#define FIXEDBITSET(obj, size) CFixedBitSet(REF(obj), (size))
+#define DYNBITSET(obj) CDynamicBitSet(REF(obj))
 #define FIXEDVARINTSBITSET(obj, size) REF(CFixedVarIntsBitSet(REF(obj), (size)))
 #define AUTOBITSET(obj, size) REF(CAutoBitSet(REF(obj), (size)))
-#define VARINT(obj) REF(WrapVarInt(REF(obj)))
-#define COMPACTSIZE(obj) REF(CCompactSize(REF(obj)))
-#define LIMITED_STRING(obj,n) LimitedString< n >(REF(obj))
+
+template<VarIntMode Mode, typename I>
+class CVarInt
+{
+protected:
+    I &n;
+public:
+    explicit CVarInt(I& nIn) : n(nIn) { }
+
+    template<typename Stream>
+    void Serialize(Stream &s) const {
+        WriteVarInt<Stream,Mode,I>(s, n);
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        n = ReadVarInt<Stream,Mode,I>(s);
+    }
+};
 
 /** Serialization wrapper class for big-endian integers.
  *
@@ -554,6 +592,7 @@ public:
     }
 };
 
+
 /**
  * Stores a fixed size bitset as a series of VarInts. Each VarInt is an offset from the last entry and the sum of the
  * last entry and the offset gives an index into the bitset for a set bit. The series of VarInts ends with a 0.
@@ -573,11 +612,12 @@ public:
         int32_t last = -1;
         for (int32_t i = 0; i < (int32_t)vec.size(); i++) {
             if (vec[i]) {
-                WriteVarInt<Stream, uint32_t>(s, (uint32_t)(i - last));
+                WriteVarInt<Stream, VarIntMode::DEFAULT, uint32_t>(s, (uint32_t)(i - last));
                 last = i;
             }
         }
-        WriteVarInt(s, 0); // stopper
+
+        WriteVarInt<Stream, VarIntMode::DEFAULT, uint32_t>(s, 0); // stopper
     }
 
     template<typename Stream>
@@ -587,7 +627,7 @@ public:
 
         int32_t last = -1;
         while(true) {
-            uint32_t offset = ReadVarInt<Stream, uint32_t>(s);
+            uint32_t offset = ReadVarInt<Stream, VarIntMode::DEFAULT, uint32_t>(s);
             if (offset == 0) {
                 break;
             }
@@ -649,27 +689,9 @@ public:
     }
 };
 
-template<typename I>
-class CVarInt
-{
-protected:
-    I &n;
-public:
-    CVarInt(I& nIn) : n(nIn) { }
 
-    template<typename Stream>
-    void Serialize(Stream &s) const {
-        WriteVarInt<Stream,I>(s, n);
-    }
-
-    template<typename Stream>
-    void Unserialize(Stream& s) {
-        n = ReadVarInt<Stream,I>(s);
-    }
-};
-
-template<typename I>
-CVarInt<I> WrapVarInt(I& n) { return CVarInt<I>(n); }
+template<VarIntMode Mode=VarIntMode::DEFAULT, typename I>
+CVarInt<Mode, I> WrapVarInt(I& n) { return CVarInt<Mode, I>{n}; }
 
 template<typename I>
 BigEndian<I> WrapBigEndian(I& n) { return BigEndian<I>(n); }
@@ -735,12 +757,6 @@ template<typename Stream, typename K, typename Hash, typename Pred, typename A> 
 template<typename Stream, typename K, typename Hash, typename Pred, typename A> void Unserialize(Stream& is, std::unordered_set<K, Hash, Pred, A>& m);
 
 /**
- * list
- */
-template<typename Stream, typename T, typename A> inline void Serialize(Stream& os, const std::list<T, A>& l);
-template<typename Stream, typename T, typename A> inline void Unserialize(Stream& is, std::list<T, A>& l);
-
-/**
  * shared_ptr
  */
 template<typename Stream, typename T> void Serialize(Stream& os, const std::shared_ptr<const T>& p);
@@ -769,8 +785,6 @@ inline void Unserialize(Stream& is, T& a)
     a.Unserialize(is);
 }
 
-
-
 /**
  * If none of the specialized versions above matched and T is an enum, default to calling
  * Serialize/Unserialze with the underlying type. This is only allowed when a specialized struct of is_serializable_enum<Enum>
@@ -785,7 +799,7 @@ template<typename Stream, typename T, typename std::enable_if<std::is_enum<T>::v
 inline void Serialize(Stream& s, T a )
 {
     // If you ever get into this situation, it usaully means you forgot to declare is_serializable_enum for the desired enum type
-    static_assert(is_serializable_enum<T>::value);
+    static_assert(is_serializable_enum<T>::value, "Missing declararion of is_serializable_enum");
 
     typedef typename std::underlying_type<T>::type T2;
     T2 b = (T2)a;
@@ -796,7 +810,7 @@ template<typename Stream, typename T, typename std::enable_if<std::is_enum<T>::v
 inline void Unserialize(Stream& s, T& a )
 {
     // If you ever get into this situation, it usaully means you forgot to declare is_serializable_enum for the desired enum type
-    static_assert(is_serializable_enum<T>::value);
+    static_assert(is_serializable_enum<T>::value, "Missing declararion of is_serializable_enum");
 
     typedef typename std::underlying_type<T>::type T2;
     T2 b;
@@ -865,7 +879,7 @@ void Unserialize_impl(Stream& is, prevector<N, T>& v, const unsigned char&)
     while (i < nSize)
     {
         unsigned int blk = std::min(nSize - i, (unsigned int)(1 + 4999999 / sizeof(T)));
-        v.resize(i + blk);
+        v.resize_uninitialized(i + blk);
         is.read((char*)&v[i], blk * sizeof(T));
         i += blk;
     }
@@ -883,8 +897,8 @@ void Unserialize_impl(Stream& is, prevector<N, T>& v, const V&)
         nMid += 5000000 / sizeof(T);
         if (nMid > nSize)
             nMid = nSize;
-        v.resize(nMid);
-        for (; i < nMid; i++)
+        v.resize_uninitialized(nMid);
+        for (; i < nMid; ++i)
             Unserialize(is, v[i]);
     }
 }
@@ -982,6 +996,7 @@ void Unserialize(Stream& is, std::pair<K, T>& item)
     Unserialize(is, item.second);
 }
 
+
 /**
  * tuple
  */
@@ -1059,13 +1074,23 @@ void UnserializeMap(Stream& is, Map& m)
 template<typename Stream, typename K, typename T, typename Pred, typename A>
 void Serialize(Stream& os, const std::map<K, T, Pred, A>& m)
 {
-    SerializeMap(os, m);
+    WriteCompactSize(os, m.size());
+    for (const auto& entry : m)
+        Serialize(os, entry);
 }
 
 template<typename Stream, typename K, typename T, typename Pred, typename A>
 void Unserialize(Stream& is, std::map<K, T, Pred, A>& m)
 {
-    UnserializeMap(is, m);
+    m.clear();
+    unsigned int nSize = ReadCompactSize(is);
+    typename std::map<K, T, Pred, A>::iterator mi = m.begin();
+    for (unsigned int i = 0; i < nSize; i++)
+    {
+        std::pair<K, T> item;
+        Unserialize(is, item);
+        mi = m.insert(mi, item);
+    }
 }
 
 template<typename Stream, typename K, typename T, typename Hash, typename Pred, typename A>
@@ -1083,52 +1108,28 @@ void Unserialize(Stream& is, std::unordered_map<K, T, Hash, Pred, A>& m)
 /**
  * set
  */
-
-template<typename Stream, typename Set>
-void SerializeSet(Stream& os, const Set& m)
-{
-    WriteCompactSize(os, m.size());
-    for (auto it = m.begin(); it != m.end(); ++it)
-        Serialize(os, (*it));
-}
-
-template<typename Stream, typename Set>
-void UnserializeSet(Stream& is, Set& m)
-{
-    m.clear();
-    unsigned int nSize = ReadCompactSize(is);
-    auto it = m.begin();
-    for (unsigned int i = 0; i < nSize; i++)
-    {
-        typename std::remove_const<typename Set::key_type>::type key;
-        Unserialize(is, key);
-        it = m.insert(it, key);
-    }
-}
-
 template<typename Stream, typename K, typename Pred, typename A>
 void Serialize(Stream& os, const std::set<K, Pred, A>& m)
 {
-    SerializeSet(os, m);
+    WriteCompactSize(os, m.size());
+    for (typename std::set<K, Pred, A>::const_iterator it = m.begin(); it != m.end(); ++it)
+        Serialize(os, (*it));
 }
 
 template<typename Stream, typename K, typename Pred, typename A>
 void Unserialize(Stream& is, std::set<K, Pred, A>& m)
 {
-    UnserializeSet(is, m);
+    m.clear();
+    unsigned int nSize = ReadCompactSize(is);
+    typename std::set<K, Pred, A>::iterator it = m.begin();
+    for (unsigned int i = 0; i < nSize; i++)
+    {
+        K key;
+        Unserialize(is, key);
+        it = m.insert(it, key);
+    }
 }
 
-template<typename Stream, typename K, typename Hash, typename Pred, typename A>
-void Serialize(Stream& os, const std::unordered_set<K, Hash, Pred, A>& m)
-{
-    SerializeSet(os, m);
-}
-
-template<typename Stream, typename K, typename Hash, typename Pred, typename A>
-void Unserialize(Stream& is, std::unordered_set<K, Hash, Pred, A>& m)
-{
-    UnserializeSet(is, m);
-}
 
 /**
  * list
@@ -1201,19 +1202,6 @@ struct CSerActionUnserialize
     constexpr bool ForRead() const { return true; }
 };
 
-template<typename Stream, typename T>
-inline void SerReadWrite(Stream& s, const T& obj, CSerActionSerialize ser_action)
-{
-    ::Serialize(s, obj);
-}
-
-template<typename Stream, typename T>
-inline void SerReadWrite(Stream& s, T& obj, CSerActionUnserialize ser_action)
-{
-    ::Unserialize(s, obj);
-}
-
-
 
 
 
@@ -1271,12 +1259,6 @@ void SerializeMany(Stream& s)
 {
 }
 
-template<typename Stream, typename Arg>
-void SerializeMany(Stream& s, Arg&& arg)
-{
-    ::Serialize(s, std::forward<Arg>(arg));
-}
-
 template<typename Stream, typename Arg, typename... Args>
 void SerializeMany(Stream& s, const Arg& arg, const Args&... args)
 {
@@ -1287,12 +1269,6 @@ void SerializeMany(Stream& s, const Arg& arg, const Args&... args)
 template<typename Stream>
 inline void UnserializeMany(Stream& s)
 {
-}
-
-template<typename Stream, typename Arg>
-inline void UnserializeMany(Stream& s, Arg& arg)
-{
-    ::Unserialize(s, arg);
 }
 
 template<typename Stream, typename Arg, typename... Args>

@@ -137,7 +137,6 @@ uint256 g_best_block;
 int nScriptCheckThreads = 0;
 std::atomic_bool fImporting(false);
 std::atomic_bool fReindex(false);
-bool fTxIndex = true;
 bool fHavePruned = false;
 bool fPruneMode = false;
 bool fRequireStandard = true;
@@ -492,7 +491,7 @@ static bool CheckInputsFromMempoolAndCache(const CTransaction& tx, CValidationSt
     // and when we actually call through to CheckInputs
     LOCK(pool.cs);
 
-    assert(!tx.IsCoinBase());
+    assert(!tx.IsCoinBase() && !tx.IsCoinStake());
     for (const CTxIn& txin : tx.vin) {
         const Coin& coin = view.AccessCoin(txin.prevout);
 
@@ -737,6 +736,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
                 if (fReplacementOptOut) {
                     return state.Invalid(ValidationInvalidReason::TX_MEMPOOL_POLICY, false, REJECT_DUPLICATE, "txn-mempool-conflict");
                 }
+
                 setConflicts.insert(ptxConflicting->GetHash());
             }
         }
@@ -965,21 +965,9 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
             for (CTxMemPool::txiter it : setIterConflicting) {
                 m_pool.CalculateDescendants(it, allConflicting);
             }
-
-            if (m_pool.existsProviderTxConflict(tx)) {
-                return state.Invalid(ValidationInvalidReason::PROTX_CONFLICT, "protx-dup");
-            }
-
-            // Finally in addition to paying more fees than the conflicts the
-            // new transaction must pay for its own bandwidth.
-            CAmount nDeltaFees = nModifiedFees - nConflictingFees;
-            if (nDeltaFees < ::incrementalRelayFee.GetFee(nSize))
-            {
-                return state.Invalid(ValidationInvalidReason::TX_MEMPOOL_POLICY, false, REJECT_INSUFFICIENTFEE, "insufficient fee",
-                        strprintf("rejecting replacement %s, not enough additional fees to relay; %s < %s",
-                              hash.ToString(),
-                              FormatMoney(nDeltaFees),
-                              FormatMoney(::incrementalRelayFee.GetFee(nSize))));
+            for (CTxMemPool::txiter it : allConflicting) {
+                nConflictingFees += it->GetModifiedFee();
+                nConflictingSize += it->GetTxSize();
             }
         } else {
             return state.Invalid(ValidationInvalidReason::TX_MEMPOOL_POLICY, false, REJECT_NONSTANDARD, "too many potential replacements",
@@ -1033,6 +1021,18 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
                         hash.ToString(),
                         FormatMoney(nDeltaFees),
                         FormatMoney(::incrementalRelayFee.GetFee(nSize))));
+        }
+
+        // check special TXs after all the other checks. If we'd do this before the other checks, we might end up
+        // DoS scoring a node for non-critical errors, e.g. duplicate keys because a TX is received that was already
+        // mined
+        bool fDIP0003Active = ::ChainActive().Height() >= Params().GetConsensus().DIP0003Height;
+        if (fDIP0003Active) {
+           if (!CheckSpecialTx(tx, ChainActive().Tip(), state))
+               return false;
+
+           if (m_pool.existsProviderTxConflict(tx))
+               return state.Invalid(ValidationInvalidReason::TX_MEMPOOL_POLICY, false, REJECT_DUPLICATE, "protx-dup");
         }
     }
     return true;
@@ -1266,7 +1266,7 @@ static bool WriteBlockToDisk(const CBlock& block, FlatFilePos& pos, const CMessa
         return error("WriteBlockToDisk: OpenBlockFile failed");
 
     // Write index header
-    unsigned int nSize = GetSerializeSize(block);
+    unsigned int nSize = GetSerializeSize(block, fileout.GetVersion());
     fileout << messageStart << nSize;
 
     // Write block
@@ -1454,6 +1454,11 @@ BlockMap& BlockIndex()
     return g_blockman.m_block_index;
 }
 
+PrevBlockMap& PrevBlockIndex()
+{
+    return g_blockman.m_prev_block_index;
+}
+
 static void AlertNotify(const std::string& strMessage)
 {
     uiInterface.NotifyAlertChanged();
@@ -1491,27 +1496,20 @@ static void CheckForkWarningConditions() EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     {
         if (!GetfLargeWorkForkFound() && pindexBestForkBase)
         {
-            if(pindexBestForkBase->phashBlock){
-                std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
-                    pindexBestForkBase->phashBlock->ToString() + std::string("'");
-                AlertNotify(warning);
-            }
+            std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
+                pindexBestForkBase->phashBlock->ToString() + std::string("'");
+            AlertNotify(warning);
         }
         if (pindexBestForkTip && pindexBestForkBase)
         {
-            if(pindexBestForkBase->phashBlock){
-                LogPrintf("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n", __func__,
-                       pindexBestForkBase->nHeight, pindexBestForkBase->phashBlock->ToString(),
-                       pindexBestForkTip->nHeight, pindexBestForkTip->phashBlock->ToString());
-                SetfLargeWorkForkFound(true);
-            }
+            LogPrintf("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n", __func__,
+                   pindexBestForkBase->nHeight, pindexBestForkBase->phashBlock->ToString(),
+                   pindexBestForkTip->nHeight, pindexBestForkTip->phashBlock->ToString());
+            SetfLargeWorkForkFound(true);
         }
         else
         {
-            if(pindexBestInvalid->nHeight > ::ChainActive().Height() + 6)
-                LogPrintf("%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n", __func__);
-            else
-                LogPrintf("%s: Warning: Found invalid chain which has higher work (at least ~6 blocks worth of work) than our best chain.\nChain state database corruption likely.\n", __func__);
+            LogPrintf("%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n", __func__);
             SetfLargeWorkInvalidChainFound(true);
         }
     }
@@ -1820,6 +1818,7 @@ int ApplyTxInUndo(Coin&& undo, CCoinsViewCache& view, const COutPoint& out)
         if (!alternate.IsSpent()) {
             undo.nHeight = alternate.nHeight;
             undo.fCoinBase = alternate.fCoinBase;
+            undo.fCoinStake = alternate.fCoinStake;
         } else {
             return DISCONNECT_FAILED; // adding output for transaction without known metadata
         }
@@ -1834,7 +1833,7 @@ int ApplyTxInUndo(Coin&& undo, CCoinsViewCache& view, const COutPoint& out)
 }
 
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
- *  When UNCLEAN or FAILED is returned, view is left in an indeterminate state. */
+ *  When FAILED is returned, view is left in an indeterminate state. */
 DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockIndex* pindex, CCoinsViewCache& view)
 {
     bool fDIP0003Active = pindex->nHeight >= Params().GetConsensus().DIP0003Height;
@@ -1868,6 +1867,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
         const CTransaction &tx = *(block.vtx[i]);
         uint256 hash = tx.GetHash();
         bool is_coinbase = tx.IsCoinBase();
+        bool is_coinstake = tx.IsCoinStake();
 
         // Check that all outputs are available and match the outputs in the block itself
         // exactly.
@@ -1902,6 +1902,7 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
                 // erase the spent input
                 mapStakeSpent.erase(out);
             }
+            // At this point, all of txundo.vprevout should have been moved out.
         }
     }
 
@@ -1957,12 +1958,13 @@ void ThreadScriptCheck(int worker_num) {
 
 VersionBitsCache versionbitscache GUARDED_BY(cs_main);
 
-int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params, bool fCheckMasternodesUpgraded)
+int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params)
 {
     LOCK(cs_main);
     int32_t nVersion = VERSIONBITS_TOP_BITS;
 
     for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++) {
+        Consensus::DeploymentPos pos = Consensus::DeploymentPos(i);
         ThresholdState state = VersionBitsState(pindexPrev, params, static_cast<Consensus::DeploymentPos>(i), versionbitscache);
         if (state == ThresholdState::LOCKED_IN || state == ThresholdState::STARTED) {
             nVersion |= VersionBitsMask(params, static_cast<Consensus::DeploymentPos>(i));
@@ -2085,7 +2087,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 {
     AssertLockHeld(cs_main);
     assert(pindex);
-    assert((pindex->phashBlock == NULL) ||
+    assert((pindex->phashBlock == nullptr) ||
            (*pindex->phashBlock == block.GetHash()));
     int64_t nTimeStart = GetTimeMicros();
 
@@ -2153,7 +2155,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         //  relative to a piece of software is an objective fact these defaults can be easily reviewed.
         // This setting doesn't force the selection of any particular chain but makes validating some faster by
         //  effectively caching the result of part of the verification.
-        BlockMap::const_iterator  it = m_blockman.m_block_index.find(hashAssumeValid);
+        BlockMap::const_iterator it = ::BlockIndex().find(hashAssumeValid);
         if (it != m_blockman.m_block_index.end()) {
             if (it->second->GetAncestor(pindex->nHeight) == pindex &&
                 pindexBestHeader->GetAncestor(pindex->nHeight) == pindex &&
@@ -2197,9 +2199,60 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     // Once BIP34 activated it was not possible to create new duplicate coinbases and thus other than starting
     // with the 2 existing duplicate coinbase pairs, not possible to create overwriting txs.  But by the
     // time BIP34 activated, in each of the existing pairs the duplicate coinbase had overwritten the first
-    // before the first had been spent.  Since those coinbases are sufficiently buried its no longer possible to create further
+    // before the first had been spent.  Since those coinbases are sufficiently buried it's no longer possible to create further
     // duplicate transactions descending from the known pairs either.
     // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
+
+    // BIP34 requires that a block at height X (block X) has its coinbase
+    // scriptSig start with a CScriptNum of X (indicated height X).  The above
+    // logic of no longer requiring BIP30 once BIP34 activates is flawed in the
+    // case that there is a block X before the BIP34 height of 227,931 which has
+    // an indicated height Y where Y is greater than X.  The coinbase for block
+    // X would also be a valid coinbase for block Y, which could be a BIP30
+    // violation.  An exhaustive search of all mainnet coinbases before the
+    // BIP34 height which have an indicated height greater than the block height
+    // reveals many occurrences. The 3 lowest indicated heights found are
+    // 209,921, 490,897, and 1,983,702 and thus coinbases for blocks at these 3
+    // heights would be the first opportunity for BIP30 to be violated.
+
+    // The search reveals a great many blocks which have an indicated height
+    // greater than 1,983,702, so we simply remove the optimization to skip
+    // BIP30 checking for blocks at height 1,983,702 or higher.  Before we reach
+    // that block in another 25 years or so, we should take advantage of a
+    // future consensus change to do a new and improved version of BIP34 that
+    // will actually prevent ever creating any duplicate coinbases in the
+    // future.
+    static constexpr int BIP34_IMPLIES_BIP30_LIMIT = 1983702;
+
+    // There is no potential to create a duplicate coinbase at block 209,921
+    // because this is still before the BIP34 height and so explicit BIP30
+    // checking is still active.
+
+    // The final case is block 176,684 which has an indicated height of
+    // 490,897. Unfortunately, this issue was not discovered until about 2 weeks
+    // before block 490,897 so there was not much opportunity to address this
+    // case other than to carefully analyze it and determine it would not be a
+    // problem. Block 490,897 was, in fact, mined with a different coinbase than
+    // block 176,684, but it is important to note that even if it hadn't been or
+    // is remined on an alternate fork with a duplicate coinbase, we would still
+    // not run into a BIP30 violation.  This is because the coinbase for 176,684
+    // is spent in block 185,956 in transaction
+    // d4f7fbbf92f4a3014a230b2dc70b8058d02eb36ac06b4a0736d9d60eaa9e8781.  This
+    // spending transaction can't be duplicated because it also spends coinbase
+    // 0328dd85c331237f18e781d692c92de57649529bd5edf1d01036daea32ffde29.  This
+    // coinbase has an indicated height of over 4.2 billion, and wouldn't be
+    // duplicatable until that height, and it's currently impossible to create a
+    // chain that long. Nevertheless we may wish to consider a future soft fork
+    // which retroactively prevents block 490,897 from creating a duplicate
+    // coinbase. The two historical BIP30 violations often provide a confusing
+    // edge case when manipulating the UTXO and it would be simpler not to have
+    // another edge case to deal with.
+
+    // testnet3 has no blocks before the BIP34 height with indicated heights
+    // post BIP34 before approximately height 486,000,000 and presumably will
+    // be reset before it reaches block 1,983,702 and starts doing unnecessary
+    // BIP30 checking again.
+    assert(pindex->pprev);
     CBlockIndex *pindexBIP34height = pindex->pprev->GetAncestor(chainparams.GetConsensus().BIP34Height);
     //Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
     fEnforceBIP30 = fEnforceBIP30 && (!pindexBIP34height || !(pindexBIP34height->GetBlockHash() == chainparams.GetConsensus().BIP34Hash));
@@ -2243,13 +2296,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     }
 
     // Start enforcing BIP68 (sequence locks) and BIP112 (CHECKSEQUENCEVERIFY) using versionbits logic.
+    int nLockTimeFlags = 0;
     if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_CSV, versionbitscache) == ThresholdState::ACTIVE) {
         flags |= SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
-    }
-
-    // Start enforcing BIP68 (sequence locks)
-    int nLockTimeFlags = 0;
-    if (pindex->nHeight >= chainparams.GetConsensus().CSVHeight) {
         nLockTimeFlags |= LOCKTIME_VERIFY_SEQUENCE;
     }
 
@@ -2264,6 +2313,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     CAmount nFees = 0;
     int nInputs = 0;
     int64_t nSigOpsCost = 0;
+    CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
+    std::vector<std::pair<uint256, CDiskTxPos>> vPos;
+    vPos.reserve(block.vtx.size());
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
@@ -2279,14 +2331,6 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         {
             CAmount txfee = 0;
             if (!Consensus::CheckTxInputs(tx, state, view, pindex->nHeight, txfee)) {
-                if (!IsBlockReason(state.GetReason())) {
-                    // CheckTxInputs may return MISSING_INPUTS or
-                    // PREMATURE_SPEND but we can't return that, as it's not
-                    // defined for a block, so we reset the reason flag to
-                    // CONSENSUS here.
-                    state.Invalid(ValidationInvalidReason::CONSENSUS, false,
-                            state.GetRejectCode(), state.GetRejectReason(), state.GetDebugMessage());
-                }
                 return error("%s: Consensus::CheckTxInputs: %s, %s", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
             }
             nFees += txfee;
@@ -2351,6 +2395,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             blockundo.vtxundo.push_back(CTxUndo());
         }
         UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
+
+        vPos.push_back(std::make_pair(tx.GetHash(), pos));
+        pos.nTxOffset += ::GetSerializeSize(tx);
     }
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint(BCLog::BNCH, "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
@@ -2488,13 +2535,13 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
     // Watch for changes to the previous coinbase transaction.
     static uint256 hashPrevBestCoinBase;
-//  GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
+    //GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
     hashPrevBestCoinBase = block.vtx[isProofOfStake]->GetHash();
 
     evoDb->WriteBestBlock(pindex->GetBlockHash());
 
     int64_t nTime7 = GetTimeMicros(); nTimeCallbacks += nTime7 - nTime6;
-    LogPrint(BCLog::BNCH, "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime7 - nTime6), nTimeCallbacks * 0.000001);
+    LogPrint(BCLog::BNCH, "    - Callbacks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime7 - nTime6), nTimeCallbacks * MICRO, nTimeCallbacks * MILLI / nBlocksTotal);
 
     return true;
 }
@@ -2510,7 +2557,6 @@ bool CChainState::FlushStateToDisk(
     assert(this->CanFlushToDisk());
     static int64_t nLastWrite = 0;
     static int64_t nLastFlush = 0;
-    static int64_t nLastSetChain = 0;
     std::set<int> setFilesToPrune;
     bool full_flush_completed = false;
     try {
@@ -2540,9 +2586,6 @@ bool CChainState::FlushStateToDisk(
         }
         if (nLastFlush == 0) {
             nLastFlush = nNow;
-        }
-        if (nLastSetChain == 0) {
-            nLastSetChain = nNow;
         }
         int64_t nMempoolSizeMax = gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
         int64_t cacheSize = ::ChainstateActive().CoinsTip().DynamicMemoryUsage();
@@ -3311,10 +3354,10 @@ bool CChainState::InvalidateBlock(CValidationState& state, const CChainParams& c
     while (true) {
         if (ShutdownRequested()) break;
 
-    // Mark the block itself as invalid.
-    pindex->nStatus |= BLOCK_FAILED_VALID;
-    setDirtyBlockIndex.insert(pindex);
-    setBlockIndexCandidates.erase(pindex);
+        // Mark the block itself as invalid.
+        pindex->nStatus |= BLOCK_FAILED_VALID;
+        setDirtyBlockIndex.insert(pindex);
+        setBlockIndexCandidates.erase(pindex);
 
         LOCK(cs_main);
         LOCK(::mempool.cs); // Lock for as long as disconnectpool is in scope to make sure UpdateMempoolForReorg is called after DisconnectTip without unlocking in between
@@ -3459,50 +3502,60 @@ CBlockIndex* BlockManager::AddToBlockIndex(const CBlockHeader& block, bool fProo
         return it->second;
 
     // Construct new block index object
-    CBlockIndex* pindex = new CBlockIndex(block);
+    CBlockIndex* pindexNew = new CBlockIndex(block);
+
     // We assign the sequence id to blocks only when the full data is available,
     // to avoid miners withholding blocks but broadcasting headers, to get a
     // competitive advantage.
-    pindex->nSequenceId = 0;
-    BlockMap::iterator mi = ::BlockIndex().insert(std::make_pair(hash, pindex)).first;
-    pindex->phashBlock = &((*mi).first);
-    BlockMap::iterator miPrev = ::BlockIndex().find(block.hashPrevBlock);
-    if (miPrev != ::BlockIndex().end())
-    {
-        pindex->pprev = (*miPrev).second;
-        pindex->nHeight = pindex->pprev->nHeight + 1;
-        pindex->BuildSkip();
+    pindexNew->nSequenceId = 0;
+    BlockMap::iterator mi = m_block_index.insert(std::make_pair(hash, pindexNew)).first;
+    pindexNew->phashBlock = &((*mi).first);
+    BlockMap::iterator miPrev = m_block_index.find(block.hashPrevBlock);
+    if (miPrev != m_block_index.end()) {
+        pindexNew->pprev = (*miPrev).second;
+        pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        pindexNew->BuildSkip();
     }
 
-    if (fProofOfStake || pindex->IsProofOfStake()) {
-        // just in case it wasnt marked
-        pindex->SetProofOfStake();
-        if (!pindex->SetStakeEntropyBit(pindex->GetStakeEntropyBit()))
-            LogPrintf("AddToBlockIndex() : SetStakeEntropyBit() failed \n");
+    // just in case it wasnt marked
+    if (fProofOfStake || pindexNew->IsProofOfStake() || !block.nNonce) {
+        pindexNew->SetProofOfStake();
+        if (!pindexNew->SetStakeEntropyBit(pindexNew->GetStakeEntropyBit()))
+            LogPrint(BCLog::KERNEL, "%s: SetStakeEntropyBit() failed", __func__);
     }
 
     // compute stake modifier
     uint64_t nStakeModifier = 0;
     bool fGeneratedStakeModifier = false;
-    if (!ComputeNextStakeModifier(pindex, nStakeModifier, fGeneratedStakeModifier))
-        LogPrintf("AddToBlockIndex() : ComputeNextStakeModifier() failed \n");
-    pindex->SetStakeModifier(nStakeModifier, fGeneratedStakeModifier);
+    if (!ComputeNextStakeModifier(pindexNew, nStakeModifier, fGeneratedStakeModifier))
+        LogPrint(BCLog::KERNEL, "%s: ComputeNextStakeModifier() failed", __func__);
+    pindexNew->SetStakeModifier(nStakeModifier, fGeneratedStakeModifier);
 
     // test modifier checksum and reject if invalid
-    pindex->nStakeModifierChecksum = GetStakeModifierChecksum(pindex);
-    if (!CheckStakeModifierCheckpoints(pindex->nHeight, pindex->nStakeModifierChecksum)) {
+    pindexNew->nStakeModifierChecksum = GetStakeModifierChecksum(pindexNew);
+    if (!CheckStakeModifierCheckpoints(pindexNew->nHeight, pindexNew->nStakeModifierChecksum)) {
         LogPrint(BCLog::KERNEL, "%s: Rejected by stake modifier checkpoint height=%d, modifier=%llu checksum=%08x",
-                                __func__, pindex->nHeight, pindex->nStakeModifier, pindex->nStakeModifierChecksum);
+                                __func__, pindexNew->nHeight, pindexNew->nStakeModifier, pindexNew->nStakeModifierChecksum);
     }
 
-    pindex->nTimeMax = (pindex->pprev ? std::max(pindex->pprev->nTimeMax, pindex->nTime) : pindex->nTime);
-    pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
-    pindex->RaiseValidity(BLOCK_VALID_TREE);
-    if (pindexBestHeader == nullptr || pindexBestHeader->nChainWork < pindex->nChainWork)
-        pindexBestHeader = pindex;
+    // sanity tests
+    pindexNew->nTimeMax = (pindexNew->pprev ? std::max(pindexNew->pprev->nTimeMax, pindexNew->nTime) : pindexNew->nTime);
+    pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
+    if (nStatus & BLOCK_VALID_MASK) {
+        pindexNew->RaiseValidity(nStatus);
+        if (pindexBestHeader == nullptr || pindexBestHeader->nChainWork < pindexNew->nChainWork)
+            pindexBestHeader = pindexNew;
+    } else {
+        pindexNew->RaiseValidity(BLOCK_VALID_TREE); // required validity level
+        pindexNew->nStatus |= nStatus;
+    }
+    setDirtyBlockIndex.insert(pindexNew);
 
-    setDirtyBlockIndex.insert(pindex);
-    return pindex;
+    // track prevBlockHash -> pindex (multimap)
+    if (pindexNew->pprev)
+        ::PrevBlockIndex().emplace(pindexNew->pprev->GetBlockHash(), pindexNew);
+
+    return pindexNew;
 }
 
 /** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
@@ -4331,6 +4384,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
+    indexDummy.phashBlock = &block_hash;
 
     // begin tx and let it rollback
     auto dbTx = evoDb->BeginTransaction();
@@ -4615,6 +4669,12 @@ bool BlockManager::LoadBlockIndex(
             pindex->BuildSkip();
         if (pindex->IsValid(BLOCK_VALID_TREE) && (pindexBestHeader == nullptr || CBlockIndexWorkComparator()(pindexBestHeader, pindex)))
             pindexBestHeader = pindex;
+
+        // proof-of-stake: calculate stake modifier checksum
+        pindex->nStakeModifierChecksum = GetStakeModifierChecksum(pindex);
+        if (ChainActive().Contains(pindex))
+            if (!CheckStakeModifierCheckpoints(pindex->nHeight, pindex->nStakeModifierChecksum))
+                return error("%s: failed stake modifier checkpoint height=%d, modifier=0x%016llx", __func__, pindex->nHeight, pindex->nStakeModifier);
     }
 
     return true;
@@ -4663,6 +4723,10 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams) EXCLUSIVE_LOCKS_RE
         if (pindex->nStatus & BLOCK_HAVE_DATA) {
             setBlkDataFiles.insert(pindex->nFile);
         }
+
+        // build PrevBlockIndex
+        if (pindex->pprev)
+            g_blockman.m_prev_block_index.emplace(pindex->pprev->GetBlockHash(), pindex);
     }
     for (std::set<int>::iterator it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
     {

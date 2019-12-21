@@ -8,6 +8,7 @@
 #include <miner.h>
 
 #include <amount.h>
+#include <blocksigner.h>
 #include <chain.h>
 #include <chainparams.h>
 #include <coins.h>
@@ -15,11 +16,6 @@
 #include <consensus/merkle.h>
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
-#include <hash.h>
-#include <key_io.h>
-#include <validation.h>
-#include <masternode/masternode-payments.h>
-#include <net.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
 #include <pow.h>
@@ -32,7 +28,7 @@
 #include <util/validation.h>
 #include <validationinterface.h>
 #include <wallet/wallet.h>
-#include <blocksigner.h>
+#include <masternode/masternode-payments.h>
 #include <masternode/masternode-sync.h>
 #include <versionbits.h>
 
@@ -147,20 +143,16 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     pblocktemplate->vTxFees.push_back(-1); // updated at end
     pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
 
-    LOCK2(cs_main, mempool.cs);
+    LOCK(cs_main);
     CBlockIndex* pindexPrev = ::ChainActive().Tip();
     assert(pindexPrev != nullptr);
     nHeight = pindexPrev->nHeight + 1;
 
-    // toggle if set by spork or by activation bit
-    bool fDIP0003Active_context = sporkManager.IsSporkActive(SPORK_15_DETERMINISTIC_MNS_ENABLED) ||
-                                  VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == ThresholdState::ACTIVE;
-    bool fDIP0008Active_context = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED) ||
-                                  VersionBitsState(::ChainActive().Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == ThresholdState::ACTIVE;
-
+    bool fDIP0003Active_context = nHeight >= chainparams.GetConsensus().DIP0003Height;
+    bool fDIP0008Active_context = nHeight >= chainparams.GetConsensus().DIP0008Height;
     LogPrintf("BlockAssembler::CreateNewBlock - DIP0003 %s DIP0008 %s\n", fDIP0003Active_context ? "true" : "false", fDIP0008Active_context ? "true" : "false");
 
-    pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus(), chainparams.BIP9CheckMasternodesUpgraded());
+    pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
@@ -184,12 +176,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // transaction (which in most cases can be a no-op).
     fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus());
 
-    int nPackagesSelected = 0;
-    int nDescendantsUpdated = 0;
-    addPackageTxs(nPackagesSelected, nDescendantsUpdated);
-
-    int64_t nTime1 = GetTimeMicros();
-
     m_last_block_num_txs = nBlockTx;
     m_last_block_weight = nBlockWeight;
 
@@ -203,9 +189,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     CAmount blockReward = GetBlockSubsidy(pindexPrev->nHeight, Params().GetConsensus());
     std::vector<const CWalletTx*> vwtxPrev;
 
-    bool fTryStaking = fProofOfStake && !sporkManager.IsSporkActive(SPORK_25_POS_DISABLED_FLAG) && (nHeight >= chainparams.GetConsensus().nFirstPoSBlock);
+    bool fTryStaking = fProofOfStake && nHeight >= chainparams.GetConsensus().nFirstPoSBlock;
 
-    if(fTryStaking) {
+    if(fTryStaking)
+    {
         assert(pwallet);
         boost::this_thread::interruption_point();
         pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), fProofOfStake);
@@ -243,10 +230,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         }
     }
 
-    {
-        LOCK(mempool.cs);
-        addPackageTxs(nPackagesSelected, nDescendantsUpdated);
-    }
+    LOCK(mempool.cs);
+
+    int nPackagesSelected = 0;
+    int nDescendantsUpdated = 0;
+
+    int64_t nTime1 = GetTimeMicros();
 
     if (!fDIP0003Active_context) {
         coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
@@ -276,14 +265,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
             }
         }
 
-        SetTxPayload(coinbaseTx, cbTx);
+        SetTxPayload(coinstakeTx, cbTx);
     }
 
-    if (!fProofOfStake)
-        FillBlockPayments(coinbaseTx, nHeight, blockReward, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
-    if (fIncludeWitness)
-        pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
     pblocktemplate->vTxFees[0] = -nFees;
 
     // Fill in header
@@ -300,7 +285,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     }
     int64_t nTime2 = GetTimeMicros();
 
-    LogPrintf("CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
+    LogPrint(BCLog::BNCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
 
     return std::move(pblocktemplate);
 }
@@ -652,8 +637,10 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
             LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(), ::GetSerializeSize(*pblock));
 
             //Sign block
-            if (fProofOfStake) {
+            if (fProofOfStake)
+            {
                 LogPrintf("CPUMiner : proof-of-stake block found %s \n", pblock->GetHash().ToString().c_str());
+
                 if (!SignBlock(*pblock, *pwallet)) {
                     LogPrintf("ZentoshiMiner(): Signing new block failed \n");
                     throw std::runtime_error(strprintf("%s: SignBlock failed", __func__));

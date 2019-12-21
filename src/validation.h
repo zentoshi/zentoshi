@@ -140,7 +140,10 @@ static const int DEFAULT_STOPATHEIGHT = 0;
 
 struct BlockHasher
 {
-    size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
+    // this used to call `GetCheapHash()` in uint256, which was later moved; the
+    // cheap hash function simply calls ReadLE64() however, so the end result is
+    // identical
+    size_t operator()(const uint256& hash) const { return ReadLE64(hash.begin()); }
 };
 
 extern CScript COINBASE_FLAGS;
@@ -150,7 +153,6 @@ extern CTxMemPool mempool;
 extern const std::string strMessageMagic;
 typedef std::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
 typedef std::unordered_multimap<uint256, CBlockIndex*, BlockHasher> PrevBlockMap;
-extern BlockMap& mapBlockIndex GUARDED_BY(cs_main);
 extern PrevBlockMap mapPrevBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockWeight;
@@ -160,7 +162,6 @@ extern uint256 g_best_block;
 extern std::atomic_bool fImporting;
 extern std::atomic_bool fReindex;
 extern int nScriptCheckThreads;
-extern bool fTxIndex;
 extern bool fIsBareMultisigStd;
 extern bool fRequireStandard;
 extern bool fCheckBlockIndex;
@@ -390,11 +391,13 @@ public:
 /** Initializes the script-execution cache */
 void InitScriptExecutionCache();
 
+
 /** Functions for disk access for blocks */
 bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::Params& consensusParams);
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
 bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, const CMessageHeader::MessageStartChars& message_start);
 bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const CBlockIndex* pindex, const CMessageHeader::MessageStartChars& message_start);
+
 bool UndoReadFromDisk(CBlockUndo& blockundo, const CBlockIndex* pindex);
 
 /** Functions for validating blocks and updating the block tree */
@@ -466,6 +469,7 @@ struct CBlockIndexWorkComparator
 class BlockManager {
 public:
     BlockMap m_block_index GUARDED_BY(cs_main);
+    PrevBlockMap m_prev_block_index GUARDED_BY(cs_main);
 
     /** In order to efficiently track invalidity of headers, we keep the set of
       * blocks which we tried to connect and found to be invalid here (ie which
@@ -791,6 +795,9 @@ CChain& ChainActive();
 /** @returns the global block index map. */
 BlockMap& BlockIndex();
 
+/** @returns the global previous block index map */
+PrevBlockMap& PrevBlockIndex();
+
 // Most often ::ChainstateActive() should be used instead of this, but some code
 // may not be able to assume that this has been initialized yet and so must use it
 // directly, e.g. init.cpp.
@@ -811,7 +818,7 @@ extern VersionBitsCache versionbitscache;
 /**
  * Determine what nVersion a new block should use.
  */
-int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params, bool fCheckMasternodesUpgraded = false);
+int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params);
 
 /**
  * Return true if hash can be found in chainActive at nBlockHeight height.

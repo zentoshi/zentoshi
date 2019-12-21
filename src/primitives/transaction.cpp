@@ -109,10 +109,9 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), nT
 CAmount CTransaction::GetValueOut() const
 {
     CAmount nValueOut = 0;
-    for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it)
-    {
-        nValueOut += it->nValue;
-        if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
+    for (const auto& tx_out : vout) {
+        nValueOut += tx_out.nValue;
+        if (!MoneyRange(tx_out.nValue) || !MoneyRange(nValueOut))
             throw std::runtime_error(std::string(__func__) + ": value out of range");
     }
     return nValueOut;
@@ -146,7 +145,7 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
 
 unsigned int CTransaction::GetTotalSize() const
 {
-    return ::GetSerializeSize(*this);
+    return ::GetSerializeSize(*this, PROTOCOL_VERSION);
 }
 
 std::string CTransaction::ToString() const

@@ -16,16 +16,15 @@
 
 #include <assert.h>
 #include <stdint.h>
-#include <bitset>
 
-#include <functional>
 #include <unordered_map>
 
 /**
  * A UTXO entry.
  *
  * Serialized format:
- * - VARINT((coinbase ? 1 : 0) | (height << 1))
+ * - VARINT((coinbase ? 1 : 0) | (height << 2))
+ * - VARINT((coinstake ? 2 : 0) | (height << 2))
  * - the non-spent CTxOut (via CTxOutCompressor)
  */
 class Coin
@@ -36,6 +35,7 @@ public:
 
     //! whether containing transaction was a coinbase
     unsigned int fCoinBase : 1;
+
     //! whether containing transaction was a coinstake
     unsigned int fCoinStake : 1;
 
@@ -43,19 +43,8 @@ public:
     uint32_t nHeight : 30;
 
     //! construct a Coin from a CTxOut and height/coinbase information.
-    Coin(CTxOut&& outIn, int nHeightIn, bool fCoinBaseIn, bool fCoinStakeIn) :
-        out(std::move(outIn)),
-        fCoinBase(fCoinBaseIn),
-        fCoinStake(fCoinStakeIn),
-        nHeight(nHeightIn)
-    { }
-
-    Coin(const CTxOut& outIn, int nHeightIn, bool fCoinBaseIn, bool fCoinStakeIn) :
-        out(outIn),
-        fCoinBase(fCoinBaseIn),
-        fCoinStake(fCoinStakeIn),
-        nHeight(nHeightIn)
-    { }
+    Coin(CTxOut&& outIn, int nHeightIn, bool fCoinBaseIn, bool fCoinStakeIn) : out(std::move(outIn)), fCoinBase(fCoinBaseIn), fCoinStake(fCoinStakeIn), nHeight(nHeightIn) {}
+    Coin(const CTxOut& outIn, int nHeightIn, bool fCoinBaseIn, bool fCoinStakeIn) : out(outIn), fCoinBase(fCoinBaseIn), fCoinStake(fCoinStakeIn), nHeight(nHeightIn) {}
 
     void Clear() {
         out.SetNull();
@@ -70,7 +59,6 @@ public:
     bool IsCoinBase() const {
         return fCoinBase;
     }
-
     bool IsCoinStake() const {
         return fCoinStake;
     }
@@ -78,23 +66,18 @@ public:
     template<typename Stream>
     void Serialize(Stream &s) const {
         assert(!IsSpent());
-        std::bitset<32> code(nHeight);
-        code[30] = fCoinStake;
-        code[31] = fCoinBase;
-        ::Serialize(s, VARINT(code.to_ulong()));
+        uint32_t code = (nHeight << 2) + (fCoinBase ? 1 : 0) + (fCoinStake ? 2 : 0);
+        ::Serialize(s, VARINT(code));
         ::Serialize(s, CTxOutCompressor(REF(out)));
     }
 
     template<typename Stream>
     void Unserialize(Stream &s) {
         uint32_t code = 0;
-        ::Unserialize(s, VARINT(code));
-        std::bitset<32> bitset(code);
-        fCoinBase = bitset[31];
-        fCoinStake = bitset[30];
-        bitset.reset(30);
-        bitset.reset(31);
-        nHeight = bitset.to_ulong();
+        ::Unserialize(s, REF(VARINT(code)));
+        nHeight = code >> 2;
+        fCoinBase = code & 1;
+        fCoinStake = (code >> 1) & 1;
         ::Unserialize(s, REF(CTxOutCompressor(out)));
     }
 
@@ -120,16 +103,8 @@ public:
      * This *must* return size_t. With Boost 1.46 on 32-bit systems the
      * unordered_map will behave unpredictably if the custom hasher returns a
      * uint64_t, resulting in failures when syncing the chain (#4634).
-     *
-     * Having the hash noexcept allows libstdc++'s unordered_map to recalculate
-     * the hash during rehash, so it does not have to cache the value. This
-     * reduces node's memory by sizeof(size_t). The required recalculation has
-     * a slight performance penalty (around 1.6%), but this is compensated by
-     * memory savings of about 9% which allow for a larger dbcache setting.
-     *
-     * @see https://gcc.gnu.org/onlinedocs/gcc-9.2.0/libstdc++/manual/manual/unordered_associative.html
      */
-    size_t operator()(const COutPoint& id) const noexcept {
+    size_t operator()(const COutPoint& id) const {
         return SipHashUint256Extra(k0, k1, id.hash, id.n);
     }
 };

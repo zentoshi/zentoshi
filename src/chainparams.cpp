@@ -190,6 +190,7 @@ public:
         consensus.nGovernanceFilterElements = 20000;
         consensus.nMasternodeCollateral = 5000 * COIN;
         consensus.nMasternodeMinimumConfirmations = 15;
+        consensus.BIP16Exception = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP34Height = FROMGENESIS;
         consensus.BIP34Hash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.BIP65Height = consensus.nFirstPoSBlock;
@@ -197,12 +198,12 @@ public:
         consensus.CSVHeight = FROMGENESIS;
         consensus.SegwitHeight = FROMGENESIS;
         consensus.DIP0001Height = FROMGENESIS;
-        consensus.DIP0003Height = consensus.nFirstPoSBlock * 2;
+        consensus.DIP0003Height = consensus.nFirstPoSBlock;
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("07fff00000000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
@@ -212,11 +213,21 @@ public:
         consensus.nModifierInterval = 60;
         consensus.nCoinbaseMaturity = 20;
         consensus.fPowAllowMinDifficultyBlocks = false;
+        consensus.fPowNoRetargeting = false;
+        consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
+        consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999;   // December 31, 2008
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nWindowSize = 100;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nThreshold = 50;
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1572790000; // Nov 1st, 2019
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1604180000;   // Nov 1st, 2020
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nWindowSize = 100;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nThreshold = 50;
 
         // Deployment of DIP0001
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].bit = 2;
@@ -261,8 +272,8 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1572600000;
-        uint32_t nNonce = 0;
+        uint32_t nTime = 1576801004;
+        uint32_t nNonce = 593;
 
         while (UintToArith256(genesis.GetPoWHash()) >
                UintToArith256(consensus.powLimit))

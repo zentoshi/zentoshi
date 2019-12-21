@@ -553,12 +553,12 @@ public:
         s << addedMNs;
         WriteCompactSize(s, updatedMNs.size());
         for (const auto& p : updatedMNs) {
-            WriteVarInt(s, p.first);
+            WriteVarInt<Stream, VarIntMode::DEFAULT, uint32_t>(s, p.first);
             s << p.second;
         }
         WriteCompactSize(s, removedMns.size());
         for (const auto& p : removedMns) {
-            WriteVarInt(s, p);
+            WriteVarInt<Stream, VarIntMode::DEFAULT, uint32_t>(s, p);
         }
     }
 
@@ -574,13 +574,13 @@ public:
         tmp = ReadCompactSize(s);
         for (size_t i = 0; i < tmp; i++) {
             CDeterministicMNStateDiff diff;
-            tmp2 = ReadVarInt<Stream, uint64_t>(s);
+            tmp2 = ReadVarInt<Stream, VarIntMode::DEFAULT, uint64_t>(s);
             s >> diff;
             updatedMNs.emplace(tmp2, std::move(diff));
         }
         tmp = ReadCompactSize(s);
         for (size_t i = 0; i < tmp; i++) {
-            tmp2 = ReadVarInt<Stream, uint64_t>(s);
+            tmp2 = ReadVarInt<Stream, VarIntMode::DEFAULT, uint64_t>(s);
             removedMns.emplace(tmp2);
         }
     }

@@ -59,7 +59,7 @@ void CRecoveredSigsDb::ConvertInvalidTimeKeys()
 
     std::unique_ptr<CDBIterator> pcursor(db.NewIterator());
 
-    auto start = std::make_tuple(std::string("rs_t"), (uint32_t)0, (Consensus::LLMQType)0, uint256());
+    auto start = std::make_tuple(std::string("rs_t"), (uint32_t)0, (uint8_t)0, uint256());
     pcursor->Seek(start);
 
     CDBBatch batch(db);
