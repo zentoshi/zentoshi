@@ -40,9 +40,9 @@
 #include <rpc/register.h>
 #include <rpc/server.h>
 #include <rpc/util.h>
-#include <script/standard.h>
-#include <script/sigcache.h>
 #include <scheduler.h>
+#include <script/sigcache.h>
+#include <script/standard.h>
 #include <shutdown.h>
 #include <timedata.h>
 #include <torcontrol.h>
@@ -1691,12 +1691,7 @@ bool AppInitMain(InitInterfaces& interfaces)
                 // (we're likely using a testnet datadir, or the other way around).
                 if (!::BlockIndex().empty() &&
                         !LookupBlockIndex(chainparams.GetConsensus().hashGenesisBlock)) {
-                        return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?").translated);
-                }
-
-                // Initialize the block index (no-op if non-empty database was already loaded)
-                if (!LoadBlockIndex(chainparams)) {
-                    return InitError(_("Error initializing block database").translated);
+                    return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?").translated);
                 }
 
                 // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks

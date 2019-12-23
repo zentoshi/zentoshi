@@ -4,13 +4,15 @@
 
 #include "spork.h"
 
-#include "base58.h"
-#include "chainparams.h"
-#include "validation.h"
-#include "messagesigner.h"
+#include <base58.h>
+#include <chainparams.h>
+#include <validation.h>
+#include <messagesigner.h>
 #include <key_io.h>
-#include "net_processing.h"
-#include "netmessagemaker.h"
+#include <net_processing.h>
+#include <netmessagemaker.h>
+#include <util/validation.h>
+
 #include <string>
 
 const std::string CSporkManager::SERIALIZATION_VERSION_STRING = "CSporkManager-Version-2";

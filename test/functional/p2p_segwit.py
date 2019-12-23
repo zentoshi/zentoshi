@@ -78,8 +78,11 @@ from test_framework.util import (
     disconnect_nodes,
     softfork_active,
     hex_str_to_bytes,
+<<<<<<< HEAD
     sync_blocks,
     sync_mempools,
+=======
+>>>>>>> 0.19
     assert_raises_rpc_error,
 )
 

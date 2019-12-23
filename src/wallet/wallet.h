@@ -18,6 +18,8 @@
 #include <script/sign.h>
 #include <tinyformat.h>
 #include <ui_interface.h>
+#include <util/strencodings.h>
+#include <util/system.h>
 #include <validationinterface.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
@@ -111,7 +113,6 @@ bool AutoBackupWallet (std::shared_ptr<CWallet> wallet, const std::string& strWa
 class CBlockIndex;
 class CCoinControl;
 class COutput;
-class CReserveKey;
 class SigningProvider;
 class CScript;
 class CWalletTx;
@@ -669,6 +670,10 @@ public:
         fAvailableWatchCreditCached = false;
         fImmatureWatchCreditCached = false;
         fDebitCached = false;
+        m_amounts[DEBIT].Reset();
+        m_amounts[CREDIT].Reset();
+        m_amounts[IMMATURE_CREDIT].Reset();
+        m_amounts[AVAILABLE_CREDIT].Reset();
         fChangeCached = false;
     }
 
@@ -724,7 +729,6 @@ public:
 
     // Pass this transaction to node for mempool insertion and relay to peers if flag set to true
     bool SubmitMemoryPoolAndRelay(std::string& err_string, bool relay, interfaces::Chain::Lock& locked_chain);
-
 
     // TODO: Remove "NO_THREAD_SAFETY_ANALYSIS" and replace it with the correct
     // annotation "EXCLUSIVE_LOCKS_REQUIRED(pwallet->cs_wallet)". The annotation
@@ -1136,7 +1140,6 @@ public:
      */
     void AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<COutput>& vCoins, bool fOnlySafe=true, const CCoinControl *coinControl = nullptr, const CAmount& nMinimumAmount = 1, const CAmount& nMaximumAmount = MAX_MONEY, const CAmount& nMinimumSumAmount = MAX_MONEY, const uint64_t nMaximumCount = 0, const int nMinDepth = 0, const int nMaxDepth = 9999999, bool fUseInstantSend = false) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlySafe=true, const CCoinControl *coinControl = nullptr, const CAmount& nMinimumAmount = 1, const CAmount& nMaximumAmount = MAX_MONEY, const CAmount& nMinimumSumAmount = MAX_MONEY, const uint64_t nMaximumCount = 0, const int nMinDepth = 0, const int nMaxDepth = 9999999, bool fUseInstantSend = false) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
-    // void AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<COutput>& vCoins, bool fOnlySafe, const CCoinControl* coinControl, const CAmount& nMinimumAmount, const CAmount& nMaximumAmount, const CAmount& nMinimumSumAmount, const uint64_t nMaximumCount) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     /**
      * Return list of available coins and locked coins grouped by non-change output address.

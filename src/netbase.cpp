@@ -5,11 +5,9 @@
 
 #include <netbase.h>
 
-#include <hash.h>
 #include <sync.h>
-#include <uint256.h>
-#include <random.h>
 #include <tinyformat.h>
+#include <random.h>
 #include <util/system.h>
 #include <util/strencodings.h>
 
@@ -835,6 +833,17 @@ bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest
     return ConnectThroughProxy(proxy, strDest, port, hSocketRet, nTimeout, outProxyConnectionFailed);
 }
 
+/**
+ * Parse and resolve a specified subnet string into the appropriate internal
+ * representation.
+ *
+ * @param pszName A string representation of a subnet of the form `network
+ *                address [ "/", ( CIDR-style suffix | netmask ) ]`(e.g.
+ *                `2001:db8::/32`, `192.0.2.0/255.255.255.0`, or `8.8.8.8`).
+ * @param ret The resulting internal representation of a subnet.
+ *
+ * @returns Whether the operation succeeded or not.
+ */
 bool LookupSubNet(const char* pszName, CSubNet& ret)
 {
     std::string strSubnet(pszName);

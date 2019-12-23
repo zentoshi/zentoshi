@@ -940,7 +940,6 @@ public:
     ~CNode();
     CNode(const CNode&) = delete;
     CNode& operator=(const CNode&) = delete;
-
     // If true, we will send him PrivateSend queue messages
     std::atomic<bool> fSendDSQueue{false};
 

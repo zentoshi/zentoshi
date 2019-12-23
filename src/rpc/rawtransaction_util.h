@@ -5,10 +5,6 @@
 #ifndef BITCOIN_RPC_RAWTRANSACTION_UTIL_H
 #define BITCOIN_RPC_RAWTRANSACTION_UTIL_H
 
-#include <rpc/server.h>
-
-#include <univalue.h>
-
 #include <map>
 
 class FillableSigningProvider;
@@ -40,10 +36,5 @@ void ParsePrevouts(const UniValue& prevTxsUnival, FillableSigningProvider* keyst
 
 /** Create a transaction from univalue parameters */
 CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf);
-
-#ifdef ENABLE_WALLET
-extern UniValue signrawtransaction(const JSONRPCRequest& request);
-extern UniValue sendrawtransaction(const JSONRPCRequest& request);
-#endif//ENABLE_WALLET
 
 #endif // BITCOIN_RPC_RAWTRANSACTION_UTIL_H

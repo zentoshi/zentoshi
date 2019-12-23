@@ -3006,6 +3006,7 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     if (!block_relay_only) {
         m_tx_relay = MakeUnique<TxRelay>();
     }
+
     filterInventoryKnown.reset();
     for (const std::string &msg : getAllNetMessageTypes())
         mapRecvBytesPerMsgCmd[msg] = 0;

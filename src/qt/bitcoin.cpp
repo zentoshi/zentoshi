@@ -26,7 +26,6 @@
 #ifdef ENABLE_WALLET
 #include <qt/paymentserver.h>
 #include <qt/walletcontroller.h>
-#include <wallet/walletutil.h>
 #include <qt/walletmodel.h>
 #endif // ENABLE_WALLET
 
@@ -36,8 +35,6 @@
 #include <ui_interface.h>
 #include <uint256.h>
 #include <util/system.h>
-#include <warnings.h>
-#include <walletinitinterface.h>
 #include <util/threadnames.h>
 
 #include <memory>
@@ -449,16 +446,19 @@ int GuiMain(int argc, char* argv[])
 
     BitcoinApplication app(*node);
 
-    // Register meta types used for QMetaObject::invokeMethod
-    qRegisterMetaType< bool* >();
+    // Register meta types used for QMetaObject::invokeMethod and Qt::QueuedConnection
+    qRegisterMetaType<bool*>();
 #ifdef ENABLE_WALLET
     qRegisterMetaType<WalletModel*>();
 #endif
-    //   Need to pass name here as CAmount is a typedef (see http://qt-project.org/doc/qt-5/qmetatype.html#qRegisterMetaType)
-    //   IMPORTANT if it is no longer a typedef use the normal variant above
-    qRegisterMetaType< CAmount >("CAmount");
-    qRegisterMetaType< std::function<void()> >("std::function<void()>");
+    // Register typedefs (see http://qt-project.org/doc/qt-5/qmetatype.html#qRegisterMetaType)
+    // IMPORTANT: if CAmount is no longer a typedef use the normal variant above (see https://doc.qt.io/qt-5/qmetatype.html#qRegisterMetaType-1)
+    qRegisterMetaType<CAmount>("CAmount");
+    qRegisterMetaType<size_t>("size_t");
+
+    qRegisterMetaType<std::function<void()>>("std::function<void()>");
     qRegisterMetaType<QMessageBox::Icon>("QMessageBox::Icon");
+
     /// 2. Parse command-line options. We do this after qt in order to show an error if there are problems parsing these
     // Command-line options take precedence:
     node->setupServerArgs();

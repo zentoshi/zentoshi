@@ -1023,7 +1023,6 @@ bool IsBanned(NodeId pnode)
     }
     return false;
 }
-
 /**
  * Returns true if the given validation state result may result in a peer
  * banning/disconnecting us. We use this to determine which unaccepted
@@ -1113,6 +1112,7 @@ static bool MaybePunishNode(NodeId nodeid, const CValidationState& state, bool v
     }
     return false;
 }
+
 
 
 
@@ -1520,22 +1520,22 @@ void static ProcessGetBlockData(CNode* pfrom, const Consensus::Params& consensus
             pblock = pblockRead;
         }
         if (pblock) {
-        if (inv.type == MSG_BLOCK)
-            connman->PushMessage(pfrom, msgMaker.Make(SERIALIZE_TRANSACTION_NO_WITNESS, NetMsgType::BLOCK, *pblock));
-        else if (inv.type == MSG_WITNESS_BLOCK)
-            connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::BLOCK, *pblock));
-        else if (inv.type == MSG_FILTERED_BLOCK)
-        {
-            bool sendMerkleBlock = false;
-            CMerkleBlock merkleBlock;
-            if (pfrom->m_tx_relay != nullptr) {
-                LOCK(pfrom->m_tx_relay->cs_filter);
-                if (pfrom->m_tx_relay->pfilter) {
-                    sendMerkleBlock = true;
-                    merkleBlock = CMerkleBlock(*pblock, *pfrom->m_tx_relay->pfilter);
+            if (inv.type == MSG_BLOCK)
+                connman->PushMessage(pfrom, msgMaker.Make(SERIALIZE_TRANSACTION_NO_WITNESS, NetMsgType::BLOCK, *pblock));
+            else if (inv.type == MSG_WITNESS_BLOCK)
+                connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::BLOCK, *pblock));
+            else if (inv.type == MSG_FILTERED_BLOCK)
+            {
+                bool sendMerkleBlock = false;
+                CMerkleBlock merkleBlock;
+                if (pfrom->m_tx_relay != nullptr) {
+                    LOCK(pfrom->m_tx_relay->cs_filter);
+                    if (pfrom->m_tx_relay->pfilter) {
+                        sendMerkleBlock = true;
+                        merkleBlock = CMerkleBlock(*pblock, *pfrom->m_tx_relay->pfilter);
+                    }
                 }
-            }
-                if (sendMerkleBlock) {
+            if (sendMerkleBlock) {
                     connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::MERKLEBLOCK, merkleBlock));
                     // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
                     // This avoids hurting performance by pointlessly requiring a round-trip
@@ -2787,8 +2787,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             return true;
         }
 
-        std::deque<COutPoint> vWorkQueue;
-        std::vector<uint256> vEraseQueue;
         CTransactionRef ptx;
         CPrivateSendBroadcastTx dstx;
         int nInvType = MSG_TX;
@@ -2980,7 +2978,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                      FormatStateMessage(state));
             if (enable_bip61 && state.GetRejectCode() > 0 && state.GetRejectCode() < REJECT_INTERNAL) { // Never send AcceptToMemoryPool's internal codes over P2P
                 connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::REJECT, strCommand, (unsigned char)state.GetRejectCode(),
-                                                          state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), inv.hash));
+                                     state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), inv.hash));
             }
             MaybePunishNode(pfrom->GetId(), state, /*via_compact_block*/ false);
         }
@@ -3414,9 +3412,12 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         pfrom->vAddrToSend.clear();
         std::vector<CAddress> vAddr = connman->GetAddresses();
         FastRandomContext insecure_rand;
-        for(const CAddress &addr : vAddr)
-           if(!g_banman->IsBanned(addr))
-              pfrom->PushAddress(addr, insecure_rand);
+        for (const CAddress &addr : vAddr) {
+            if (!g_banman->IsBanned(addr)) {
+                pfrom->PushAddress(addr, insecure_rand);
+            }
+        }
+        return true;
     }
 
     if (strCommand == NetMsgType::MEMPOOL) {
@@ -3624,8 +3625,28 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
 
     else if (strCommand == NetMsgType::NOTFOUND) {
-        // We do not care about the NOTFOUND message, but logging an Unknown Command
-        // message would be undesirable as we transmit it ourselves.
+        // Remove the NOTFOUND transactions from the peer
+        LOCK(cs_main);
+        CNodeState *state = State(pfrom->GetId());
+        std::vector<CInv> vInv;
+        vRecv >> vInv;
+        if (vInv.size() <= MAX_PEER_TX_IN_FLIGHT + MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
+            for (CInv &inv : vInv) {
+                if (inv.type == MSG_TX || inv.type == MSG_WITNESS_TX) {
+                    // If we receive a NOTFOUND message for a txid we requested, erase
+                    // it from our data structures for this peer.
+                    auto in_flight_it = state->m_tx_download.m_tx_in_flight.find(inv.hash);
+                    if (in_flight_it == state->m_tx_download.m_tx_in_flight.end()) {
+                        // Skip any further work if this is a spurious NOTFOUND
+                        // message.
+                        continue;
+                    }
+                    state->m_tx_download.m_tx_in_flight.erase(in_flight_it);
+                    state->m_tx_download.m_tx_announced.erase(inv.hash);
+                }
+            }
+        }
+        return true;
     }
 
     else {
@@ -3716,12 +3737,22 @@ bool PeerLogicValidation::ProcessMessages(CNode* pfrom, std::atomic<bool>& inter
     if (!pfrom->vRecvGetData.empty())
         ProcessGetData(pfrom, Params(), connman, interruptMsgProc);
 
+    if (!pfrom->orphan_work_set.empty()) {
+        std::list<CTransactionRef> removed_txn;
+        LOCK2(cs_main, g_cs_orphans);
+        ProcessOrphanTx(connman, pfrom->orphan_work_set, removed_txn);
+        for (const CTransactionRef& removedTx : removed_txn) {
+            AddToCompactExtraTransactions(removedTx);
+        }
+    }
+
     if (pfrom->fDisconnect)
         return false;
 
     // this maintains the order of responses
     // and prevents vRecvGetData to grow unbounded
     if (!pfrom->vRecvGetData.empty()) return true;
+    if (!pfrom->orphan_work_set.empty()) return true;
 
     // Don't bother if send buffer is too full to respond anyway
     if (pfrom->fPauseSend)

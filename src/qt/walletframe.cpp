@@ -70,7 +70,6 @@ void WalletFrame::addWallet(WalletModel *walletModel)
     });
 
     connect(walletView, &WalletView::outOfSyncWarningClicked, this, &WalletFrame::outOfSyncWarningClicked);
-    connect(walletView, SIGNAL(currentChanged(int)), this, SLOT(pageChanged(int)));
 }
 
 void WalletFrame::setCurrentWallet(WalletModel* wallet_model)

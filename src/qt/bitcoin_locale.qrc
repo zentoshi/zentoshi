@@ -43,7 +43,6 @@
         <file alias="mk">locale/bitcoin_mk.qm</file>
         <file alias="ml">locale/bitcoin_ml.qm</file>
         <file alias="mn">locale/bitcoin_mn.qm</file>
-        <file alias="mr_IN">locale/bitcoin_mr_IN.qm</file>
         <file alias="ms">locale/bitcoin_ms.qm</file>
         <file alias="nb">locale/bitcoin_nb.qm</file>
         <file alias="ne">locale/bitcoin_ne.qm</file>
@@ -70,7 +69,6 @@
         <file alias="ur">locale/bitcoin_ur.qm</file>
         <file alias="uz@Cyrl">locale/bitcoin_uz@Cyrl.qm</file>
         <file alias="vi">locale/bitcoin_vi.qm</file>
-        <file alias="yo">locale/bitcoin_yo.qm</file>
         <file alias="zh-Hans">locale/bitcoin_zh-Hans.qm</file>
         <file alias="zh_CN">locale/bitcoin_zh_CN.qm</file>
         <file alias="zh_HK">locale/bitcoin_zh_HK.qm</file>

@@ -14,7 +14,18 @@ from test_framework.blocktools import create_coinbase
 from test_framework.messages import CBlock, ToHex
 from test_framework.script import CScript, OP_RETURN, OP_NOP
 from test_framework.test_framework import BitcoinTestFramework
+<<<<<<< HEAD
 from test_framework.util import assert_equal, assert_raises_rpc_error, connect_nodes, mine_large_block, sync_blocks, wait_until
+=======
+from test_framework.util import (
+    assert_equal,
+    assert_greater_than,
+    assert_raises_rpc_error,
+    connect_nodes,
+    disconnect_nodes,
+    wait_until,
+)
+>>>>>>> 0.19
 
 # Rescans start at the earliest block up to 2 hours before a key timestamp, so
 # the manual prune RPC avoids pruning blocks in the same window to be

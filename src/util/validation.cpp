@@ -17,3 +17,4 @@ std::string FormatStateMessage(const CValidationState &state)
         state.GetRejectCode());
 }
 
+const std::string strMessageMagic = "Zentoshi Signed Message:\n";

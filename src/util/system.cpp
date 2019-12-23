@@ -766,7 +766,6 @@ const fs::path &GetBackupsDir(bool fNetSpecific)
 const fs::path &GetDataDir(bool fNetSpecific)
 {
     LOCK(csPathCached);
-
     fs::path &path = g_blocks_path_cache_net_specific;
 
     // Cache the path to avoid calling fs::create_directories on every call of
@@ -796,7 +795,6 @@ const fs::path &GetDataDir(bool fNetSpecific)
 const fs::path &GetBlocksDir(bool fNetSpecific)
 {
     LOCK(csPathCached);
-
     fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
 
     // Cache the path to avoid calling fs::create_directories on every call of

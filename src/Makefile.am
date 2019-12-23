@@ -312,7 +312,6 @@ libzentoshi_server_a_SOURCES = \
   addrman.cpp \
   addrdb.cpp \
   banman.cpp \
-  bloom.cpp \
   blocksigner.cpp \
   blockencodings.cpp \
   blockfilter.cpp \
@@ -433,7 +432,6 @@ libzentoshi_wallet_a_SOURCES = \
   wallet/db.cpp \
   wallet/feebumper.cpp \
   wallet/fees.cpp \
-  wallet/init.cpp \
   wallet/ismine.cpp \
   wallet/load.cpp \
   wallet/psbtwallet.cpp \

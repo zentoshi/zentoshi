@@ -174,6 +174,7 @@ private:
     void updateNetworkState();
 
 private Q_SLOTS:
+    void updateAlerts(const QString& warnings);
 };
 
 #endif // BITCOIN_QT_RPCCONSOLE_H

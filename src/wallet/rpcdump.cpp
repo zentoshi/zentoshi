@@ -19,7 +19,6 @@
 #include <util/translation.h>
 #include <wallet/rpcwallet.h>
 #include <wallet/wallet.h>
-#include <validation.h>
 
 #include <fstream>
 #include <stdint.h>
@@ -801,17 +800,12 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     std::sort(vKeyBirth.begin(), vKeyBirth.end());
 
     // produce output
-    file << strprintf("# Wallet dump created by Dash Core %s\n", CLIENT_BUILD);
-    file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
-    file << strprintf("# * Best block at time of backup was %i (%s),\n", ::ChainActive().Height(), ::ChainActive().Tip()->GetBlockHash().ToString());
-    file << strprintf("#   mined on %s\n", EncodeDumpTime(::ChainActive().Tip()->GetBlockTime()));
+    file << strprintf("# Wallet dump created by Zentoshi %s\n", CLIENT_BUILD);
+    file << strprintf("# * Created on %s\n", FormatISO8601DateTime(GetTime()));
+    const Optional<int> tip_height = locked_chain->getHeight();
+    file << strprintf("# * Best block at time of backup was %i (%s),\n", tip_height.get_value_or(-1), tip_height ? locked_chain->getBlockHash(*tip_height).ToString() : "(missing block hash)");
+    file << strprintf("#   mined on %s\n", tip_height ? FormatISO8601DateTime(locked_chain->getBlockTime(*tip_height)) : "(missing block time)");
     file << "\n";
-
-    UniValue obj(UniValue::VOBJ);
-    obj.pushKV("dashcoreversion", CLIENT_BUILD);
-    obj.pushKV("lastblockheight", ::ChainActive().Height());
-    obj.pushKV("lastblockhash", ::ChainActive().Tip()->GetBlockHash().ToString());
-    obj.pushKV("lastblocktime", EncodeDumpTime(::ChainActive().Tip()->GetBlockTime()));
 
     // add the base58check encoded extended master if the wallet uses HD
     CKeyID seed_id = pwallet->GetHDChain().seed_id;

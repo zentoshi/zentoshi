@@ -520,7 +520,7 @@ void CChainLocksHandler::EnforceBestChainLock()
         // and invalidate each of them.
         while (pindex && !::ChainActive().Contains(pindex)) {
             // Invalidate all blocks that have the same prevBlockHash but are not equal to blockHash
-            auto itp = mapPrevBlockIndex.equal_range(pindex->pprev->GetBlockHash());
+            auto itp = ::PrevBlockIndex().equal_range(pindex->pprev->GetBlockHash());
             for (auto jt = itp.first; jt != itp.second; ++jt) {
                 if (jt->second == pindex) {
                     continue;

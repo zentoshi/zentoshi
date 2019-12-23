@@ -370,6 +370,7 @@ public:
         result.immature_balance = bal.m_mine_immature;
         result.anonymized_balance = m_wallet->GetAnonymizedBalance();   
         result.stake = m_wallet->GetStake();
+        result.have_watch_only = m_wallet->HaveWatchOnly();
         if (result.have_watch_only) {
             result.watch_only_balance = bal.m_watchonly_trusted;
             result.unconfirmed_watch_only_balance = bal.m_watchonly_untrusted_pending;

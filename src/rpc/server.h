@@ -173,4 +173,7 @@ std::string JSONRPCExecBatch(const JSONRPCRequest& jreq, const UniValue& vReq);
 // Retrieves any serialization flags requested in command line argument
 int RPCSerializationFlags();
 
+//! shouldnt be here
+UniValue sendrawtransaction(const JSONRPCRequest& request);
+
 #endif // BITCOIN_RPC_SERVER_H
