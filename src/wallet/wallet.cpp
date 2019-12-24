@@ -43,6 +43,7 @@
 
 #include <llmq/quorums_chainlocks.h>
 #include <llmq/quorums_instantsend.h>
+#include <masternode/masternode-payments.h>
 
 #include <algorithm>
 #include <assert.h>
@@ -4326,12 +4327,7 @@ bool CWallet::CreateCoinStake(unsigned int nBits, CAmount blockReward, CMutableT
         return false;
     }
 
-    // Update coinbase transaction with additional info about masternode and governance payments,
-    std::vector<CTxOut> txoutMasternodeRet;
-    std::vector<CTxOut> voutSuperblockRet;
-    int nHeight = ::ChainActive().Tip()->nHeight + 1;
-    LogPrintf("CreateCoinStake -- nBlockHeight %d blockReward %lld txNew %s", nHeight, blockReward, txNew.ToString());
-    nLastStakeSetUpdate = 0; //this will trigger stake set to repopulate next round
+    nLastStakeSetUpdate = 0;
     return true;
 }
 

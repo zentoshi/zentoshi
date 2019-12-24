@@ -8,6 +8,7 @@
 
 #include <string>
 #include <version.h>
+#include <logging.h>
 #include <consensus/consensus.h>
 #include <primitives/transaction.h>
 #include <primitives/block.h>

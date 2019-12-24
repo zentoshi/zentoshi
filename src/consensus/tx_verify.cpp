@@ -161,6 +161,7 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
 {
     // are the actual inputs available?
     if (!inputs.HaveInputs(tx)) {
+        LogPrintf("Invalid State at line %d in file %s\n", __LINE__, __FILE__);
         return state.Invalid(ValidationInvalidReason::TX_MISSING_INPUTS, false, REJECT_INVALID, "bad-txns-inputs-missingorspent",
                          strprintf("%s: inputs missing/spent", __func__));
     }
@@ -174,6 +175,7 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
 
         // If prev is coinbase, check that it's matured
         if (coin.IsCoinBase() && nSpendHeight - coin.nHeight < COINBASE_MATURITY) {
+            LogPrintf("Invalid State at line %d in file %s\n", __LINE__, __FILE__);
             return state.Invalid(ValidationInvalidReason::TX_PREMATURE_SPEND, false, REJECT_INVALID, "bad-txns-premature-spend-of-coinbase",
                 strprintf("tried to spend coinbase at depth %d", nSpendHeight - coin.nHeight));
         }
@@ -181,6 +183,7 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
         // Check for negative or overflow input values
         nValueIn += coin.out.nValue;
         if (!MoneyRange(coin.out.nValue) || !MoneyRange(nValueIn)) {
+            LogPrintf("Invalid State at line %d in file %s\n", __LINE__, __FILE__);
             return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-txns-inputvalues-outofrange");
         }
     }
@@ -189,15 +192,18 @@ bool Consensus::CheckTxInputs(const CTransaction& tx, CValidationState& state, c
     if (!tx.IsCoinStake())
     {
         if (nValueIn < nValueOut) {
+            LogPrintf("Invalid State at line %d in file %s\n", __LINE__, __FILE__);
             return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-txns-in-belowout",
                    strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(nValueOut)));
         }
         CAmount nTxFee = nValueIn - nValueOut;
         if (nTxFee < 0) {
+            LogPrintf("Invalid State at line %d in file %s\n", __LINE__, __FILE__);
             return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-txns-fee-negative");
         }
         nFees += nTxFee;
         if (!MoneyRange(nFees)) {
+            LogPrintf("Invalid State at line %d in file %s\n", __LINE__, __FILE__);
             return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-txns-fee-outofrange");
         }
         txfee = nFees;
