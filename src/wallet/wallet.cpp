@@ -3208,9 +3208,6 @@ bool CWallet::SelectStakeCoins(StakeCoinsSet &setCoins, CAmount nTargetAmount, b
         if(!ExtractDestination(scriptPubKeyKernel, dest))
             continue;
 
-        //if(!fSelectWitness && !boost::get<CKeyID>(&dest))
-        //    continue;
-
         if (GetTime() - out.tx->GetTxTime() < Params().GetConsensus().nStakeMinAge)
             continue;
 

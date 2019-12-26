@@ -9,6 +9,15 @@
 #include <primitives/transaction.h>
 #include <random.h>
 
+enum AvailableCoinsType
+{
+    ALL_COINS,
+    ONLY_DENOMINATED,
+    ONLY_NONDENOMINATED,
+    ONLY_MASTERNODE_COLLATERAL,
+    ONLY_PRIVATESEND_COLLATERAL
+};
+
 //! target minimum change amount
 static constexpr CAmount MIN_CHANGE{COIN / 100};
 //! final minimum change amount after paying for fees

@@ -139,15 +139,6 @@ enum WalletFeature
     FEATURE_LATEST = FEATURE_PRE_SPLIT_KEYPOOL
 };
 
-enum AvailableCoinsType
-{
-    ALL_COINS,
-    ONLY_DENOMINATED,
-    ONLY_NONDENOMINATED,
-    ONLY_MASTERNODE_COLLATERAL,
-    ONLY_PRIVATESEND_COLLATERAL
-};
-
 struct CompactTallyItem
 {
     CTxDestination txdest;
