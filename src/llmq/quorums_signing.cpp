@@ -48,7 +48,7 @@ CRecoveredSigsDb::CRecoveredSigsDb(CDBWrapper& _db) :
         ConvertInvalidTimeKeys();
         AddVoteTimeKeys();
 
-        db.Write(std::string("rs_upgraded"), (uint8_t)1);
+        db.Write(std::string("rs_upgraded"), (Consensus::LLMQType)1);
     }
 }
 
@@ -59,7 +59,7 @@ void CRecoveredSigsDb::ConvertInvalidTimeKeys()
 
     std::unique_ptr<CDBIterator> pcursor(db.NewIterator());
 
-    auto start = std::make_tuple(std::string("rs_t"), (uint32_t)0, (uint8_t)0, uint256());
+    auto start = std::make_tuple(std::string("rs_t"), (uint32_t)0, (Consensus::LLMQType)0, uint256());
     pcursor->Seek(start);
 
     CDBBatch batch(db);
@@ -73,7 +73,7 @@ void CRecoveredSigsDb::ConvertInvalidTimeKeys()
 
         batch.Erase(k);
         std::get<1>(k) = htobe32(std::get<1>(k));
-        batch.Write(k, (uint8_t)1);
+        batch.Write(k, (Consensus::LLMQType)1);
 
         cnt++;
 
@@ -112,7 +112,7 @@ void CRecoveredSigsDb::AddVoteTimeKeys()
         const uint256& id = std::get<2>(k);
 
         auto k2 = std::make_tuple(std::string("rs_vt"), (uint32_t)htobe32(curTime), llmqType, id);
-        batch.Write(k2, (uint8_t)1);
+        batch.Write(k2, (Consensus::LLMQType)1);
 
         cnt++;
 
@@ -241,11 +241,11 @@ void CRecoveredSigsDb::WriteRecoveredSig(const llmq::CRecoveredSig& recSig)
     // store by signHash
     auto signHash = CLLMQUtils::BuildSignHash(recSig);
     auto k4 = std::make_tuple(std::string("rs_s"), signHash);
-    batch.Write(k4, (uint8_t)1);
+    batch.Write(k4, (Consensus::LLMQType)1);
 
     // store by current time. Allows fast cleanup of old recSigs
     auto k5 = std::make_tuple(std::string("rs_t"), (uint32_t)htobe32(curTime), recSig.llmqType, recSig.id);
-    batch.Write(k5, (uint8_t)1);
+    batch.Write(k5, (Consensus::LLMQType)1);
 
     db.WriteBatch(batch);
 
@@ -390,7 +390,7 @@ void CRecoveredSigsDb::WriteVoteForId(Consensus::LLMQType llmqType, const uint25
 
     CDBBatch batch(db);
     batch.Write(k1, msgHash);
-    batch.Write(k2, (uint8_t)1);
+    batch.Write(k2, (Consensus::LLMQType)1);
 
     db.WriteBatch(batch);
 }
@@ -896,7 +896,7 @@ CQuorumCPtr CSigningManager::SelectQuorumForSigning(Consensus::LLMQType llmqType
     scores.reserve(quorums.size());
     for (size_t i = 0; i < quorums.size(); i++) {
         CHashWriter h(SER_NETWORK, 0);
-        h << (uint8_t)llmqType;
+        h << (Consensus::LLMQType)llmqType;
         h << quorums[i]->qc.quorumHash;
         h << selectionHash;
         scores.emplace_back(h.GetHash(), i);

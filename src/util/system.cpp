@@ -755,15 +755,7 @@ static fs::path pathCached;
 static fs::path pathCachedNetSpecific;
 static RecursiveMutex csPathCached;
 
-const fs::path &GetBackupsDir(bool fNetSpecific)
-{
-    if (!gArgs.IsArgSet("-walletbackupsdir"))
-        return GetDataDir() / "backups";
-
-    return fs::absolute(gArgs.GetArg("-walletbackupsdir", ""));
-}
-
-const fs::path &GetDataDir(bool fNetSpecific)
+const fs::path &GetBlocksDir()
 {
     LOCK(csPathCached);
     fs::path &path = g_blocks_path_cache_net_specific;
@@ -772,8 +764,34 @@ const fs::path &GetDataDir(bool fNetSpecific)
     // this function
     if (!path.empty()) return path;
 
-    if (gArgs.IsArgSet("-datadir")) {
-        path = fs::system_complete(gArgs.GetArg("-datadir", ""));
+    if (gArgs.IsArgSet("-blocksdir")) {
+        path = fs::system_complete(gArgs.GetArg("-blocksdir", ""));
+        if (!fs::is_directory(path)) {
+            path = "";
+            return path;
+        }
+    } else {
+        path = GetDataDir(false);
+    }
+
+    path /= BaseParams().DataDir();
+    path /= "blocks";
+    fs::create_directories(path);
+    return path;
+}
+
+const fs::path &GetDataDir(bool fNetSpecific)
+{
+    LOCK(csPathCached);
+    fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
+
+    // Cache the path to avoid calling fs::create_directories on every call of
+    // this function
+    if (!path.empty()) return path;
+
+    std::string datadir = gArgs.GetArg("-datadir", "");
+    if (!datadir.empty()) {
+        path = fs::system_complete(datadir);
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -789,35 +807,6 @@ const fs::path &GetDataDir(bool fNetSpecific)
         fs::create_directories(path / "wallets");
     }
 
-    return path;
-}
-
-const fs::path &GetBlocksDir(bool fNetSpecific)
-{
-    LOCK(csPathCached);
-    fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
-
-    // Cache the path to avoid calling fs::create_directories on every call of
-    // this function
-    if (!path.empty()) return path;
-
-    if (gArgs.IsArgSet("-blocksdir"))
-        path = fs::system_complete(gArgs.GetArg("-blocksdir", ""));
-
-    std::string datadir = gArgs.GetArg("-datadir", "");
-    if (!datadir.empty()) {
-        path = fs::system_complete(datadir);
-        if (!fs::is_directory(path)) {
-            path = "";
-            return path;
-        }
-    } else {
-        path = GetDataDir(false);
-    }
-
-    path /= BaseParams().DataDir();
-    path /= "blocks";
-    fs::create_directories(path);
     return path;
 }
 

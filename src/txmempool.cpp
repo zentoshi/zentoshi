@@ -1186,7 +1186,7 @@ CTxMemPool::ReadFeeEstimates(CAutoFile& filein)
         if (nVersionRequired > CLIENT_VERSION)
             return error("CTxMemPool::ReadFeeEstimates(): up-version (%d) fee estimate file", nVersionRequired);
         LOCK(cs);
-        minerPolicyEstimator->Read(filein, nVersionThatWrote);
+        minerPolicyEstimator->Read(filein);
     }
     catch (const std::exception&) {
         LogPrintf("CTxMemPool::ReadFeeEstimates(): unable to read policy estimator data (non-fatal)\n");

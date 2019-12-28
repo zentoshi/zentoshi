@@ -20,8 +20,6 @@
 static const char DB_COIN = 'C';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
-static const char DB_TXINDEX = 't';
-static const char DB_TXINDEX_BLOCK = 'T';
 static const char DB_BLOCK_INDEX = 'b';
 
 static const char DB_BEST_BLOCK = 'B';
@@ -235,10 +233,6 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
     return WriteBatch(batch, true);
 }
 
-bool CBlockTreeDB::HasTxIndex(const uint256& txid) {
-    return Exists(std::make_pair(DB_TXINDEX, txid));
-}
-
 bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
     return Write(std::make_pair(DB_FLAG, name), fValue ? '1' : '0');
 }
@@ -320,18 +314,17 @@ public:
     int nHeight;
 
     //! empty constructor
-    CCoins() : fCoinBase(false), fCoinStake(false), vout(0), nHeight(0) { }
+    CCoins() : fCoinBase(false), vout(0), nHeight(0) { }
 
     template<typename Stream>
     void Unserialize(Stream &s) {
         unsigned int nCode = 0;
         // version
-        unsigned int nVersionDummy;
+        int nVersionDummy;
         ::Unserialize(s, REF(VARINT(nVersionDummy)));
         // header code
         ::Unserialize(s, REF(VARINT(nCode)));
         fCoinBase = nCode & 1;
-        fCoinStake = nCode & 16;
         std::vector<bool> vAvail(2, false);
         vAvail[0] = (nCode & 2) != 0;
         vAvail[1] = (nCode & 4) != 0;
@@ -354,7 +347,7 @@ public:
                 ::Unserialize(s, REF(CTxOutCompressor(vout[i])));
         }
         // coinbase height
-        ::Unserialize(s, REF(VARINT(nHeight, VarIntMode::NONNEGATIVE_SIGNED)));
+        ::Unserialize(s, REF(VARINT(nHeight)));
     }
 };
 

@@ -268,13 +268,6 @@ public:
         // genesis
         uint32_t nTime = 1576801004;
         uint32_t nNonce = 593;
-
-        while(UintToArith256(genesis.GetPoWHash()) >
-              UintToArith256(consensus.powLimit)) {
-            nNonce++;
-            genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
-        }
-
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
@@ -430,13 +423,6 @@ public:
         // genesis
         uint32_t nTime = 1576801004;
         uint32_t nNonce = 593;
-
-        while(UintToArith256(genesis.GetPoWHash()) >
-              UintToArith256(consensus.powLimit)) {
-            nNonce++;
-            genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
-        }
-
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 

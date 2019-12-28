@@ -60,7 +60,6 @@
 
 #include <masternode/activemasternode.h>
 #include <dsnotificationinterface.h>
-#include <flat-database.h>
 #include <governance/governance.h>
 
 #include <masternode/masternode-meta.h>
@@ -230,6 +229,7 @@ void Shutdown(InitInterfaces& interfaces)
     /// module was initialized.
     util::ThreadRename("zentoshi-shutoff");
     mempool.AddTransactionsUpdated(1);
+
     StopHTTPRPC();
     StopREST();
     StopRPC();
@@ -275,8 +275,6 @@ void Shutdown(InitInterfaces& interfaces)
         flatdb3.Dump(governance);
         CFlatDB<CNetFulfilledRequestManager> flatdb4("netfulfilled.dat", "magicFulfilledCache");
         flatdb4.Dump(netfulfilledman);
-        CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
-        flatdb6.Dump(sporkManager);
     }
 
     if (::mempool.IsLoaded() && gArgs.GetArg("-persistmempool", DEFAULT_PERSIST_MEMPOOL)) {
@@ -1834,7 +1832,7 @@ bool AppInitMain(InitInterfaces& interfaces)
     CAutoFile est_filein(fsbridge::fopen(est_path, "rb"), SER_DISK, CLIENT_VERSION);
     // Allowed to fail as this file IS missing on first startup.
     if (!est_filein.IsNull())
-        mempool.ReadFeeEstimates(est_filein);
+        ::feeEstimator.Read(est_filein);
     fFeeEstimatesInitialized = true;
 
     // ********************************************************* Step 8: start indexers

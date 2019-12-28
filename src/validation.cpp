@@ -625,8 +625,8 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     }
 
     // Coinbase is only valid in a block, not as a loose transaction
-    if (tx.IsCoinBase() || tx.IsCoinStake())
-        return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "coinbase");
+    if (tx.IsCoinBase())
+        return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "coinbase as individual tx");
 
     //Coinstake is also only valid in a block, not as a loose transaction
     if (tx.IsCoinStake())
@@ -1613,7 +1613,7 @@ void InitScriptExecutionCache() {
  */
 bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
-    if (!tx.IsCoinBase() && !tx.IsCoinStake())
+    if (!tx.IsCoinBase())
     {
         if (pvChecks) {
             pvChecks->reserve(tx.vin.size());
@@ -1804,6 +1804,10 @@ int ApplyTxInUndo(Coin&& undo, CCoinsViewCache& view, const COutPoint& out)
  *  When FAILED is returned, view is left in an indeterminate state. */
 DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockIndex* pindex, CCoinsViewCache& view)
 {
+    assert(pindex->GetBlockHash() == view.GetBestBlock());
+
+    bool fClean = true;
+
     bool fDIP0003Active = pindex->nHeight >= Params().GetConsensus().DIP0003Height;
     bool fHasBestBlock = evoDb->VerifyBestBlock(pindex->GetBlockHash());
 
@@ -1812,8 +1816,6 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
         AbortNode("Found EvoDB inconsistency, you must reindex to continue");
         return DISCONNECT_FAILED;
     }
-
-    bool fClean = true;
 
     CBlockUndo blockUndo;
     if (!UndoReadFromDisk(blockUndo, pindex)) {
@@ -1844,11 +1846,20 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
                 COutPoint out(hash, o);
                 Coin coin;
                 bool is_spent = view.SpendCoin(out, &coin);
-                if (!is_spent || tx.vout[o] != coin.out || pindex->nHeight != coin.nHeight || is_coinbase != coin.fCoinBase) {
-                    LogPrintf("(%d, %d) %d (%s, %s) == %d, (%d, %d) == %d, (%d, %d) == %d\n",
+                if (!is_spent || tx.vout[o] != coin.out || pindex->nHeight != coin.nHeight || is_coinbase != coin.fCoinBase || is_coinstake != coin.fCoinStake) {
+                    LogPrintf("(%d, %d) %d (%s, %s) == %d, "
+                              "(%d, %d) == %d %d, "
+                              "(%d, %d, %d) == %d %d %d\n",
                               i, o, is_spent, tx.vout[o].ToString(), coin.out.ToString(), tx.vout[o] != coin.out,
-                              pindex->nHeight, coin.nHeight, pindex->nHeight != coin.nHeight,
-                              is_coinbase, coin.fCoinBase, is_coinbase != coin.fCoinBase);
+                              is_coinbase != coin.fCoinBase, is_coinstake != coin.fCoinStake, pindex->nHeight, coin.nHeight,
+                              is_coinbase, is_coinstake, coin.fCoinBase, coin.fCoinStake, is_coinbase != coin.fCoinBase, is_coinstake != coin.fCoinStake);
+                    {
+                              if (!is_spent) LogPrintf("!is_spent\n");
+                              if (tx.vout[o] != coin.out) LogPrintf("tx.vout[o] != coin.out\n");
+                              if (pindex->nHeight != coin.nHeight) LogPrintf("pindex->nHeight != coin.nHeight\n");
+                              if (is_coinbase != coin.fCoinBase) LogPrintf("is_coinbase != coin.fCoinBase\n");
+                              if (is_coinstake != coin.fCoinStake) LogPrintf("is_coinstake != coin.fCoinStake\n");
+                    }
                     fClean = false; // transaction output mismatch
                 }
             }
@@ -1932,7 +1943,6 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
     int32_t nVersion = VERSIONBITS_TOP_BITS;
 
     for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++) {
-        Consensus::DeploymentPos pos = Consensus::DeploymentPos(i);
         ThresholdState state = VersionBitsState(pindexPrev, params, static_cast<Consensus::DeploymentPos>(i), versionbitscache);
         if (state == ThresholdState::LOCKED_IN || state == ThresholdState::STARTED) {
             nVersion |= VersionBitsMask(params, static_cast<Consensus::DeploymentPos>(i));
@@ -2190,7 +2200,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     // future consensus change to do a new and improved version of BIP34 that
     // will actually prevent ever creating any duplicate coinbases in the
     // future.
-    static constexpr int BIP34_IMPLIES_BIP30_LIMIT = 0;
+    static constexpr int BIP34_IMPLIES_BIP30_LIMIT = 1983702;
 
     // There is no potential to create a duplicate coinbase at block 209,921
     // because this is still before the BIP34 height and so explicit BIP30
@@ -2228,12 +2238,12 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     // TODO: Remove BIP30 checking from block height 1,983,702 on, once we have a
     // consensus change that ensures coinbases at those heights can not
     // duplicate earlier coinbases.
-    if (fEnforceBIP30) {
+    if (fEnforceBIP30 || pindex->nHeight >= BIP34_IMPLIES_BIP30_LIMIT) {
         for (const auto& tx : block.vtx) {
             for (size_t o = 0; o < tx->vout.size(); o++) {
                 if (view.HaveCoin(COutPoint(tx->GetHash(), o))) {
                     return state.Invalid(ValidationInvalidReason::CONSENSUS, error("ConnectBlock(): tried to overwrite transaction"),
-                                     REJECT_INVALID, "bad-txns-BIP30");
+                                         REJECT_INVALID, "bad-txns-BIP30");
                 }
             }
         }
@@ -2270,10 +2280,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
         nInputs += tx.vin.size();
 
-        if (tx.IsCoinBase()) {
-            nValueOut += tx.GetValueOut();
-        }
-        else
+        if (!tx.IsCoinBase())
         {
             CAmount txfee = 0;
             if (!Consensus::CheckTxInputs(tx, state, view, pindex->nHeight, txfee)) {
@@ -2282,16 +2289,15 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                     // PREMATURE_SPEND but we can't return that, as it's not
                     // defined for a block, so we reset the reason flag to
                     // CONSENSUS here.
-                    state.Invalid(ValidationInvalidReason::CONSENSUS, false,
-                            state.GetRejectCode(), state.GetRejectReason(), state.GetDebugMessage());
+                    return state.Invalid(ValidationInvalidReason::CONSENSUS, false,
+                                         state.GetRejectCode(), state.GetRejectReason(), state.GetDebugMessage());
                 }
                 return error("%s: Consensus::CheckTxInputs: %s, %s", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
             }
-            if (!tx.IsCoinStake())
-               nFees += txfee;
+            nFees += txfee;
             if (!MoneyRange(nFees)) {
                 return state.Invalid(ValidationInvalidReason::CONSENSUS, error("%s: accumulated fee in the block out of range.", __func__),
-                                 REJECT_INVALID, "bad-txns-accumulated-fee-outofrange");
+                                     REJECT_INVALID, "bad-txns-accumulated-fee-outofrange");
             }
 
             // Check that transaction is BIP68 final
@@ -2306,50 +2312,51 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                 return state.Invalid(ValidationInvalidReason::CONSENSUS, error("%s: contains a non-BIP68-final transaction", __func__),
                                  REJECT_INVALID, "bad-txns-nonfinal");
             }
+      }
 
-			// GetTransactionSigOpCost counts 3 types of sigops:
-			// * legacy (always)
-			// * p2sh (when P2SH enabled in flags and excludes coinbase)
-			// * witness (when witness enabled in flags and excludes coinbase)
-			nSigOpsCost += GetTransactionSigOpCost(tx, view, flags);
-			if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
-				return state.Invalid(ValidationInvalidReason::CONSENSUS, error("ConnectBlock(): too many sigops"),
-								 REJECT_INVALID, "bad-blk-sigops");
+      // GetTransactionSigOpCost counts 3 types of sigops:
+      // * legacy (always)
+      // * p2sh (when P2SH enabled in flags and excludes coinbase)
+      // * witness (when witness enabled in flags and excludes coinbase)
+      nSigOpsCost += GetTransactionSigOpCost(tx, view, flags);
+      if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
+          return state.Invalid(ValidationInvalidReason::CONSENSUS, error("ConnectBlock(): too many sigops"),
+                                REJECT_INVALID, "bad-blk-sigops");
 
-			txdata.emplace_back(tx);
-			if (!tx.IsCoinBase())
-			{
-				if (!tx.IsCoinStake())
-					nFees += view.GetValueIn(tx) - tx.GetValueOut();
-				nValueIn += view.GetValueIn(tx);
+      txdata.emplace_back(tx);
+      if (!tx.IsCoinBase())
+      {
+          if (!tx.IsCoinStake())
+                  nFees += view.GetValueIn(tx) - tx.GetValueOut();
+          nValueIn += view.GetValueIn(tx);
 
-				std::vector<CScriptCheck> vChecks;
-				bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-				if (fScriptChecks && !CheckInputs(tx, state, view, flags, fCacheResults, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : nullptr)) {
-					if (state.GetReason() == ValidationInvalidReason::TX_NOT_STANDARD) {
-						// CheckInputs may return NOT_STANDARD for extra flags we passed,
-						// but we can't return that, as it's not defined for a block, so
-						// we reset the reason flag to CONSENSUS here.
-						// In the event of a future soft-fork, we may need to
-						// consider whether rewriting to CONSENSUS or
-						// RECENT_CONSENSUS_CHANGE would be more appropriate.
-						state.Invalid(ValidationInvalidReason::CONSENSUS, false,
-								  state.GetRejectCode(), state.GetRejectReason(), state.GetDebugMessage());
-					}
-					return error("ConnectBlock(): CheckInputs on %s failed with %s",
-						tx.GetHash().ToString(), FormatStateMessage(state));
-				}
-				control.Add(vChecks);
-			}
-			nValueOut += tx.GetValueOut();
+          std::vector<CScriptCheck> vChecks;
+          bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
+          if (fScriptChecks && !CheckInputs(tx, state, view, flags, fCacheResults, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : nullptr)) {
+              if (state.GetReason() == ValidationInvalidReason::TX_NOT_STANDARD) {
+                  // CheckInputs may return NOT_STANDARD for extra flags we passed,
+                  // but we can't return that, as it's not defined for a block, so
+                  // we reset the reason flag to CONSENSUS here.
+                  // In the event of a future soft-fork, we may need to
+                  // consider whether rewriting to CONSENSUS or
+                  // RECENT_CONSENSUS_CHANGE would be more appropriate.
+                  state.Invalid(ValidationInvalidReason::CONSENSUS, false,
+                                        state.GetRejectCode(), state.GetRejectReason(), state.GetDebugMessage());
+              }
+              return error("ConnectBlock(): CheckInputs on %s failed with %s",
+                            tx.GetHash().ToString(), FormatStateMessage(state));
+          }
+          control.Add(vChecks);
+      }
+      nValueOut += tx.GetValueOut();
+      CTxUndo undoDummy;
+      if (i > 0) {
+          blockundo.vtxundo.push_back(CTxUndo());
+      }
+      UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
 
-			CTxUndo undoDummy;
-			if (i > 0) {
-				blockundo.vtxundo.push_back(CTxUndo());
-			}
-                        UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
-		    }
     }
+
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint(BCLog::BNCH, "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
 
@@ -3217,7 +3224,7 @@ bool CChainState::ActivateBestChain(CValidationState &state, const CChainParams&
             if (!blocks_connected) return true;
 
             const CBlockIndex* pindexFork = m_chain.FindFork(starting_tip);
-            bool fInitialDownload = ::ChainstateActive().IsInitialBlockDownload();
+            bool fInitialDownload = IsInitialBlockDownload();
 
             // Notify external listeners about the new tip.
             // Enqueue while holding cs_main to ensure that UpdatedBlockTip is called in the order in which blocks are connected
@@ -3240,7 +3247,7 @@ bool CChainState::ActivateBestChain(CValidationState &state, const CChainParams&
         if (ShutdownRequested())
             break;
     } while (pindexNewTip != pindexMostWork);
-    ::ChainstateActive().CheckBlockIndex(chainparams.GetConsensus());
+    CheckBlockIndex(chainparams.GetConsensus());
 
     // Write changes periodically to disk, after relay.
     if (!FlushStateToDisk(chainparams, state, FlushStateMode::PERIODIC)) {
@@ -3279,6 +3286,7 @@ bool CChainState::PreciousBlock(CValidationState& state, const CChainParams& par
             PruneBlockIndexCandidates();
         }
     }
+
     return ActivateBestChain(state, params, std::shared_ptr<const CBlock>());
 }
 

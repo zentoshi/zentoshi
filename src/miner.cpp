@@ -181,6 +181,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     // Create coinbase transaction.
     CMutableTransaction coinbaseTx;
+    CMutableTransaction coinstakeTx;
     coinbaseTx.vin.resize(1);
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
@@ -195,7 +196,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         assert(pwallet);
         boost::this_thread::interruption_point();
         pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), fProofOfStake);
-        CMutableTransaction coinstakeTx;
         int64_t nSearchTime = pblock->nTime;
         bool fStakeFound = false;
         if (nSearchTime >= nLastCoinStakeSearchTime) {
@@ -236,6 +236,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     int64_t nTime1 = GetTimeMicros();
 
+    nLastBlockTx = nBlockTx;
+    nLastBlockWeight = nBlockWeight;
+    LogPrintf("CreateNewBlock(): total weight %u txs: %u fees: %ld sigopscost %d\n", nBlockWeight, nBlockTx, nFees, nBlockSigOpsCost);
+
     if (!fDIP0003Active_context) {
         coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
     } else {
@@ -264,7 +268,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
             }
         }
 
-        SetTxPayload(coinbaseTx, cbTx);
+        SetTxPayload(fProofOfStake ? coinstakeTx : coinbaseTx, cbTx);
     }
 
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
@@ -633,18 +637,16 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
             auto pblock = std::make_shared<CBlock>(pblocktemplate->block);
             IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
-            LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(), ::GetSerializeSize(*pblock));
+            LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+                      ::GetSerializeSize(*pblock));
 
             //Sign block
-            if (fProofOfStake)
-            {
+            if (fProofOfStake) {
                 LogPrintf("CPUMiner : proof-of-stake block found %s \n", pblock->GetHash().ToString().c_str());
-
                 if (!SignBlock(*pblock, *pwallet)) {
-                    LogPrintf("ZentoshiMiner(): Signing new block failed \n");
+                    LogPrintf("ZentoshiMiner(): Signing new block failed\n");
                     throw std::runtime_error(strprintf("%s: SignBlock failed", __func__));
                 }
-
                 LogPrintf("CPUMiner : proof-of-stake block was signed %s \n", pblock->GetHash().ToString().c_str());
             }
 

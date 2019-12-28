@@ -887,7 +887,7 @@ bool CBlockPolicyEstimator::Write(CAutoFile& fileout) const
     return true;
 }
 
-bool CBlockPolicyEstimator::Read(CAutoFile& filein, int& nVersionThatWrote)
+bool CBlockPolicyEstimator::Read(CAutoFile& filein)
 {
     try {
         LOCK(m_cs_fee_estimator);

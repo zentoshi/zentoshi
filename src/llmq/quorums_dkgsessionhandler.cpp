@@ -95,7 +95,7 @@ CDKGSessionHandler::CDKGSessionHandler(const Consensus::LLMQParams& _params, ctp
     pendingPrematureCommitments((size_t)_params.size * 2)
 {
     phaseHandlerThread = std::thread([this] {
-        RenameThread(strprintf("zentoshi-q-phase-%d", (uint8_t)params.type).c_str());
+        RenameThread(strprintf("zentoshi-q-phase-%d", (Consensus::LLMQType)params.type).c_str());
         PhaseHandlerThread();
     });
 }
@@ -198,8 +198,8 @@ void CDKGSessionHandler::WaitForNextPhase(QuorumPhase curPhase,
         quorumDKGDebugManager->ResetLocalSessionStatus(params.type);
     } else {
         quorumDKGDebugManager->UpdateLocalSessionStatus(params.type, [&](CDKGDebugSessionStatus& status) {
-            bool changed = status.phase != (uint8_t) nextPhase;
-            status.phase = (uint8_t) nextPhase;
+            bool changed = status.phase != (Consensus::LLMQType) nextPhase;
+            status.phase = (Consensus::LLMQType) nextPhase;
             return changed;
         });
     }
@@ -468,8 +468,8 @@ void CDKGSessionHandler::HandleDKGRound()
     }
 
     quorumDKGDebugManager->UpdateLocalSessionStatus(params.type, [&](CDKGDebugSessionStatus& status) {
-        bool changed = status.phase != (uint8_t) QuorumPhase_Initialized;
-        status.phase = (uint8_t) QuorumPhase_Initialized;
+        bool changed = status.phase != (Consensus::LLMQType) QuorumPhase_Initialized;
+        status.phase = (Consensus::LLMQType) QuorumPhase_Initialized;
         return changed;
     });
 
