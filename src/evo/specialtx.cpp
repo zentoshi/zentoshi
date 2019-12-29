@@ -33,6 +33,8 @@ bool CheckSpecialTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVali
         return CheckProUpRevTx(tx, pindexPrev, state);
     case TRANSACTION_COINBASE:
         return CheckCbTx(tx, pindexPrev, state);
+    case TRANSACTION_STAKE:
+        return CheckCbTx(tx, pindexPrev, state);
     case TRANSACTION_QUORUM_COMMITMENT:
         return llmq::CheckLLMQCommitment(tx, pindexPrev, state);
     }
@@ -54,6 +56,8 @@ bool ProcessSpecialTx(const CTransaction& tx, const CBlockIndex* pindex, CValida
         return true; // handled in batches per block
     case TRANSACTION_COINBASE:
         return true; // nothing to do
+    case TRANSACTION_STAKE:
+        return true; // nothing to do
     case TRANSACTION_QUORUM_COMMITMENT:
         return true; // handled per block
     }
@@ -74,6 +78,8 @@ bool UndoSpecialTx(const CTransaction& tx, const CBlockIndex* pindex)
     case TRANSACTION_PROVIDER_UPDATE_REVOKE:
         return true; // handled in batches per block
     case TRANSACTION_COINBASE:
+        return true; // nothing to do
+    case TRANSACTION_STAKE:
         return true; // nothing to do
     case TRANSACTION_QUORUM_COMMITMENT:
         return true; // handled per block

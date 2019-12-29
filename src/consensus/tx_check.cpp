@@ -6,6 +6,7 @@
 #include <consensus/validation.h>
 #include <policy/policy.h>
 #include <primitives/transaction.h>
+#include <spork.h>
 
 bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fCheckDuplicateInputs)
 {
@@ -92,14 +93,20 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                 tx.nType != TRANSACTION_PROVIDER_UPDATE_REGISTRAR &&
                 tx.nType != TRANSACTION_PROVIDER_UPDATE_REVOKE &&
                 tx.nType != TRANSACTION_COINBASE &&
-                tx.nType != TRANSACTION_QUORUM_COMMITMENT) {
+                tx.nType != TRANSACTION_QUORUM_COMMITMENT &&
+                tx.nType != TRANSACTION_STAKE) {
                 return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-txns-type");
             }
-            if (tx.IsCoinBase() && tx.nType != TRANSACTION_COINBASE) {
+            if (tx.IsCoinStake() && tx.nType != TRANSACTION_STAKE) {
                 return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-txns-cb-type");
             }
-        } else if (tx.nType != TRANSACTION_NORMAL) {
-            return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-txns-type");
+        }
+        else if (tx.nType != TRANSACTION_NORMAL) {
+            if (sporkManager.IsSporkActive(SPORK_27_ENFORCE_STRICT_CBTX)) {
+                return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-txns-type");
+            } else {
+                LogPrintf("ContextualCheckTransaction(ZENTOSHI): spork is off, standard CBTX rules skipped\n");
+            }
         }
     }
 

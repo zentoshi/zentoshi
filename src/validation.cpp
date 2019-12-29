@@ -2327,7 +2327,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
       if (!tx.IsCoinBase())
       {
           if (!tx.IsCoinStake())
-                  nFees += view.GetValueIn(tx) - tx.GetValueOut();
+              nFees += view.GetValueIn(tx) - tx.GetValueOut();
           nValueIn += view.GetValueIn(tx);
 
           std::vector<CScriptCheck> vChecks;
@@ -2343,10 +2343,11 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                   state.Invalid(ValidationInvalidReason::CONSENSUS, false,
                                         state.GetRejectCode(), state.GetRejectReason(), state.GetDebugMessage());
               }
-              return error("ConnectBlock(): CheckInputs on %s failed with %s",
-                            tx.GetHash().ToString(), FormatStateMessage(state));
+              return error("ConnectBlock(): CheckInputs on %s failed with %s", tx.GetHash().ToString(), FormatStateMessage(state));
           }
-          control.Add(vChecks);
+
+          if (!tx.IsCoinStake())
+              control.Add(vChecks);
       }
       nValueOut += tx.GetValueOut();
       CTxUndo undoDummy;
@@ -3920,7 +3921,8 @@ static bool ContextualCheckBlock(const CBlock& block, CValidationState& state, c
             mapProofOfStake.insert(std::make_pair(hash, hashProofOfStake));
     }
 
-    if (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())) {
+    // Only enforce nBits for PoW blocks; PoS can set it as they please (they must satisfy hashProof still..)
+    if (block.IsProofOfWork() && block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())) {
         return state.Invalid(ValidationInvalidReason::CONSENSUS, error("CheckBlock(): incorrect difficulty: block pow=%s bits=%08x calc=%08x",
                              block.IsProofOfWork() ? "Y" : "N", block.nBits, GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())));
     } else {

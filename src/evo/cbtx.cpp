@@ -18,17 +18,19 @@
 
 bool CheckCbTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state)
 {
-    if (tx.nType != TRANSACTION_COINBASE) {
+    if (tx.nType != TRANSACTION_COINBASE && tx.nType != TRANSACTION_STAKE) {
         return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-cbtx-type");
     }
 
-    if (!tx.IsCoinBase()) {
+    if (!tx.IsCoinBase() && !tx.IsCoinStake()) {
         return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-cbtx-invalid");
     }
 
     CCbTx cbTx;
     if (!GetTxPayload(tx, cbTx)) {
-        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-cbtx-payload");
+        if (tx.vExtraPayload.size() == 0 && sporkManager.IsSporkActive(SPORK_27_ENFORCE_STRICT_CBTX)) {
+            return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-cbtx-payload");
+        }
     }
 
     if (cbTx.nVersion == 0 || cbTx.nVersion > CCbTx::CURRENT_VERSION) {
@@ -36,15 +38,9 @@ bool CheckCbTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidatio
     }
 
     if (pindexPrev && pindexPrev->nHeight + 1 != cbTx.nHeight) {
+        LogPrintf("pindexPrev->nHeight + 1 == %d, cbTx.nHeight == %d\n", pindexPrev->nHeight + 1, cbTx.nHeight);
         return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-cbtx-height");
     }
-
-//  if (pindexPrev) {
-//      bool fDIP0008Active = VersionBitsState(pindexPrev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0008, versionbitscache) == THRESHOLD_ACTIVE;
-//      if (fDIP0008Active && cbTx.nVersion < 2) {
-//          return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-version");
-//      }
-//  }
 
     return true;
 }
