@@ -186,7 +186,9 @@ bool CalcCbTxMerkleRootQuorums(const CBlock& block, const CBlockIndex* pindexPre
 
     // now add the commitments from the current block, which are not returned by GetMinedAndActiveCommitmentsUntilBlock
     // due to the use of pindexPrev (we don't have the tip index here)
-    for (size_t i = 1; i < block.vtx.size(); i++) {
+    const int vtxOffset = 1 + (block.nNonce == 0);
+    for (int i = vtxOffset; i < (int)block.vtx.size(); i++) {
+
         auto& tx = block.vtx[i];
 
         if (tx->nVersion == 3 && tx->nType == TRANSACTION_QUORUM_COMMITMENT) {

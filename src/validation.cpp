@@ -1613,12 +1613,13 @@ void InitScriptExecutionCache() {
  */
 bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsViewCache &inputs, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData& txdata, std::vector<CScriptCheck> *pvChecks) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
-    if (!tx.IsCoinBase())
+    if (tx.IsCoinBase() || tx.IsCoinStake()) return true;
+
+    if (pvChecks) {
+        pvChecks->reserve(tx.vin.size());
+    }
+
     {
-        if (pvChecks) {
-            pvChecks->reserve(tx.vin.size());
-        }
-      
         // First check if script executions have been cached with the same
         // flags. Note that this assumes that the inputs provided are
         // correct (ie that the transaction hash which is in tx's prevouts
@@ -2280,7 +2281,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
         nInputs += tx.vin.size();
 
-        if (!tx.IsCoinBase())
+        if (tx.IsCoinBase())
+            nValueOut += tx.GetValueOut();
+        else
         {
             CAmount txfee = 0;
             if (!Consensus::CheckTxInputs(tx, state, view, pindex->nHeight, txfee)) {
@@ -2294,7 +2297,8 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                 }
                 return error("%s: Consensus::CheckTxInputs: %s, %s", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
             }
-            nFees += txfee;
+            if (!tx.IsCoinStake())
+                nFees += txfee;
             if (!MoneyRange(nFees)) {
                 return state.Invalid(ValidationInvalidReason::CONSENSUS, error("%s: accumulated fee in the block out of range.", __func__),
                                      REJECT_INVALID, "bad-txns-accumulated-fee-outofrange");
@@ -2345,9 +2349,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
               }
               return error("ConnectBlock(): CheckInputs on %s failed with %s", tx.GetHash().ToString(), FormatStateMessage(state));
           }
-
-          if (!tx.IsCoinStake())
-              control.Add(vChecks);
+          control.Add(vChecks);
       }
       nValueOut += tx.GetValueOut();
       CTxUndo undoDummy;

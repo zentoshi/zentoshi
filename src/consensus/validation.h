@@ -162,7 +162,7 @@ public:
 static inline int64_t GetTransactionWeight(const CTransaction& tx)
 {
     int nExtraPayloadWeight = 0;
-    if (tx.nVersion == 3 && tx.nType != TRANSACTION_NORMAL && tx.nType != TRANSACTION_COINBASE) {
+    if (tx.nVersion == 3 && tx.nType != TRANSACTION_NORMAL && tx.nType != TRANSACTION_COINBASE && tx.nType != TRANSACTION_STAKE) {
         int nExtraPayloadSize = (int)tx.vExtraPayload.size();
         nExtraPayloadWeight = GetSizeOfCompactSize(nExtraPayloadSize) + nExtraPayloadSize;
     }
