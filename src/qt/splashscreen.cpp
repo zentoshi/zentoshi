@@ -66,15 +66,6 @@ SplashScreen::SplashScreen(interfaces::Node& node, Qt::WindowFlags f, const Netw
 
     QPoint versionPoint(rectTitle.bottomLeft());
 
-    // draw additional text if special network
-    if(!titleAddText.isEmpty())
-    {
-        QRect titleAddRect(rectTitle.bottomLeft(), QSize(rectTitle.width(), titleAddTextHeight));
-        versionPoint = titleAddRect.bottomLeft();
-        pixPaint.setFont(QFont(font, 8*fontFactor, QFont::Bold));
-        pixPaint.drawText(titleAddRect, Qt::AlignHCenter | Qt::AlignVCenter, titleAddText);
-    }
-
     pixPaint.setFont(QFont(font, 11*fontFactor));
 
     // draw copyright stuff

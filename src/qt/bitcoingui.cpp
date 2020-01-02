@@ -760,7 +760,6 @@ void BitcoinGUI::addWallet(WalletModel* walletModel)
         m_wallet_selector_action->setVisible(true);
     }
     appTitleBar->addWallet(walletModel);
-    QTimer::singleShot(MODEL_UPDATE_DELAY, clientModel, SLOT(updateTip()));
 }
 
 void BitcoinGUI::removeWallet(WalletModel* walletModel)

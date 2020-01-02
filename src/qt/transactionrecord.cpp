@@ -193,7 +193,6 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const interface
 
 void TransactionRecord::updateStatus(const interfaces::WalletTxStatus& wtx, int numBlocks, int64_t block_time)
 {
-    AssertLockHeld(cs_main);
     // Determine transaction status
 
     // Sort order, unrecorded transactions sort to the top
