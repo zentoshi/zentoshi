@@ -2717,8 +2717,8 @@ void static UpdateTip(const CBlockIndex* pindexNew, const CChainParams& chainPar
             DoWarning(strWarning);
         }
     }
-    LogPrintf("%s: new best=%s height=%d version=0x%08x log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo) evodb_cache=%.1fMiB\n", __func__,
-              pindexNew->GetBlockHash().ToString(), pindexNew->nHeight, pindexNew->nVersion,
+    LogPrintf("%s: new best=%s height=%d version=0x%08x proof=%s log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo) evodb_cache=%.1fMiB\n", __func__,
+              pindexNew->GetBlockHash().ToString(), pindexNew->nHeight, pindexNew->nVersion, pindexNew->nNonce == 0 ? "PoS" : "PoW",
               log(pindexNew->nChainWork.getdouble())/log(2.0), (unsigned long)pindexNew->nChainTx,
               FormatISO8601DateTime(pindexNew->GetBlockTime()),
               GuessVerificationProgress(chainParams.TxData(), pindexNew),
@@ -3855,7 +3855,7 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationSta
     }
 
     // Test PoW block difficulty
-    if (block.nNonce != uint32_t(0) && (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, (block.nNonce == 0)))) {
+    if (block.nNonce != 0 && (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, (block.nNonce == 0)))) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "bad-diffbits", "incorrect proof of work");
     }
 
@@ -3924,7 +3924,7 @@ static bool ContextualCheckBlock(const CBlock& block, CValidationState& state, c
     }
 
     // Only enforce nBits for PoW blocks; PoS can set it as they please (they must satisfy hashProof still..)
-    if (block.IsProofOfWork() && block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())) {
+    if (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())) {
         return state.Invalid(ValidationInvalidReason::CONSENSUS, error("CheckBlock(): incorrect difficulty: block pow=%s bits=%08x calc=%08x",
                              block.IsProofOfWork() ? "Y" : "N", block.nBits, GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())));
     } else {
