@@ -4198,7 +4198,7 @@ bool CWallet::ConvertList(std::vector<CTxIn> vecTxIn, std::vector<CAmount>& vecA
     return true;
 }
 
-bool CWallet::CreateCoinStakeKernel(CScript& kernelScript, const CScript& stakeScript, unsigned int nBits, const CBlock& blockFrom, const CTransactionRef& txPrev, const COutPoint& prevout, unsigned int& nTimeTx, bool fPrintProofOfStake) const
+bool CWallet::CreateCoinStakeKernel(CScript& kernelScript, const CScript& stakeScript, unsigned int nBits, const CBlock& blockFrom, const CTransactionRef& txPrev, const COutPoint& prevout, unsigned int& nTimeTx, uint256& bestProofOfStake, bool fPrintProofOfStake) const
 {
     unsigned int nTryTime = 0;
     uint256 hashProofOfStake = uint256();
@@ -4206,9 +4206,15 @@ bool CWallet::CreateCoinStakeKernel(CScript& kernelScript, const CScript& stakeS
     if (blockFrom.GetBlockTime() + Params().GetConsensus().nStakeMinAge + nHashDrift > nTimeTx)
         return false;
 
-    for (unsigned int i = 0; i < nHashDrift; ++i) {
+    for (unsigned int i = 0; i < nHashDrift; ++i)
+    {
         nTryTime = nTimeTx - i;
+
         bool fValidStake = CheckStakeKernelHash(nBits, blockFrom, txPrev, prevout, nTryTime, hashProofOfStake, true, false);
+
+        if (UintToArith256(hashProofOfStake) < UintToArith256(bestProofOfStake))
+            bestProofOfStake = hashProofOfStake;
+
         if (fValidStake)
         {
             //Double check that this will pass time requirements
@@ -4225,6 +4231,7 @@ bool CWallet::CreateCoinStakeKernel(CScript& kernelScript, const CScript& stakeS
             return true;
         }
     }
+
     return false;
 }
 
@@ -4292,6 +4299,7 @@ bool CWallet::CreateCoinStake(unsigned int nBits, CAmount blockReward, CMutableT
 
     CScript scriptPubKeyKernel;
     bool fKernelFound = false;
+    uint256 bestProofOfStake = uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     for(const std::pair<const CWalletTx*, unsigned int> &pcoin : setStakeCoins)
     {
         //make sure that enough time has elapsed between
@@ -4312,7 +4320,7 @@ bool CWallet::CreateCoinStake(unsigned int nBits, CAmount blockReward, CMutableT
         //iterates each utxo inside of CheckStakeKernelHash()
         CScript kernelScript;
         auto stakeScript = pcoin.first->tx->vout[pcoin.second].scriptPubKey;
-        fKernelFound = CreateCoinStakeKernel(kernelScript, stakeScript, nBits, block, pcoin.first->tx, prevoutStake, nTxNewTime, false);
+        fKernelFound = CreateCoinStakeKernel(kernelScript, stakeScript, nBits, block, pcoin.first->tx, prevoutStake, nTxNewTime, bestProofOfStake, false);
         if(fKernelFound) {
             FillCoinStakePayments(txNew, kernelScript, prevoutStake, blockReward);
             break;
@@ -4320,7 +4328,7 @@ bool CWallet::CreateCoinStake(unsigned int nBits, CAmount blockReward, CMutableT
     }
 
     if (!fKernelFound) {
-        LogPrintf("Failed to find coinstake kernel");
+        LogPrintf("Failed to find coinstake kernel (best seen %s)\n", bestProofOfStake.ToString().c_str());
         return false;
     }
 

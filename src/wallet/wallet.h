@@ -1016,7 +1016,7 @@ private:
     uint256 m_last_block_processed GUARDED_BY(cs_wallet);
 
     //! Staking related functions
-    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript, unsigned int nBits, const CBlock& blockFrom, const CTransactionRef &txPrev, const COutPoint& prevout, unsigned int &nTimeTx, bool fPrintProofOfStake) const;
+    bool CreateCoinStakeKernel(CScript &kernelScript, const CScript &stakeScript, unsigned int nBits, const CBlock& blockFrom, const CTransactionRef &txPrev, const COutPoint& prevout, unsigned int &nTimeTx, uint256& bestProofOfStake, bool fPrintProofOfStake) const;
     void FillCoinStakePayments(CMutableTransaction &transaction, const CScript &kernelScript, const COutPoint &stakePrevout, CAmount blockReward) const;
 
     //! Fetches a key from the keypool

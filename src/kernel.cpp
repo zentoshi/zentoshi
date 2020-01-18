@@ -266,21 +266,17 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlockHeader& blockFrom, con
     auto txPrevTime = blockFrom.nTime;
     if (nTimeTx < txPrevTime)  // Transaction timestamp violation
         return error("CheckStakeKernelHash() : nTime violation");
-
     auto nStakeMinAge = Params().GetConsensus().nStakeMinAge;
     auto nStakeMaxAge = Params().GetConsensus().nStakeMaxAge;
     unsigned int nTimeBlockFrom = blockFrom.GetBlockTime();
     if (nTimeBlockFrom + nStakeMinAge > nTimeTx) // Min age requirement
         return error("CheckStakeKernelHash() : min age violation");
 
-    arith_uint256 bnTargetPerCoinDay;
-    bnTargetPerCoinDay.SetCompact(nBits);
+    arith_uint256 bnTarget;
+    bnTarget.SetCompact(nBits);
     CAmount nValueIn = txPrev->vout[prevout.n].nValue;
-    // v0.3 protocol kernel hash weight starts from 0 at the 30-day min age
-    // this change increases active coins participating the hash and helps
-    // to secure the network when proof-of-stake difficulty is low
-    int64_t nTimeWeight = std::min<int64_t>(nTimeTx - txPrevTime, nStakeMaxAge - nStakeMinAge);
-    arith_uint256 bnCoinDayWeight = nValueIn * nTimeWeight / COIN / 200;
+    arith_uint256 bnWeight = arith_uint256(nValueIn);
+    bnTarget *= bnWeight;
 
     // Calculate hash
     CDataStream ss(SER_GETHASH, 0);
@@ -294,14 +290,8 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlockHeader& blockFrom, con
     ss << nTimeBlockFrom << txPrevTime << prevout.n << nTimeTx;
     hashProofOfStake = Hash(ss.begin(), ss.end());
 
-    // Debugging stake kernel
-    if (gArgs.GetBoolArg("-debug", true)) {
-       bool fStakeValid = (UintToArith256(hashProofOfStake) > bnCoinDayWeight * bnTargetPerCoinDay);
-       LogPrint(BCLog::KERNEL, "hashProofOfStake %s (blockcandidate: %s)\n", hashProofOfStake.ToString().c_str(), !fStakeValid ? "Y" : "N");
-    }
-
     // Now check if proof-of-stake hash meets target protocol
-    if (UintToArith256(hashProofOfStake) > bnCoinDayWeight * bnTargetPerCoinDay)
+    if (UintToArith256(hashProofOfStake) > bnTarget)
         return false;
 
     return true;
