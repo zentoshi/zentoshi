@@ -13,7 +13,7 @@ const struct VBDeploymentInfo VersionBitsDeploymentInfo[Consensus::MAX_VERSION_B
         /*.check_mn_protocol =*/ false,
     },
     {
-        /*.name =*/ "segwit",
+        /*.name =*/ "csv",
         /*.gbt_force =*/ true,
         /*.check_mn_protocol =*/ false,
     },
@@ -29,6 +29,11 @@ const struct VBDeploymentInfo VersionBitsDeploymentInfo[Consensus::MAX_VERSION_B
     },
     {
         /*.name =*/ "dip0008",
+        /*.gbt_force =*/ true,
+        /*.check_mn_protocol =*/ false,
+    },
+    {
+        /*.name =*/ "segwit",
         /*.gbt_force =*/ true,
         /*.check_mn_protocol =*/ false,
     }
