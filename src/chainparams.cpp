@@ -410,10 +410,10 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0x0f;
-        pchMessageStart[1] = 0x0f;
-        pchMessageStart[2] = 0x0f;
-        pchMessageStart[3] = 0x0f;
+        pchMessageStart[0] = 0x1f;
+        pchMessageStart[1] = 0x1f;
+        pchMessageStart[2] = 0x1f;
+        pchMessageStart[3] = 0x1f;
         nDefaultPort = 49152;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 1;
@@ -421,8 +421,8 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1579356000;
-        uint32_t nNonce = 367;
+        uint32_t nTime = 1579450000;
+        uint32_t nNonce = 972;
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
