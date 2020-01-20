@@ -33,17 +33,17 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     double EventHorizonDeviation;
     double EventHorizonDeviationFast;
     double EventHorizonDeviationSlow;
-    static const int64_t Blocktime = params.nPowTargetSpacing;
+    static const int64_t Blocktime = fProofOfStake ? params.nPosTargetSpacing : params.nPowTargetSpacing;
     static const unsigned int timeDaySeconds = 86400;
     uint64_t pastSecondsMin = timeDaySeconds * 0.025;
     uint64_t pastSecondsMax = timeDaySeconds * 7;
     uint64_t PastBlocksMin = pastSecondsMin / Blocktime;
     uint64_t PastBlocksMax = pastSecondsMax / Blocktime;
-    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
+    const arith_uint256 bnLimit = fProofOfStake ? UintToArith256(params.posLimit) : UintToArith256(params.powLimit);
 
     if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 ||
             (uint64_t)BlockLastSolved->nHeight < PastBlocksMin)
-        return bnPowLimit.GetCompact();
+        return bnLimit.GetCompact();
 
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
         if (PastBlocksMax > 0 && i > PastBlocksMax) break;
@@ -113,7 +113,7 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
         bnNew = bnNew / nLongShortNew2;
     }
 
-    if (bnNew > bnPowLimit) bnNew = bnPowLimit;
+    if (bnNew > bnLimit) bnNew = bnLimit;
 
     return bnNew.GetCompact();
 }
@@ -134,6 +134,8 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fMining, const Cons
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
+
+    LogPrintf("hash %s target %s\n", hash.ToString().c_str(), bnTarget.ToString().c_str());
 
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget) {
