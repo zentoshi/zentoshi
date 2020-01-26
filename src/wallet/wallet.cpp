@@ -4210,7 +4210,7 @@ bool CWallet::CreateCoinStakeKernel(CScript& kernelScript, const CScript& stakeS
     {
         nTryTime = nTimeTx - i;
 
-        bool fValidStake = CheckStakeKernelHash(nBits, blockFrom, txPrev, prevout, nTryTime, hashProofOfStake, true, false);
+        bool fValidStake = CheckStakeKernelHash(nBits, blockFrom, txPrev, prevout, nTryTime, hashProofOfStake);
 
         if (UintToArith256(hashProofOfStake) < UintToArith256(bestProofOfStake))
             bestProofOfStake = hashProofOfStake;

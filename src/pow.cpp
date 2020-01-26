@@ -123,7 +123,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const Consensus:
     return DualKGW3(pindexLast, params, fProofOfStake);
 }
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fMining, const Consensus::Params& params)
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     bool fNegative;
     bool fOverflow;
@@ -133,16 +133,13 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool fMining, const Cons
 
     // Check range
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
-        return error("CheckProofOfWork(): nBits below minimum work");
+        return false;
 
-    LogPrintf("hash %s target %s\n", hash.ToString().c_str(), bnTarget.ToString().c_str());
+    // LogPrintf("hash %s target %s\n", hash.ToString().c_str(), bnTarget.ToString().c_str());
 
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget) {
-        if (!fMining)
-           return error("CheckProofOfWork(): hash doesn't match nBits");
-        else
-           return false;
+        return false;
     }
 
     return true;

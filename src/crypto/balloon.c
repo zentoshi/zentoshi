@@ -423,7 +423,7 @@ extern "C" {
     }
 
     void balloon(const void* input, void* output) {
-        balloon_hash(input, output, 262144);
+        balloon_hash(input, output, 8192);
     }
 
 #ifdef __cplusplus

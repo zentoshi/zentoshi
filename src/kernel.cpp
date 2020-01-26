@@ -261,7 +261,7 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, unsigned int nTimeTx, 
     return true;
 }
 
-bool CheckStakeKernelHash(unsigned int nBits, const CBlockHeader& blockFrom, const CTransactionRef& txPrev, const COutPoint& prevout, unsigned int nTimeTx, uint256& hashProofOfStake, bool fMinting, bool fValidate)
+bool CheckStakeKernelHash(unsigned int nBits, const CBlockHeader& blockFrom, const CTransactionRef& txPrev, const COutPoint& prevout, unsigned int nTimeTx, uint256& hashProofOfStake)
 {
     auto txPrevTime = blockFrom.nTime;
     if (nTimeTx < txPrevTime)  // Transaction timestamp violation
@@ -289,6 +289,11 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlockHeader& blockFrom, con
     ss << nStakeModifier;
     ss << nTimeBlockFrom << txPrevTime << prevout.n << nTimeTx;
     hashProofOfStake = Hash(ss.begin(), ss.end());
+
+    if (bnTarget > UintToArith256(Params().GetConsensus().posLimit))
+        bnTarget = UintToArith256(Params().GetConsensus().posLimit);
+
+    // LogPrintf("hashproof %s target %s\n", hashProofOfStake.ToString().c_str(), bnTarget.ToString().c_str());
 
     // Now check if proof-of-stake hash meets target protocol
     if (UintToArith256(hashProofOfStake) > bnTarget)
@@ -368,7 +373,7 @@ bool CheckProofOfStake(const CBlock &block, uint256& hashProofOfStake, const CBl
     if(!CheckKernelScript(prevTxOut.scriptPubKey, tx->vout[1].scriptPubKey))
         return error("CheckProofOfStake() : INFO: check kernel script failed on coinstake %s, hashProof=%s \n", tx->GetHash().ToString().c_str(), hashProofOfStake.ToString().c_str());
 
-    if (!CheckStakeKernelHash(block.nBits, blockprev, txPrev, txin.prevout, block.nTime, hashProofOfStake, false, true))
+    if (!CheckStakeKernelHash(block.nBits, blockprev, txPrev, txin.prevout, block.nTime, hashProofOfStake))
         return error("CheckProofOfStake() : INFO: check kernel failed on coinstake %s, hashProof=%s \n", tx->GetHash().ToString().c_str(), hashProofOfStake.ToString().c_str());
 
     return true;

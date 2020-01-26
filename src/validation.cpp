@@ -1265,7 +1265,7 @@ bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::P
     }
 
     // Check the header
-    if (block.IsProofOfWork() && !CheckProofOfWork(block.GetPoWHash(), block.nBits, false, consensusParams))
+    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams) && block.IsProofOfWork())
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
 
     return true;
@@ -3665,7 +3665,7 @@ static bool FindUndoPos(CValidationState &state, int nFile, FlatFilePos &pos, un
 static bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     bool isProofOfStake = (block.nNonce == 0);
-    if (fCheckPOW && !isProofOfStake && !CheckProofOfWork(block.GetPoWHash(), block.nBits, false, consensusParams)) {
+    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams) && fCheckPOW && !isProofOfStake) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "high-hash", "proof of work failed");
     }
     return true;
@@ -3855,12 +3855,12 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationSta
     }
 
     // Test PoW block difficulty
-    if (block.nNonce != 0 && (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, (block.nNonce == 0)))) {
+    if ((block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, false)) && block.nNonce != 0) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "bad-diffbits", "incorrect proof of work");
     }
 
     // Limit damage by PoSv3 potential vulnerabilities (barrystyle/giaki3003 2019)
-    if (block.nNonce == uint32_t(0) && (block.GetBlockTime() > nAdjustedTime + MAX_FUTURE_STAKE_TIME)) {
+    if ((block.GetBlockTime() > nAdjustedTime + MAX_FUTURE_STAKE_TIME) && block.nNonce == 0) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "time-too-new", "block's timestamp is too early");
     }
 

@@ -164,8 +164,8 @@ class CMainParams : public CChainParams
 {
 public:
     CMainParams() {
-
         strNetworkID = "main";
+
         consensus.nFirstPoSBlock = 50;
         consensus.nMasternodePaymentsStartBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreaseBlock = consensus.nFirstPoSBlock;
@@ -196,8 +196,8 @@ public:
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
-        consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("007ffff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
@@ -351,8 +351,8 @@ public:
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
-        consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("7fff000000000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("007ffff000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
@@ -365,6 +365,7 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999;   // December 31, 2008
@@ -421,9 +422,9 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1579450000;
-        uint32_t nNonce = 972;
-        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
+        uint32_t nTime = 1580000000;
+        uint32_t nNonce = 17419;
+        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,80);
@@ -474,6 +475,7 @@ class CRegTestParams : public CChainParams
 public:
     explicit CRegTestParams(const ArgsManager& args) {
         strNetworkID = "regtest";
+
         consensus.nFirstPoSBlock = 100;
         consensus.nMasternodePaymentsStartBlock = 100000;
         consensus.nMasternodePaymentsIncreaseBlock = 158000;
@@ -503,8 +505,8 @@ public:
         consensus.DIP0003EnforcementHeight = 1048576; // TODO
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
-        consensus.powLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("0007fff000000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 60;
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
