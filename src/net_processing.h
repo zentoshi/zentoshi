@@ -85,7 +85,4 @@ void Misbehaving(NodeId nodeid, int howmuch, const std::string& message="");
 /** Relay transaction to every node */
 void RelayTransaction(const uint256&, const CConnman& connman);
 
-/** Relay transaction to every node */
-void RelayTransaction(const uint256&, const CConnman& connman);
-
 #endif // BITCOIN_NET_PROCESSING_H

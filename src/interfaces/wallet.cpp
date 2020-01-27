@@ -238,20 +238,6 @@ public:
         }
         return true;
     }
-    bool commitTransaction(CTransactionRef tx,
-        WalletValueMap value_map,
-        WalletOrderForm order_form,
-        std::string& reject_reason) override
-    {
-        auto locked_chain = m_wallet->chain().lock();
-        LOCK(m_wallet->cs_wallet);
-        CValidationState state;
-        if (!m_wallet->CommitTransaction(std::move(tx), std::move(value_map), std::move(order_form), state)) {
-            reject_reason = state.GetRejectReason();
-            return false;
-        }
-        return true;
-    }
     int GetOutpointPrivateSendRounds (const COutPoint& outpoint) override { return m_wallet->GetOutpointPrivateSendRounds(outpoint); }
     CAmount GetAnonymizableBalance(bool fSkipDenominated, bool fSkipUnconfirmed ) override { return m_wallet->GetAnonymizableBalance(fSkipDenominated, fSkipUnconfirmed); }
     CAmount GetAnonymizedBalance() override { return m_wallet->GetAnonymizedBalance(); }

@@ -1263,10 +1263,12 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     obj.pushKV("blocks",                (int)::ChainActive().Height());
     obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
     obj.pushKV("bestblockhash",         tip->GetBlockHash().GetHex());
+
     UniValue diff(UniValue::VOBJ);
-    diff.pushKV("proof-of-work",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,false)),8));
-    diff.pushKV("proof-of-stake",(double)nround(GetDifficulty(GetNextWorkRequired(tip,consensusParams,true)),8));
+    diff.pushKV("proof-of-work", (double)nround(GetDifficulty(GetNextWorkRequired(tip, consensusParams, false)), 8));
+    diff.pushKV("proof-of-stake", (double)nround(GetDifficulty(GetNextWorkRequired(tip, consensusParams, true)), 8));
     obj.pushKV("difficulty", diff);
+
     obj.pushKV("mediantime",            (int64_t)tip->GetMedianTimePast());
     obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), tip));
     obj.pushKV("initialblockdownload",  ::ChainstateActive().IsInitialBlockDownload());
@@ -1290,7 +1292,6 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
         }
     }
 
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     UniValue softforks(UniValue::VOBJ);
     BuriedForkDescPushBack(softforks, "bip34", consensusParams.BIP34Height);
     BuriedForkDescPushBack(softforks, "bip66", consensusParams.BIP66Height);
@@ -1298,7 +1299,7 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     BuriedForkDescPushBack(softforks, "csv", consensusParams.CSVHeight);
     BuriedForkDescPushBack(softforks, "segwit", consensusParams.SegwitHeight);
     BIP9SoftForkDescPushBack(softforks, "testdummy", consensusParams, Consensus::DEPLOYMENT_TESTDUMMY);
-    obj.pushKV("softforks",             softforks);
+    obj.pushKV("softforks", softforks);
     obj.pushKV("warnings", GetWarnings("statusbar"));
     return obj;
 }
@@ -1388,6 +1389,15 @@ static UniValue getchaintips(const JSONRPCRequest& request)
 
     // Always report the currently active tip.
     setTips.insert(::ChainActive().Tip());
+
+    int nBranchMin = -1;
+    int nCountMax = INT_MAX;
+
+    if(request.params.size() >= 1)
+        nCountMax = request.params[0].get_int();
+
+    if(request.params.size() == 2)
+        nBranchMin = request.params[1].get_int();
 
     /* Construct the output array.  */
     UniValue res(UniValue::VARR);

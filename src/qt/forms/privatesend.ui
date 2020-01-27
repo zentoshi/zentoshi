@@ -46,6 +46,12 @@
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item alignment="Qt::AlignHCenter">
          <widget class="QFrame" name="framePrivateSend">
+          <property name="minimumSize">
+           <size>
+            <width>930</width>
+            <height>250</height>
+           </size>
+          </property>
           <property name="layoutDirection">
            <enum>Qt::LeftToRight</enum>
           </property>
@@ -166,7 +172,7 @@
            <item row="1" column="0">
             <widget class="QFrame" name="">
              <property name="styleSheet">
-              <string notr="true">background-color: rgb(3, 19, 30);</string>
+              <string notr="true"/>
              </property>
              <layout class="QGridLayout" name="gridLayout_3">
               <property name="sizeConstraint">
@@ -266,7 +272,7 @@
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>600</width>
+                  <width>400</width>
                   <height>16777215</height>
                  </size>
                 </property>
