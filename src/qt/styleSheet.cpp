@@ -12,25 +12,13 @@
 #include <QPainter>
 #include <QLineEdit>
 #include <QtGlobal>
-#include <QSettings>
 
-static const QString STYLE_FORMAT = ":/styles/%1/%2";
-static const QString STYLE_CONFIG_FORMAT = ":/styles/%1/config";
+static const QString STYLE_FORMAT = ":/styles/%1";
 static const QColor LINK_COLOR = "#2d9ad0";
 
 class QtumStyle : public QProxyStyle
 {
 public:
-    QtumStyle()
-    {
-        message_info_path = GetStringStyleValue("appstyle/message-info-icon", ":/styles/theme1/app-icons/message_info");
-        message_warning_path = GetStringStyleValue("appstyle/message-warning-icon", ":/styles/theme1/app-icons/message_warning");
-        message_critical_path = GetStringStyleValue("appstyle/message-critical-icon", ":/styles/theme1/app-icons/message_critical");
-        message_question_path = GetStringStyleValue("appstyle/message-question-icon", ":/styles/theme1/app-icons/message_question");
-        message_icon_weight = GetIntStyleValue("appstyle/message-icon-weight", 45);
-        message_icon_height = GetIntStyleValue("appstyle/message-icon-height", 49);
-        button_text_upper = GetIntStyleValue("appstyle/button_text_upper", true);
-    }
 
     void polish(QWidget *widget)
     {
@@ -58,24 +46,24 @@ public:
             switch (icon)
             {
             case QMessageBox::Information:
-                iconPixmap = QPixmap(message_info_path);
+                iconPixmap = QPixmap(":/styles/app-icons/message_info");
                 break;
             case QMessageBox::Warning:
-                iconPixmap = QPixmap(message_warning_path);
+                iconPixmap = QPixmap(":/styles/app-icons/message_warning");
                 break;
             case QMessageBox::Critical:
-                iconPixmap = QPixmap(message_critical_path);
+                iconPixmap = QPixmap(":/styles/app-icons/message_critical");
                 break;
             case QMessageBox::Question:
-                iconPixmap = QPixmap(message_question_path);
+                iconPixmap = QPixmap(":/styles/app-icons/message_question");
                 break;
             default:
                 QProxyStyle::polish(widget);
                 return;
             }
-            messageBox->setIconPixmap(iconPixmap.scaled(message_icon_weight, message_icon_height));
+            messageBox->setIconPixmap(iconPixmap.scaled(45,49));
         }
-        if(widget && widget->inherits("QPushButton") && button_text_upper)
+        if(widget && widget->inherits("QPushButton"))
         {
             QPushButton* button = (QPushButton*)widget;
             button->setText(button->text().toUpper());
@@ -91,15 +79,6 @@ public:
 
         QProxyStyle::polish(widget);
     }
-
-private:
-    QString message_info_path;
-    QString message_warning_path;
-    QString message_critical_path;
-    QString message_question_path;
-    int message_icon_weight;
-    int message_icon_height;
-    bool button_text_upper;
 };
 
 StyleSheet &StyleSheet::instance()
@@ -109,14 +88,7 @@ StyleSheet &StyleSheet::instance()
 }
 
 StyleSheet::StyleSheet()
-{
-    QSettings settings;
-    m_theme = settings.value("Theme", getDefaultTheme()).toString();
-    QStringList supportedThemes = getSupportedThemes();
-    if(!supportedThemes.contains(m_theme))
-        m_theme = getDefaultTheme();
-    m_config = new QSettings(STYLE_CONFIG_FORMAT.arg(m_theme), QSettings::IniFormat);
-}
+{}
 
 void StyleSheet::setStyleSheet(QWidget *widget, const QString &style_name)
 {
@@ -131,7 +103,7 @@ void StyleSheet::setStyleSheet(QApplication *app, const QString& style_name)
     app->setStyle(qtumStyle);
 
     QPalette mainPalette(app->palette());
-    mainPalette.setColor(QPalette::Link, GetStyleValue("appstyle/link-color", LINK_COLOR).toString());
+    mainPalette.setColor(QPalette::Link, LINK_COLOR);
     app->setPalette(mainPalette);
 
     // Increase the font size slightly for Windows and MAC
@@ -150,7 +122,7 @@ void StyleSheet::setStyleSheet(QApplication *app, const QString& style_name)
 QString StyleSheet::getStyleSheet(const QString &style_name)
 {
     QString style;
-    QFile file(STYLE_FORMAT.arg(m_theme, style_name));
+    QFile file(STYLE_FORMAT.arg(style_name));
     if(file.open(QIODevice::ReadOnly))
     {
         style = file.readAll();
@@ -164,46 +136,4 @@ void StyleSheet::setObjectStyleSheet(T *object, const QString &style_name)
 {
     QString style_value = m_cacheStyles.contains(style_name) ? m_cacheStyles[style_name] : getStyleSheet(style_name);
     object->setStyleSheet(style_value);
-}
-
-QString StyleSheet::getCurrentTheme()
-{
-    return m_theme;
-}
-
-QStringList StyleSheet::getSupportedThemes()
-{
-    return QStringList() << "theme3" << "theme2" << "theme1";
-}
-
-QStringList StyleSheet::getSupportedThemesNames()
-{
-    return QStringList() << "Light blue theme" << "Dark blue theme" << "Dark theme";
-}
-
-
-QString StyleSheet::getDefaultTheme()
-{
-    return "theme3";
-}
-
-bool StyleSheet::setTheme(const QString &theme)
-{
-    if(getSupportedThemes().contains(theme))
-    {
-        QSettings settings;
-        settings.setValue("Theme", theme);
-        return true;
-    }
-    return false;
-}
-
-QVariant StyleSheet::getStyleValue(const QString &key, const QVariant &defaultValue)
-{
-    if(m_config)
-    {
-        return m_config->value(key, defaultValue);
-    }
-
-    return defaultValue;
 }

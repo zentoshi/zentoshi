@@ -78,7 +78,7 @@ Line Edit CSS
 QLineEdit{
     border: 1px solid #5a5a5d;
     border-radius: 12px;
-    background-color: #282828;
+    background-color: #011826;
     color: #bdbdbd;
     padding: 4px;
 }
@@ -252,7 +252,7 @@ Spin Box CSS
 --------------------------------------------*/
 QAbstractSpinBox {
     padding: 4px;
-    background-color: #282828;
+    background-color: #011826;
     background-position: right;
     background-repeat: no-repeat;
     border: 1px solid #5a5a5d;
@@ -514,7 +514,7 @@ QTextEdit CSS
 QTextEdit {
     border: 1px solid #5a5a5d;
     border-radius: 12px;
-    background-color: #282828;
+    background-color: #011826;
     color: #bdbdbd;
     padding-left: 5px;
 }
@@ -534,7 +534,7 @@ QPlainTextEdit CSS
 QPlainTextEdit {
     border: 1px solid #5a5a5d;
     border-radius: 12px;
-    background-color: #282828;
+    background-color: #011826;
     color: #bdbdbd;
     padding-left: 5px;
 }
