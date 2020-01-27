@@ -72,7 +72,7 @@ std::shared_ptr<CWallet> GetMainWallet()
     return nullptr;
 }
 
-static std::vector<std::shared_ptr<CWallet>> vpwallets GUARDED_BY(cs_wallets);
+std::vector<std::shared_ptr<CWallet>> vpwallets GUARDED_BY(cs_wallets);
 static std::list<LoadWalletFn> g_load_wallet_fns GUARDED_BY(cs_wallets);
 
 bool AddWallet(const std::shared_ptr<CWallet>& wallet)
@@ -2765,6 +2765,7 @@ CAmount CWallet::GetUnconfirmedBalance() const
                 nTotal += wtx.GetAvailableCredit(*locked_chain);
         }
     } // locked_chain and cs_wallet
+}
 
 CAmount CWallet::GetImmatureBalance() const
 {
@@ -2777,44 +2778,6 @@ CAmount CWallet::GetImmatureBalance() const
             nTotal += wtx.GetImmatureCredit(*locked_chain);
         }
     }
-}
-
-/** @} */ // end of mapWallet
-
-void MaybeResendWalletTxs()
-{
-    CAmount nTotal = 0;
-    {
-        auto locked_chain = chain().lock();
-        LOCK(cs_wallet);
-        for (const auto& entry : mapWallet) {
-            const CWalletTx& wtx = entry.second;
-            if (!wtx.IsTrusted(*locked_chain) && wtx.GetDepthInMainChain(*locked_chain) == 0 && wtx.InMempool())
-                nTotal += wtx.GetAvailableCredit(*locked_chain, true, ISMINE_WATCH_ONLY);
-        }
-    }
-}
-
-
-/** @defgroup Actions
- *
- * @{
- */
-
-
-CWallet::Balance CWallet::GetBalance(const int min_depth, bool avoid_reuse) const
-{
-    Balance ret;
-    isminefilter reuse_filter = avoid_reuse ? ISMINE_NO : ISMINE_USED;
-    {
-        auto locked_chain = chain().lock();
-        LOCK(cs_wallet);
-        for (const auto& entry : mapWallet) {
-            const CWalletTx& wtx = entry.second;
-            nTotal += wtx.GetImmatureWatchOnlyCredit(*locked_chain);
-        }
-    }
-    return nTotal;
 }
 
 /** @} */ // end of mapWallet

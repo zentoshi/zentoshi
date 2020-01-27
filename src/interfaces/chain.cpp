@@ -175,7 +175,7 @@ public:
     {
         m_notifications->TransactionAddedToMempool(tx);
     }
-    void TransactionRemovedFromMempool(const CTransactionRef& tx) override
+    void TransactionRemovedFromMempool(const CTransactionRef& tx)
     {
         m_notifications->TransactionRemovedFromMempool(tx);
     }
@@ -185,7 +185,7 @@ public:
     {
         m_notifications->BlockConnected(*block, tx_conflicted);
     }
-    void BlockDisconnected(const std::shared_ptr<const CBlock>& block) override
+    void BlockDisconnected(const std::shared_ptr<const CBlock>& block)
     {
         m_notifications->BlockDisconnected(*block);
     }

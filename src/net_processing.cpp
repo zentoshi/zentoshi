@@ -1013,6 +1013,18 @@ void Misbehaving(NodeId pnode, int howmuch, const std::string& message) EXCLUSIV
         LogPrint(BCLog::NET, "%s: %s peer=%d (%d -> %d)%s\n", __func__, state->name, pnode, state->nMisbehavior-howmuch, state->nMisbehavior, message_prefixed);
 }
 
+// Requires cs_main.
+bool IsBanned(NodeId pnode)
+{
+    CNodeState *state = State(pnode);
+    if (state == nullptr)
+        return false;
+    if (state->fShouldBan) {
+        return true;
+    }
+    return false;
+}
+
 /**
  * Returns true if the given validation state result may result in a peer
  * banning/disconnecting us. We use this to determine which unaccepted
@@ -1044,6 +1056,7 @@ static bool MaybePunishNode(NodeId nodeid, const CValidationState& state, bool v
     case ValidationInvalidReason::PROTX_INVALID:
     case ValidationInvalidReason::PROTX_CONFLICT:
     case ValidationInvalidReason::PROTX_BAD:
+    case ValidationInvalidReason::CBTX_INVALID:
     case ValidationInvalidReason::QC_INVALID:
     case ValidationInvalidReason::CHAINLOCK_CONFLICT:
     case ValidationInvalidReason::CRISIS_CONFLICT:
@@ -1102,10 +1115,6 @@ static bool MaybePunishNode(NodeId nodeid, const CValidationState& state, bool v
     }
     return false;
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 0.19
 
 
 
