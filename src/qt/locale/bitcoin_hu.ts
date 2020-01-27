@@ -66,8 +66,8 @@
         <translation>Fogadási cím</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Ezek a Bitcoin címeid kifizetések küldéséhez. Mindíg ellenőrizd az összeget és a fogadó címet mielőtt coinokat küldenél.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Ezek a Zentoshi címeid kifizetések küldéséhez. Mindíg ellenőrizd az összeget és a fogadó címet mielőtt coinokat küldenél.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -129,15 +129,11 @@
     </message>
     <message>
         <source>Repeat new passphrase</source>
-<<<<<<< HEAD
-        <translation>Új jelszó újra</translation>
-=======
         <translation>Ismét az új jelszó</translation>
     </message>
     <message>
         <source>Show passphrase</source>
         <translation>Jelszó mutatása</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt wallet</source>
@@ -161,11 +157,7 @@
     </message>
     <message>
         <source>Change passphrase</source>
-<<<<<<< HEAD
-        <translation>Kulcsmondat megváltoztatása</translation>
-=======
         <translation>Jelszó megváltoztatása</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Confirm wallet encryption</source>
@@ -184,10 +176,6 @@
         <translation>Tárca titkosítva</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>Ne feledd, hogy a tárca titkosítása sem nyújt teljes védelmet az adathalász programok fertőzésével szemben.</translation>
-=======
         <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
         <translation>Írja be a tárca új jelszavát. &lt;br/&gt;A jelszó összetétele a következő: &lt;b&gt;tíz vagy annál több véletlenszerű karakter&lt;/b&gt;, vagy &lt;b&gt;nyolc vagy annál több szó&lt;/b&gt;. </translation>
     </message>
@@ -210,7 +198,6 @@
     <message>
         <source>Your wallet is now encrypted. </source>
         <translation>Tárcáját titkosítottuk.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
@@ -333,8 +320,6 @@
     <message>
         <source>Open &amp;URI...</source>
         <translation>&amp;URI azonosító megnyitása...</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Create Wallet...</source>
@@ -343,11 +328,6 @@
     <message>
         <source>Create a new wallet</source>
         <translation>Új tárca készítése</translation>
-    </message>
-    <message>
-        <source>Wallet:</source>
-        <translation>Tárca:</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Wallet:</source>
@@ -378,8 +358,8 @@
         <translation>Proxy  &lt;b&gt;aktív&lt;/b&gt;: %1</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Bitcoin küldése megadott címre</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Zentoshi küldése megadott címre</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -422,12 +402,12 @@
         <translation>A tárcádhoz tartozó privát kulcsok titkosítása</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Üzenetek aláírása a Bitcoin-címmeiddel, amivel bizonyítod, hogy a cím a sajátod</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Üzenetek aláírása a Zentoshi-címmeiddel, amivel bizonyítod, hogy a cím a sajátod</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Üzenetek ellenőrzése, hogy valóban a megjelölt Bitcoin-címekkel vannak-e aláírva</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>Üzenetek ellenőrzése, hogy valóban a megjelölt Zentoshi-címekkel vannak-e aláírva</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -446,8 +426,8 @@
         <translation>Fül eszköztár</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>Fizetési kérelem (QR-kódot és "bitcoin:" URI azonosítót hoz létre)</translation>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
+        <translation>Fizetési kérelem (QR-kódot és "zentoshi:" URI azonosítót hoz létre)</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
@@ -458,16 +438,16 @@
         <translation>A használt fogadó címek és címkék megtekintése</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>"bitcoin:" URI azonosító vagy fizetési kérelem megnyitása</translation>
+        <source>Open a zentoshi: URI or payment request</source>
+        <translation>"zentoshi:" URI azonosító vagy fizetési kérelem megnyitása</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
         <translation>Paran&amp;cssor kapcsolók</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n aktív kapcsolat a Bitcoin hálózathoz</numerusform><numerusform>%n aktív kapcsolat a Bitcoin hálózathoz</numerusform></translation>
+        <source>%n active connection(s) to Zentoshi network</source>
+        <translation><numerusform>%n aktív kapcsolat a Zentoshi hálózathoz</numerusform><numerusform>%n aktív kapcsolat a Zentoshi hálózathoz</numerusform></translation>
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
@@ -523,11 +503,7 @@
     </message>
     <message>
         <source>Open a wallet</source>
-<<<<<<< HEAD
-        <translation>Tárca nyitása</translation>
-=======
         <translation>Tárca megnyitása</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Close Wallet...</source>
@@ -538,8 +514,8 @@
         <translation>Tárca bezárása</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
-        <translation>A %1 súgó megjelenítése a Bitcoin lehetséges parancssori kapcsolóinak listájával</translation>
+        <source>Show the %1 help message to get a list with possible Zentoshi command-line options</source>
+        <translation>A %1 súgó megjelenítése a Zentoshi lehetséges parancssori kapcsolóinak listájával</translation>
     </message>
     <message>
         <source>default wallet</source>
@@ -645,8 +621,8 @@
         <translation>A tárca &lt;b&gt;titkosítva&lt;/b&gt; és jelenleg &lt;b&gt;bezárva&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>Végzetes hiba történt. A Bitcoin működése nem biztonságos és hamarosan leáll.</translation>
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
+        <translation>Végzetes hiba történt. A Zentoshi működése nem biztonságos és hamarosan leáll.</translation>
     </message>
 </context>
 <context>
@@ -802,11 +778,6 @@
 </context>
 <context>
     <name>CreateWalletActivity</name>
-<<<<<<< HEAD
-    </context>
-<context>
-    <name>CreateWalletDialog</name>
-=======
     <message>
         <source>Creating Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; tárca készítése folyamatban...</translation>
@@ -850,7 +821,6 @@
         <source>Make Blank Wallet</source>
         <translation>Üres tárca készítése</translation>
     </message>
->>>>>>> 0.19
     </context>
 <context>
     <name>EditAddressDialog</name>
@@ -887,8 +857,8 @@
         <translation>Küldő cím szerkesztése</translation>
     </message>
     <message>
-        <source>The entered address "%1" is not a valid Bitcoin address.</source>
-        <translation>A megadott "%1" cím nem egy érvényes Bitcoin-cím.</translation>
+        <source>The entered address "%1" is not a valid Zentoshi address.</source>
+        <translation>A megadott "%1" cím nem egy érvényes Zentoshi-cím.</translation>
     </message>
     <message>
         <source>Could not unlock wallet.</source>
@@ -980,8 +950,8 @@
         <translation>Saját adatkönyvtár használata:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Discard blocks after verification, except most recent %1 GB (prune)</source>
@@ -996,8 +966,8 @@
         <translation>Hozzávetőlegesen %1 GB adatot fogunk ebben a könyvtárban tárolni.</translation>
     </message>
     <message>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
-        <translation>%1 le fog töltődni és a Bitcoin blokk lánc egy másolatát fogja tárolni.</translation>
+        <source>%1 will download and store a copy of the Zentoshi block chain.</source>
+        <translation>%1 le fog töltődni és a Zentoshi blokk lánc egy másolatát fogja tárolni.</translation>
     </message>
     <message>
         <source>The wallet will also be stored in this directory.</source>
@@ -1023,8 +993,8 @@
         <translation>Űrlap</translation>
     </message>
     <message>
-        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
-        <translation>A legutóbbi tranzakciók még lehet, hogy nem láthatók, és így előfordulhat, hogy a tárca egyenlege helytelen. A tárca azon nyomban az aktuális egyenleget fogja mutatni, amint befejezte a bitcoin hálózattal történő szinkronizációt, amely alább van részletezve.</translation>
+        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the zentoshi network, as detailed below.</source>
+        <translation>A legutóbbi tranzakciók még lehet, hogy nem láthatók, és így előfordulhat, hogy a tárca egyenlege helytelen. A tárca azon nyomban az aktuális egyenleget fogja mutatni, amint befejezte a zentoshi hálózattal történő szinkronizációt, amely alább van részletezve.</translation>
     </message>
     <message>
         <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
@@ -1089,8 +1059,6 @@
 <context>
     <name>OpenWalletActivity</name>
     <message>
-<<<<<<< HEAD
-=======
         <source>Open wallet failed</source>
         <translation>Nem sikerült a tárca megnyitása</translation>
     </message>
@@ -1099,17 +1067,12 @@
         <translation>Tárca-megnyitási figyelmeztetés</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>default wallet</source>
         <translation>Alapértelmezett tárca</translation>
     </message>
     <message>
         <source>Opening Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
-<<<<<<< HEAD
-        <translation>Tárca megnyitása &lt;b&gt;%1&lt;/b&gt;...</translation>
-=======
         <translation>&lt;b&gt;%1&lt;/b&gt; tárca megnyitása...</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -1183,8 +1146,6 @@
         <translation>&amp;Hálózat</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Disables some advanced features but all blocks will still be fully validated. Reverting this setting requires re-downloading the entire blockchain. Actual disk usage may be somewhat higher.</source>
         <translation>Bizonyos haladó funkciókat letilt, de minden blokkot teljes mértékben érvényesít. A beállítás visszaállításához le kell tölteni a teljes blokkláncot. A tényleges lemezhasználat valamennyire megnövekedhet.</translation>
     </message>
@@ -1193,18 +1154,14 @@
         <translation>Nyesi a &amp;block tárolását ide:</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>GB</source>
         <translation>GB</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Reverting this setting requires re-downloading the entire blockchain.</source>
         <translation>A beállítás visszaállításához le kell tölteni a teljes blokkláncot.</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>MiB</source>
         <translation>MB</translation>
     </message>
@@ -1233,8 +1190,8 @@
         <translation>&amp;Költése a a jóváhagyatlan visszajárónak</translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>A Bitcoin-kliens portjának automatikus megnyitása a routeren. Ez csak akkor működik, ha a routered támogatja az UPnP-t és az engedélyezve is van rajta.</translation>
+        <source>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>A Zentoshi-kliens portjának automatikus megnyitása a routeren. Ez csak akkor működik, ha a routered támogatja az UPnP-t és az engedélyezve is van rajta.</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
@@ -1249,8 +1206,8 @@
         <translation>Bejövő kapcsolatok engedélyezése.</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
-        <translation>Csatlakozás a Bitcoin hálózatához SOCKS5 proxyn keresztül</translation>
+        <source>Connect to the Zentoshi network through a SOCKS5 proxy.</source>
+        <translation>Csatlakozás a Zentoshi hálózatához SOCKS5 proxyn keresztül</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
@@ -1285,8 +1242,8 @@
         <translation>Tor</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
-        <translation>Csatlakozás a Bitcoin hálózathoz külön SOCKS5 proxy használatával a Tor rejtett szolgáltatásainak eléréséhez.</translation>
+        <source>Connect to the Zentoshi network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <translation>Csatlakozás a Zentoshi hálózathoz külön SOCKS5 proxy használatával a Tor rejtett szolgáltatásainak eléréséhez.</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -1392,8 +1349,8 @@
         <translation>Űrlap</translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>A kijelzett információ lehet, hogy elavult. A kapcsolat létrehozatalát követően tárcája automatikusan szinkronba kerül a Bitcoin hálózattal, de ez a folyamat még nem fejeződött be.</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</source>
+        <translation>A kijelzett információ lehet, hogy elavult. A kapcsolat létrehozatalát követően tárcája automatikusan szinkronba kerül a Zentoshi hálózattal, de ez a folyamat még nem fejeződött be.</translation>
     </message>
     <message>
         <source>Watch-only:</source>
@@ -1467,8 +1424,8 @@
         <translation>Hiba történt a fizetési kérelem során</translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>A bitcoin nem tud elindulni: click-to-pay kezelő</translation>
+        <source>Cannot start zentoshi: click-to-pay handler</source>
+        <translation>A zentoshi nem tud elindulni: click-to-pay kezelő</translation>
     </message>
     <message>
         <source>URI handling</source>
@@ -1483,8 +1440,8 @@
         <translation>Érvénytelen fizetési cím %1</translation>
     </message>
     <message>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>Nem sikerült az URI elemzése! Ezt okozhatja érvénytelen Bitcoin cím, vagy rossz URI paraméterezés.</translation>
+        <source>URI cannot be parsed! This can be caused by an invalid Zentoshi address or malformed URI parameters.</source>
+        <translation>Nem sikerült az URI elemzése! Ezt okozhatja érvénytelen Zentoshi cím, vagy rossz URI paraméterezés.</translation>
     </message>
     <message>
         <source>Payment request file handling</source>
@@ -1581,8 +1538,8 @@
         <translation>Összeg</translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
-        <translation>Ad meg egy Bitcoin címet (pl: %1)</translation>
+        <source>Enter a Zentoshi address (e.g. %1)</source>
+        <translation>Ad meg egy Zentoshi címet (pl: %1)</translation>
     </message>
     <message>
         <source>%1 d</source>
@@ -2018,8 +1975,8 @@
         <translation>&amp;Üzenet:</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-        <translation>Egy opcionális üzenet csatolása a fizetési kérelemhez, amely megjelenik a kérelem megnyitásakor. Megjegyzés: Az üzenet nem lesz elküldve a fizetséggel a Bitcoin hálózaton keresztül.</translation>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Zentoshi network.</source>
+        <translation>Egy opcionális üzenet csatolása a fizetési kérelemhez, amely megjelenik a kérelem megnyitásakor. Megjegyzés: Az üzenet nem lesz elküldve a fizetséggel a Zentoshi hálózaton keresztül.</translation>
     </message>
     <message>
         <source>An optional label to associate with the new receiving address.</source>
@@ -2387,8 +2344,8 @@
         <translation>A fizetési kérelem lejárt.</translation>
     </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>Figyelmeztetés: Érvénytelen Bitcoin cím</translation>
+        <source>Warning: Invalid Zentoshi address</source>
+        <translation>Figyelmeztetés: Érvénytelen Zentoshi cím</translation>
     </message>
     <message>
         <source>Warning: Unknown change address</source>
@@ -2430,8 +2387,8 @@
         <translation>Ez normál fizetés.</translation>
     </message>
     <message>
-        <source>The Bitcoin address to send the payment to</source>
-        <translation>Erre a Bitcoin címre küldje az összeget</translation>
+        <source>The Zentoshi address to send the payment to</source>
+        <translation>Erre a Zentoshi címre küldje az összeget</translation>
     </message>
     <message>
         <source>Alt+A</source>
@@ -2515,8 +2472,8 @@
         <translation>Üzenet aláírása...</translation>
     </message>
     <message>
-        <source>The Bitcoin address to sign the message with</source>
-        <translation>Bitcoin cím, amivel alá kívánja írni az üzenetet</translation>
+        <source>The Zentoshi address to sign the message with</source>
+        <translation>Zentoshi cím, amivel alá kívánja írni az üzenetet</translation>
     </message>
     <message>
         <source>Choose previously used address</source>
@@ -2547,7 +2504,7 @@
         <translation>A jelenleg kiválasztott aláírás másolása a rendszer-vágólapra</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
+        <source>Sign the message to prove you own this Zentoshi address</source>
         <translation>Üzenet</translation>
     </message>
     <message>
@@ -2563,12 +2520,12 @@
         <translation>Üzenet ellenőrzése</translation>
     </message>
     <message>
-        <source>The Bitcoin address the message was signed with</source>
-        <translation>Bitcoin cím, amivel aláírta az üzenetet</translation>
+        <source>The Zentoshi address the message was signed with</source>
+        <translation>Zentoshi cím, amivel aláírta az üzenetet</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Ellenőrizze az üzenetet, hogy valóban a megjelölt Bitcoin címmel van-e aláírva</translation>
+        <source>Verify the message to ensure it was signed with the specified Zentoshi address</source>
+        <translation>Ellenőrizze az üzenetet, hogy valóban a megjelölt Zentoshi címmel van-e aláírva</translation>
     </message>
     <message>
         <source>Verify &amp;Message</source>
@@ -3027,9 +2984,6 @@
         <source>Close wallet</source>
         <translation>Tárca bezárása</translation>
     </message>
-<<<<<<< HEAD
-    </context>
-=======
     <message>
         <source>Are you sure you wish to close the wallet &lt;i&gt;%1&lt;/i&gt;?</source>
         <translation>Biztos, hogy bezárja a "%1" tárcát?</translation>
@@ -3039,7 +2993,6 @@
         <translation>A tárca hosszantartó bezárása nyesési üzemmódban azt eredményezheti, hogy a teljes láncot újra kell szinkronizálnia.</translation>
     </message>
 </context>
->>>>>>> 0.19
 <context>
     <name>WalletFrame</name>
     <message>
@@ -3122,7 +3075,7 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation>MIT szoftver licenc alapján terjesztve, tekintse meg a hozzátartozó fájlt %s or %s</translation>
@@ -3238,8 +3191,6 @@
     <message>
         <source>Not enough file descriptors available.</source>
         <translation>Nincs elég fájlleíró.</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Prune cannot be configured with a negative value.</source>
@@ -3248,7 +3199,6 @@
     <message>
         <source>Prune mode is incompatible with -txindex.</source>
         <translation>A -txindex nem használható nyesett üzemmódban.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Replaying blocks...</source>
@@ -3291,13 +3241,10 @@
         <translation>Hiba a blokk adatbázis betöltése közben</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Prune mode is incompatible with -blockfilterindex.</source>
         <translation>A -blockfilterindex nem használható nyesés üzemmódban.</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Signing transaction failed</source>
         <translation>Tranzakció aláírása sikertelen</translation>
     </message>
@@ -3330,8 +3277,6 @@
         <translation>Tárcák ellenőrzése...</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Zapping all transactions from wallet...</source>
         <translation>A tárca összes trancakciójának törlése...</translation>
     </message>
@@ -3340,7 +3285,6 @@
         <translation>Figyelem: A tárca-fájl megsérült, de az adatokat sikerült megmenteni! Az eredeti %s fájlt mentettük %s név alatt a %s könyvtárban. Amennyiben az egyenleg vagy a trancakciók helytelenek, állítsa vissza tárcáját a biztonsági mentés használatával.</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>%s is set very high!</source>
         <translation>%s étéke nagyon magas!</translation>
     </message>

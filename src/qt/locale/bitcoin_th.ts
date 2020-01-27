@@ -28,13 +28,10 @@
     <message>
         <source>Delete the currently selected address from the list</source>
         <translation>ลบที่อยู่ที่เลือกไว้ออกจากรายการ</translation>
-<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
-=======
     </message>
     <message>
         <source>Enter address or label to search</source>
         <translation>ป้อนที่อยู่หรือฉลากเพื่อค้นหา</translation>
->>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
     </message>
     <message>
         <source>Export the data in the current tab to a file</source>
@@ -69,8 +66,8 @@
         <translation>ที่อยู่ในการรับ</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>ที่อยู่ Bitcoin ของคุณสำหรับการส่งการชำระเงิน โปรดตรวจสอบจำนวนเงินและที่อยู่รับก่อนที่จะส่งเหรียญ</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>ที่อยู่ Zentoshi ของคุณสำหรับการส่งการชำระเงิน โปรดตรวจสอบจำนวนเงินและที่อยู่รับก่อนที่จะส่งเหรียญ</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -135,13 +132,10 @@
         <translation>ทำซ้ำข้อความรหัสใหม่</translation>
     </message>
     <message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
-=======
         <source>Show passphrase</source>
         <translation>ดูวลี</translation>
     </message>
     <message>
->>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
         <source>Encrypt wallet</source>
         <translation>กระเป๋าสตางค์ เข้ารหัส</translation>
     </message>
@@ -164,8 +158,6 @@
     <message>
         <source>Change passphrase</source>
         <translation>เปลี่ยน ข้อความรหัสผ่าน</translation>
-<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
-=======
     </message>
     <message>
         <source>Confirm wallet encryption</source>
@@ -174,7 +166,6 @@
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
         <translation>คุณแน่ใจหรือว่าต้องการเข้ารหัสกระเป๋าเงินของคุณ?</translation>
->>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
     </message>
     </context>
 <context>
@@ -271,8 +262,8 @@
         <translation>กำลังทำดัชนี ที่เก็บบล็อก ใหม่ ในดิสก์...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>ส่ง coins ไปยัง ที่เก็บ Bitcoin</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>ส่ง coins ไปยัง ที่เก็บ Zentoshi</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -315,12 +306,12 @@
         <translation>เข้ารหัส private keys/ รหัสส่วนตัว สำหรับกระเป๋าเงินของท่าน</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>เซ็นชื่อด้วยข้อความ ที่เก็บ Bitcoin เพื่อแสดงว่าท่านเป็นเจ้าของ bitcoin นี้จริง</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>เซ็นชื่อด้วยข้อความ ที่เก็บ Zentoshi เพื่อแสดงว่าท่านเป็นเจ้าของ zentoshi นี้จริง</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>ตรวจสอบ ข้อความ เพื่อให้แน่ใจว่า การเซ็นต์ชื่อ ด้วยที่เก็บ Bitcoin แล้ว</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>ตรวจสอบ ข้อความ เพื่อให้แน่ใจว่า การเซ็นต์ชื่อ ด้วยที่เก็บ Zentoshi แล้ว</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -339,28 +330,28 @@
         <translation>แถบเครื่องมือ</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>เรียกเก็บ การชำระเงิน (สร้าง QR codes และ bitcoin: URIs)</translation>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
+        <translation>เรียกเก็บ การชำระเงิน (สร้าง QR codes และ zentoshi: URIs)</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
-        <translation>แสดงรายการ ที่เก็บเงินที่จะส่ง bitcoin ออก และป้ายชื่อ ที่ใช้ไปแล้ว</translation>
+        <translation>แสดงรายการ ที่เก็บเงินที่จะส่ง zentoshi ออก และป้ายชื่อ ที่ใช้ไปแล้ว</translation>
     </message>
     <message>
         <source>Show the list of used receiving addresses and labels</source>
-        <translation>แสดงรายการ ที่เก็บเงินที่จะรับ bitcoin เข้า และป้ายชื่อ ที่ใช้ไปแล้ว</translation>
+        <translation>แสดงรายการ ที่เก็บเงินที่จะรับ zentoshi เข้า และป้ายชื่อ ที่ใช้ไปแล้ว</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>เปิด bitcoin: URI หรือ การเรียกเก็บเงิน (การเรียกให้ชำระเงิน)</translation>
+        <source>Open a zentoshi: URI or payment request</source>
+        <translation>เปิด zentoshi: URI หรือ การเรียกเก็บเงิน (การเรียกให้ชำระเงิน)</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
         <translation>&amp;ตัวเลือก Command-line</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n ช่องการเชื่อมต่อที่ใช้งานได้ เพื่อเชื่อมกับเครือข่าย Bitcoin</numerusform></translation>
+        <source>%n active connection(s) to Zentoshi network</source>
+        <translation><numerusform>%n ช่องการเชื่อมต่อที่ใช้งานได้ เพื่อเชื่อมกับเครือข่าย Zentoshi</numerusform></translation>
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
@@ -403,8 +394,8 @@
         <translation>ทันสมัย</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
-        <translation>แสดง %1 ข้อความช่วยเหลือ เพื่อแสดงรายการ ตัวเลือกที่เป็นไปได้สำหรับ Bitcoin command-line</translation>
+        <source>Show the %1 help message to get a list with possible Zentoshi command-line options</source>
+        <translation>แสดง %1 ข้อความช่วยเหลือ เพื่อแสดงรายการ ตัวเลือกที่เป็นไปได้สำหรับ Zentoshi command-line</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -465,8 +456,8 @@
         <translation>กระเป๋าเงินถูก &lt;b&gt;เข้ารหัส&lt;/b&gt; และในปัจจุบัน &lt;b&gt;ล็อค &lt;/b&gt;</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>เกิดข้อผิดพลาดร้ายแรง Bitcoin ไม่สามารถดำเนินการต่อได้อย่างปลอดภัยอีกต่อไปและจะยกเลิก</translation>
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
+        <translation>เกิดข้อผิดพลาดร้ายแรง Zentoshi ไม่สามารถดำเนินการต่อได้อย่างปลอดภัยอีกต่อไปและจะยกเลิก</translation>
     </message>
 </context>
 <context>
@@ -540,17 +531,6 @@
         <translation>ยืนยันแล้ว</translation>
     </message>
     <message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
-        <source>(no label)</source>
-        <translation>(ไม่มีฉลาก)</translation>
-    </message>
-    </context>
-<context>
-    <name>CreateWalletActivity</name>
-    </context>
-<context>
-    <name>CreateWalletDialog</name>
-=======
         <source>Copy address</source>
         <translation>คัดลอกที่อยู่</translation>
     </message>
@@ -570,7 +550,6 @@
         <source>(no label)</source>
         <translation>(ไม่มีฉลาก)</translation>
     </message>
->>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
     </context>
 <context>
     <name>CreateWalletActivity</name>
@@ -678,8 +657,8 @@
         <translation>ใช้ไดเร็กทอรี่ข้อมูลที่ตั้งค่าเอง:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Approximately %1 GB of data will be stored in this directory.</source>
@@ -810,16 +789,16 @@
         <translation>&amp;ใช้เงินทอนที่ยังไม่ยืนยัน</translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>เปิด Bitcoin ไคล์เอ็นท์พอร์ต/client port บน router โดยอัตโนมัติ วิธีนี้ใช้ได้เมื่อ router สนับสนุน UPnP และสถานะเปิดใช้งาน</translation>
+        <source>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>เปิด Zentoshi ไคล์เอ็นท์พอร์ต/client port บน router โดยอัตโนมัติ วิธีนี้ใช้ได้เมื่อ router สนับสนุน UPnP และสถานะเปิดใช้งาน</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
         <translation>จองพอร์ต โดยใช้ &amp;UPnP</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
-        <translation>เชื่อมต่อกับ Bitcoin เน็ตเวิร์ก ผ่านพร็อกซี่แบบ SOCKS5</translation>
+        <source>Connect to the Zentoshi network through a SOCKS5 proxy.</source>
+        <translation>เชื่อมต่อกับ Zentoshi เน็ตเวิร์ก ผ่านพร็อกซี่แบบ SOCKS5</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
@@ -854,8 +833,8 @@
         <translation>Tor</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
-        <translation>เชื่อมต่อกับ เครือข่าย Bitcoin ผ่านทาง พร้อกซี่ SOCKS5 แยกต่างหาก สำหรับ Tor เซอร์วิส</translation>
+        <source>Connect to the Zentoshi network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <translation>เชื่อมต่อกับ เครือข่าย Zentoshi ผ่านทาง พร้อกซี่ SOCKS5 แยกต่างหาก สำหรับ Tor เซอร์วิส</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -984,13 +963,10 @@
         <translation>เศษ:</translation>
     </message>
     <message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
-=======
         <source>Copy amount</source>
         <translation>คัดลอกจำนวนเงิน</translation>
     </message>
     <message>
->>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
         <source>(no label)</source>
         <translation>(ไม่มีฉลาก)</translation>
     </message>
@@ -1046,8 +1022,6 @@
 <context>
     <name>TransactionView</name>
     <message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
-=======
         <source>Copy address</source>
         <translation>คัดลอกที่อยู่</translation>
     </message>
@@ -1064,7 +1038,6 @@
         <translation>คัดลอก ID ธุรกรรม</translation>
     </message>
     <message>
->>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
         <source>Comma separated file (*.csv)</source>
         <translation>ไฟล์ที่คั่นด้วยจุลภาค (* .csv)</translation>
     </message>
@@ -1117,6 +1090,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     </context>
 </TS>

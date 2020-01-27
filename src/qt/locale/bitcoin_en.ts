@@ -85,12 +85,12 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>These are your Bitcoin addresses for receiving payments. Use the &apos;Create new receiving address&apos; button in the receive tab to create new addresses.</source>
+        <source>These are your Zentoshi addresses for receiving payments. Use the &apos;Create new receiving address&apos; button in the receive tab to create new addresses.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -330,20 +330,12 @@
         <translation>Sign &amp;message...</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+623"/>
-=======
         <location line="+625"/>
->>>>>>> 0.19
         <source>Synchronizing with network...</source>
         <translation>Synchronizing with network...</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="-701"/>
-=======
         <location line="-703"/>
->>>>>>> 0.19
         <source>&amp;Overview</source>
         <translation>&amp;Overview</translation>
     </message>
@@ -428,11 +420,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+1"/>
-=======
         <location line="+2"/>
->>>>>>> 0.19
         <source>Create a new wallet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -442,11 +430,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+334"/>
-=======
         <location line="+335"/>
->>>>>>> 0.19
         <source>Click to disable network activity.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -476,13 +460,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="-1021"/>
-=======
         <location line="-1023"/>
->>>>>>> 0.19
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Send coins to a Bitcoin address</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Send coins to a Zentoshi address</translation>
     </message>
     <message>
         <location line="+67"/>
@@ -536,20 +516,16 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Sign messages with your Bitcoin addresses to prove you own them</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Sign messages with your Zentoshi addresses to prove you own them</translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Verify messages to ensure they were signed with specified Bitcoin addresses</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>Verify messages to ensure they were signed with specified Zentoshi addresses</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+110"/>
-=======
         <location line="+111"/>
->>>>>>> 0.19
         <source>&amp;File</source>
         <translation>&amp;File</translation>
     </message>
@@ -569,12 +545,8 @@
         <translation>Tabs toolbar</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="-256"/>
-=======
         <location line="-257"/>
->>>>>>> 0.19
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -589,28 +561,20 @@
     </message>
     <message>
         <location line="+3"/>
-        <source>Open a bitcoin: URI or payment request</source>
+        <source>Open a zentoshi: URI or payment request</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+13"/>
-=======
         <location line="+14"/>
->>>>>>> 0.19
         <source>&amp;Command-line options</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-<<<<<<< HEAD
-        <location line="+522"/>
-=======
         <location line="+523"/>
->>>>>>> 0.19
-        <source>%n active connection(s) to Bitcoin network</source>
+        <source>%n active connection(s) to Zentoshi network</source>
         <translation>
-            <numerusform>%n active connection to Bitcoin network</numerusform>
-            <numerusform>%n active connections to Bitcoin network</numerusform>
+            <numerusform>%n active connection to Zentoshi network</numerusform>
+            <numerusform>%n active connections to Zentoshi network</numerusform>
         </translation>
     </message>
     <message>
@@ -667,11 +631,7 @@
         <translation>Up to date</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="-642"/>
-=======
         <location line="-644"/>
->>>>>>> 0.19
         <source>&amp;Sending addresses</source>
         <translation type="unfinished"></translation>
     </message>
@@ -701,12 +661,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+7"/>
-=======
         <location line="+8"/>
->>>>>>> 0.19
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
+        <source>Show the %1 help message to get a list with possible Zentoshi command-line options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -740,11 +696,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location line="+232"/>
-=======
         <location line="+233"/>
->>>>>>> 0.19
         <source>%1 client</source>
         <translation type="unfinished"></translation>
     </message>
@@ -840,8 +792,8 @@
         <translation>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../bitcoin.cpp" line="+386"/>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
+        <location filename="../zentoshi.cpp" line="+386"/>
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1145,7 +1097,7 @@
     </message>
     <message>
         <location line="+75"/>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
+        <source>The entered address &quot;%1&quot; is not a valid Zentoshi address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1270,8 +1222,8 @@
     </message>
     <message>
         <location filename="../intro.cpp" line="+22"/>
-        <source>Bitcoin</source>
-        <translation type="unfinished">Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation type="unfinished">Zentoshi</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -1290,7 +1242,7 @@
     </message>
     <message>
         <location line="+8"/>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
+        <source>%1 will download and store a copy of the Zentoshi block chain.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1342,7 +1294,7 @@
     </message>
     <message>
         <location line="+119"/>
-        <source>Recent transactions may not yet be visible, and therefore your wallet&apos;s balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
+        <source>Recent transactions may not yet be visible, and therefore your wallet&apos;s balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the zentoshi network, as detailed below.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1603,8 +1555,8 @@
     </message>
     <message>
         <location line="+30"/>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</translation>
+        <source>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -1623,7 +1575,7 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
+        <source>Connect to the Zentoshi network through a SOCKS5 proxy.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1671,7 +1623,7 @@
     </message>
     <message>
         <location line="+25"/>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <source>Connect to the Zentoshi network through a separate SOCKS5 proxy for Tor hidden services.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1811,8 +1763,8 @@
     <message>
         <location line="+62"/>
         <location line="+386"/>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</source>
+        <translation>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</translation>
     </message>
     <message>
         <location line="-139"/>
@@ -1909,7 +1861,7 @@
     </message>
     <message>
         <location line="-531"/>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
+        <source>Cannot start zentoshi: click-to-pay handler</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1924,7 +1876,7 @@
     </message>
     <message>
         <location line="-55"/>
-        <source>&apos;bitcoin://&apos; is not a valid URI. Use &apos;bitcoin:&apos; instead.</source>
+        <source>&apos;zentoshi://&apos; is not a valid URI. Use &apos;zentoshi:&apos; instead.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1962,7 +1914,7 @@
     </message>
     <message>
         <location line="+8"/>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
+        <source>URI cannot be parsed! This can be caused by an invalid Zentoshi address or malformed URI parameters.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2095,7 +2047,7 @@
     </message>
     <message>
         <location filename="../guiutil.cpp" line="+108"/>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
+        <source>Enter a Zentoshi address (e.g. %1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2209,11 +2161,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <location filename="../bitcoin.cpp" line="+115"/>
-=======
-        <location filename="../bitcoin.cpp" line="+118"/>
->>>>>>> 0.19
+        <location filename="../zentoshi.cpp" line="+118"/>
         <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2733,7 +2681,7 @@
     <message>
         <location line="-3"/>
         <location line="+46"/>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Zentoshi network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2890,11 +2838,7 @@
 <context>
     <name>RecentRequestsTableModel</name>
     <message>
-<<<<<<< HEAD
-        <location filename="../recentrequeststablemodel.cpp" line="+27"/>
-=======
         <location filename="../recentrequeststablemodel.cpp" line="+26"/>
->>>>>>> 0.19
         <source>Date</source>
         <translation type="unfinished">Date</translation>
     </message>
@@ -3076,7 +3020,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+543"/>
-        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for bitcoin transactions than the network can process.</source>
+        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for zentoshi transactions than the network can process.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3276,7 +3220,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+101"/>
-        <source>Warning: Invalid Bitcoin address</source>
+        <source>Warning: Invalid Zentoshi address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3331,7 +3275,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+39"/>
-        <source>The Bitcoin address to send the payment to</source>
+        <source>The Zentoshi address to send the payment to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3393,7 +3337,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+54"/>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
+        <source>A message that was attached to the zentoshi: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Zentoshi network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3455,7 +3399,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+18"/>
-        <source>The Bitcoin address to sign the message with</source>
+        <source>The Zentoshi address to sign the message with</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3497,8 +3441,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+21"/>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Sign the message to prove you own this Bitcoin address</translation>
+        <source>Sign the message to prove you own this Zentoshi address</source>
+        <translation>Sign the message to prove you own this Zentoshi address</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3528,13 +3472,13 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
     <message>
         <location line="+21"/>
-        <source>The Bitcoin address the message was signed with</source>
+        <source>The Zentoshi address the message was signed with</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+37"/>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Verify the message to ensure it was signed with the specified Bitcoin address</translation>
+        <source>Verify the message to ensure it was signed with the specified Zentoshi address</source>
+        <translation>Verify the message to ensure it was signed with the specified Zentoshi address</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -4350,7 +4294,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <location filename="../bitcoinstrings.cpp" line="+28"/>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>

@@ -66,8 +66,8 @@
         <translation>Direcciones de recibo</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Estas son tus direcciones de Bitcoin para enviar pagos. Siempre revisa el monto y la dirección de envío antes de enviar monedas.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Estas son tus direcciones de Zentoshi para enviar pagos. Siempre revisa el monto y la dirección de envío antes de enviar monedas.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -292,7 +292,6 @@
     <message>
         <source>Open &amp;URI...</source>
         <translation>Abrir &amp;URL...</translation>
-<<<<<<< HEAD
     </message>
     <message>
         <source>Wallet:</source>
@@ -303,30 +302,15 @@
         <translation>Haga clic para desactivar la actividad de la red.</translation>
     </message>
     <message>
-=======
-    </message>
-    <message>
-        <source>Wallet:</source>
-        <translation>Cartera:</translation>
-    </message>
-    <message>
-        <source>Click to disable network activity.</source>
-        <translation>Haga clic para desactivar la actividad de la red.</translation>
-    </message>
-    <message>
->>>>>>> 0.19
         <source>Network activity disabled.</source>
         <translation>Actividad de red deshabilitada.</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Click to enable network activity again.</source>
         <translation> 
 Haga clic para habilitar la actividad de red nuevamente.</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Syncing Headers (%1%)...</source>
         <translation>Sincronizar encabezados (%1%) ...</translation>
     </message>
@@ -339,8 +323,8 @@ Haga clic para habilitar la actividad de red nuevamente.</translation>
         <translation>El proxy está &lt;b&gt;habilitado&lt;/b&gt;: %1</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Enviar monedas a una dirección Bitcoin</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Enviar monedas a una dirección Zentoshi</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -383,17 +367,14 @@ Haga clic para habilitar la actividad de red nuevamente.</translation>
         <translation>Cifre las claves privadas que pertenecen a su billetera</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Firme mensajes con sus direcciones de Bitcoin para demostrar que los posee</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Firme mensajes con sus direcciones de Zentoshi para demostrar que los posee</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Verifique los mensajes para asegurarse de que se firmaron con direcciones de Bitcoin especificadas.</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>Verifique los mensajes para asegurarse de que se firmaron con direcciones de Zentoshi especificadas.</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>&amp;File</source>
         <translation>&amp;Archivo</translation>
     </message>
@@ -410,9 +391,9 @@ Haga clic para habilitar la actividad de red nuevamente.</translation>
         <translation>Pestañas</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
         <translation> 
-Solicitar pagos (genera códigos QR y bitcoin: URI)
+Solicitar pagos (genera códigos QR y zentoshi: URI)
  </translation>
     </message>
     <message>
@@ -545,8 +526,8 @@ Solicitar pagos (genera códigos QR y bitcoin: URI)
 <context>
     <name>Intro</name>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Error</source>
@@ -634,8 +615,8 @@ Solicitar pagos (genera códigos QR y bitcoin: URI)
         <translation>Mensaje:</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-        <translation>Mensaje opcional para agregar a la solicitud de pago, el cual será mostrado cuando la solicitud este abierta. Nota: El mensaje no se manda con el pago a travéz de la red de Bitcoin.</translation>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Zentoshi network.</source>
+        <translation>Mensaje opcional para agregar a la solicitud de pago, el cual será mostrado cuando la solicitud este abierta. Nota: El mensaje no se manda con el pago a travéz de la red de Zentoshi.</translation>
     </message>
     <message>
         <source>Use this form to request payments. All fields are &lt;b&gt;optional&lt;/b&gt;.</source>
@@ -898,7 +879,7 @@ Solicitar pagos (genera códigos QR y bitcoin: URI)
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Verifying blocks...</source>
         <translation>Verificando bloques...</translation>
