@@ -175,11 +175,19 @@ public:
     {
         m_notifications->TransactionAddedToMempool(tx);
     }
+    void TransactionRemovedFromMempool(const CTransactionRef& tx) override
+    {
+        m_notifications->TransactionRemovedFromMempool(tx);
+    }
     void BlockConnected(const std::shared_ptr<const CBlock>& block,
         const CBlockIndex* index,
         const std::vector<CTransactionRef>& tx_conflicted) override
     {
         m_notifications->BlockConnected(*block, tx_conflicted);
+    }
+    void BlockDisconnected(const std::shared_ptr<const CBlock>& block) override
+    {
+        m_notifications->BlockDisconnected(*block);
     }
     void UpdatedBlockTip(const CBlockIndex* index, const CBlockIndex* fork_index, bool is_ibd) override
     {
@@ -331,7 +339,6 @@ public:
     void initMessage(const std::string& message) override { ::uiInterface.InitMessage(message); }
     void initWarning(const std::string& message) override { InitWarning(message); }
     void initError(const std::string& message) override { InitError(message); }
-    void loadWallet(std::unique_ptr<Wallet> wallet) override { ::uiInterface.LoadWallet(wallet); }
     void showProgress(const std::string& title, int progress, bool resume_possible) override
     {
         ::uiInterface.ShowProgress(title, progress, resume_possible);

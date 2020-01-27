@@ -292,6 +292,7 @@
     <message>
         <source>Open &amp;URI...</source>
         <translation>Abrir &amp;URL...</translation>
+<<<<<<< HEAD
     </message>
     <message>
         <source>Wallet:</source>
@@ -302,10 +303,30 @@
         <translation>Haga clic para desactivar la actividad de la red.</translation>
     </message>
     <message>
+=======
+    </message>
+    <message>
+        <source>Wallet:</source>
+        <translation>Cartera:</translation>
+    </message>
+    <message>
+        <source>Click to disable network activity.</source>
+        <translation>Haga clic para desactivar la actividad de la red.</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>Network activity disabled.</source>
         <translation>Actividad de red deshabilitada.</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Click to enable network activity again.</source>
+        <translation> 
+Haga clic para habilitar la actividad de red nuevamente.</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>Syncing Headers (%1%)...</source>
         <translation>Sincronizar encabezados (%1%) ...</translation>
     </message>
@@ -366,6 +387,13 @@
         <translation>Firme mensajes con sus direcciones de Bitcoin para demostrar que los posee</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
+        <translation>Verifique los mensajes para asegurarse de que se firmaron con direcciones de Bitcoin especificadas.</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>&amp;File</source>
         <translation>&amp;Archivo</translation>
     </message>
@@ -380,6 +408,12 @@
     <message>
         <source>Tabs toolbar</source>
         <translation>Pestañas</translation>
+    </message>
+    <message>
+        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
+        <translation> 
+Solicitar pagos (genera códigos QR y bitcoin: URI)
+ </translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>

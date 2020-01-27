@@ -15,8 +15,11 @@ from test_framework.messages import CBlock, ToHex
 from test_framework.script import CScript, OP_RETURN, OP_NOP
 from test_framework.test_framework import BitcoinTestFramework
 <<<<<<< HEAD
+<<<<<<< HEAD
 from test_framework.util import assert_equal, assert_raises_rpc_error, connect_nodes, mine_large_block, sync_blocks, wait_until
 =======
+=======
+>>>>>>> 0.19
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
@@ -25,6 +28,9 @@ from test_framework.util import (
     disconnect_nodes,
     wait_until,
 )
+<<<<<<< HEAD
+>>>>>>> 0.19
+=======
 >>>>>>> 0.19
 
 # Rescans start at the earliest block up to 2 hours before a key timestamp, so

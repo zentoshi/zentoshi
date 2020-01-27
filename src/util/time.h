@@ -39,6 +39,10 @@ T GetTime();
 template <typename T>
 T GetTime();
 
+/** Return system time (or mocked time, if set) */
+template <typename T>
+T GetTime();
+
 /**
  * ISO 8601 formatting is preferred. Use the FormatISO8601{DateTime,Date}
  * helper functions if possible.

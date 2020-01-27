@@ -590,6 +590,74 @@ static void EnableOrDisableLogCategories(UniValue cats, bool enable) {
     }
 }
 
+UniValue logging(const JSONRPCRequest& request)
+{
+            RPCHelpMan{"logging",
+            "Gets and sets the logging configuration.\n"
+            "When called without an argument, returns the list of categories with status that are currently being debug logged or not.\n"
+            "When called with arguments, adds or removes categories from debug logging and return the lists above.\n"
+            "The arguments are evaluated in order \"include\", \"exclude\".\n"
+            "If an item is both included and excluded, it will thus end up being excluded.\n"
+            "The valid logging categories are: " + ListLogCategories() + "\n"
+            "In addition, the following are available as category names with special meanings:\n"
+            "  - \"all\",  \"1\" : represent all logging categories.\n"
+            "  - \"none\", \"0\" : even if other logging categories are specified, ignore all of them.\n"
+            ,
+                {
+                    {"include", RPCArg::Type::ARR, RPCArg::Optional::OMITTED_NAMED_ARG, "A json array of categories to add debug logging",
+                        {
+                            {"include_category", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "the valid logging category"},
+                        }},
+                    {"exclude", RPCArg::Type::ARR, RPCArg::Optional::OMITTED_NAMED_ARG, "A json array of categories to remove debug logging",
+                        {
+                            {"exclude_category", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "the valid logging category"},
+                        }},
+                },
+                RPCResult{
+            "{                   (json object where keys are the logging categories, and values indicates its status\n"
+            "  \"category\": true|false,  (bool) if being debug logged or not. false:inactive, true:active\n"
+            "  ...\n"
+            "}\n"
+                },
+                RPCExamples{
+                    HelpExampleCli("logging", "\"[\\\"all\\\"]\" \"[\\\"http\\\"]\"")
+            + HelpExampleRpc("logging", "[\"all\"], [\"libevent\"]")
+                },
+            }.Check(request);
+
+    uint32_t original_log_categories = LogInstance().GetCategoryMask();
+    if (request.params[0].isArray()) {
+        EnableOrDisableLogCategories(request.params[0], true);
+    }
+    if (request.params[1].isArray()) {
+        EnableOrDisableLogCategories(request.params[1], false);
+    }
+    uint32_t updated_log_categories = LogInstance().GetCategoryMask();
+    uint32_t changed_log_categories = original_log_categories ^ updated_log_categories;
+
+    // Update libevent logging if BCLog::LIBEVENT has changed.
+    // If the library version doesn't allow it, UpdateHTTPServerLogging() returns false,
+    // in which case we should clear the BCLog::LIBEVENT flag.
+    // Throw an error if the user has explicitly asked to change only the libevent
+    // flag and it failed.
+    if (changed_log_categories & BCLog::LIBEVENT) {
+        if (!UpdateHTTPServerLogging(LogInstance().WillLogCategory(BCLog::LIBEVENT))) {
+            LogInstance().DisableCategory(BCLog::LIBEVENT);
+            if (changed_log_categories == BCLog::LIBEVENT) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "libevent logging cannot be updated when using libevent before v2.1.1.");
+            }
+        }
+    }
+
+    UniValue result(UniValue::VOBJ);
+    std::vector<CLogCategoryActive> vLogCatActive = ListActiveLogCategories();
+    for (const auto& logCatActive : vLogCatActive) {
+        result.pushKV(logCatActive.category, logCatActive.active);
+    }
+
+    return result;
+}
+
 static UniValue echo(const JSONRPCRequest& request)
 {
     if (request.fHelp)

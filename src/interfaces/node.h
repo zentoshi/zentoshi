@@ -10,7 +10,6 @@
 #include <net.h>        // For CConnman::NumConnections
 #include <netaddress.h> // For Network
 #include <support/allocators/secure.h> // For SecureString
-#include <ui_interface.h> // For ChangeType
 
 #include <functional>
 #include <memory>

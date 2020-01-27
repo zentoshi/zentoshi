@@ -235,7 +235,15 @@
         <source>Wallet passphrase was successfully changed.</source>
         <translation>Diruzorroaren pasahitza arrakastaz aldatu da.</translation>
     </message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
     </context>
+=======
+    <message>
+        <source>Warning: The Caps Lock key is on!</source>
+        <translation>Abisua: Mayuskulak blokeatuak dituzu!</translation>
+    </message>
+</context>
+>>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
 <context>
     <name>BanTableModel</name>
     <message>
@@ -310,10 +318,24 @@
         <translation>Diruzorroa &amp;enkriptatu...</translation>
     </message>
     <message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
+=======
+        <source>&amp;Backup Wallet...</source>
+        <translation>Diruzorroaren kopia bat gorde</translation>
+    </message>
+    <message>
+>>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
         <source>&amp;Change Passphrase...</source>
         <translation>Pasahitza &amp;aldatu...</translation>
     </message>
     <message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
+=======
+        <source>Open &amp;URI...</source>
+        <translation>&amp;URLa zabaldu</translation>
+    </message>
+    <message>
+>>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
         <source>Create Wallet...</source>
         <translation>Diruzorroa sortu...</translation>
     </message>
@@ -324,6 +346,29 @@
     <message>
         <source>Wallet:</source>
         <translation>Diruzorroa:</translation>
+<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
+=======
+    </message>
+    <message>
+        <source>Click to disable network activity.</source>
+        <translation>Sarea desaktibatzeko sakatu</translation>
+    </message>
+    <message>
+        <source>Network activity disabled.</source>
+        <translation>Sarea desaktibatua</translation>
+    </message>
+    <message>
+        <source>Click to enable network activity again.</source>
+        <translation>Sarea berriro aktibatzeko sakatu</translation>
+    </message>
+    <message>
+        <source>Syncing Headers (%1%)...</source>
+        <translation>Burukoak sinkronizatzen (%1)...</translation>
+    </message>
+    <message>
+        <source>Reindexing blocks on disk...</source>
+        <translation>Blokeak diskoan berriro zerrendatzen...</translation>
+>>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
     </message>
     <message>
         <source>Change the passphrase used for wallet encryption</source>

@@ -67,11 +67,15 @@
     </message>
     <message>
         <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Voici vos adresses Bitcoin pour envoyer des paiements. Vérifiez toujours le montant et l’adresse du destinataire avant d’envoyer des pièces.</translation>
+        <translation>Ce sont vos adresses Bitcoin pour envoyer des paiements. Vérifiez toujours le montant et l’adresse du destinataire avant d’envoyer des pièces.</translation>
     </message>
     <message>
         <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+<<<<<<< HEAD
         <translation>Ce sont vos adresses Bitcoin pour recevoir des paiements. Utilisez le bouton 'Créer nouvelle adresse de réception' dans l'onglet Recevoir pour créer de nouvelles adresses.</translation>
+=======
+        <translation>Ce sont vos adresses Bitcoin pour recevoir des paiements. Utilisez le bouton 'Créer une nouvelle adresse de réception' dans l’onglet Recevoir afin de créer de nouvelles adresses.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -137,7 +141,11 @@
     </message>
     <message>
         <source>Show passphrase</source>
+<<<<<<< HEAD
         <translation>Afficher phrase secrète</translation>
+=======
+        <translation>Afficher la phrase de passe</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt wallet</source>
@@ -181,6 +189,7 @@
     </message>
     <message>
         <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
+<<<<<<< HEAD
         <translation>Saisir la nouvelle phrase secrète pour le porte-monnaie.&lt;br/&gt;Veuillez utiliser une phrase secrète de &lt;b&gt;dix caractères aléatoires ou plus&lt;/b&gt;, ou &lt;b&gt;huit mots ou plus&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -190,6 +199,17 @@
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
         <translation>Souvenez-vous que chiffrer votre porte-monnaie ne peut pas complètement protéger vos bitcoins contre le vol par des programmes malveillants infectant votre ordinateur.</translation>
+=======
+        <translation>Saisissez la nouvelle phrase de passe du porte-monnaie.&lt;br/&gt;Veuillez utiliser une phrase de passe composée de &lt;b&gt;dix caractères aléatoires ou plus&lt;/b&gt;, ou de &lt;b&gt;huit mots ou plus&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Enter the old passphrase and new passphrase for the wallet.</source>
+        <translation>Saisir l’ancienne puis la nouvelle phrase de passe du porte-monnaie.</translation>
+    </message>
+    <message>
+        <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
+        <translation>N’oubliez pas que le chiffrement de votre porte-monnaie ne peut pas protéger entièrement vos bitcoins contre le vol par des programmes malveillants qui infecteraient votre ordinateur.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Wallet to be encrypted</source>
@@ -197,11 +217,19 @@
     </message>
     <message>
         <source>Your wallet is about to be encrypted. </source>
+<<<<<<< HEAD
         <translation>Votre porte-monnaie est sur le point d'être chiffré.</translation>
     </message>
     <message>
         <source>Your wallet is now encrypted. </source>
         <translation>Votre porte-monnaie est maintenant chiffré.</translation>
+=======
+        <translation>Votre porte-monnaie est sur le point d’être chiffré.</translation>
+    </message>
+    <message>
+        <source>Your wallet is now encrypted. </source>
+        <translation>Votre porte-monnaie est désormais chiffré.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
@@ -255,7 +283,7 @@
     <name>BitcoinGUI</name>
     <message>
         <source>Sign &amp;message...</source>
-        <translation>Signer un &amp;message...</translation>
+        <translation>Signer un &amp;message…</translation>
     </message>
     <message>
         <source>Synchronizing with network...</source>
@@ -311,23 +339,31 @@
     </message>
     <message>
         <source>&amp;Encrypt Wallet...</source>
-        <translation>&amp;Chiffrer le porte-monnaie...</translation>
+        <translation>&amp;Chiffrer le porte-monnaie…</translation>
     </message>
     <message>
         <source>&amp;Backup Wallet...</source>
-        <translation>Sauvegarder le &amp;porte-monnaie...</translation>
+        <translation>Sauvegarder le &amp;porte-monnaie…</translation>
     </message>
     <message>
         <source>&amp;Change Passphrase...</source>
-        <translation>&amp;Changer la phrase de passe...</translation>
+        <translation>&amp;Changer la phrase de passe…</translation>
     </message>
     <message>
         <source>Open &amp;URI...</source>
+<<<<<<< HEAD
         <translation>Ouvrir une &amp;URI...</translation>
     </message>
     <message>
         <source>Create Wallet...</source>
         <translation>Créer un porte-monnaie...</translation>
+=======
+        <translation>Ouvrir une &amp;URI…</translation>
+    </message>
+    <message>
+        <source>Create Wallet...</source>
+        <translation>Créer un porte-monnaie…</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Create a new wallet</source>
@@ -351,11 +387,11 @@
     </message>
     <message>
         <source>Syncing Headers (%1%)...</source>
-        <translation>Synchronisation des en-têtes (%1)...</translation>
+        <translation>Synchronisation des en-têtes (%1)…</translation>
     </message>
     <message>
         <source>Reindexing blocks on disk...</source>
-        <translation>Réindexation des blocs sur le disque...</translation>
+        <translation>Réindexation des blocs sur le disque…</translation>
     </message>
     <message>
         <source>Proxy is &lt;b&gt;enabled&lt;/b&gt;: %1</source>
@@ -383,7 +419,11 @@
     </message>
     <message>
         <source>&amp;Verify message...</source>
+<<<<<<< HEAD
         <translation>&amp;Vérifier un message...</translation>
+=======
+        <translation>&amp;Vérifier un message…</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Send</source>
@@ -455,11 +495,11 @@
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
-        <translation>Indexation des blocs sur le disque...</translation>
+        <translation>Indexation des blocs sur le disque…</translation>
     </message>
     <message>
         <source>Processing blocks on disk...</source>
-        <translation>Traitement des blocs sur le disque...</translation>
+        <translation>Traitement des blocs sur le disque…</translation>
     </message>
     <message numerus="yes">
         <source>Processed %n block(s) of transaction history.</source>
@@ -551,7 +591,7 @@
     </message>
     <message>
         <source>Connecting to peers...</source>
-        <translation>Connexion aux pairs...</translation>
+        <translation>Connexion aux pairs…</translation>
     </message>
     <message>
         <source>Catching up...</source>
@@ -559,11 +599,19 @@
     </message>
     <message>
         <source>Error: %1</source>
+<<<<<<< HEAD
         <translation>Erreur : %1</translation>
     </message>
     <message>
         <source>Warning: %1</source>
         <translation>Avertissement : %1</translation>
+=======
+        <translation>Erreur : %1</translation>
+    </message>
+    <message>
+        <source>Warning: %1</source>
+        <translation>Avertissement : %1</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Date: %1
@@ -789,11 +837,19 @@
     <name>CreateWalletActivity</name>
     <message>
         <source>Creating Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
+<<<<<<< HEAD
         <translation>Création du porte-monnaie &lt;b&gt;%1&lt;/b&gt;...</translation>
     </message>
     <message>
         <source>Create wallet failed</source>
         <translation>Création du porte-monnaie échouée</translation>
+=======
+        <translation>Création du porte-monnaie &lt;b&gt;%1&lt;/b&gt;…</translation>
+    </message>
+    <message>
+        <source>Create wallet failed</source>
+        <translation>Échec de création du porte-monnaie</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Create wallet warning</source>
@@ -804,7 +860,11 @@
     <name>CreateWalletDialog</name>
     <message>
         <source>Create Wallet</source>
+<<<<<<< HEAD
         <translation>Créer porte-monnaie</translation>
+=======
+        <translation>Créer un porte-monnaie</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Wallet Name</source>
@@ -812,7 +872,11 @@
     </message>
     <message>
         <source>Encrypt the wallet. The wallet will be encrypted with a passphrase of your choice.</source>
+<<<<<<< HEAD
         <translation>Chiffrer le porte-monnaie. Le porte-monnaie sera chiffré avec une phrase secrète de votre choix.</translation>
+=======
+        <translation>Chiffrer le porte-monnaie. Le porte-monnaie sera chiffré avec une phrase de passe de votre choix.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt Wallet</source>
@@ -820,6 +884,7 @@
     </message>
     <message>
         <source>Disable private keys for this wallet. Wallets with private keys disabled will have no private keys and cannot have an HD seed or imported private keys. This is ideal for watch-only wallets.</source>
+<<<<<<< HEAD
         <translation>Désactiver les clés privées pour ce porte-monnaie. Les portes-monnaie avec des clés privées désactivées n'auront pas de clés privées et ne peuvent pas avoir une graine HD ou des clés privées importées. Ceci est idéal pour un porte-monnaie</translation>
     </message>
     <message>
@@ -833,6 +898,21 @@
     <message>
         <source>Make Blank Wallet</source>
         <translation>Créer Porte-Monnaie Vide</translation>
+=======
+        <translation>Désactiver les clés privées pour ce porte-monnaie. Les porte-monnaie pour lesquels les clés privées sont désactivées n’auront aucune clé privée et ne pourront ni avoir de graine HD ni de clés privées importées. Cela est idéal pour les porte-monnaie juste-regarder.</translation>
+    </message>
+    <message>
+        <source>Disable Private Keys</source>
+        <translation>Désactiver les clés privées</translation>
+    </message>
+    <message>
+        <source>Make a blank wallet. Blank wallets do not initially have private keys or scripts. Private keys and addresses can be imported, or an HD seed can be set, at a later time.</source>
+        <translation>Créer un porte-monnaie vide. Les porte-monnaie vides n’ont initialement ni clé privée ni script. Ultérieurement, des clés privées et des adresses peuvent être importées ou une graine HD peut être définie.</translation>
+    </message>
+    <message>
+        <source>Make Blank Wallet</source>
+        <translation>Créer un porte-monnaie vide</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Create</source>
@@ -956,7 +1036,11 @@
     </message>
     <message>
         <source>Reverting this setting requires re-downloading the entire blockchain. It is faster to download the full chain first and prune it later. Disables some advanced features.</source>
+<<<<<<< HEAD
         <translation>Revenir sur ce paramètre requiert de re-télécharger l'entier de la chaîne de blocs. Il est plus rapide de télécharger la chaîne complète et de l'élaguer plus tard. Désactive certaines fonctionnalités avancées.</translation>
+=======
+        <translation>Rétablir ce paramètre à sa valeur antérieure exige de retélécharger la chaîne de blocs dans son intégralité. Il est plus rapide de télécharger la chaîne complète dans un premier temps et de l’élaguer ultérieurement. Désactive certaines fonctions avancées.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
@@ -980,7 +1064,11 @@
     </message>
     <message>
         <source>Discard blocks after verification, except most recent %1 GB (prune)</source>
+<<<<<<< HEAD
         <translation>Jeter les blocs après vérification, à l'exception des %1 Go les plus récents (élagage)</translation>
+=======
+        <translation>Jeter les blocs après vérification, à l’exception des %1 Go les plus récents (élagage)</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>At least %1 GB of data will be stored in this directory, and it will grow over time.</source>
@@ -1016,7 +1104,11 @@
     </message>
     <message numerus="yes">
         <source>(%n GB needed for full chain)</source>
+<<<<<<< HEAD
         <translation><numerusform>(%n Go nécessaire pour la chaîne complète)</numerusform><numerusform>(%n Go nécessaires pour la chaîne complète)</numerusform></translation>
+=======
+        <translation><numerusform>(%n Go nécessaire pour la chaîne complète)</numerusform><numerusform>(%n Go nécessaires pour la chaîne complète)</numerusform></translation>
+>>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -1039,7 +1131,7 @@
     </message>
     <message>
         <source>Unknown...</source>
-        <translation>Inconnu...</translation>
+        <translation>Inconnu…</translation>
     </message>
     <message>
         <source>Last block time</source>
@@ -1055,7 +1147,7 @@
     </message>
     <message>
         <source>calculating...</source>
-        <translation>calcul en cours...</translation>
+        <translation>calcul en cours…</translation>
     </message>
     <message>
         <source>Estimated time left until synced</source>
@@ -1101,7 +1193,11 @@
     </message>
     <message>
         <source>Open wallet warning</source>
+<<<<<<< HEAD
         <translation>Avertissement d'ouverture du porte-monnaie</translation>
+=======
+        <translation>Avertissement d’ouverture du porte-monnaie</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>default wallet</source>
@@ -1188,7 +1284,7 @@
     </message>
     <message>
         <source>Disables some advanced features but all blocks will still be fully validated. Reverting this setting requires re-downloading the entire blockchain. Actual disk usage may be somewhat higher.</source>
-        <translation>Désactive certaines fonctions avancées, mais tous les blocs seront quand même validés entièrement. Changer ce paramètre à sa valeur antérieure exige de retélécharger la chaîne de blocs dans son intégralité. L’espace disque utilisé pourrait être un peu plus élevé.</translation>
+        <translation>Désactive certaines fonctions avancées, mais tous les blocs seront quand même validés entièrement. Rétablir ce paramètre à sa valeur antérieure exige de retélécharger la chaîne de blocs dans son intégralité. L’espace disque utilisé pourrait être un peu plus élevé.</translation>
     </message>
     <message>
         <source>Prune &amp;block storage to</source>
@@ -1200,7 +1296,11 @@
     </message>
     <message>
         <source>Reverting this setting requires re-downloading the entire blockchain.</source>
-        <translation>Changer ce paramètre à sa valeur antérieure exige de retélécharger la chaîne de blocs dans son intégralité.</translation>
+        <translation>Rétablir ce paramètre à sa valeur antérieure exige de retélécharger la chaîne de blocs dans son intégralité.</translation>
+    </message>
+    <message>
+        <source>MiB</source>
+        <translation>Mio</translation>
     </message>
     <message>
         <source>MiB</source>
@@ -1494,11 +1594,19 @@
     </message>
     <message>
         <source>Due to widespread security flaws in BIP70 it's strongly recommended that any merchant instructions to switch wallets be ignored.</source>
+<<<<<<< HEAD
         <translation>En raison de faille de sécurité généralisées dans BIP70 il est vivement recommandé que les instructions des marchands pour changer de porte-monnaie soient ignorées.</translation>
     </message>
     <message>
         <source>If you are receiving this error you should request the merchant provide a BIP21 compatible URI.</source>
         <translation>Si vous recevez cette erreur vous devriez demander au marchand de vous fournir un URI compatible avec BIP21.</translation>
+=======
+        <translation>En raison de failles de sécurité fréquentes dans BIP70, il est vivement recommandé d’ignorer les instructions de marchands qui demanderaient de changer de porte-monnaie.</translation>
+    </message>
+    <message>
+        <source>If you are receiving this error you should request the merchant provide a BIP21 compatible URI.</source>
+        <translation>Si vous recevez cette erreur, vous devriez demander au marchand de vous fournir une URI compatible avec BIP21.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Invalid payment address %1</source>
@@ -1692,7 +1800,15 @@
     </message>
     <message>
         <source>Error: %1</source>
-        <translation>Erreur : %1</translation>
+        <translation>Erreur : %1</translation>
+    </message>
+    <message>
+        <source>%1 didn't yet exit safely...</source>
+        <translation>%1 ne s’est pas encore arrêté en toute sécurité…</translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation>inconnue</translation>
     </message>
     <message>
         <source>%1 didn't yet exit safely...</source>
@@ -1707,7 +1823,7 @@
     <name>QRImageWidget</name>
     <message>
         <source>&amp;Save Image...</source>
-        <translation>&amp;Enregistrer l’image...</translation>
+        <translation>&amp;Enregistrer l’image…</translation>
     </message>
     <message>
         <source>&amp;Copy Image</source>
@@ -1723,7 +1839,11 @@
     </message>
     <message>
         <source>QR code support not available.</source>
+<<<<<<< HEAD
         <translation>Support du code QR non disponible.</translation>
+=======
+        <translation>La prise en charge des codes QR n’est pas proposée.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Save QR Code</source>
@@ -2085,7 +2205,11 @@
     </message>
     <message>
         <source>&amp;Create new receiving address</source>
+<<<<<<< HEAD
         <translation>&amp;Créer nouvelle adresse de réception</translation>
+=======
+        <translation>&amp;Créer une nouvelle adresse de réception</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Clear all fields of the form.</source>
@@ -2156,7 +2280,7 @@
     </message>
     <message>
         <source>&amp;Save Image...</source>
-        <translation>&amp;Enregistrer l’image...</translation>
+        <translation>&amp;Enregistrer l’image…</translation>
     </message>
     <message>
         <source>Request payment to %1</source>
@@ -2234,7 +2358,7 @@
     </message>
     <message>
         <source>Inputs...</source>
-        <translation>Entrants...</translation>
+        <translation>Entrants…</translation>
     </message>
     <message>
         <source>automatically selected</source>
@@ -2282,7 +2406,7 @@
     </message>
     <message>
         <source>Choose...</source>
-        <translation>Choisir...</translation>
+        <translation>Choisir…</translation>
     </message>
     <message>
         <source>Using the fallbackfee can result in sending a transaction that will take several hours or days (or never) to confirm. Consider choosing your fee manually or wait until you have validated the complete chain.</source>
@@ -2322,7 +2446,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>(Smart fee not initialized yet. This usually takes a few blocks...)</source>
-        <translation>(Les frais intelligents ne sont pas encore initialisés. Cela prend habituellement quelques blocs...)</translation>
+        <translation>(Les frais intelligents ne sont pas encore initialisés. Cela prend habituellement quelques blocs…)</translation>
     </message>
     <message>
         <source>Send to multiple recipients at once</source>
@@ -2450,7 +2574,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>To review recipient list click "Show Details..."</source>
+<<<<<<< HEAD
         <translation>Pour passer en revue la liste des destinataires cliquer sur "Afficher détails..."</translation>
+=======
+        <translation>Pour réviser la liste des destinataires, cliquez sur « Afficher les détails de la transaction… »</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Confirm send coins</source>
@@ -2615,7 +2743,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     <name>ShutdownWindow</name>
     <message>
         <source>%1 is shutting down...</source>
-        <translation>Arrêt de %1...</translation>
+        <translation>Arrêt de %1…</translation>
     </message>
     <message>
         <source>Do not shut down the computer until this window disappears.</source>
@@ -2901,6 +3029,10 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     <message>
         <source>Output index</source>
         <translation>Index des sorties</translation>
+    </message>
+    <message>
+        <source> (Certificate was not verified)</source>
+        <translation>(Le certificat n’a pas été vérifié)</translation>
     </message>
     <message>
         <source>Merchant</source>
@@ -3227,7 +3359,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Are you sure you wish to close the wallet &lt;i&gt;%1&lt;/i&gt;?</source>
+<<<<<<< HEAD
         <translation>Voulez-vous vraiment fermer le porte-monnaie &lt;i&gt;%1&lt;/i&gt;?</translation>
+=======
+        <translation>Voulez-vous vraiment fermer le porte-monnaie &lt;i&gt;%1&lt;/i&gt; ?</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
@@ -3351,7 +3487,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Pruning blockstore...</source>
-        <translation>Élagage du magasin de blocs...</translation>
+        <translation>Élagage du magasin de blocs…</translation>
     </message>
     <message>
         <source>Unable to start HTTP server. See debug log for details.</source>
@@ -3491,7 +3627,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Importing...</source>
-        <translation>Importation...</translation>
+        <translation>Importation…</translation>
     </message>
     <message>
         <source>Incorrect or no genesis block found. Wrong datadir for network?</source>
@@ -3503,7 +3639,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Invalid P2P permission: '%s'</source>
+<<<<<<< HEAD
         <translation>Permission P2P invalide : '%s'</translation>
+=======
+        <translation>Permission P2P invalide : '%s'</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Invalid amount for -%s=&lt;amount&gt;: '%s'</source>
@@ -3523,11 +3663,19 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Unknown address type '%s'</source>
+<<<<<<< HEAD
         <translation>Type d’adresse inconnu « %s »</translation>
     </message>
     <message>
         <source>Unknown change type '%s'</source>
         <translation>Type de monnaie inconnu « %s »</translation>
+=======
+        <translation>Type d’adresse inconnu '%s'</translation>
+    </message>
+    <message>
+        <source>Unknown change type '%s'</source>
+        <translation>Type de monnaie inconnu '%s'</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Upgrading txindex database</source>
@@ -3535,7 +3683,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Loading P2P addresses...</source>
-        <translation>Chargement des adresses P2P...</translation>
+        <translation>Chargement des adresses P2P…</translation>
+    </message>
+    <message>
+        <source>Error: Disk space is too low!</source>
+        <translation>Erreur : L’espace disque est trop faible !</translation>
     </message>
     <message>
         <source>Error: Disk space is too low!</source>
@@ -3543,7 +3695,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Loading banlist...</source>
-        <translation>Chargement de la liste d’interdiction...</translation>
+        <translation>Chargement de la liste d’interdiction…</translation>
     </message>
     <message>
         <source>Not enough file descriptors available.</source>
@@ -3559,11 +3711,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Replaying blocks...</source>
-        <translation>Relecture des blocs...</translation>
+        <translation>Relecture des blocs…</translation>
     </message>
     <message>
         <source>Rewinding blocks...</source>
-        <translation>Rebobinage des blocs...</translation>
+        <translation>Rebobinage des blocs…</translation>
     </message>
     <message>
         <source>The source code is available from %s.</source>
@@ -3595,7 +3747,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Verifying blocks...</source>
-        <translation>Vérification des blocs... </translation>
+        <translation>Vérification des blocs… </translation>
     </message>
     <message>
         <source>Wallet needed to be rewritten: restart %s to complete</source>
@@ -3651,7 +3803,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Prune mode is incompatible with -blockfilterindex.</source>
+<<<<<<< HEAD
         <translation>Le mode élagage est incompatible avec -blockfilterindex.</translation>
+=======
+        <translation>Le mode élagage n’est pas compatible avec -blockfilterindex.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Reducing -maxconnections from %d to %d, because of system limitations.</source>
@@ -3717,7 +3873,11 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Verifying wallet(s)...</source>
+<<<<<<< HEAD
         <translation>Vérification des porte-monnaie...</translation>
+=======
+        <translation>Vérification des porte-monnaie…</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Warning: unknown new rules activated (versionbit %i)</source>
@@ -3725,7 +3885,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Zapping all transactions from wallet...</source>
-        <translation>Supprimer toutes les transactions du porte-monnaie...</translation>
+        <translation>Supprimer toutes les transactions du porte-monnaie…</translation>
     </message>
     <message>
         <source>-maxtxfee is set very high! Fees this large could be paid on a single transaction.</source>
@@ -3757,7 +3917,7 @@ Note : Les frais étant calculés par octet, des frais de « 100 satoshis par
     </message>
     <message>
         <source>Starting network threads...</source>
-        <translation>Démarrage des processus réseau...</translation>
+        <translation>Démarrage des processus réseau…</translation>
     </message>
     <message>
         <source>The wallet will avoid paying less than the minimum relay fee.</source>

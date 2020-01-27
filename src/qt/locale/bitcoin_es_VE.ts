@@ -170,6 +170,13 @@
     <message>
         <source>Wallet encrypted</source>
         <translation>Monedero cifrado</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Wallet encryption failed</source>
+        <translation>Encriptado de monedero fallido</translation>
+>>>>>>> 0.19
     </message>
     </context>
 <context>
@@ -358,6 +365,17 @@
         <translation>Actualizado</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Close wallet</source>
+        <translation>Cerrar monedero</translation>
+    </message>
+    <message>
+        <source>No wallets available</source>
+        <translation>Monederos no disponibles</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>&amp;Window</source>
         <translation>&amp;Ventana</translation>
     </message>
@@ -451,6 +469,14 @@
     <message>
         <source>Confirmed</source>
         <translation>Confirmado</translation>
+    </message>
+    <message>
+        <source>Copy address</source>
+        <translation>Copiar dirección</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
+        <translation>Copiar cantidad</translation>
     </message>
     <message>
         <source>Copy quantity</source>
@@ -959,7 +985,19 @@
         <source>Remove</source>
         <translation>Eliminar</translation>
     </message>
+<<<<<<< HEAD
     </context>
+=======
+    <message>
+        <source>Copy message</source>
+        <translation>Copiar mensaje</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
+        <translation>Copiar cantidad</translation>
+    </message>
+</context>
+>>>>>>> 0.19
 <context>
     <name>ReceiveRequestDialog</name>
     <message>
@@ -1102,6 +1140,10 @@
     </message>
     <message>
         <source>Copy quantity</source>
+        <translation>Copiar cantidad</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
         <translation>Copiar cantidad</translation>
     </message>
     <message>
@@ -1308,6 +1350,14 @@
 <context>
     <name>TransactionView</name>
     <message>
+        <source>Copy address</source>
+        <translation>Copiar dirección</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
+        <translation>Copiar cantidad</translation>
+    </message>
+    <message>
         <source>Comma separated file (*.csv)</source>
         <translation>Archivo de columnas separadas por coma (*.csv)</translation>
     </message>
@@ -1337,6 +1387,13 @@
     </context>
 <context>
     <name>WalletController</name>
+<<<<<<< HEAD
+=======
+    <message>
+        <source>Close wallet</source>
+        <translation>Cerrar monedero</translation>
+    </message>
+>>>>>>> 0.19
     </context>
 <context>
     <name>WalletFrame</name>

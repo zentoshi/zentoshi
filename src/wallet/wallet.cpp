@@ -62,7 +62,6 @@ const std::map<uint64_t,std::string> WALLET_FLAG_CAVEATS{
 static const size_t OUTPUT_GROUP_MAX_ENTRIES = 10;
 
 static CCriticalSection cs_wallets;
-std::vector<std::shared_ptr<CWallet>> vpwallets GUARDED_BY(cs_wallets);
 
 std::shared_ptr<CWallet> GetMainWallet()
 {
@@ -72,6 +71,9 @@ std::shared_ptr<CWallet> GetMainWallet()
 
     return nullptr;
 }
+
+static std::vector<std::shared_ptr<CWallet>> vpwallets GUARDED_BY(cs_wallets);
+static std::list<LoadWalletFn> g_load_wallet_fns GUARDED_BY(cs_wallets);
 
 bool AddWallet(const std::shared_ptr<CWallet>& wallet)
 {
@@ -112,6 +114,13 @@ std::shared_ptr<CWallet> GetWallet(const std::string& name)
         if (wallet->GetName() == name) return wallet;
     }
     return nullptr;
+}
+
+std::unique_ptr<interfaces::Handler> HandleLoadWallet(LoadWalletFn load_wallet)
+{
+    LOCK(cs_wallets);
+    auto it = g_load_wallet_fns.emplace(g_load_wallet_fns.end(), std::move(load_wallet));
+    return interfaces::MakeHandler([it] { LOCK(cs_wallets); g_load_wallet_fns.erase(it); });
 }
 
 static Mutex g_wallet_release_mutex;
@@ -1100,17 +1109,31 @@ void CWallet::SetUsedDestinationState(const uint256& hash, unsigned int n, bool 
     }
 }
 
-bool CWallet::IsUsedDestination(const CTxDestination& dst) const
-{
-    LOCK(cs_wallet);
-    return ::IsMine(*this, dst) && GetDestData(dst, "used", nullptr);
-}
-
 bool CWallet::IsUsedDestination(const uint256& hash, unsigned int n) const
 {
+    AssertLockHeld(cs_wallet);
     CTxDestination dst;
     const CWalletTx* srctx = GetWalletTx(hash);
-    return srctx && ExtractDestination(srctx->tx->vout[n].scriptPubKey, dst) && IsUsedDestination(dst);
+    if (srctx) {
+        assert(srctx->tx->vout.size() > n);
+        // When descriptor wallets arrive, these additional checks are
+        // likely superfluous and can be optimized out
+        for (const auto& keyid : GetAffectedKeys(srctx->tx->vout[n].scriptPubKey, *this)) {
+            WitnessV0KeyHash wpkh_dest(keyid);
+            if (GetDestData(wpkh_dest, "used", nullptr)) {
+                return true;
+            }
+            ScriptHash sh_wpkh_dest(GetScriptForDestination(wpkh_dest));
+            if (GetDestData(sh_wpkh_dest, "used", nullptr)) {
+                return true;
+            }
+            PKHash pkh_dest(keyid);
+            if (GetDestData(pkh_dest, "used", nullptr)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose)
@@ -2741,9 +2764,7 @@ CAmount CWallet::GetUnconfirmedBalance() const
             if (!wtx.IsTrusted(*locked_chain) && wtx.GetDepthInMainChain(*locked_chain) == 0 && wtx.InMempool())
                 nTotal += wtx.GetAvailableCredit(*locked_chain);
         }
-    }
-    return nTotal;
-}
+    } // locked_chain and cs_wallet
 
 CAmount CWallet::GetImmatureBalance() const
 {
@@ -2756,10 +2777,11 @@ CAmount CWallet::GetImmatureBalance() const
             nTotal += wtx.GetImmatureCredit(*locked_chain);
         }
     }
-    return nTotal;
 }
 
-CAmount CWallet::GetUnconfirmedWatchOnlyBalance() const
+/** @} */ // end of mapWallet
+
+void MaybeResendWalletTxs()
 {
     CAmount nTotal = 0;
     {
@@ -2771,12 +2793,19 @@ CAmount CWallet::GetUnconfirmedWatchOnlyBalance() const
                 nTotal += wtx.GetAvailableCredit(*locked_chain, true, ISMINE_WATCH_ONLY);
         }
     }
-    return nTotal;
 }
 
-CAmount CWallet::GetImmatureWatchOnlyBalance() const
+
+/** @defgroup Actions
+ *
+ * @{
+ */
+
+
+CWallet::Balance CWallet::GetBalance(const int min_depth, bool avoid_reuse) const
 {
-    CAmount nTotal = 0;
+    Balance ret;
+    isminefilter reuse_filter = avoid_reuse ? ISMINE_NO : ISMINE_USED;
     {
         auto locked_chain = chain().lock();
         LOCK(cs_wallet);
@@ -2949,6 +2978,7 @@ void CWallet::AvailableCoins(interfaces::Chain::Lock& locked_chain, std::vector<
         }
 
         for (unsigned int i = 0; i < wtx.tx->vout.size(); i++) {
+
             if (!IsCorrectType(wtx.tx->vout[i].nValue, nCoinType))
                 continue;
 
@@ -3708,8 +3738,10 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
     ReserveDestination reservedest(this);
     int nChangePosRequest = nChangePosInOut;
     unsigned int nSubtractFeeFromAmount = 0;
-    for (const auto& recipient : vecSend) {
-        if (nValue < 0 || recipient.nAmount < 0) {
+    for (const auto& recipient : vecSend)
+    {
+        if (nValue < 0 || recipient.nAmount < 0)
+        {
             strFailReason = _("Transaction amounts must not be negative").translated;
             return false;
         }
@@ -3870,8 +3902,6 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                                     strFailReason += " " + strprintf(_("InstantSend requires inputs with at least %d confirmations, you might need to wait a few minutes and try again."), nInstantSendConfirmationsRequired).translated;
                                 }
                             }
-                            //
-
                             return false;
                         }
                     }
@@ -4413,13 +4443,12 @@ bool CWallet::CommitTransaction(CTransactionRef tx, mapValue_t mapValue, std::ve
         // fInMempool flag is cached properly
         CWalletTx& wtx = mapWallet.at(wtxNew.GetHash());
 
-        if (fBroadcastTransactions) {
-            // Broadcast
-            if (!wtx.AcceptToMemoryPool(*locked_chain, state)) {
-                WalletLogPrintf("CommitTransaction(): Transaction cannot be broadcast immediately, %s\n", FormatStateMessage(state));
-            } else {
-                std::string unused_err_string;
-                wtx.SubmitMemoryPoolAndRelay(unused_err_string, false, *locked_chain);
+        if (fBroadcastTransactions)
+        {
+            std::string err_string;
+            if (!wtx.SubmitMemoryPoolAndRelay(err_string, true, *locked_chain)) {
+                WalletLogPrintf("CommitTransaction(): Transaction cannot be broadcast immediately, %s\n", err_string);
+                // TODO: if we expect the failure to be long term or permanent, instead delete wtx from the wallet and return failure.
             }
         }
     }
@@ -5702,7 +5731,12 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
         }
     }
 
-    chain.loadWallet(interfaces::MakeWallet(walletInstance));
+    {
+        LOCK(cs_wallets);
+        for (auto& load_wallet : g_load_wallet_fns) {
+            load_wallet(interfaces::MakeWallet(walletInstance));
+        }
+    }
 
     // Register with the validation interface. It's ok to do this after rescan since we're still holding locked_chain.
     walletInstance->handleNotifications();

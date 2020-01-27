@@ -68,6 +68,13 @@
     <message>
         <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation>Это ваши адреса Bitcoin для отправки платежей. Всегда проверяйте количество и адрес получателя перед отправкой перевода.</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>Це ваші біткойн-адреси для отримання платежів. Використовуйте кнопку "Створити нову адресу прийому" на вкладці отримання, для створення нових адрес.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -130,6 +137,13 @@
     <message>
         <source>Repeat new passphrase</source>
         <translation>Повторите новый пароль</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Show passphrase</source>
+        <translation>Показати парольну фразу</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt wallet</source>
@@ -170,10 +184,33 @@
     <message>
         <source>Wallet encrypted</source>
         <translation>Кошелёк зашифрован</translation>
+<<<<<<< HEAD
     </message>
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
         <translation>Пам’ятайте, що шифрування гаманця не може повністю захистити ваші біткоіни від кражі, у випадку якщо ваш комп’ютер буде інфіковано шкідливими програмами.</translation>
+=======
+    </message>
+    <message>
+        <source>Enter the old passphrase and new passphrase for the wallet.</source>
+        <translation>Введіть стару та нову парольну фразу для гаманця.</translation>
+    </message>
+    <message>
+        <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
+        <translation>Пам’ятайте, що шифрування гаманця не може повністю захистити ваші біткоіни від кражі, у випадку якщо ваш комп’ютер буде інфіковано шкідливими програмами.</translation>
+    </message>
+    <message>
+        <source>Wallet to be encrypted</source>
+        <translation>Гаманець який потрібно зашифрувати</translation>
+    </message>
+    <message>
+        <source>Your wallet is about to be encrypted. </source>
+        <translation>Ваш гаманець буде зашифровано.</translation>
+    </message>
+    <message>
+        <source>Your wallet is now encrypted. </source>
+        <translation>Ваш гаманець зашифровано.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
@@ -296,6 +333,17 @@
     <message>
         <source>Open &amp;URI...</source>
         <translation>Відкрити &amp;URI</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Create Wallet...</source>
+        <translation>Створити Гаманець...</translation>
+    </message>
+    <message>
+        <source>Create a new wallet</source>
+        <translation>Створити новий гаманець</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Wallet:</source>
@@ -526,6 +574,13 @@
         <translation>Помилка: %1</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Warning: %1</source>
+        <translation>Попередження: %1</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>Date: %1
 </source>
         <translation>Дата: %1
@@ -747,10 +802,49 @@
 </context>
 <context>
     <name>CreateWalletActivity</name>
+<<<<<<< HEAD
     </context>
 <context>
     <name>CreateWalletDialog</name>
     </context>
+=======
+    <message>
+        <source>Creating Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
+        <translation>Створення Гаманця &lt;b&gt;%1&lt;/b&gt;...</translation>
+    </message>
+    <message>
+        <source>Create wallet failed</source>
+        <translation>Помилка створення гаманця</translation>
+    </message>
+    <message>
+        <source>Create wallet warning</source>
+        <translation>Попередження створення гаманця</translation>
+    </message>
+</context>
+<context>
+    <name>CreateWalletDialog</name>
+    <message>
+        <source>Create Wallet</source>
+        <translation>Створити Гаманець</translation>
+    </message>
+    <message>
+        <source>Wallet Name</source>
+        <translation>Назва Гаманця</translation>
+    </message>
+    <message>
+        <source>Encrypt the wallet. The wallet will be encrypted with a passphrase of your choice.</source>
+        <translation>Зашифруйте гаманець. Гаманець буде зашифрований за допомогою пароля на ваш вибір.</translation>
+    </message>
+    <message>
+        <source>Encrypt Wallet</source>
+        <translation>Шифрувати Гаманець</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Створити</translation>
+    </message>
+</context>
+>>>>>>> 0.19
 <context>
     <name>EditAddressDialog</name>
     <message>
@@ -996,6 +1090,17 @@
 <context>
     <name>OpenWalletActivity</name>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Open wallet failed</source>
+        <translation>Помилка відкриття гаманця</translation>
+    </message>
+    <message>
+        <source>Open wallet warning</source>
+        <translation>Попередження відкриття гаманця</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>default wallet</source>
         <translation>гаманець за змовчуванням</translation>
     </message>
@@ -1017,12 +1122,21 @@
     <message>
         <source>Automatically start %1 after logging in to the system.</source>
         <translation>Автоматично запускати %1 при вході до системи.</translation>
+<<<<<<< HEAD
     </message>
     <message>
         <source>&amp;Start %1 on system login</source>
         <translation>&amp;Запускати %1 при вході в систему</translation>
     </message>
     <message>
+=======
+    </message>
+    <message>
+        <source>&amp;Start %1 on system login</source>
+        <translation>&amp;Запускати %1 при вході в систему</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>Size of &amp;database cache</source>
         <translation>Розмір &amp;кешу бази даних</translation>
     </message>
@@ -2769,6 +2883,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>Вихідний індекс</translation>
     </message>
     <message>
+        <source> (Certificate was not verified)</source>
+        <translation>(Сертифікат не підтверджено)</translation>
+    </message>
+    <message>
         <source>Merchant</source>
         <translation>Продавець</translation>
     </message>
@@ -3386,6 +3504,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Loading P2P addresses...</source>
         <translation>Завантаження P2P адрес...</translation>
+    </message>
+    <message>
+        <source>Error: Disk space is too low!</source>
+        <translation>Помилка: замало дискового простору!</translation>
     </message>
     <message>
         <source>Loading banlist...</source>

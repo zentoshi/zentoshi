@@ -1137,6 +1137,112 @@ bool MemPoolAccept::AcceptSingleTransaction(const CTransactionRef& ptx, ATMPArgs
 
     if (!Finalize(args, workspace)) return false;
 
+    return true;
+}
+
+bool MemPoolAccept::ConsensusScriptChecks(ATMPArgs& args, Workspace& ws, PrecomputedTransactionData& txdata)
+{
+    const CTransaction& tx = *ws.m_ptx;
+    const uint256& hash = ws.m_hash;
+
+    CValidationState &state = args.m_state;
+    const CChainParams& chainparams = args.m_chainparams;
+
+    // Check again against the current block tip's script verification
+    // flags to cache our script execution flags. This is, of course,
+    // useless if the next block has different script flags from the
+    // previous one, but because the cache tracks script flags for us it
+    // will auto-invalidate and we'll just have a few blocks of extra
+    // misses on soft-fork activation.
+    //
+    // This is also useful in case of bugs in the standard flags that cause
+    // transactions to pass as valid when they're actually invalid. For
+    // instance the STRICTENC flag was incorrectly allowing certain
+    // CHECKSIG NOT scripts to pass, even though they were invalid.
+    //
+    // There is a similar check in CreateNewBlock() to prevent creating
+    // invalid blocks (using TestBlockValidity), however allowing such
+    // transactions into the mempool can be exploited as a DoS attack.
+    unsigned int currentBlockScriptVerifyFlags = GetBlockScriptFlags(::ChainActive().Tip(), chainparams.GetConsensus());
+    if (!CheckInputsFromMempoolAndCache(tx, state, m_view, m_pool, currentBlockScriptVerifyFlags, true, txdata)) {
+        return error("%s: BUG! PLEASE REPORT THIS! CheckInputs failed against latest-block but not STANDARD flags %s, %s",
+                __func__, hash.ToString(), FormatStateMessage(state));
+    }
+
+    return true;
+}
+
+bool MemPoolAccept::Finalize(ATMPArgs& args, Workspace& ws)
+{
+    const CTransaction& tx = *ws.m_ptx;
+    const uint256& hash = ws.m_hash;
+    CValidationState &state = args.m_state;
+    const bool bypass_limits = args.m_bypass_limits;
+
+    CTxMemPool::setEntries& allConflicting = ws.m_all_conflicting;
+    CTxMemPool::setEntries& setAncestors = ws.m_ancestors;
+    const CAmount& nModifiedFees = ws.m_modified_fees;
+    const CAmount& nConflictingFees = ws.m_conflicting_fees;
+    const size_t& nConflictingSize = ws.m_conflicting_size;
+    const bool fReplacementTransaction = ws.m_replacement_transaction;
+    std::unique_ptr<CTxMemPoolEntry>& entry = ws.m_entry;
+
+    // Remove conflicting transactions from the mempool
+    for (CTxMemPool::txiter it : allConflicting)
+    {
+        LogPrint(BCLog::MEMPOOL, "replacing tx %s with %s for %s BTC additional fees, %d delta bytes\n",
+                it->GetTx().GetHash().ToString(),
+                hash.ToString(),
+                FormatMoney(nModifiedFees - nConflictingFees),
+                (int)entry->GetTxSize() - (int)nConflictingSize);
+        if (args.m_replaced_transactions)
+            args.m_replaced_transactions->push_back(it->GetSharedTx());
+    }
+    m_pool.RemoveStaged(allConflicting, false, MemPoolRemovalReason::REPLACED);
+
+    // This transaction should only count for fee estimation if:
+    // - it isn't a BIP 125 replacement transaction (may not be widely supported)
+    // - it's not being re-added during a reorg which bypasses typical mempool fee limits
+    // - the node is not behind
+    // - the transaction is not dependent on any other transactions in the mempool
+    bool validForFeeEstimation = !fReplacementTransaction && !bypass_limits && IsCurrentForFeeEstimation() && m_pool.HasNoInputsOf(tx);
+
+    // Store transaction in memory
+    m_pool.addUnchecked(*entry, setAncestors, validForFeeEstimation);
+
+    // trim mempool and check if tx was trimmed
+    if (!bypass_limits) {
+        LimitMempoolSize(m_pool, gArgs.GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, gArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+        if (!m_pool.exists(hash))
+            return state.Invalid(ValidationInvalidReason::TX_MEMPOOL_POLICY, false, REJECT_INSUFFICIENTFEE, "mempool full");
+    }
+    return true;
+}
+
+bool MemPoolAccept::AcceptSingleTransaction(const CTransactionRef& ptx, ATMPArgs& args)
+{
+    AssertLockHeld(cs_main);
+    LOCK(m_pool.cs); // mempool "read lock" (held through GetMainSignals().TransactionAddedToMempool())
+
+    Workspace workspace(ptx);
+
+    if (!PreChecks(args, workspace)) return false;
+
+    // Only compute the precomputed transaction data if we need to verify
+    // scripts (ie, other policy checks pass). We perform the inexpensive
+    // checks first and avoid hashing and signature verification unless those
+    // checks pass, to mitigate CPU exhaustion denial-of-service attacks.
+    PrecomputedTransactionData txdata(*ptx);
+
+    if (!PolicyScriptChecks(args, workspace, txdata)) return false;
+
+    if (!ConsensusScriptChecks(args, workspace, txdata)) return false;
+
+    // Tx was accepted, but not added
+    if (args.m_test_accept) return true;
+
+    if (!Finalize(args, workspace)) return false;
+
     GetMainSignals().TransactionAddedToMempool(ptx);
 
     return true;
@@ -1352,6 +1458,40 @@ CAmount GetBlockSubsidy(int nPrevHeight, const Consensus::Params& consensusParam
 CAmount GetMasternodePayment(int nHeight, CAmount blockValue)
 {
     return blockValue * 0.45;
+}
+
+CoinsViews::CoinsViews(
+    std::string ldb_name,
+    size_t cache_size_bytes,
+    bool in_memory,
+    bool should_wipe) : m_dbview(
+                            GetDataDir() / ldb_name, cache_size_bytes, in_memory, should_wipe),
+                        m_catcherview(&m_dbview) {}
+
+void CoinsViews::InitCache()
+{
+    m_cacheview = MakeUnique<CCoinsViewCache>(&m_catcherview);
+}
+
+// NOTE: for now m_blockman is set to a global, but this will be changed
+// in a future commit.
+CChainState::CChainState() : m_blockman(g_blockman) {}
+
+
+void CChainState::InitCoinsDB(
+    size_t cache_size_bytes,
+    bool in_memory,
+    bool should_wipe,
+    std::string leveldb_name)
+{
+    m_coins_views = MakeUnique<CoinsViews>(
+        leveldb_name, cache_size_bytes, in_memory, should_wipe);
+}
+
+void CChainState::InitCoinsCache()
+{
+    assert(m_coins_views != nullptr);
+    m_coins_views->InitCache();
 }
 
 CoinsViews::CoinsViews(
@@ -1677,12 +1817,28 @@ bool CheckInputs(const CTransaction& tx, CValidationState &state, const CCoinsVi
                 // such errors).
                 return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
             }
+            // MANDATORY flag failures correspond to
+            // ValidationInvalidReason::CONSENSUS. Because CONSENSUS
+            // failures are the most serious case of validation
+            // failures, we may need to consider using
+            // RECENT_CONSENSUS_CHANGE for any script failure that
+            // could be due to non-upgraded nodes which we may want to
+            // support, to avoid splitting the network (but this
+            // depends on the details of how net_processing handles
+            // such errors).
+            return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError())));
         }
         if (cacheFullScriptStore && !pvChecks) {
             // We executed all of the provided scripts, and were told to
             // cache the result. Do so now.
             scriptExecutionCache.insert(hashCacheEntry);
         }
+    }
+
+    if (cacheFullScriptStore && !pvChecks) {
+        // We executed all of the provided scripts, and were told to
+        // cache the result. Do so now.
+        scriptExecutionCache.insert(hashCacheEntry);
     }
 
     return true;
@@ -2281,8 +2437,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
         nInputs += tx.vin.size();
 
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase()) {
             nValueOut += tx.GetValueOut();
+        }
         else
         {
             CAmount txfee = 0;
@@ -2297,6 +2454,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                 }
                 return error("%s: Consensus::CheckTxInputs: %s, %s", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
             }
+
             if (!tx.IsCoinStake())
                 nFees += txfee;
             if (!MoneyRange(nFees)) {
@@ -2717,13 +2875,14 @@ void static UpdateTip(const CBlockIndex* pindexNew, const CChainParams& chainPar
             DoWarning(strWarning);
         }
     }
-    LogPrintf("%s: new best=%s height=%d version=0x%08x proof=%s log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo) evodb_cache=%.1fMiB\n", __func__,
+    LogPrintf("%s: new best=%s height=%d version=0x%08x proof=%s log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo) evodb_cache=%.1fMiB %s\n", __func__,
               pindexNew->GetBlockHash().ToString(), pindexNew->nHeight, pindexNew->nVersion, pindexNew->nNonce == 0 ? "PoS" : "PoW",
               log(pindexNew->nChainWork.getdouble())/log(2.0), (unsigned long)pindexNew->nChainTx,
               FormatISO8601DateTime(pindexNew->GetBlockTime()),
               GuessVerificationProgress(chainParams.TxData(), pindexNew),
               ::ChainstateActive().CoinsTip().DynamicMemoryUsage() * (1.0 / (1<<20)),
-              ::ChainstateActive().CoinsTip().GetCacheSize(), evoDb->GetMemoryUsage() * (1.0 / (1<<20)));
+              ::ChainstateActive().CoinsTip().GetCacheSize(), evoDb->GetMemoryUsage() * (1.0 / (1<<20)),
+              !warningMessages.empty() ? strprintf(" warning='%s'", warningMessages) : "");
 }
 
 /** Disconnect m_chain's tip.
@@ -3664,8 +3823,8 @@ static bool FindUndoPos(CValidationState &state, int nFile, FlatFilePos &pos, un
 
 static bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
-    bool isProofOfStake = (block.nNonce == 0);
-    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams) && fCheckPOW && !isProofOfStake) {
+    bool isProofOfWork = block.nNonce > 0;
+    if (!CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams) && fCheckPOW && isProofOfWork) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "high-hash", "proof of work failed");
     }
     return true;
@@ -3714,6 +3873,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
         if (block.vtx[i]->IsCoinBase())
             return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "bad-cb-multiple", "more than one coinbase");
 
+    // Proof of stake checks
     if (block.IsProofOfStake())
     {
         // vtx[1] must be coinstake, the rest must not be
@@ -4237,7 +4397,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
 
     // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
     // (but if it does not build on our best tip, let the SendMessages loop relay it)
-    if (!::ChainstateActive().IsInitialBlockDownload() && m_chain.Tip() == pindex->pprev)
+    if (!IsInitialBlockDownload() && m_chain.Tip() == pindex->pprev)
         GetMainSignals().NewPoWValidBlock(pindex, pblock);
 
     // Fake stake validation checks

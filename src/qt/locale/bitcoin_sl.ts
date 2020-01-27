@@ -2900,6 +2900,13 @@ Opomba: Ker se provizija izračuna na bajt, bi provizija "100 satoshijev na kB" 
     <message>
         <source>Output index</source>
         <translation>Indeks izhoda</translation>
+<<<<<<< HEAD:src/qt/locale/bitcoin_sl.ts
+=======
+    </message>
+    <message>
+        <source> (Certificate was not verified)</source>
+        <translation>(Certifikat ni bil overjen)</translation>
+>>>>>>> 0.19:src/qt/locale/bitcoin_ko_KR.ts
     </message>
     <message>
         <source>Merchant</source>

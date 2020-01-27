@@ -68,6 +68,13 @@
     <message>
         <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation>비트코인을 보내는 계좌 주소입니다. 코인을 보내기 전에 금액과 받는 주소를 항상 확인하세요.</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>지불 수신용 비트코인주소. 신규 주소를 만들려면 'Create new receiving address' 버튼을 사용하세요.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -130,6 +137,13 @@
     <message>
         <source>Repeat new passphrase</source>
         <translation>새로운 암호 재입력</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Show passphrase</source>
+        <translation>암호 보기</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt wallet</source>
@@ -170,6 +184,17 @@
     <message>
         <source>Wallet encrypted</source>
         <translation>지갑 암호화 완료</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
+        <translation>새로운 지갑 비밀번호를 입력하세요. 암호는 10개 이상의 문자 또는 8개 이상의 단어로 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Enter the old passphrase and new passphrase for the wallet.</source>
+        <translation>지갑의 이전 비밀번호와 새로운 비밀번호를 입력하세요.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>

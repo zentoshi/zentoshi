@@ -56,3 +56,7 @@ Zentoshi contains source code created by the following bodies/associations (in n
     . Dash Core (http://github.com/dashpay/dash)
     . Qtum Core (https://github.com/qtumproject/qtum)
 
+Additionally, we would like to thank:
+
+    . konez2k (bitgreen)
+    . uhlik (fxtc)

@@ -64,10 +64,36 @@
     <message>
         <source>Receiving addresses</source>
         <translation>العنوان الرقمي المُرسَل إليه</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>هذه هي عناوين البيتكوين لإرسال المدفوعات. دائما تحقق من المبلغ وعنوان المستلم قبل الإرسال.</translation>
+    </message>
+    <message>
+        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>هذه هي عناوين البيتكوين الخاصة بك لإستلام المدفوعات. استخدم زر "إنشاء عنوان استلام جديد" في علامة التبويب "إستلام" لإنشاء عناوين جديدة.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Copy Address</source>
         <translation>نسخ العنوان</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Copy &amp;Label</source>
+        <translation>نسخ&amp;تسمية</translation>
+    </message>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>تحرير</translation>
+    </message>
+    <message>
+        <source>Export Address List</source>
+        <translation>تصدير قائمة العناوين</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Comma separated file (*.csv)</source>
@@ -80,9 +106,95 @@
     </context>
 <context>
     <name>AddressTableModel</name>
+<<<<<<< HEAD
     </context>
 <context>
     <name>AskPassphraseDialog</name>
+=======
+    <message>
+        <source>Label</source>
+        <translation>وسم</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>عنوان</translation>
+    </message>
+    <message>
+        <source>(no label)</source>
+        <translation>(بدون وسم)</translation>
+    </message>
+</context>
+<context>
+    <name>AskPassphraseDialog</name>
+    <message>
+        <source>Passphrase Dialog</source>
+        <translation>مربع كلمة المرور</translation>
+    </message>
+    <message>
+        <source>Enter passphrase</source>
+        <translation>ادخل كلمة المرور</translation>
+    </message>
+    <message>
+        <source>New passphrase</source>
+        <translation>كلمة مرور جديد</translation>
+    </message>
+    <message>
+        <source>Repeat new passphrase</source>
+        <translation>إعادة إدخال كلمة المرور</translation>
+    </message>
+    <message>
+        <source>Show passphrase</source>
+        <translation>إظهار كلمة المرور</translation>
+    </message>
+    <message>
+        <source>Encrypt wallet</source>
+        <translation>تشفير المحفظة</translation>
+    </message>
+    <message>
+        <source>This operation needs your wallet passphrase to unlock the wallet.</source>
+        <translation>العملية تحتاج كملة المرور المحفظة لتستطيع فتحها.</translation>
+    </message>
+    <message>
+        <source>Unlock wallet</source>
+        <translation>فتح المحفظة</translation>
+    </message>
+    <message>
+        <source>This operation needs your wallet passphrase to decrypt the wallet.</source>
+        <translation>العملية تحتاج كملة المرور المحفظة لتستطيع فتحها.</translation>
+    </message>
+    <message>
+        <source>Decrypt wallet</source>
+        <translation>فك تشفير المحفظة</translation>
+    </message>
+    <message>
+        <source>Change passphrase</source>
+        <translation>تغيير كلمة المرور</translation>
+    </message>
+    <message>
+        <source>Confirm wallet encryption</source>
+        <translation>تأكيد تشفير المحفظة</translation>
+    </message>
+    <message>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
+        <translation>إذا شفرت محفظتك وفقدت كلمة المرور، ستفقد كل ما تملك من البيتكوين.</translation>
+    </message>
+    <message>
+        <source>Are you sure you wish to encrypt your wallet?</source>
+        <translation>هل انت متأكد بأنك تريد تشفير محفظتك؟</translation>
+    </message>
+    <message>
+        <source>Wallet encrypted</source>
+        <translation>تم تشفير المحفظة</translation>
+    </message>
+    <message>
+        <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
+        <translation>أدخل كلمة المرور الجديدة للمحفظة. &lt;br/&gt; الرجاء استخدام  كلمة مرور تتكون من &lt;b&gt; عشرة أحرف عشوائية أو أكثر &lt;/b&gt; ، أو &lt;b&gt; ثماني كلمات أو أكثر&lt;/b&gt; .</translation>
+    </message>
+    <message>
+        <source>Enter the old passphrase and new passphrase for the wallet.</source>
+        <translation>ادخل كملة المرور القديمة وكلمة المرور الجديدة للمحفظة.</translation>
+    </message>
+>>>>>>> 0.19
     </context>
 <context>
     <name>BanTableModel</name>
@@ -104,6 +216,13 @@
     </context>
 <context>
     <name>CoinControlDialog</name>
+<<<<<<< HEAD
+=======
+    <message>
+        <source>(no label)</source>
+        <translation>(بدون وسم)</translation>
+    </message>
+>>>>>>> 0.19
     </context>
 <context>
     <name>CreateWalletActivity</name>
@@ -190,6 +309,7 @@
     </context>
 <context>
     <name>ReceiveRequestDialog</name>
+<<<<<<< HEAD
     </context>
 <context>
     <name>RecentRequestsTableModel</name>
@@ -197,6 +317,35 @@
 <context>
     <name>SendCoinsDialog</name>
     </context>
+=======
+    <message>
+        <source>Address</source>
+        <translation>عنوان</translation>
+    </message>
+    <message>
+        <source>Label</source>
+        <translation>وسم</translation>
+    </message>
+    </context>
+<context>
+    <name>RecentRequestsTableModel</name>
+    <message>
+        <source>Label</source>
+        <translation>وسم</translation>
+    </message>
+    <message>
+        <source>(no label)</source>
+        <translation>(بدون وسم)</translation>
+    </message>
+    </context>
+<context>
+    <name>SendCoinsDialog</name>
+    <message>
+        <source>(no label)</source>
+        <translation>(بدون وسم)</translation>
+    </message>
+</context>
+>>>>>>> 0.19
 <context>
     <name>SendCoinsEntry</name>
     </context>
@@ -220,6 +369,17 @@
     </context>
 <context>
     <name>TransactionTableModel</name>
+<<<<<<< HEAD
+=======
+    <message>
+        <source>Label</source>
+        <translation>وسم</translation>
+    </message>
+    <message>
+        <source>(no label)</source>
+        <translation>(بدون وسم)</translation>
+    </message>
+>>>>>>> 0.19
     </context>
 <context>
     <name>TransactionView</name>
@@ -232,6 +392,17 @@
         <translation>ملف مفصول بفاصلة (*.csv)</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Label</source>
+        <translation>وسم</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>عنوان</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>Exporting Failed</source>
         <translation>لقد فشل التصدير</translation>
     </message>

@@ -28,6 +28,13 @@
     <message>
         <source>Delete the currently selected address from the list</source>
         <translation>ลบที่อยู่ที่เลือกไว้ออกจากรายการ</translation>
+<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
+=======
+    </message>
+    <message>
+        <source>Enter address or label to search</source>
+        <translation>ป้อนที่อยู่หรือฉลากเพื่อค้นหา</translation>
+>>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
     </message>
     <message>
         <source>Export the data in the current tab to a file</source>
@@ -128,6 +135,13 @@
         <translation>ทำซ้ำข้อความรหัสใหม่</translation>
     </message>
     <message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
+=======
+        <source>Show passphrase</source>
+        <translation>ดูวลี</translation>
+    </message>
+    <message>
+>>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
         <source>Encrypt wallet</source>
         <translation>กระเป๋าสตางค์ เข้ารหัส</translation>
     </message>
@@ -150,6 +164,17 @@
     <message>
         <source>Change passphrase</source>
         <translation>เปลี่ยน ข้อความรหัสผ่าน</translation>
+<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
+=======
+    </message>
+    <message>
+        <source>Confirm wallet encryption</source>
+        <translation>ยืนยันการเข้ารหัสกระเป๋าเงิน</translation>
+    </message>
+    <message>
+        <source>Are you sure you wish to encrypt your wallet?</source>
+        <translation>คุณแน่ใจหรือว่าต้องการเข้ารหัสกระเป๋าเงินของคุณ?</translation>
+>>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
     </message>
     </context>
 <context>
@@ -236,6 +261,10 @@
     <message>
         <source>Open &amp;URI...</source>
         <translation>เปิด &amp;URI</translation>
+    </message>
+    <message>
+        <source>Create Wallet...</source>
+        <translation>สร้าง Wallet</translation>
     </message>
     <message>
         <source>Reindexing blocks on disk...</source>
@@ -435,7 +464,11 @@
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</source>
         <translation>กระเป๋าเงินถูก &lt;b&gt;เข้ารหัส&lt;/b&gt; และในปัจจุบัน &lt;b&gt;ล็อค &lt;/b&gt;</translation>
     </message>
-    </context>
+    <message>
+        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
+        <translation>เกิดข้อผิดพลาดร้ายแรง Bitcoin ไม่สามารถดำเนินการต่อได้อย่างปลอดภัยอีกต่อไปและจะยกเลิก</translation>
+    </message>
+</context>
 <context>
     <name>CoinControlDialog</name>
     <message>
@@ -507,6 +540,7 @@
         <translation>ยืนยันแล้ว</translation>
     </message>
     <message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
         <source>(no label)</source>
         <translation>(ไม่มีฉลาก)</translation>
     </message>
@@ -516,7 +550,46 @@
     </context>
 <context>
     <name>CreateWalletDialog</name>
+=======
+        <source>Copy address</source>
+        <translation>คัดลอกที่อยู่</translation>
+    </message>
+    <message>
+        <source>Copy label</source>
+        <translation>คัดลอกป้ายกำกับ</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
+        <translation>คัดลอกจำนวนเงิน</translation>
+    </message>
+    <message>
+        <source>Copy transaction ID</source>
+        <translation>คัดลอก ID ธุรกรรม</translation>
+    </message>
+    <message>
+        <source>(no label)</source>
+        <translation>(ไม่มีฉลาก)</translation>
+    </message>
+>>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
     </context>
+<context>
+    <name>CreateWalletActivity</name>
+    </context>
+<context>
+    <name>CreateWalletDialog</name>
+    <message>
+        <source>Encrypt Wallet</source>
+        <translation>เข้ารหัสกระเป๋าเงิน</translation>
+    </message>
+    <message>
+        <source>Make Blank Wallet</source>
+        <translation>ทำกระเป๋าเงินเปล่า</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>สร้าง</translation>
+    </message>
+</context>
 <context>
     <name>EditAddressDialog</name>
     <message>
@@ -607,6 +680,14 @@
     <message>
         <source>Bitcoin</source>
         <translation>Bitcoin</translation>
+    </message>
+    <message>
+        <source>Approximately %1 GB of data will be stored in this directory.</source>
+        <translation>ประมาณ %1 GB ของข้อมูลจะเก็บในไดเร็กทอรี่</translation>
+    </message>
+    <message>
+        <source>The wallet will also be stored in this directory.</source>
+        <translation>The wallet เก็บใว้ในไดเร็กทอรี่</translation>
     </message>
     <message>
         <source>Error: Specified data directory "%1" cannot be created.</source>
@@ -825,7 +906,15 @@
         <source>&amp;Label:</source>
         <translation>&amp;ชื่อ:</translation>
     </message>
-    </context>
+    <message>
+        <source>Copy label</source>
+        <translation>คัดลอกป้ายกำกับ</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
+        <translation>คัดลอกจำนวนเงิน</translation>
+    </message>
+</context>
 <context>
     <name>ReceiveRequestDialog</name>
     <message>
@@ -895,6 +984,13 @@
         <translation>เศษ:</translation>
     </message>
     <message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
+=======
+        <source>Copy amount</source>
+        <translation>คัดลอกจำนวนเงิน</translation>
+    </message>
+    <message>
+>>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
         <source>(no label)</source>
         <translation>(ไม่มีฉลาก)</translation>
     </message>
@@ -950,6 +1046,25 @@
 <context>
     <name>TransactionView</name>
     <message>
+<<<<<<< HEAD:src/qt/locale/bitcoin_th.ts
+=======
+        <source>Copy address</source>
+        <translation>คัดลอกที่อยู่</translation>
+    </message>
+    <message>
+        <source>Copy label</source>
+        <translation>คัดลอกป้ายกำกับ</translation>
+    </message>
+    <message>
+        <source>Copy amount</source>
+        <translation>คัดลอกจำนวนเงิน</translation>
+    </message>
+    <message>
+        <source>Copy transaction ID</source>
+        <translation>คัดลอก ID ธุรกรรม</translation>
+    </message>
+    <message>
+>>>>>>> 0.19:src/qt/locale/bitcoin_th_TH.ts
         <source>Comma separated file (*.csv)</source>
         <translation>ไฟล์ที่คั่นด้วยจุลภาค (* .csv)</translation>
     </message>

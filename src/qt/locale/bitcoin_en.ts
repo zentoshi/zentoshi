@@ -330,12 +330,20 @@
         <translation>Sign &amp;message...</translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+623"/>
+=======
+        <location line="+625"/>
+>>>>>>> 0.19
         <source>Synchronizing with network...</source>
         <translation>Synchronizing with network...</translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="-701"/>
+=======
+        <location line="-703"/>
+>>>>>>> 0.19
         <source>&amp;Overview</source>
         <translation>&amp;Overview</translation>
     </message>
@@ -420,7 +428,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+1"/>
+=======
+        <location line="+2"/>
+>>>>>>> 0.19
         <source>Create a new wallet</source>
         <translation type="unfinished"></translation>
     </message>
@@ -430,7 +442,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+334"/>
+=======
+        <location line="+335"/>
+>>>>>>> 0.19
         <source>Click to disable network activity.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -460,7 +476,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="-1021"/>
+=======
+        <location line="-1023"/>
+>>>>>>> 0.19
         <source>Send coins to a Bitcoin address</source>
         <translation>Send coins to a Bitcoin address</translation>
     </message>
@@ -525,7 +545,11 @@
         <translation>Verify messages to ensure they were signed with specified Bitcoin addresses</translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+110"/>
+=======
+        <location line="+111"/>
+>>>>>>> 0.19
         <source>&amp;File</source>
         <translation>&amp;File</translation>
     </message>
@@ -545,7 +569,11 @@
         <translation>Tabs toolbar</translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="-256"/>
+=======
+        <location line="-257"/>
+>>>>>>> 0.19
         <source>Request payments (generates QR codes and bitcoin: URIs)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -565,12 +593,20 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+13"/>
+=======
+        <location line="+14"/>
+>>>>>>> 0.19
         <source>&amp;Command-line options</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
+<<<<<<< HEAD
         <location line="+522"/>
+=======
+        <location line="+523"/>
+>>>>>>> 0.19
         <source>%n active connection(s) to Bitcoin network</source>
         <translation>
             <numerusform>%n active connection to Bitcoin network</numerusform>
@@ -631,7 +667,11 @@
         <translation>Up to date</translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="-642"/>
+=======
+        <location line="-644"/>
+>>>>>>> 0.19
         <source>&amp;Sending addresses</source>
         <translation type="unfinished"></translation>
     </message>
@@ -661,7 +701,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+7"/>
+=======
+        <location line="+8"/>
+>>>>>>> 0.19
         <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
         <translation type="unfinished"></translation>
     </message>
@@ -696,7 +740,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location line="+232"/>
+=======
+        <location line="+233"/>
+>>>>>>> 0.19
         <source>%1 client</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2161,7 +2209,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+<<<<<<< HEAD
         <location filename="../bitcoin.cpp" line="+115"/>
+=======
+        <location filename="../bitcoin.cpp" line="+118"/>
+>>>>>>> 0.19
         <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2838,7 +2890,11 @@
 <context>
     <name>RecentRequestsTableModel</name>
     <message>
+<<<<<<< HEAD
         <location filename="../recentrequeststablemodel.cpp" line="+27"/>
+=======
+        <location filename="../recentrequeststablemodel.cpp" line="+26"/>
+>>>>>>> 0.19
         <source>Date</source>
         <translation type="unfinished">Date</translation>
     </message>

@@ -121,7 +121,7 @@
     </message>
     <message>
         <source>Enter passphrase</source>
-        <translation>Add meg a jelszót</translation>
+        <translation>Írja be a jelszót</translation>
     </message>
     <message>
         <source>New passphrase</source>
@@ -129,7 +129,15 @@
     </message>
     <message>
         <source>Repeat new passphrase</source>
+<<<<<<< HEAD
         <translation>Új jelszó újra</translation>
+=======
+        <translation>Ismét az új jelszó</translation>
+    </message>
+    <message>
+        <source>Show passphrase</source>
+        <translation>Jelszó mutatása</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt wallet</source>
@@ -137,7 +145,7 @@
     </message>
     <message>
         <source>This operation needs your wallet passphrase to unlock the wallet.</source>
-        <translation>Ehhez a művelethez szükség van a tárcához tartozó kulcsmondathoz, hogy kinyithassa azt.</translation>
+        <translation>Ehhez a művelethez szükség van a tárcanyitó jelszóra.</translation>
     </message>
     <message>
         <source>Unlock wallet</source>
@@ -145,15 +153,19 @@
     </message>
     <message>
         <source>This operation needs your wallet passphrase to decrypt the wallet.</source>
-        <translation>Ehhez a művelethez szükség van a tárcához tartozó kulcsmondathoz, hogy a titkosítás megszűnjön.</translation>
+        <translation>Ehhez a művelethez szükség van a tárcatitkosítást feloldó jelszóra.</translation>
     </message>
     <message>
         <source>Decrypt wallet</source>
-        <translation>Tárca dekódolása</translation>
+        <translation>Tárcatitkosítás feloldása</translation>
     </message>
     <message>
         <source>Change passphrase</source>
+<<<<<<< HEAD
         <translation>Kulcsmondat megváltoztatása</translation>
+=======
+        <translation>Jelszó megváltoztatása</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Confirm wallet encryption</source>
@@ -172,8 +184,33 @@
         <translation>Tárca titkosítva</translation>
     </message>
     <message>
+<<<<<<< HEAD
         <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
         <translation>Ne feledd, hogy a tárca titkosítása sem nyújt teljes védelmet az adathalász programok fertőzésével szemben.</translation>
+=======
+        <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
+        <translation>Írja be a tárca új jelszavát. &lt;br/&gt;A jelszó összetétele a következő: &lt;b&gt;tíz vagy annál több véletlenszerű karakter&lt;/b&gt;, vagy &lt;b&gt;nyolc vagy annál több szó&lt;/b&gt;. </translation>
+    </message>
+    <message>
+        <source>Enter the old passphrase and new passphrase for the wallet.</source>
+        <translation>Írja be a tárca régi és új jelszavát.</translation>
+    </message>
+    <message>
+        <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
+        <translation>Ne feledd, hogy a tárca titkosítása nem nyújt teljes védelmet az adathalász programok fertőzésével szemben.</translation>
+    </message>
+    <message>
+        <source>Wallet to be encrypted</source>
+        <translation>A titkositandó tárca</translation>
+    </message>
+    <message>
+        <source>Your wallet is about to be encrypted. </source>
+        <translation>Tárcatitkosítás megkezdése.</translation>
+    </message>
+    <message>
+        <source>Your wallet is now encrypted. </source>
+        <translation>Tárcáját titkosítottuk.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
@@ -181,31 +218,31 @@
     </message>
     <message>
         <source>Wallet encryption failed</source>
-        <translation>A tárca titkosítása sikertelen.</translation>
+        <translation>Nem sikerült a tárca titkosítása</translation>
     </message>
     <message>
         <source>Wallet encryption failed due to an internal error. Your wallet was not encrypted.</source>
-        <translation>Tárca titkosítása belső hiba miatt sikertelen. A tárcád nem lett titkosítva.</translation>
+        <translation>A tárca titkosítása belső hiba miatt nem sikerült. A tárcád nem lett titkosítva.</translation>
     </message>
     <message>
         <source>The supplied passphrases do not match.</source>
-        <translation>A megadott jelszavak nem egyeznek.</translation>
+        <translation>A megadott jelszók nem egyeznek.</translation>
     </message>
     <message>
         <source>Wallet unlock failed</source>
-        <translation>Tárca megnyitása sikertelen</translation>
+        <translation>A tárca felnyitása nem sikerült</translation>
     </message>
     <message>
         <source>The passphrase entered for the wallet decryption was incorrect.</source>
-        <translation>A tárca titkosításának feloldásához megadott jelszó helytelen.</translation>
+        <translation>A tárcatitkosítás feloldásához megadott jelszó helytelen.</translation>
     </message>
     <message>
         <source>Wallet decryption failed</source>
-        <translation>Tárca titkosításának feloldása sikertelen</translation>
+        <translation>A tárca titkosításának feloldása nem sikerült</translation>
     </message>
     <message>
         <source>Wallet passphrase was successfully changed.</source>
-        <translation>Tárca jelszava sikeresen megváltoztatva.</translation>
+        <translation>A tárca jelszavát sikeresen megváltoztatta.</translation>
     </message>
     <message>
         <source>Warning: The Caps Lock key is on!</source>
@@ -239,7 +276,7 @@
     </message>
     <message>
         <source>Show general overview of wallet</source>
-        <translation>Tárca általános áttekintése</translation>
+        <translation>A tárca általános áttekintése</translation>
     </message>
     <message>
         <source>&amp;Transactions</source>
@@ -287,7 +324,7 @@
     </message>
     <message>
         <source>&amp;Backup Wallet...</source>
-        <translation>&amp;Bisztonsági másolat készítése a Tárcáról</translation>
+        <translation>&amp;Biztonsági tárcamásolat készítése...</translation>
     </message>
     <message>
         <source>&amp;Change Passphrase...</source>
@@ -296,6 +333,21 @@
     <message>
         <source>Open &amp;URI...</source>
         <translation>&amp;URI azonosító megnyitása...</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Create Wallet...</source>
+        <translation>Tárca készítése...</translation>
+    </message>
+    <message>
+        <source>Create a new wallet</source>
+        <translation>Új tárca készítése</translation>
+    </message>
+    <message>
+        <source>Wallet:</source>
+        <translation>Tárca:</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Wallet:</source>
@@ -335,7 +387,7 @@
     </message>
     <message>
         <source>Change the passphrase used for wallet encryption</source>
-        <translation>Tárca-titkosító jelszó megváltoztatása</translation>
+        <translation>Tárcatitkosító jelszó megváltoztatása</translation>
     </message>
     <message>
         <source>&amp;Debug window</source>
@@ -471,7 +523,11 @@
     </message>
     <message>
         <source>Open a wallet</source>
+<<<<<<< HEAD
         <translation>Tárca nyitása</translation>
+=======
+        <translation>Tárca megnyitása</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Close Wallet...</source>
@@ -582,11 +638,11 @@
     </message>
     <message>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;unlocked&lt;/b&gt;</source>
-        <translation>A tárca &lt;b&gt;titkosítva&lt;/b&gt; és jelenleg &lt;b&gt;nyitva&lt;/b&gt;.</translation>
+        <translation>A tárca &lt;b&gt;titkosítva&lt;/b&gt; és jelenleg &lt;b&gt;megnyitva&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Wallet is &lt;b&gt;encrypted&lt;/b&gt; and currently &lt;b&gt;locked&lt;/b&gt;</source>
-        <translation>Tárca &lt;b&gt;kódolva&lt;/b&gt; és jelenleg &lt;b&gt;zárva&lt;/b&gt;.</translation>
+        <translation>A tárca &lt;b&gt;titkosítva&lt;/b&gt; és jelenleg &lt;b&gt;bezárva&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
@@ -746,9 +802,55 @@
 </context>
 <context>
     <name>CreateWalletActivity</name>
+<<<<<<< HEAD
     </context>
 <context>
     <name>CreateWalletDialog</name>
+=======
+    <message>
+        <source>Creating Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
+        <translation>&lt;b&gt;%1&lt;/b&gt; tárca készítése folyamatban...</translation>
+    </message>
+    <message>
+        <source>Create wallet failed</source>
+        <translation>A tárcakészítés nem sikerült</translation>
+    </message>
+    <message>
+        <source>Create wallet warning</source>
+        <translation>Tárcakészítési figyelmeztetés</translation>
+    </message>
+</context>
+<context>
+    <name>CreateWalletDialog</name>
+    <message>
+        <source>Create Wallet</source>
+        <translation>Tárca készítése</translation>
+    </message>
+    <message>
+        <source>Wallet Name</source>
+        <translation>Tárca neve</translation>
+    </message>
+    <message>
+        <source>Encrypt the wallet. The wallet will be encrypted with a passphrase of your choice.</source>
+        <translation>A tárca titkosítása. A tárcát egy Ön által megadott jelszó titkosítja.</translation>
+    </message>
+    <message>
+        <source>Encrypt Wallet</source>
+        <translation>Tárca titkosítása</translation>
+    </message>
+    <message>
+        <source>Disable private keys for this wallet. Wallets with private keys disabled will have no private keys and cannot have an HD seed or imported private keys. This is ideal for watch-only wallets.</source>
+        <translation>A tárcához tartozó privát kulcsok letiltása. Azok a tárcák, melyeknél a privát kulcsok le vannak tiltva, nem tartalmaznak privát kulcsokat és nem tartalmazhatnak HD magot vagy importált privát kulcsokat. Ez azoknál a tárcáknál ideális, melyeket csak megfigyelésre használnak.</translation>
+    </message>
+    <message>
+        <source>Make a blank wallet. Blank wallets do not initially have private keys or scripts. Private keys and addresses can be imported, or an HD seed can be set, at a later time.</source>
+        <translation>Üres tárca készítése. Az üres tárcák kezdetben nem tartalmaznak privát kulcsokat vagy szkripteket. Később lehetséges a privát kulcsok vagy címek importálása avagy egy HD mag beállítása.</translation>
+    </message>
+    <message>
+        <source>Make Blank Wallet</source>
+        <translation>Üres tárca készítése</translation>
+    </message>
+>>>>>>> 0.19
     </context>
 <context>
     <name>EditAddressDialog</name>
@@ -790,7 +892,7 @@
     </message>
     <message>
         <source>Could not unlock wallet.</source>
-        <translation>Tárca feloldása sikertelen</translation>
+        <translation>Nem sikerült a tárca megnyitása</translation>
     </message>
     <message>
         <source>New key generation failed.</source>
@@ -858,6 +960,10 @@
         <translation>Ha az OK-ra kattint, %1 megkezdi a teljes %4 blokk lánc letöltését és feldolgozását (%2GB) a legkorábbi tranzakciókkal kezdve %3 -ben, amikor a %4 bevezetésre került.</translation>
     </message>
     <message>
+        <source>Reverting this setting requires re-downloading the entire blockchain. It is faster to download the full chain first and prune it later. Disables some advanced features.</source>
+        <translation>A beállítás visszaállításához le kell tölteni a teljes blokkláncot. A teljes lánc letöltése és későbbi nyesése ennél gyorsabb. Bizonyos haladó funkciókat letilt.</translation>
+    </message>
+    <message>
         <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
         <translation>Az első szinkronizáció nagyon erőforrás-igényes és felszínre hozhat a számítógépében eddig rejtve maradt hardver problémákat. Minden %1 indításnál a program onnan folytatja a letöltést, ahol legutóbb abbahagyta.</translation>
     </message>
@@ -878,6 +984,10 @@
         <translation>Bitcoin</translation>
     </message>
     <message>
+        <source>Discard blocks after verification, except most recent %1 GB (prune)</source>
+        <translation>Blokkok elhgyása ellenőrzés után, kivéve a legújabb %1 GB-ot (nyesés)</translation>
+    </message>
+    <message>
         <source>At least %1 GB of data will be stored in this directory, and it will grow over time.</source>
         <translation>Legalább %1 GB adatot fogunk ebben a könyvtárban tárolni és idővel ez egyre több lesz.</translation>
     </message>
@@ -891,7 +1001,7 @@
     </message>
     <message>
         <source>The wallet will also be stored in this directory.</source>
-        <translation>Ebben a könyvtárban lesz a pénztárca is.</translation>
+        <translation>A tárcát is ebben a könyvtárban tároljuk.</translation>
     </message>
     <message>
         <source>Error: Specified data directory "%1" cannot be created.</source>
@@ -914,7 +1024,7 @@
     </message>
     <message>
         <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
-        <translation>A legutóbbi tranzakciók még lehet, hogy nem látszanak, ezért előfordulhat, hogy a pénztárca egyenlege nem a valós állapotot mutatja. Ha a pénztárca befejezte a szinkronizációt a bitcoin hálózattal, utána már az aktuális egyenleget fogja mutatni, amint alant részletesen látszik.</translation>
+        <translation>A legutóbbi tranzakciók még lehet, hogy nem láthatók, és így előfordulhat, hogy a tárca egyenlege helytelen. A tárca azon nyomban az aktuális egyenleget fogja mutatni, amint befejezte a bitcoin hálózattal történő szinkronizációt, amely alább van részletezve.</translation>
     </message>
     <message>
         <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
@@ -979,12 +1089,27 @@
 <context>
     <name>OpenWalletActivity</name>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Open wallet failed</source>
+        <translation>Nem sikerült a tárca megnyitása</translation>
+    </message>
+    <message>
+        <source>Open wallet warning</source>
+        <translation>Tárca-megnyitási figyelmeztetés</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>default wallet</source>
         <translation>Alapértelmezett tárca</translation>
     </message>
     <message>
         <source>Opening Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
+<<<<<<< HEAD
         <translation>Tárca megnyitása &lt;b&gt;%1&lt;/b&gt;...</translation>
+=======
+        <translation>&lt;b&gt;%1&lt;/b&gt; tárca megnyitása...</translation>
+>>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -1058,10 +1183,28 @@
         <translation>&amp;Hálózat</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Disables some advanced features but all blocks will still be fully validated. Reverting this setting requires re-downloading the entire blockchain. Actual disk usage may be somewhat higher.</source>
+        <translation>Bizonyos haladó funkciókat letilt, de minden blokkot teljes mértékben érvényesít. A beállítás visszaállításához le kell tölteni a teljes blokkláncot. A tényleges lemezhasználat valamennyire megnövekedhet.</translation>
+    </message>
+    <message>
+        <source>Prune &amp;block storage to</source>
+        <translation>Nyesi a &amp;block tárolását ide:</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>GB</source>
         <translation>GB</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Reverting this setting requires re-downloading the entire blockchain.</source>
+        <translation>A beállítás visszaállításához le kell tölteni a teljes blokkláncot.</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>MiB</source>
         <translation>MB</translation>
     </message>
@@ -1250,7 +1393,7 @@
     </message>
     <message>
         <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>A kijelzett információ lehet, hogy elavult. A pénztárcája automatikusan szinkronizálja magát a Bitcoin hálózattal miután a kapcsolat létrejön, de ez e folyamat még nem fejeződött be.</translation>
+        <translation>A kijelzett információ lehet, hogy elavult. A kapcsolat létrehozatalát követően tárcája automatikusan szinkronba kerül a Bitcoin hálózattal, de ez a folyamat még nem fejeződött be.</translation>
     </message>
     <message>
         <source>Watch-only:</source>
@@ -1332,6 +1475,10 @@
         <translation>URI kezelés</translation>
     </message>
     <message>
+        <source>Due to widespread security flaws in BIP70 it's strongly recommended that any merchant instructions to switch wallets be ignored.</source>
+        <translation>A BIP70 széleskörű biztonsági hiányosságai következtében határozottan ajánljuk, hogy hagyjon figyelmen kívül bármiféle kereskedelmi utasítást, amely a tárca váltására készteti.</translation>
+    </message>
+    <message>
         <source>Invalid payment address %1</source>
         <translation>Érvénytelen fizetési cím %1</translation>
     </message>
@@ -1373,7 +1520,7 @@
     </message>
     <message>
         <source>Refund from %1</source>
-        <translation>Visszatérítés a %1 -tól</translation>
+        <translation>Visszatérítés innen: %1</translation>
     </message>
     <message>
         <source>Payment request %1 is too large (%2 bytes, allowed %3 bytes).</source>
@@ -1624,6 +1771,10 @@
         <translation>Memóriahasználat</translation>
     </message>
     <message>
+        <source>Wallet: </source>
+        <translation>Tárca:</translation>
+    </message>
+    <message>
         <source>&amp;Reset</source>
         <translation>&amp;Visszaállítás</translation>
     </message>
@@ -1810,6 +1961,14 @@
     <message>
         <source>Network activity disabled</source>
         <translation>Hálózati tevékenység letiltva.</translation>
+    </message>
+    <message>
+        <source>Executing command without any wallet</source>
+        <translation>Parancs végrehajtása tárca nélkül</translation>
+    </message>
+    <message>
+        <source>Executing command using "%1" wallet</source>
+        <translation>Parancs végrehajtása a "%1" tárca használatával</translation>
     </message>
     <message>
         <source>(node id: %1)</source>
@@ -2168,6 +2327,10 @@
         <translation>Visszajáró másolása</translation>
     </message>
     <message>
+        <source> from wallet '%1'</source>
+        <translation>A "%1" tárcától</translation>
+    </message>
+    <message>
         <source>Are you sure you want to send?</source>
         <translation>Biztosan el akarja küldeni?</translation>
     </message>
@@ -2237,7 +2400,7 @@
     </message>
     <message>
         <source>The address you selected for change is not part of this wallet. Any or all funds in your wallet may be sent to this address. Are you sure?</source>
-        <translation>A cím, amelyet a visszajárónak megadott, nincs ebben a tárcában. Bármennyi vagy minden összeg elküldhető a tárcájából erre a címre. Biztos benne?</translation>
+        <translation>A visszajárónak megadott cím nem szerepel ebben a tárcában. Bármilyen - vagy az egész - összeg elküldhető a tárcájából erre a címre. Biztos benne?</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -2864,7 +3027,19 @@
         <source>Close wallet</source>
         <translation>Tárca bezárása</translation>
     </message>
+<<<<<<< HEAD
     </context>
+=======
+    <message>
+        <source>Are you sure you wish to close the wallet &lt;i&gt;%1&lt;/i&gt;?</source>
+        <translation>Biztos, hogy bezárja a "%1" tárcát?</translation>
+    </message>
+    <message>
+        <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
+        <translation>A tárca hosszantartó bezárása nyesési üzemmódban azt eredményezheti, hogy a teljes láncot újra kell szinkronizálnia.</translation>
+    </message>
+</context>
+>>>>>>> 0.19
 <context>
     <name>WalletFrame</name>
     <message>
@@ -2953,6 +3128,18 @@
         <translation>MIT szoftver licenc alapján terjesztve, tekintse meg a hozzátartozó fájlt %s or %s</translation>
     </message>
     <message>
+        <source>Prune configured below the minimum of %d MiB.  Please use a higher number.</source>
+        <translation>Nyesés megkísérlése a minimális %d MiB alatt. Kérjük, használjon egy magasabb értéket.</translation>
+    </message>
+    <message>
+        <source>Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)</source>
+        <translation>Nyesés: az utolsó tárcaszinkronizálás meghaladja a nyesett adatokat. Szükséges a -reindex használata (nyesett csomópont esetében a teljes blokklánc ismételt letöltése).</translation>
+    </message>
+    <message>
+        <source>Rescans are not possible in pruned mode. You will need to use -reindex which will download the whole blockchain again.</source>
+        <translation>Nyesett üzemmódban nem lehet megismételni a feltérképezést. Szükséges a -reindex használata, ami a teljes blokklánc letöltését eredményezi.</translation>
+    </message>
+    <message>
         <source>Error: A fatal internal error occurred, see debug.log for details</source>
         <translation>Hiba: Fatális belső hiba történt, nézze meg a debug.log -ot a részletekért</translation>
     </message>
@@ -2971,6 +3158,10 @@
     <message>
         <source>This is a pre-release test build - use at your own risk - do not use for mining or merchant applications</source>
         <translation>Ez egy kiadás előtt álló, teszt verzió - csak saját felelősségre - ne használja bányászatra vagy kereskedéshez.</translation>
+    </message>
+    <message>
+        <source>Unable to rewind the database to a pre-fork state. You will need to redownload the blockchain</source>
+        <translation>Az adatbázis visszatekerése az elágazás előtti állapotba nem sikerült. Ismételten le kell töltenie a blokkláncot.</translation>
     </message>
     <message>
         <source>Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.</source>
@@ -3026,7 +3217,7 @@
     </message>
     <message>
         <source>Failed to rescan the wallet during initialization</source>
-        <translation>A tárca átvizsgálása közben hiba történt.</translation>
+        <translation>Inicializálás közben nem sikerült feltérképezni a tárcát</translation>
     </message>
     <message>
         <source>Importing...</source>
@@ -3047,6 +3238,17 @@
     <message>
         <source>Not enough file descriptors available.</source>
         <translation>Nincs elég fájlleíró.</translation>
+<<<<<<< HEAD
+=======
+    </message>
+    <message>
+        <source>Prune cannot be configured with a negative value.</source>
+        <translation>Nyesett üzemmódot nem lehet negatív értékkel kialakítani.</translation>
+    </message>
+    <message>
+        <source>Prune mode is incompatible with -txindex.</source>
+        <translation>A -txindex nem használható nyesett üzemmódban.</translation>
+>>>>>>> 0.19
     </message>
     <message>
         <source>Replaying blocks...</source>
@@ -3077,6 +3279,10 @@
         <translation>A Tárca újraírása szükséges: Indítsa újra a %s-t.</translation>
     </message>
     <message>
+        <source>You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain</source>
+        <translation>Újra kell építeni az adatbázist a -reindex használatával, ami a nyesett üzemmódot megszünteti. Ez a teljes blokklánc ismételt letöltésével jár.</translation>
+    </message>
+    <message>
         <source>Error reading from database, shutting down.</source>
         <translation>Hiba az adatbázis olvasásakor, leállítás</translation>
     </message>
@@ -3085,8 +3291,27 @@
         <translation>Hiba a blokk adatbázis betöltése közben</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Prune mode is incompatible with -blockfilterindex.</source>
+        <translation>A -blockfilterindex nem használható nyesés üzemmódban.</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>Signing transaction failed</source>
         <translation>Tranzakció aláírása sikertelen</translation>
+    </message>
+    <message>
+        <source>Specified -walletdir "%s" does not exist</source>
+        <translation>A megadott "%s" -walletdir nem létezik</translation>
+    </message>
+    <message>
+        <source>Specified -walletdir "%s" is a relative path</source>
+        <translation>A megadott "%s" -walletdir relatív elérési út</translation>
+    </message>
+    <message>
+        <source>Specified -walletdir "%s" is not a directory</source>
+        <translation>A megadott "%s" -walletdir nem könyvtár</translation>
     </message>
     <message>
         <source>This is experimental software.</source>
@@ -3105,12 +3330,31 @@
         <translation>Tárcák ellenőrzése...</translation>
     </message>
     <message>
+<<<<<<< HEAD
+=======
+        <source>Zapping all transactions from wallet...</source>
+        <translation>A tárca összes trancakciójának törlése...</translation>
+    </message>
+    <message>
+        <source>Warning: Wallet file corrupt, data salvaged! Original %s saved as %s in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
+        <translation>Figyelem: A tárca-fájl megsérült, de az adatokat sikerült megmenteni! Az eredeti %s fájlt mentettük %s név alatt a %s könyvtárban. Amennyiben az egyenleg vagy a trancakciók helytelenek, állítsa vissza tárcáját a biztonsági mentés használatával.</translation>
+    </message>
+    <message>
+>>>>>>> 0.19
         <source>%s is set very high!</source>
         <translation>%s étéke nagyon magas!</translation>
     </message>
     <message>
+        <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
+        <translation>Hiba történt a %s tárca betöltésekor, mert duplikált tárca-fájlnevet adott meg.</translation>
+    </message>
+    <message>
         <source>Starting network threads...</source>
         <translation>Hálózati szálak indítása...</translation>
+    </message>
+    <message>
+        <source>The wallet will avoid paying less than the minimum relay fee.</source>
+        <translation>A tárca nem fog a minimális továbbítási díjnál kevesebbet fizetni. </translation>
     </message>
     <message>
         <source>This is the minimum transaction fee you pay on every transaction.</source>
@@ -3134,7 +3378,15 @@
     </message>
     <message>
         <source>Insufficient funds</source>
-        <translation>Nincs elég bitcoinod.</translation>
+        <translation>Fedezethiány</translation>
+    </message>
+    <message>
+        <source>Cannot upgrade a non HD split wallet without upgrading to support pre split keypool. Please use -upgradewallet=169900 or -upgradewallet with no version specified.</source>
+        <translation>A nem HD-s megosztott tárcát nem lehet bővíteni anélkül, hogy először a megosztás előtti kulcskészlet támogatására bővít. Használja az -upgradewallet=169900 parancsot vagy az -upgradewallet parancsot verzió megadása nélkül.</translation>
+    </message>
+    <message>
+        <source>Warning: Private keys detected in wallet {%s} with disabled private keys</source>
+        <translation>Figyelem: Privát kulcsokat észleltünk a {%s} tárcában, melynél a privát kulcsok le vannak tiltva.</translation>
     </message>
     <message>
         <source>Loading block index...</source>
@@ -3150,7 +3402,7 @@
     </message>
     <message>
         <source>Rescanning...</source>
-        <translation>Újraszkennelés...</translation>
+        <translation>Feltérképezés megismétlése...</translation>
     </message>
     <message>
         <source>Done loading</source>
