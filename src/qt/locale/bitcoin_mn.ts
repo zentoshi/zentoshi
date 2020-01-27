@@ -223,7 +223,7 @@
 <context>
     <name>Intro</name>
     <message>
-        <source>Bitcoin</source>
+        <source>Zentoshi</source>
         <translation>Биткойн</translation>
     </message>
     <message>
@@ -592,7 +592,7 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Insufficient funds</source>
         <translation>Таны дансны үлдэгдэл хүрэлцэхгүй байна</translation>

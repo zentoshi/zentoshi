@@ -126,7 +126,7 @@
         <translation>Повторно индексирање на блокови од дискот...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
+        <source>Send coins to a Zentoshi address</source>
         <translation>Испрати биткоини на Биткоин адреса</translation>
     </message>
     <message>
@@ -289,7 +289,7 @@
 <context>
     <name>Intro</name>
     <message>
-        <source>Bitcoin</source>
+        <source>Zentoshi</source>
         <translation>Биткоин</translation>
     </message>
     <message>
@@ -610,6 +610,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     </context>
 </TS>

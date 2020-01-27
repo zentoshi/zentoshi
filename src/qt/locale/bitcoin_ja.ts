@@ -66,17 +66,14 @@
         <translation>受取用アドレス</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>これらは、あなたが知っている支払い送り先の Bitcoin アドレスです。コインを送る前に、必ず金額と送金先アドレスを確認してください。</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>これらは、あなたが知っている支払い送り先の Zentoshi アドレスです。コインを送る前に、必ず金額と送金先アドレスを確認してください。</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
-        <translation>これらは支払いを受け取るための、あなたの Bitcoin アドレスです。新しいアドレスを作成するには受取タブ内の「新しい受取用アドレスを作成」ボタンを使用します。</translation>
+        <source>These are your Zentoshi addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>これらは支払いを受け取るための、あなたの Zentoshi アドレスです。新しいアドレスを作成するには受取タブ内の「新しい受取用アドレスを作成」ボタンを使用します。</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>&amp;Copy Address</source>
         <translation>アドレスをコピー(&amp;C)</translation>
     </message>
@@ -139,13 +136,10 @@
         <translation>新しいパスフレーズをもう一度</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Show passphrase</source>
         <translation>パスフレーズを表示</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Encrypt wallet</source>
         <translation>ウォレットを暗号化</translation>
     </message>
@@ -175,7 +169,7 @@
     </message>
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
-        <translation>警告: もしもあなたのウォレットを暗号化してパスフレーズを忘れてしまったら、&lt;b&gt;あなたの Bitcoin はすべて失われます&lt;/b&gt;！</translation>
+        <translation>警告: もしもあなたのウォレットを暗号化してパスフレーズを忘れてしまったら、&lt;b&gt;あなたの Zentoshi はすべて失われます&lt;/b&gt;！</translation>
     </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
@@ -184,8 +178,6 @@
     <message>
         <source>Wallet encrypted</source>
         <translation>ウォレットの暗号化の完了</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
@@ -198,7 +190,7 @@
     </message>
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-        <translation>ウォレットを暗号化しても、コンピュータに感染したマルウェアなどによる Bitcoin の盗難を完全に防ぐことはできないことにご注意ください。</translation>
+        <translation>ウォレットを暗号化しても、コンピュータに感染したマルウェアなどによる Zentoshi の盗難を完全に防ぐことはできないことにご注意ください。</translation>
     </message>
     <message>
         <source>Wallet to be encrypted</source>
@@ -211,7 +203,6 @@
     <message>
         <source>Your wallet is now encrypted. </source>
         <translation>ウォレットは暗号化されました。</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
@@ -330,12 +321,6 @@
     <message>
         <source>&amp;Change Passphrase...</source>
         <translation>パスフレーズの変更(&amp;C)...</translation>
-<<<<<<< HEAD
-    </message>
-    <message>
-        <source>Open &amp;URI...</source>
-        <translation>URI を開く(&amp;U)...</translation>
-=======
     </message>
     <message>
         <source>Open &amp;URI...</source>
@@ -348,7 +333,6 @@
     <message>
         <source>Create a new wallet</source>
         <translation>新しいウォレットを作成</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Wallet:</source>
@@ -379,8 +363,8 @@
         <translation>プロキシは&lt;b&gt;有効&lt;/b&gt;: %1</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Bitcoin アドレスにコインを送る</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Zentoshi アドレスにコインを送る</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -423,12 +407,12 @@
         <translation>ウォレットの秘密鍵を暗号化する</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Bitcoin アドレスでメッセージに署名して、アドレスを所有していることを証明する</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Zentoshi アドレスでメッセージに署名して、アドレスを所有していることを証明する</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>メッセージを検証して、指定された Bitcoin アドレスで署名されたことを確認する</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>メッセージを検証して、指定された Zentoshi アドレスで署名されたことを確認する</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -447,8 +431,8 @@
         <translation>タブツールバー</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>支払いをリクエストする (QRコードと bitcoin: URIを生成する)&lt;</translation>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
+        <translation>支払いをリクエストする (QRコードと zentoshi: URIを生成する)&lt;</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
@@ -459,16 +443,16 @@
         <translation>受け取ったことがあるアドレスとラベルの一覧を表示する</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>bitcoin: URIや支払いリクエストを開く</translation>
+        <source>Open a zentoshi: URI or payment request</source>
+        <translation>zentoshi: URIや支払いリクエストを開く</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
         <translation>コマンドラインオプション(&amp;C)</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>Bitcoin ネットワークへのアクティブな接続は %n 個</numerusform></translation>
+        <source>%n active connection(s) to Zentoshi network</source>
+        <translation><numerusform>Zentoshi ネットワークへのアクティブな接続は %n 個</numerusform></translation>
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
@@ -535,7 +519,7 @@
         <translation>ウォレットを閉じる</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
+        <source>Show the %1 help message to get a list with possible Zentoshi command-line options</source>
         <translation>%1 のヘルプ メッセージを表示して、使用可能な XPChain のコマンドライン オプションの一覧を見る。</translation>
     </message>
     <message>
@@ -577,13 +561,10 @@
     <message>
         <source>Error: %1</source>
         <translation>エラー: %1</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Warning: %1</source>
         <translation>警告: %1</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Date: %1
@@ -650,8 +631,8 @@
         <translation>ウォレットは&lt;b&gt;暗号化済み&lt;/b&gt;・&lt;b&gt;ロック状態&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>致命的なエラーが発生しました。Bitcoin を安全に動作し続けることができないため終了します。</translation>
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
+        <translation>致命的なエラーが発生しました。Zentoshi を安全に動作し続けることができないため終了します。</translation>
     </message>
 </context>
 <context>
@@ -807,12 +788,6 @@
 </context>
 <context>
     <name>CreateWalletActivity</name>
-<<<<<<< HEAD
-    </context>
-<context>
-    <name>CreateWalletDialog</name>
-    </context>
-=======
     <message>
         <source>Creating Wallet &lt;b&gt;%1&lt;/b&gt;...</source>
         <translation>ウォレット &lt;b&gt;%1&lt;/b&gt;を作成しています...</translation>
@@ -865,7 +840,6 @@
         <translation>作成</translation>
     </message>
 </context>
->>>>>>> 0.19
 <context>
     <name>EditAddressDialog</name>
     <message>
@@ -901,8 +875,8 @@
         <translation>送金先アドレスを編集</translation>
     </message>
     <message>
-        <source>The entered address "%1" is not a valid Bitcoin address.</source>
-        <translation>入力されたアドレス "%1" は無効な Bitcoin アドレスです。</translation>
+        <source>The entered address "%1" is not a valid Zentoshi address.</source>
+        <translation>入力されたアドレス "%1" は無効な Zentoshi アドレスです。</translation>
     </message>
     <message>
         <source>Address "%1" already exists as a receiving address with label "%2" and so cannot be added as a sending address.</source>
@@ -980,13 +954,10 @@
     <message>
         <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
         <translation>OKをクリックすると、%1 は %4 がリリースされた%3年最初の取引からの完全な %4 ブロックチェーン（%2GB）のダウンロードおよび処理を開始します。</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Reverting this setting requires re-downloading the entire blockchain. It is faster to download the full chain first and prune it later. Disables some advanced features.</source>
         <translation>この設定を元に戻すには、ブロックチェーン全体を再ダウンロードする必要があります。先にチェーン全体をダウンロードしてから、剪定する方が高速です。一部の高度な機能を無効にします。</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
@@ -1005,8 +976,8 @@
         <translation>カスタム データ ディレクトリを使用:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Discard blocks after verification, except most recent %1 GB (prune)</source>
@@ -1021,8 +992,8 @@
         <translation>約%1 GBのデータがこのディレクトリに保存されます。</translation>
     </message>
     <message>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
-        <translation>%1 は Bitcoin ブロックチェーンのコピーをダウンロードし保存します。</translation>
+        <source>%1 will download and store a copy of the Zentoshi block chain.</source>
+        <translation>%1 は Zentoshi ブロックチェーンのコピーをダウンロードし保存します。</translation>
     </message>
     <message>
         <source>The wallet will also be stored in this directory.</source>
@@ -1044,15 +1015,11 @@
         <source>(of %n GB needed)</source>
         <translation><numerusform>(%n GB必要)</numerusform></translation>
     </message>
-<<<<<<< HEAD
-    </context>
-=======
     <message numerus="yes">
         <source>(%n GB needed for full chain)</source>
         <translation><numerusform>(完全なチェーンには%n GB必要です)</numerusform></translation>
     </message>
 </context>
->>>>>>> 0.19
 <context>
     <name>ModalOverlay</name>
     <message>
@@ -1060,12 +1027,12 @@
         <translation>フォーム</translation>
     </message>
     <message>
-        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
-        <translation>最近の取引がまだ表示されていない可能性があります。そのため、ウォレットの残高が正しく表示されていないかもしれません。この情報は、ウォレットが Bitcoin ネットワークへの同期が完了すると正確なものとなります。詳細は下記を参照してください。</translation>
+        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the zentoshi network, as detailed below.</source>
+        <translation>最近の取引がまだ表示されていない可能性があります。そのため、ウォレットの残高が正しく表示されていないかもしれません。この情報は、ウォレットが Zentoshi ネットワークへの同期が完了すると正確なものとなります。詳細は下記を参照してください。</translation>
     </message>
     <message>
         <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
-        <translation>まだ表示されていない取引が関係する Bitcoin を使用しようとすると、ネットワークから認証を受けられません。</translation>
+        <translation>まだ表示されていない取引が関係する Zentoshi を使用しようとすると、ネットワークから認証を受けられません。</translation>
     </message>
     <message>
         <source>Number of blocks left</source>
@@ -1130,8 +1097,6 @@
 <context>
     <name>OpenWalletActivity</name>
     <message>
-<<<<<<< HEAD
-=======
         <source>Open wallet failed</source>
         <translation>ウォレットを開くことに失敗しました</translation>
     </message>
@@ -1140,7 +1105,6 @@
         <translation>ウォレットを開く - 警告</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>default wallet</source>
         <translation>デフォルトウォレット</translation>
     </message>
@@ -1268,8 +1232,8 @@
         <translation>未検証のお釣りを使用する(&amp;S)</translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>自動的にルーター上の Bitcoin クライアントのポートを開放します。あなたのルーターが UPnP に対応していて、それが有効になっている場合のみ動作します。</translation>
+        <source>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>自動的にルーター上の Zentoshi クライアントのポートを開放します。あなたのルーターが UPnP に対応していて、それが有効になっている場合のみ動作します。</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
@@ -1284,8 +1248,8 @@
         <translation>外部からの接続を許可する(&amp;G)</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
-        <translation>SOCKS5 プロキシ経由で Bitcoin ネットワークに接続する。</translation>
+        <source>Connect to the Zentoshi network through a SOCKS5 proxy.</source>
+        <translation>SOCKS5 プロキシ経由で Zentoshi ネットワークに接続する。</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
@@ -1320,8 +1284,8 @@
         <translation>Tor</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
-        <translation>Tor秘匿サービスを利用するため、専用の SOCKS5 プロキシ経由で Bitcoin ネットワークに接続する。</translation>
+        <source>Connect to the Zentoshi network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <translation>Tor秘匿サービスを利用するため、専用の SOCKS5 プロキシ経由で Zentoshi ネットワークに接続する。</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -1431,8 +1395,8 @@
         <translation>フォーム</translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>表示されている情報は古い可能性があります。ウォレットは接続確立後に Bitcoin ネットワークと自動的に同期しますが、同期処理はまだ完了していません。</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</source>
+        <translation>表示されている情報は古い可能性があります。ウォレットは接続確立後に Zentoshi ネットワークと自動的に同期しますが、同期処理はまだ完了していません。</translation>
     </message>
     <message>
         <source>Watch-only:</source>
@@ -1506,16 +1470,16 @@
         <translation>支払いリクエスト エラー</translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>Bitcoin を起動できません: click-to-pay handler</translation>
+        <source>Cannot start zentoshi: click-to-pay handler</source>
+        <translation>Zentoshi を起動できません: click-to-pay handler</translation>
     </message>
     <message>
         <source>URI handling</source>
         <translation>URIの処理</translation>
     </message>
     <message>
-        <source>'bitcoin://' is not a valid URI. Use 'bitcoin:' instead.</source>
-        <translation>'bitcoin://' は正しいURIではありません｡ 'bitcoin:'を使用してください｡</translation>
+        <source>'zentoshi://' is not a valid URI. Use 'zentoshi:' instead.</source>
+        <translation>'zentoshi://' は正しいURIではありません｡ 'zentoshi:'を使用してください｡</translation>
     </message>
     <message>
         <source>You are using a BIP70 URL which will be unsupported in the future.</source>
@@ -1528,8 +1492,6 @@
     <message>
         <source>Cannot process payment request because BIP70 support was not compiled in.</source>
         <translation>BIP70のサポートが組み込まれていないため、支払いリクエストを処理することができません。</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Due to widespread security flaws in BIP70 it's strongly recommended that any merchant instructions to switch wallets be ignored.</source>
@@ -1538,15 +1500,14 @@
     <message>
         <source>If you are receiving this error you should request the merchant provide a BIP21 compatible URI.</source>
         <translation>このエラーが発生する場合は、販売者にBIP21互換URIの提供を依頼するべきです。</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Invalid payment address %1</source>
         <translation>支払い先アドレス「 %1 」は無効です</translation>
     </message>
     <message>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>URIを解析できませんでした！ Bitcoin アドレスが無効であるか、URIパラメーターが不正な形式である可能性があります。</translation>
+        <source>URI cannot be parsed! This can be caused by an invalid Zentoshi address or malformed URI parameters.</source>
+        <translation>URIを解析できませんでした！ Zentoshi アドレスが無効であるか、URIパラメーターが不正な形式である可能性があります。</translation>
     </message>
     <message>
         <source>Payment request file handling</source>
@@ -1647,8 +1608,8 @@
         <translation>金額</translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
-        <translation>Bitcoin アドレスを入力してください (例: %1)</translation>
+        <source>Enter a Zentoshi address (e.g. %1)</source>
+        <translation>Zentoshi アドレスを入力してください (例: %1)</translation>
     </message>
     <message>
         <source>%1 d</source>
@@ -1762,13 +1723,10 @@
         <translation>URIをQRコードへ変換している際にエラーが発生しました。</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>QR code support not available.</source>
         <translation>QRコードは利用できません。</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Save QR Code</source>
         <translation>QRコードの保存</translation>
     </message>
@@ -2111,8 +2069,8 @@
         <translation>メッセージ (&amp;M):</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-        <translation>支払いリクエストに添付するメッセージ（任意）。支払リクエスト開始時に表示されます。注意: メッセージは Bitcoin ネットワーク上へ送信されません。</translation>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Zentoshi network.</source>
+        <translation>支払いリクエストに添付するメッセージ（任意）。支払リクエスト開始時に表示されます。注意: メッセージは Zentoshi ネットワーク上へ送信されません。</translation>
     </message>
     <message>
         <source>An optional label to associate with the new receiving address.</source>
@@ -2125,13 +2083,10 @@
     <message>
         <source>An optional amount to request. Leave this empty or zero to not request a specific amount.</source>
         <translation>リクエストする金額（任意）。特定の金額をリクエストしない場合は、この欄は空白のままかゼロにしてください。</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>&amp;Create new receiving address</source>
         <translation>新しい受取用アドレスを作成</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Clear all fields of the form.</source>
@@ -2387,7 +2342,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>ダスト:</translation>
     </message>
     <message>
-        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for bitcoin transactions than the network can process.</source>
+        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for zentoshi transactions than the network can process.</source>
         <translation>ブロック内の空きよりトランザクション流量が少ない場合、マイナーや中継ノードは最低限の手数料でも処理することがあります。この最低限の手数料だけを支払っても問題ありませんが、一度トランザクションの需要がネットワークの処理能力を超えてしまった場合には、トランザクションが永久に承認されなくなってしまう可能性があることにご注意ください。</translation>
     </message>
     <message>
@@ -2543,8 +2498,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation><numerusform>予想される承認開始ブロック: %n ブロック以内</numerusform></translation>
     </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>警告: 無効な Bitcoin アドレス</translation>
+        <source>Warning: Invalid Zentoshi address</source>
+        <translation>警告: 無効な Zentoshi アドレス</translation>
     </message>
     <message>
         <source>Warning: Unknown change address</source>
@@ -2586,8 +2541,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>これは通常の支払いです。</translation>
     </message>
     <message>
-        <source>The Bitcoin address to send the payment to</source>
-        <translation>支払い先 Bitcoin アドレス</translation>
+        <source>The Zentoshi address to send the payment to</source>
+        <translation>支払い先 Zentoshi アドレス</translation>
     </message>
     <message>
         <source>Alt+A</source>
@@ -2607,7 +2562,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     </message>
     <message>
         <source>The fee will be deducted from the amount being sent. The recipient will receive less bitcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
-        <translation>手数料は送金する金額から差し引かれます。送金先には金額欄で指定した額よりも少ない Bitcoin が送られます。送金先が複数ある場合は、手数料は均等に分けられます。</translation>
+        <translation>手数料は送金する金額から差し引かれます。送金先には金額欄で指定した額よりも少ない Zentoshi が送られます。送金先が複数ある場合は、手数料は均等に分けられます。</translation>
     </message>
     <message>
         <source>S&amp;ubtract fee from amount</source>
@@ -2634,8 +2589,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>このアドレスに対するラベルを入力することで、送金したことがあるアドレスの一覧に追加することができます</translation>
     </message>
     <message>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
-        <translation>bitcoin: URIに添付されていたメッセージです。これは参照用として取引とともに保存されます。注意: メッセージは Bitcoin ネットワーク上へ送信されません。</translation>
+        <source>A message that was attached to the zentoshi: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Zentoshi network.</source>
+        <translation>zentoshi: URIに添付されていたメッセージです。これは参照用として取引とともに保存されます。注意: メッセージは Zentoshi ネットワーク上へ送信されません。</translation>
     </message>
     <message>
         <source>Pay To:</source>
@@ -2680,11 +2635,11 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     </message>
     <message>
         <source>You can sign messages/agreements with your addresses to prove you can receive bitcoins sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation>あなたが所有しているアドレスでメッセージや契約書に署名をすることで、それらのアドレスへ送られた Bitcoin を受け取ることができることを証明できます。フィッシング攻撃者があなたを騙して、あなたの身分情報に署名させようとしている可能性があるため、よくわからないものやランダムな文字列に対して署名しないでください。あなたが同意した、よく詳細の記された文言にのみ署名するようにしてください。</translation>
+        <translation>あなたが所有しているアドレスでメッセージや契約書に署名をすることで、それらのアドレスへ送られた Zentoshi を受け取ることができることを証明できます。フィッシング攻撃者があなたを騙して、あなたの身分情報に署名させようとしている可能性があるため、よくわからないものやランダムな文字列に対して署名しないでください。あなたが同意した、よく詳細の記された文言にのみ署名するようにしてください。</translation>
     </message>
     <message>
-        <source>The Bitcoin address to sign the message with</source>
-        <translation>メッセージの署名に使用する Bitcoin アドレス</translation>
+        <source>The Zentoshi address to sign the message with</source>
+        <translation>メッセージの署名に使用する Zentoshi アドレス</translation>
     </message>
     <message>
         <source>Choose previously used address</source>
@@ -2715,8 +2670,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>この署名をシステムのクリップボードにコピー</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>メッセージに署名してこの Bitcoin アドレスを所有していることを証明</translation>
+        <source>Sign the message to prove you own this Zentoshi address</source>
+        <translation>メッセージに署名してこの Zentoshi アドレスを所有していることを証明</translation>
     </message>
     <message>
         <source>Sign &amp;Message</source>
@@ -2739,12 +2694,12 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>送金先のアドレスと、メッセージ（改行やスペース、タブなども完全に一致させること）および署名を以下に入力し、メッセージを検証します。中間者攻撃により騙されるのを防ぐため、署名対象のメッセージから書かれていること以上の意味を読み取ろうとしないでください。また、これは署名作成者がこのアドレスで受け取れることを証明するだけであり、取引の送信権限を証明するものではありません！</translation>
     </message>
     <message>
-        <source>The Bitcoin address the message was signed with</source>
-        <translation>メッセージの署名に使われた Bitcoin アドレス</translation>
+        <source>The Zentoshi address the message was signed with</source>
+        <translation>メッセージの署名に使われた Zentoshi アドレス</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>メッセージを検証して指定された Bitcoin アドレスで署名されたことを確認</translation>
+        <source>Verify the message to ensure it was signed with the specified Zentoshi address</source>
+        <translation>メッセージを検証して指定された Zentoshi アドレスで署名されたことを確認</translation>
     </message>
     <message>
         <source>Verify &amp;Message</source>
@@ -2947,13 +2902,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Output index</source>
         <translation>アウトプット インデックス数</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source> (Certificate was not verified)</source>
         <translation>(証明書は検証されませんでした)</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Merchant</source>
@@ -3279,13 +3231,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>ウォレットを閉じる</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Are you sure you wish to close the wallet &lt;i&gt;%1&lt;/i&gt;?</source>
         <translation>本当にウォレット&lt;i&gt;%1&lt;/i&gt;を閉じますか？</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
         <translation>ブロックファイル剪定が有効の場合、長期間ウォレットを起動しないと全チェーンを再度同期させる必要があるかもしれません。</translation>
     </message>
@@ -3384,7 +3333,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation>MIT ソフトウェアライセンスのもとで配布されています。付属の %s ファイルか、 %s を参照してください</translation>
@@ -3556,13 +3505,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Initialization sanity check failed. %s is shutting down.</source>
         <translation>初期化時の健全性検査に失敗しました。%s を終了します。</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Invalid P2P permission: '%s'</source>
         <translation>無効なP2Pアクセス権: '%s'</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Invalid amount for -%s=&lt;amount&gt;: '%s'</source>
@@ -3595,13 +3541,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Loading P2P addresses...</source>
         <translation>P2Pアドレスの読み込み中...</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Error: Disk space is too low!</source>
         <translation>エラー: ディスク容量が不足しています！</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Loading banlist...</source>
@@ -3710,13 +3653,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Need to specify a port with -whitebind: '%s'</source>
         <translation>-whitebind オプションでポートを指定する必要があります: '%s'</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Prune mode is incompatible with -blockfilterindex.</source>
         <translation>剪定モードは -blockfilterindex オプションと互換性がありません。</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Reducing -maxconnections from %d to %d, because of system limitations.</source>
@@ -3767,7 +3707,6 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Unable to bind to %s on this computer (bind returned error %s)</source>
         <translation>このコンピュータの %s にバインドすることができません（%s エラーが返却されました）</translation>
-<<<<<<< HEAD
     </message>
     <message>
         <source>Unable to create the PID file '%s': %s</source>
@@ -3776,20 +3715,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
     <message>
         <source>Unable to generate initial keys</source>
         <translation>イニシャル鍵を生成できません</translation>
-=======
     </message>
     <message>
-        <source>Unable to create the PID file '%s': %s</source>
-        <translation>PIDファイルの作成に失敗しました ('%s': %s)</translation>
->>>>>>> 0.19
-    </message>
-    <message>
-        <source>Unable to generate initial keys</source>
-        <translation>イニシャル鍵を生成できません</translation>
-    </message>
-    <message>
-<<<<<<< HEAD
-=======
         <source>Unknown -blockfilterindex value %s.</source>
         <translation>不明な -blockfilterindex の値 %s。</translation>
     </message>
@@ -3798,7 +3725,6 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of "100 satoshis p
         <translation>ウォレットの確認中...</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Warning: unknown new rules activated (versionbit %i)</source>
         <translation>警告: 未知の新しいルールが有効化されました (バージョンビット %i)</translation>
     </message>

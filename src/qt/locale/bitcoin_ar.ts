@@ -64,23 +64,18 @@
     <message>
         <source>Receiving addresses</source>
         <translation>العنوان الرقمي المُرسَل إليه</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation>هذه هي عناوين البيتكوين لإرسال المدفوعات. دائما تحقق من المبلغ وعنوان المستلم قبل الإرسال.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <source>These are your Zentoshi addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
         <translation>هذه هي عناوين البيتكوين الخاصة بك لإستلام المدفوعات. استخدم زر "إنشاء عنوان استلام جديد" في علامة التبويب "إستلام" لإنشاء عناوين جديدة.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Copy Address</source>
         <translation>نسخ العنوان</translation>
-<<<<<<< HEAD
-=======
     </message>
     <message>
         <source>Copy &amp;Label</source>
@@ -93,7 +88,6 @@
     <message>
         <source>Export Address List</source>
         <translation>تصدير قائمة العناوين</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Comma separated file (*.csv)</source>
@@ -106,11 +100,6 @@
     </context>
 <context>
     <name>AddressTableModel</name>
-<<<<<<< HEAD
-    </context>
-<context>
-    <name>AskPassphraseDialog</name>
-=======
     <message>
         <source>Label</source>
         <translation>وسم</translation>
@@ -194,7 +183,6 @@
         <source>Enter the old passphrase and new passphrase for the wallet.</source>
         <translation>ادخل كملة المرور القديمة وكلمة المرور الجديدة للمحفظة.</translation>
     </message>
->>>>>>> 0.19
     </context>
 <context>
     <name>BanTableModel</name>
@@ -216,13 +204,10 @@
     </context>
 <context>
     <name>CoinControlDialog</name>
-<<<<<<< HEAD
-=======
     <message>
         <source>(no label)</source>
         <translation>(بدون وسم)</translation>
     </message>
->>>>>>> 0.19
     </context>
 <context>
     <name>CreateWalletActivity</name>
@@ -309,15 +294,6 @@
     </context>
 <context>
     <name>ReceiveRequestDialog</name>
-<<<<<<< HEAD
-    </context>
-<context>
-    <name>RecentRequestsTableModel</name>
-    </context>
-<context>
-    <name>SendCoinsDialog</name>
-    </context>
-=======
     <message>
         <source>Address</source>
         <translation>عنوان</translation>
@@ -345,7 +321,6 @@
         <translation>(بدون وسم)</translation>
     </message>
 </context>
->>>>>>> 0.19
 <context>
     <name>SendCoinsEntry</name>
     </context>
@@ -369,8 +344,6 @@
     </context>
 <context>
     <name>TransactionTableModel</name>
-<<<<<<< HEAD
-=======
     <message>
         <source>Label</source>
         <translation>وسم</translation>
@@ -379,7 +352,6 @@
         <source>(no label)</source>
         <translation>(بدون وسم)</translation>
     </message>
->>>>>>> 0.19
     </context>
 <context>
     <name>TransactionView</name>
@@ -392,8 +364,6 @@
         <translation>ملف مفصول بفاصلة (*.csv)</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Label</source>
         <translation>وسم</translation>
     </message>
@@ -402,7 +372,6 @@
         <translation>عنوان</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>Exporting Failed</source>
         <translation>لقد فشل التصدير</translation>
     </message>
@@ -431,6 +400,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     </context>
 </TS>

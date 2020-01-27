@@ -66,12 +66,12 @@
         <translation>Helbideak jasotzen</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Hauek dira zuk dirua jaso dezaketen Bitcoin helbideak. Egiaztatu beti diru-kopurua eta dirua jasoko duen helbidea zuzen egon daitezen, txanponak bidali baino lehen.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Hauek dira zuk dirua jaso dezaketen Zentoshi helbideak. Egiaztatu beti diru-kopurua eta dirua jasoko duen helbidea zuzen egon daitezen, txanponak bidali baino lehen.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
-        <translation>Hauek dira ordainketak jasotzeko zure Bitcoin helbideak. Jaso taulako 'Jasotzeko helbide berri bat sortu' botoia erabili helbide berri bat sortzeko.</translation>
+        <source>These are your Zentoshi addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>Hauek dira ordainketak jasotzeko zure Zentoshi helbideak. Jaso taulako 'Jasotzeko helbide berri bat sortu' botoia erabili helbide berri bat sortzeko.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -235,15 +235,11 @@
         <source>Wallet passphrase was successfully changed.</source>
         <translation>Diruzorroaren pasahitza arrakastaz aldatu da.</translation>
     </message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
-    </context>
-=======
     <message>
         <source>Warning: The Caps Lock key is on!</source>
         <translation>Abisua: Mayuskulak blokeatuak dituzu!</translation>
     </message>
 </context>
->>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
 <context>
     <name>BanTableModel</name>
     <message>
@@ -318,24 +314,18 @@
         <translation>Diruzorroa &amp;enkriptatu...</translation>
     </message>
     <message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
-=======
         <source>&amp;Backup Wallet...</source>
         <translation>Diruzorroaren kopia bat gorde</translation>
     </message>
     <message>
->>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
         <source>&amp;Change Passphrase...</source>
         <translation>Pasahitza &amp;aldatu...</translation>
     </message>
     <message>
-<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
-=======
         <source>Open &amp;URI...</source>
         <translation>&amp;URLa zabaldu</translation>
     </message>
     <message>
->>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
         <source>Create Wallet...</source>
         <translation>Diruzorroa sortu...</translation>
     </message>
@@ -346,8 +336,6 @@
     <message>
         <source>Wallet:</source>
         <translation>Diruzorroa:</translation>
-<<<<<<< HEAD:src/qt/locale/bitcoin_eu.ts
-=======
     </message>
     <message>
         <source>Click to disable network activity.</source>
@@ -368,7 +356,6 @@
     <message>
         <source>Reindexing blocks on disk...</source>
         <translation>Blokeak diskoan berriro zerrendatzen...</translation>
->>>>>>> 0.19:src/qt/locale/bitcoin_eu_ES.ts
     </message>
     <message>
         <source>Change the passphrase used for wallet encryption</source>
@@ -666,8 +653,8 @@
         <translation>Ongietorri %1-ra</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Error</source>
@@ -1231,7 +1218,7 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Loading wallet...</source>
         <translation>Diru-zorroa kargatzen</translation>

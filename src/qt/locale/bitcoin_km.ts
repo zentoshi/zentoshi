@@ -147,8 +147,8 @@
 <context>
     <name>BitcoinGUI</name>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>ផ្ញើកាក់ទៅកាន់ អាសយដ្ឋាន Bitcoin មួយ</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>ផ្ញើកាក់ទៅកាន់ អាសយដ្ឋាន Zentoshi មួយ</translation>
     </message>
     </context>
 <context>
@@ -313,6 +313,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     </context>
 </TS>

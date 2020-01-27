@@ -66,8 +66,8 @@
         <translation>Derbyn cyfeiriadau</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Rhain ydi eich cyfeiriadau Bitcoin ar gyfer gyrru taliadau. Gwnewch yn sicr o'r swm a'r cyfeiriad derbyn cyn gyrru arian.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Rhain ydi eich cyfeiriadau Zentoshi ar gyfer gyrru taliadau. Gwnewch yn sicr o'r swm a'r cyfeiriad derbyn cyn gyrru arian.</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -168,13 +168,10 @@
         <translation>Waled wedi amgryptio</translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
         <source>Wallet to be encrypted</source>
         <translation>Waled i'w amgryptio</translation>
     </message>
     <message>
->>>>>>> 0.19
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
         <translation>PWYSIG: Mi ddylai unrhyw back ups blaenorol rydych wedi ei wneud o ffeil eich waled gael ei ddiweddaru efo'r ffeil amgryptiedig newydd ei chreu. Am resymau diogelwch, bydd back ups blaenorol o ffeil y walet heb amgryptio yn ddiwerth mor fuan ac yr ydych yn dechrau defnyddio'r waled amgryptiedig newydd.</translation>
     </message>
@@ -321,8 +318,8 @@
         <translation>Ailfynegi y blociau ar ddisg...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Anfon arian i gyfeiriad Bitcoin</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Anfon arian i gyfeiriad Zentoshi</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -361,12 +358,12 @@
         <translation>Amgryptio'r allweddi preifat sy'n perthyn i'ch waled</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Arwyddo negeseuon gyda eich cyfeiriadau Bitcoin i brofi mae chi sy'n berchen arnynt</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Arwyddo negeseuon gyda eich cyfeiriadau Zentoshi i brofi mae chi sy'n berchen arnynt</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Gwirio negeseuon i sicrhau eu bod wedi eu harwyddo gyda cyfeiriadau Bitcoin penodol</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>Gwirio negeseuon i sicrhau eu bod wedi eu harwyddo gyda cyfeiriadau Zentoshi penodol</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -385,8 +382,8 @@
         <translation>Bar offer tabiau</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-        <translation>Gofyn taliadau (creu côd QR a bitcoin: URIs)</translation>
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
+        <translation>Gofyn taliadau (creu côd QR a zentoshi: URIs)</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
@@ -397,8 +394,8 @@
         <translation>Dangos rhestr o gyfeiriadau derbyn a labelau wedi eu defnyddio</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-        <translation>Agor Bitcoin: URI neu ofyn taliad</translation>
+        <source>Open a zentoshi: URI or payment request</source>
+        <translation>Agor Zentoshi: URI neu ofyn taliad</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
@@ -537,8 +534,8 @@
         <translation>Mae'r waled &lt;b&gt;wedi'i amgryptio&lt;/b&gt; ac &lt;b&gt;ar glo&lt;/b&gt; ar hyn o bryd</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>Mae gwall angheuol wedi digwydd. Ni all Bitcoin barhau'n ddiogel ac mae'n cau lawr.</translation>
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
+        <translation>Mae gwall angheuol wedi digwydd. Ni all Zentoshi barhau'n ddiogel ac mae'n cau lawr.</translation>
     </message>
 </context>
 <context>
@@ -553,11 +550,7 @@
     </message>
     <message>
         <source>Bytes:</source>
-<<<<<<< HEAD
-        <translation>Maint</translation>
-=======
         <translation>Maint:</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Amount:</source>
@@ -658,8 +651,8 @@
         <translation>Croeso</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Error</source>
@@ -749,13 +742,10 @@
         <source>%1 and %2</source>
         <translation>%1 a %2</translation>
     </message>
-<<<<<<< HEAD
-=======
     <message>
         <source>Error: %1</source>
         <translation> Gwall: %1</translation>
     </message>
->>>>>>> 0.19
     </context>
 <context>
     <name>QRImageWidget</name>
@@ -1074,6 +1064,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     </context>
 </TS>

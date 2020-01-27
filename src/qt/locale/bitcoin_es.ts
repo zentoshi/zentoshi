@@ -66,12 +66,12 @@
         <translation>Direcciones de recepción</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>Estas son sus direcciones Bitcoin para enviar pagos. Compruebe siempre la cantidad y la dirección de recibo antes de transferir monedas.</translation>
+        <source>These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>Estas son sus direcciones Zentoshi para enviar pagos. Compruebe siempre la cantidad y la dirección de recibo antes de transferir monedas.</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
-        <translation>Estas son sus direcciones Bitcoin para la recepción de pagos. Use el botón 'Crear una nueva dirección para recepción' en la pestaña Recibir para crear nuevas direcciones</translation>
+        <source>These are your Zentoshi addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.</source>
+        <translation>Estas son sus direcciones Zentoshi para la recepción de pagos. Use el botón 'Crear una nueva dirección para recepción' en la pestaña Recibir para crear nuevas direcciones</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -99,11 +99,7 @@
     </message>
     <message>
         <source>There was an error trying to save the address list to %1. Please try again.</source>
-<<<<<<< HEAD
-        <translation>Hubo un error al intentar guardar la lista de direcciones a %1. Por favor trate de nuevo.</translation>
-=======
         <translation>Hubo un error al intentar guardar la lista de direcciones a %1. Por favor, inténtelo de nuevo.</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -141,11 +137,7 @@
     </message>
     <message>
         <source>Show passphrase</source>
-<<<<<<< HEAD
-        <translation>Mostrar clave</translation>
-=======
         <translation>Mostrar contraseña</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt wallet</source>
@@ -169,19 +161,11 @@
     </message>
     <message>
         <source>Change passphrase</source>
-<<<<<<< HEAD
-        <translation>Cambiar frase secreta</translation>
-    </message>
-    <message>
-        <source>Confirm wallet encryption</source>
-        <translation>Confirme cifrado del monedero</translation>
-=======
         <translation>Cambiar contraseña</translation>
     </message>
     <message>
         <source>Confirm wallet encryption</source>
         <translation>Confirmar el cifrado del monedero</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
@@ -197,11 +181,7 @@
     </message>
     <message>
         <source>Enter the new passphrase for the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
-<<<<<<< HEAD
-        <translation>Introduzca la nueva contraseña del monedero. &lt;br/&gt;Por favor utilice una contraseña de &lt;b&gt;diez o más caracteres aleatorios&lt;/b&gt;, o &lt;b&gt;ocho o más palabras&lt;/b&gt;.</translation>
-=======
         <translation>Introduzca la nueva contraseña del monedero. &lt;br/&gt;Por favor utilice una contraseña de &lt;b&gt;diez o más caracteres aleatorios&lt;/b&gt;, u &lt;b&gt;ocho o más palabras&lt;/b&gt;.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Enter the old passphrase and new passphrase for the wallet.</source>
@@ -209,19 +189,11 @@
     </message>
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
-<<<<<<< HEAD
-        <translation>Recuerda que codificando tu billetera no garantiza mantener a salvo tus bitcoins en caso de tener virus en el computador.</translation>
-    </message>
-    <message>
-        <source>Wallet to be encrypted</source>
-        <translation>Monedero a cifrar</translation>
-=======
         <translation>Recuerde que cifrar su monedero no garantiza mantener a salvo sus bitcoins en caso de tener virus en el computador.</translation>
     </message>
     <message>
         <source>Wallet to be encrypted</source>
         <translation>Monedero para cifrar</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Your wallet is about to be encrypted. </source>
@@ -233,17 +205,6 @@
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
-<<<<<<< HEAD
-        <translation>IMPORTANTE: cualquier copia de seguridad anterior que haya hecho de su archivo de cartera debe ser reemplazada por el archivo de cartera encriptado y recién generado. Por razones de seguridad, las copias de seguridad anteriores del archivo de cartera sin cifrar serán inútiles tan pronto como empieces a usar la nueva billetera encriptada.</translation>
-    </message>
-    <message>
-        <source>Wallet encryption failed</source>
-        <translation>Encriptación de la cartera fallida</translation>
-    </message>
-    <message>
-        <source>Wallet encryption failed due to an internal error. Your wallet was not encrypted.</source>
-        <translation>La encriptación de la cartera falló debido a un error interno. Su cartera no fue encriptada.</translation>
-=======
         <translation>IMPORTANTE: Cualquier copia de seguridad anterior que haya hecho de su archivo del monedero debe ser reemplazada por el archivo del monedero cifrado y recién generado. Por razones de seguridad, las copias de seguridad anteriores del archivo del monedero sin cifrar serán inútiles tan pronto como empiece a usar el nuevo monedero cifrado.</translation>
     </message>
     <message>
@@ -253,7 +214,6 @@
     <message>
         <source>Wallet encryption failed due to an internal error. Your wallet was not encrypted.</source>
         <translation>El cifrado del monedero falló debido a un error interno. Su monedero no fue cifrado.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>The supplied passphrases do not match.</source>
@@ -261,21 +221,6 @@
     </message>
     <message>
         <source>Wallet unlock failed</source>
-<<<<<<< HEAD
-        <translation>El desbloqueo de la cartera falló.</translation>
-    </message>
-    <message>
-        <source>The passphrase entered for the wallet decryption was incorrect.</source>
-        <translation>La contraseña ingresada para la desencriptación de la cartera es incorrecta.</translation>
-    </message>
-    <message>
-        <source>Wallet decryption failed</source>
-        <translation>La desencriptación de la cartera fallo</translation>
-    </message>
-    <message>
-        <source>Wallet passphrase was successfully changed.</source>
-        <translation>La contraseña de la cartera ha sido exitosamente cambiada.</translation>
-=======
         <translation>Desbloquear el monedero falló.</translation>
     </message>
     <message>
@@ -289,7 +234,6 @@
     <message>
         <source>Wallet passphrase was successfully changed.</source>
         <translation>La contraseña del monedero ha sido cambiada con éxito.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Warning: The Caps Lock key is on!</source>
@@ -371,11 +315,7 @@
     </message>
     <message>
         <source>&amp;Backup Wallet...</source>
-<<<<<<< HEAD
-        <translation>Copia de &amp;respaldo del monedero...</translation>
-=======
         <translation>&amp;Copia de respaldo del monedero...</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Change Passphrase...</source>
@@ -395,11 +335,7 @@
     </message>
     <message>
         <source>Wallet:</source>
-<<<<<<< HEAD
-        <translation>Cartera:</translation>
-=======
         <translation>Monedero:</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Click to disable network activity.</source>
@@ -415,11 +351,7 @@
     </message>
     <message>
         <source>Syncing Headers (%1%)...</source>
-<<<<<<< HEAD
-        <translation>Sincronizar encabezados (%1%) ...</translation>
-=======
         <translation>Sincronizando cabeceras (%1%) ...</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Reindexing blocks on disk...</source>
@@ -430,8 +362,8 @@
         <translation>El proxy está &lt;b&gt;habilitado&lt;/b&gt;: %1</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Enviar monedas a una dirección Bitcoin</translation>
+        <source>Send coins to a Zentoshi address</source>
+        <translation>Enviar monedas a una dirección Zentoshi</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -443,11 +375,7 @@
     </message>
     <message>
         <source>&amp;Debug window</source>
-<<<<<<< HEAD
-        <translation>Ventana de &amp;depuración</translation>
-=======
         <translation>&amp;Ventana de depuración.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Open debugging and diagnostic console</source>
@@ -467,7 +395,7 @@
     </message>
     <message>
         <source>&amp;Show / Hide</source>
-        <translation>Mo&amp;strar/ocultar</translation>
+        <translation>&amp;Mostrar / Ocultar</translation>
     </message>
     <message>
         <source>Show or hide the main Window</source>
@@ -478,12 +406,12 @@
         <translation>Cifrar las claves privadas de su monedero</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Firmar mensajes con sus direcciones Bitcoin para demostrar la propiedad</translation>
+        <source>Sign messages with your Zentoshi addresses to prove you own them</source>
+        <translation>Firmar mensajes con sus direcciones Zentoshi para demostrar la propiedad</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Verificar mensajes comprobando que están firmados con direcciones Bitcoin concretas</translation>
+        <source>Verify messages to ensure they were signed with specified Zentoshi addresses</source>
+        <translation>Verificar mensajes comprobando que están firmados con direcciones Zentoshi concretas</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -495,19 +423,15 @@
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>A&amp;yuda</translation>
+        <translation>&amp;Ayuda</translation>
     </message>
     <message>
         <source>Tabs toolbar</source>
         <translation>Barra de pestañas</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
-<<<<<<< HEAD
-        <translation>Solicitar pagos (genera codigo QR y URL's de Bitcoin)</translation>
-=======
-        <translation>Solicitar pagos (genera código QR y URL's de Bitcoin)</translation>
->>>>>>> 0.19
+        <source>Request payments (generates QR codes and zentoshi: URIs)</source>
+        <translation>Solicitar pagos (genera código QR y URL's de Zentoshi)</translation>
     </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
@@ -518,24 +442,16 @@
         <translation>Muestra la lista de direcciones de recepción y etiquetas</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
-<<<<<<< HEAD
-        <translation>Abrir un bitcoin: URI o petición de pago</translation>
-    </message>
-    <message>
-        <source>&amp;Command-line options</source>
-        <translation>&amp;Opciones de linea de comando</translation>
-=======
-        <translation>Abrir un identificador URI de bitcoin o una solicitud de pago</translation>
+        <source>Open a zentoshi: URI or payment request</source>
+        <translation>Abrir un identificador URI de zentoshi o una solicitud de pago</translation>
     </message>
     <message>
         <source>&amp;Command-line options</source>
         <translation>&amp;Opciones de línea de comandos</translation>
->>>>>>> 0.19
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n conexión activa hacia la red Bitcoin</numerusform><numerusform>%n conexiones activas hacia la red Bitcoin</numerusform></translation>
+        <source>%n active connection(s) to Zentoshi network</source>
+        <translation><numerusform>%n conexión activa hacia la red Zentoshi</numerusform><numerusform>%n conexiones activas hacia la red Zentoshi</numerusform></translation>
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
@@ -579,19 +495,11 @@
     </message>
     <message>
         <source>&amp;Sending addresses</source>
-<<<<<<< HEAD
-        <translation>Direcciones de &amp;envío</translation>
-    </message>
-    <message>
-        <source>&amp;Receiving addresses</source>
-        <translation>Direcciones de &amp;recepción</translation>
-=======
         <translation>&amp;Direcciones de envío</translation>
     </message>
     <message>
         <source>&amp;Receiving addresses</source>
         <translation>Direcciones de recepción</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Open Wallet</source>
@@ -610,8 +518,8 @@
         <translation>Cerrar monedero</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
-        <translation>Muestre el mensaje de ayuda %1 para obtener una lista con posibles opciones de línea de comandos de Bitcoin</translation>
+        <source>Show the %1 help message to get a list with possible Zentoshi command-line options</source>
+        <translation>Muestre el mensaje de ayuda %1 para obtener una lista con posibles opciones de línea de comandos de Zentoshi</translation>
     </message>
     <message>
         <source>default wallet</source>
@@ -619,11 +527,7 @@
     </message>
     <message>
         <source>No wallets available</source>
-<<<<<<< HEAD
-        <translation>No hay carteras disponibles</translation>
-=======
         <translation>No hay monederos disponibles.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Window</source>
@@ -676,11 +580,7 @@
     <message>
         <source>Wallet: %1
 </source>
-<<<<<<< HEAD
-        <translation>Billetera: %1
-=======
         <translation>Monedero: %1
->>>>>>> 0.19
 </translation>
     </message>
     <message>
@@ -711,15 +611,11 @@
     </message>
     <message>
         <source>HD key generation is &lt;b&gt;enabled&lt;/b&gt;</source>
-        <translation>La generación de la clave HD está &lt;b&gt; activada &lt;/ b&gt;</translation>
+        <translation>La generación de clave HD está &lt;b&gt;habilitada&lt;/b&gt;</translation>
     </message>
     <message>
         <source>HD key generation is &lt;b&gt;disabled&lt;/b&gt;</source>
-        <translation>La generación de la clave HD está &lt;b&gt; desactivada &lt;/ b&gt;</translation>
-    </message>
-    <message>
-        <source>Private key &lt;b&gt;disabled&lt;/b&gt;</source>
-        <translation>Llave privada &lt;b&gt;deshabilitada&lt;/b&gt;</translation>
+        <translation>La generación de clave HD está &lt;b&gt;deshabilitada&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Private key &lt;b&gt;disabled&lt;/b&gt;</source>
@@ -734,12 +630,8 @@
         <translation>El monedero está &lt;b&gt;cifrado&lt;/b&gt; y actualmente &lt;b&gt;bloqueado&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-<<<<<<< HEAD
-        <translation>Se produjo un error fatal. Bitcoin ya no puede continuar de manera segura y no continuará</translation>
-=======
-        <translation>Se produjo un error fatal. Bitcoin ya no puede continuar de manera segura y se cerrará</translation>
->>>>>>> 0.19
+        <source>A fatal error occurred. Zentoshi can no longer continue safely and will quit.</source>
+        <translation>Se produjo un error fatal. Zentoshi ya no puede continuar de manera segura y se cerrará</translation>
     </message>
 </context>
 <context>
@@ -762,7 +654,7 @@
     </message>
     <message>
         <source>Fee:</source>
-        <translation>Tasa:</translation>
+        <translation>Comisión:</translation>
     </message>
     <message>
         <source>Dust:</source>
@@ -770,11 +662,7 @@
     </message>
     <message>
         <source>After Fee:</source>
-<<<<<<< HEAD
-        <translation>Después de tasas:</translation>
-=======
         <translation>Después de comisión:</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Change:</source>
@@ -786,7 +674,7 @@
     </message>
     <message>
         <source>Tree mode</source>
-        <translation>Modo arbol</translation>
+        <translation>Modo árbol</translation>
     </message>
     <message>
         <source>List mode</source>
@@ -834,11 +722,11 @@
     </message>
     <message>
         <source>Lock unspent</source>
-        <translation>Bloquear no utilizado</translation>
+        <translation>Bloquear lo no gastado</translation>
     </message>
     <message>
         <source>Unlock unspent</source>
-        <translation>Desbloquear no utilizado</translation>
+        <translation>Desbloquear lo no gastado</translation>
     </message>
     <message>
         <source>Copy quantity</source>
@@ -850,11 +738,7 @@
     </message>
     <message>
         <source>Copy after fee</source>
-<<<<<<< HEAD
-        <translation>Copiar después de la tarifa</translation>
-=======
         <translation>Copiar después de la comisión</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Copy bytes</source>
@@ -874,7 +758,7 @@
     </message>
     <message>
         <source>yes</source>
-        <translation>si</translation>
+        <translation>sí</translation>
     </message>
     <message>
         <source>no</source>
@@ -882,15 +766,11 @@
     </message>
     <message>
         <source>This label turns red if any recipient receives an amount smaller than the current dust threshold.</source>
-<<<<<<< HEAD
-        <translation>Está etiqueta se vuelve roja si algún receptor recibe una cantidad inferior al límite actual establecido para el polvo.</translation>
-=======
         <translation>Esta etiqueta se vuelve roja si algún receptor recibe una cantidad inferior al umbral actual establecido para el polvo.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Can vary +/- %1 satoshi(s) per input.</source>
-        <translation>Puede variar +/- %1 satoshi (s) por entrada.</translation>
+        <translation>Puede variar +/- %1 satoshi(s) por entrada.</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -913,19 +793,11 @@
     </message>
     <message>
         <source>Create wallet failed</source>
-<<<<<<< HEAD
-        <translation>La creación del monedero falló</translation>
-    </message>
-    <message>
-        <source>Create wallet warning</source>
-        <translation>Advertencia sobre creación de monedero</translation>
-=======
         <translation>Crear monedero falló</translation>
     </message>
     <message>
         <source>Create wallet warning</source>
         <translation>Advertencia sobre crear monedero</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -940,11 +812,7 @@
     </message>
     <message>
         <source>Encrypt the wallet. The wallet will be encrypted with a passphrase of your choice.</source>
-<<<<<<< HEAD
-        <translation>Cifrar el monedero. El monedero se cifrará con la clave que elija.</translation>
-=======
         <translation>Encriptar monedero. El monedero será cifrado con la contraseña que elija.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Encrypt Wallet</source>
@@ -952,11 +820,7 @@
     </message>
     <message>
         <source>Disable private keys for this wallet. Wallets with private keys disabled will have no private keys and cannot have an HD seed or imported private keys. This is ideal for watch-only wallets.</source>
-<<<<<<< HEAD
-        <translation>Desahibilitar las claves privadas para este monedero. Los monederos con claves privadas deshabilitadas no tendrán claves privadas y no podrán tener ni una semilla HD ni claves privadas importadas. Esto es ideal para monederos de solo lectura.</translation>
-=======
         <translation>Deshabilita las claves privadas para este monedero. Los monederos con claves privadas deshabilitadas no tendrán claves privadas y no podrán tener ni una semilla HD ni claves privadas importadas. Esto es ideal para monederos de solo lectura.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Disable Private Keys</source>
@@ -964,11 +828,7 @@
     </message>
     <message>
         <source>Make a blank wallet. Blank wallets do not initially have private keys or scripts. Private keys and addresses can be imported, or an HD seed can be set, at a later time.</source>
-<<<<<<< HEAD
-        <translation>Crear un monedero vacío. Los monederos vacíos no tienen claves privadas ni scripts. Las claves privadas y direcciones pueden importarse despues o también establecer una semilla HD.</translation>
-=======
         <translation>Crear un monedero vacío. Los monederos vacíos no tienen claves privadas ni scripts. Las claves privadas y direcciones pueden importarse después o también establecer una semilla HD.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Make Blank Wallet</source>
@@ -1014,8 +874,8 @@
         <translation>Editar dirección de envío</translation>
     </message>
     <message>
-        <source>The entered address "%1" is not a valid Bitcoin address.</source>
-        <translation>La dirección ingresada "%1" no es una dirección válida de Bitcoin.</translation>
+        <source>The entered address "%1" is not a valid Zentoshi address.</source>
+        <translation>La dirección ingresada "%1" no es una dirección válida de Zentoshi.</translation>
     </message>
     <message>
         <source>Address "%1" already exists as a receiving address with label "%2" and so cannot be added as a sending address.</source>
@@ -1027,7 +887,7 @@
     </message>
     <message>
         <source>Could not unlock wallet.</source>
-        <translation>No se pudo desbloquear la billetera.</translation>
+        <translation>No se pudo desbloquear el monedero.</translation>
     </message>
     <message>
         <source>New key generation failed.</source>
@@ -1073,7 +933,7 @@
     </message>
     <message>
         <source>Command-line options</source>
-        <translation>Opciones de la línea de órdenes</translation>
+        <translation>Opciones de la línea de comandos</translation>
     </message>
 </context>
 <context>
@@ -1092,17 +952,6 @@
     </message>
     <message>
         <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
-<<<<<<< HEAD
-        <translation>Al hacer clic OK, %1 iniciará el proceso de descarga y procesará el blockchain completo de %4 (%2 GB), iniciando desde el la transacción más antigua %3 cuando %4 se ejecutó inicialmente.</translation>
-    </message>
-    <message>
-        <source>Reverting this setting requires re-downloading the entire blockchain. It is faster to download the full chain first and prune it later. Disables some advanced features.</source>
-        <translation>Revertir este parámetro requiere volver a descargar todos los bloques. Es más rápido descargar primero todos los bloques y podar despues. Deshabilita algunas características avanzadas.</translation>
-    </message>
-    <message>
-        <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
-        <translation>Esta sincronización inicial es muy exigente y puede exponer problemas de hardware con su computadora que anteriormente habían pasado desapercibidos. Cada vez que ejecuta %1, continuará la descarga donde lo dejó.</translation>
-=======
         <translation>Al hacer clic en OK, %1 se iniciará el proceso de descarga y se procesará la cadena de bloques completa de %4 (%2 GB), iniciando desde la transacción más antigua %3 cuando %4 se ejecutó inicialmente.</translation>
     </message>
     <message>
@@ -1112,7 +961,6 @@
     <message>
         <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
         <translation>Esta sincronización inicial es muy exigente y puede exponer problemas de hardware con su computadora que anteriormente habían pasado desapercibidos. Cada vez que ejecuta %1, continuará la descarga desde donde la dejó.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</source>
@@ -1127,40 +975,28 @@
         <translation>Utilice un directorio de datos personalizado:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>Bitcoin</translation>
+        <source>Zentoshi</source>
+        <translation>Zentoshi</translation>
     </message>
     <message>
         <source>Discard blocks after verification, except most recent %1 GB (prune)</source>
-<<<<<<< HEAD
-        <translation>Descartar los bloques tras la verificación, excepto los %1 GB más recientes</translation>
-    </message>
-    <message>
-        <source>At least %1 GB of data will be stored in this directory, and it will grow over time.</source>
-        <translation>Al menos %1 GB de información será almacenado en este directorio, y seguirá creciendo a través del tiempo.</translation>
-=======
         <translation>Descartar los bloques después de la verificación, excepto los %1 GB más recientes (prune)</translation>
     </message>
     <message>
         <source>At least %1 GB of data will be stored in this directory, and it will grow over time.</source>
         <translation>Al menos %1 GB de información será almacenada en este directorio, y seguirá creciendo a través del tiempo.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Approximately %1 GB of data will be stored in this directory.</source>
         <translation>Aproximadamente %1 GB de datos se almacenarán en este directorio.</translation>
     </message>
     <message>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
-        <translation>%1 descargará y almacenará una copia de la cadena de bloques de Bitcoin.</translation>
+        <source>%1 will download and store a copy of the Zentoshi block chain.</source>
+        <translation>%1 descargará y almacenará una copia de la cadena de bloques de Zentoshi.</translation>
     </message>
     <message>
         <source>The wallet will also be stored in this directory.</source>
-<<<<<<< HEAD
-        <translation>La billetera también se almacenará en este directorio.</translation>
-=======
         <translation>El monedero también se almacenará en este directorio.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Error: Specified data directory "%1" cannot be created.</source>
@@ -1183,22 +1019,11 @@
     <name>ModalOverlay</name>
     <message>
         <source>Form</source>
-        <translation>Desde</translation>
+        <translation>Formulario</translation>
     </message>
     <message>
-        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
-<<<<<<< HEAD
-        <translation>Es posible que las transacciones recientes aún no estén visibles y, por lo tanto, el saldo de su billetera podría ser incorrecto. Esta información será correcta una vez que su billetera haya terminado de sincronizarse con la red bitcoin, como se detalla a continuación.</translation>
-    </message>
-    <message>
-        <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
-        <translation>La red no aceptará intentar gastar bitcoins que se vean afectados por transacciones aún no mostradas</translation>
-    </message>
-    <message>
-        <source>Number of blocks left</source>
-        <translation>Cantidad de bloques restantes</translation>
-=======
-        <translation>Es posible que las transacciones recientes aún no estén visibles y, por lo tanto, el saldo de su monedero podría ser incorrecto. Esta información será correcta una vez que su monedero haya terminado de sincronizarse con la red bitcoin, como se detalla a continuación.</translation>
+        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the zentoshi network, as detailed below.</source>
+        <translation>Es posible que las transacciones recientes aún no estén visibles y, por lo tanto, el saldo de su monedero podría ser incorrecto. Esta información será correcta una vez que su monedero haya terminado de sincronizarse con la red zentoshi, como se detalla a continuación.</translation>
     </message>
     <message>
         <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
@@ -1207,7 +1032,6 @@
     <message>
         <source>Number of blocks left</source>
         <translation>Cantidad de bloques restantes.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Unknown...</source>
@@ -1223,11 +1047,7 @@
     </message>
     <message>
         <source>Progress increase per hour</source>
-<<<<<<< HEAD
-        <translation>Aumento de progreso por hora</translation>
-=======
         <translation>Aumento de progreso por hora.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>calculating...</source>
@@ -1235,23 +1055,15 @@
     </message>
     <message>
         <source>Estimated time left until synced</source>
-<<<<<<< HEAD
-        <translation>Tiempo estimado restante hasta sincronización</translation>
-=======
         <translation>Tiempo estimado restante hasta la sincronización.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Hide</source>
-        <translation>Esconder</translation>
+        <translation>Ocultar</translation>
     </message>
     <message>
         <source>Unknown. Syncing Headers (%1, %2%)...</source>
-<<<<<<< HEAD
-        <translation>Desconocido. Sincronizando cabecesar (%1, %2%)...</translation>
-=======
         <translation>Desconocido. Sincronizando cabeceras (%1, %2%)...</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -1270,11 +1082,7 @@
     </message>
     <message>
         <source>Select payment request file</source>
-<<<<<<< HEAD
-        <translation>Seleccione archivo de sulicitud de pago</translation>
-=======
         <translation>Seleccione archivo de solicitud de pago</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Select payment request file to open</source>
@@ -1311,13 +1119,6 @@
         <translation>&amp;Principal</translation>
     </message>
     <message>
-<<<<<<< HEAD
-        <source>Automatically start %1 after logging in to the system.</source>
-        <translation>Inicie automáticamente %1 después de iniciar sesión en el sistema.</translation>
-    </message>
-    <message>
-=======
->>>>>>> 0.19
         <source>&amp;Start %1 on system login</source>
         <translation>&amp; Comience %1 en el inicio de sesión del sistema</translation>
     </message>
@@ -1351,7 +1152,7 @@
     </message>
     <message>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Exit in the menu.</source>
-        <translation>Minimice en lugar de salir de la aplicación cuando la ventana esté cerrada. Cuando esta opción está habilitada, la aplicación se cerrará solo después de seleccionar Salir en el menú.</translation>
+        <translation>Minimizar en lugar de salir de la aplicación cuando la ventana está cerrada. Cuando se activa esta opción, la aplicación sólo se cerrará después de seleccionar Salir en el menú.</translation>
     </message>
     <message>
         <source>Third party URLs (e.g. a block explorer) that appear in the transactions tab as context menu items. %s in the URL is replaced by transaction hash. Multiple URLs are separated by vertical bar |.</source>
@@ -1398,16 +1199,8 @@
         <translation>MiB</translation>
     </message>
     <message>
-        <source>MiB</source>
-        <translation>MiB</translation>
-    </message>
-    <message>
         <source>(0 = auto, &lt;0 = leave that many cores free)</source>
-<<<<<<< HEAD
-        <translation>(0 = auto, &lt;0 = deja muchos núcleos gratis)</translation>
-=======
         <translation>(0 = auto, &lt;0 = deja estos núcleos libres)</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>W&amp;allet</source>
@@ -1419,27 +1212,19 @@
     </message>
     <message>
         <source>Enable coin &amp;control features</source>
-<<<<<<< HEAD
-        <translation>Habilite las funciones de moneda y control</translation>
-    </message>
-    <message>
-        <source>If you disable the spending of unconfirmed change, the change from a transaction cannot be used until that transaction has at least one confirmation. This also affects how your balance is computed.</source>
-        <translation>Si deshabilita el gasto de un cambio no confirmado, el cambio de una transacción no se puede usar hasta que esa transacción tenga al menos una confirmación. Esto también afecta cómo se calcula su saldo.</translation>
-=======
         <translation>Habilitar características de &amp;Control de Moneda.</translation>
     </message>
     <message>
         <source>If you disable the spending of unconfirmed change, the change from a transaction cannot be used until that transaction has at least one confirmation. This also affects how your balance is computed.</source>
         <translation>Si deshabilita el gasto de un cambio no confirmado, el cambio de una transacción no se puede usar hasta que esa transacción tenga al menos una confirmación. Esto también afecta a cómo se calcula su saldo.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Spend unconfirmed change</source>
         <translation>&amp; Gastar cambio no confirmado</translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>Abrir automáticamente el puerto del cliente Bitcoin en el router. Esta opción solo funciona si el router admite UPnP y está activado.</translation>
+        <source>Automatically open the Zentoshi client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>Abrir automáticamente el puerto del cliente Zentoshi en el router. Esta opción solo funciona si el router admite UPnP y está activado.</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
@@ -1454,8 +1239,8 @@
         <translation>Permitir conexiones entrantes</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
-        <translation>Conéctese a la red de Bitcoin a través de un proxy SOCKS5.</translation>
+        <source>Connect to the Zentoshi network through a SOCKS5 proxy.</source>
+        <translation>Conéctese a la red de Zentoshi a través de un proxy SOCKS5.</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
@@ -1490,8 +1275,8 @@
         <translation>Tor</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
-        <translation>Conéctese a la red de Bitcoin a través de un proxy SOCKS5 separado para los servicios Tor ocultos.</translation>
+        <source>Connect to the Zentoshi network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <translation>Conéctese a la red de Zentoshi a través de un proxy SOCKS5 separado para los servicios Tor ocultos.</translation>
     </message>
     <message>
         <source>&amp;Window</source>
@@ -1563,15 +1348,11 @@
     </message>
     <message>
         <source>Client restart required to activate changes.</source>
-        <translation>Reinicio del cliente para activar cambios.</translation>
+        <translation>Se necesita reiniciar el cliente para activar los cambios.</translation>
     </message>
     <message>
         <source>Client will be shut down. Do you want to proceed?</source>
-<<<<<<< HEAD
-        <translation>El cliente será cluasurado. Quieres proceder?</translation>
-=======
         <translation>El cliente se cerrará. ¿Quiere proceder?</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Configuration options</source>
@@ -1591,11 +1372,7 @@
     </message>
     <message>
         <source>This change would require a client restart.</source>
-<<<<<<< HEAD
-        <translation>Este cambio requiere reinicio por parte del cliente.</translation>
-=======
         <translation>Este cambio requiere reiniciar el cliente.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>The supplied proxy address is invalid.</source>
@@ -1609,8 +1386,8 @@
         <translation>Desde</translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>La información mostrada puede estar desactualizada. Su monedero se sincroniza automáticamente con la red Bitcoin después de que se haya establecido una conexión, pero este proceso aún no se ha completado.</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Zentoshi network after a connection is established, but this process has not completed yet.</source>
+        <translation>La información mostrada puede estar desactualizada. Su monedero se sincroniza automáticamente con la red Zentoshi después de que se haya establecido una conexión, pero este proceso aún no se ha completado.</translation>
     </message>
     <message>
         <source>Watch-only:</source>
@@ -1630,11 +1407,7 @@
     </message>
     <message>
         <source>Total of transactions that have yet to be confirmed, and do not yet count toward the spendable balance</source>
-<<<<<<< HEAD
-        <translation>Total de transacciones que deben ser confirmadas, y que no cuentan con el balance gastable necesario</translation>
-=======
         <translation>Total de transacciones que deben ser confirmadas y que no cuentan aun con el balance gastable necesario.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Immature:</source>
@@ -1658,11 +1431,7 @@
     </message>
     <message>
         <source>Your current balance in watch-only addresses</source>
-<<<<<<< HEAD
-        <translation>Tu saldo actual en solo ver direcciones</translation>
-=======
         <translation>Su saldo actual en direcciones solo-ver</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Spendable:</source>
@@ -1674,17 +1443,6 @@
     </message>
     <message>
         <source>Unconfirmed transactions to watch-only addresses</source>
-<<<<<<< HEAD
-        <translation>Transacciones no confirmadas para ver solo direcciones</translation>
-    </message>
-    <message>
-        <source>Mined balance in watch-only addresses that has not yet matured</source>
-        <translation>Balance minero ver solo direcciones que aún no ha madurado</translation>
-    </message>
-    <message>
-        <source>Current total balance in watch-only addresses</source>
-        <translation>Saldo total actual en direcciones de solo reloj</translation>
-=======
         <translation>Transacciones no confirmadas para direcciones ver-solo</translation>
     </message>
     <message>
@@ -1694,7 +1452,6 @@
     <message>
         <source>Current total balance in watch-only addresses</source>
         <translation>Saldo total actual en direcciones de solo-ver</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -1704,16 +1461,16 @@
         <translation>Error de solicitud de pago</translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>No se puede iniciar Bitcoin: controlador de clic para pagar</translation>
+        <source>Cannot start zentoshi: click-to-pay handler</source>
+        <translation>No se puede iniciar Zentoshi: controlador de clic para pagar</translation>
     </message>
     <message>
         <source>URI handling</source>
         <translation>Manejo de URI</translation>
     </message>
     <message>
-        <source>'bitcoin://' is not a valid URI. Use 'bitcoin:' instead.</source>
-        <translation>'bitcoin: //' no es un URI válido. Use 'bitcoin:' en su lugar.</translation>
+        <source>'zentoshi://' is not a valid URI. Use 'zentoshi:' instead.</source>
+        <translation>'zentoshi: //' no es un URI válido. Use 'zentoshi:' en su lugar.</translation>
     </message>
     <message>
         <source>You are using a BIP70 URL which will be unsupported in the future.</source>
@@ -1733,23 +1490,15 @@
     </message>
     <message>
         <source>If you are receiving this error you should request the merchant provide a BIP21 compatible URI.</source>
-<<<<<<< HEAD
-        <translation>Si está recibiendo este error debería pedir al comerciante que le proporcione una URI compatible con BIP21</translation>
-=======
         <translation>Si está recibiendo este error debería solicitar al comerciante que le proporcione una URI compatible con BIP21</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Invalid payment address %1</source>
         <translation>Dirección de pago inválida %1</translation>
     </message>
     <message>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-<<<<<<< HEAD
-        <translation>¡URI no puede ser analizado! Esto puede deberse a una dirección de Bitcoin no válida o a parámetros de URI mal formados.</translation>
-=======
-        <translation>¡No se puede interpretar la URI! Esto puede deberse a una dirección Bitcoin inválida o a parámetros de URI mal formados.</translation>
->>>>>>> 0.19
+        <source>URI cannot be parsed! This can be caused by an invalid Zentoshi address or malformed URI parameters.</source>
+        <translation>¡No se puede interpretar la URI! Esto puede deberse a una dirección Zentoshi inválida o a parámetros de URI mal formados.</translation>
     </message>
     <message>
         <source>Payment request file handling</source>
@@ -1785,19 +1534,11 @@
     </message>
     <message>
         <source>Requested payment amount of %1 is too small (considered dust).</source>
-<<<<<<< HEAD
-        <translation>El monto para la solicitud de pago de %1 es muy pequeño (considera el dust).</translation>
-    </message>
-    <message>
-        <source>Refund from %1</source>
-        <translation>Reembolso de %1</translation>
-=======
         <translation>El monto para la solicitud de pago de %1 es muy pequeño (considerando el polvo).</translation>
     </message>
     <message>
         <source>Refund from %1</source>
         <translation>Devolución desde %1</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Payment request %1 is too large (%2 bytes, allowed %3 bytes).</source>
@@ -1844,7 +1585,7 @@
     </message>
     <message>
         <source>Sent</source>
-        <translation>Expedido</translation>
+        <translation>Enviado</translation>
     </message>
     <message>
         <source>Received</source>
@@ -1858,8 +1599,8 @@
         <translation>Cantidad</translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
-        <translation>Ingrese una dirección de Bitcoin (por ejemplo, %1)</translation>
+        <source>Enter a Zentoshi address (e.g. %1)</source>
+        <translation>Ingrese una dirección de Zentoshi (por ejemplo, %1)</translation>
     </message>
     <message>
         <source>%1 d</source>
@@ -2081,7 +1822,7 @@
     </message>
     <message>
         <source>Sent</source>
-        <translation>Expedido</translation>
+        <translation>Enviado</translation>
     </message>
     <message>
         <source>&amp;Peers</source>
@@ -2133,11 +1874,7 @@
     </message>
     <message>
         <source>Increase font size</source>
-<<<<<<< HEAD
-        <translation>Aumenta el tamaño de la fuente</translation>
-=======
         <translation>Aumentar el tamaño de la fuente</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Services</source>
@@ -2169,11 +1906,7 @@
     </message>
     <message>
         <source>Ping Wait</source>
-<<<<<<< HEAD
-        <translation>Ping espera</translation>
-=======
         <translation>Ping en espera</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Min Ping</source>
@@ -2265,11 +1998,7 @@
     </message>
     <message>
         <source>WARNING: Scammers have been active, telling users to type commands here, stealing their wallet contents. Do not use this console without fully understanding the ramifications of a command.</source>
-<<<<<<< HEAD
-        <translation>ADVERTENCIA: los estafadores han estado activos, pidiendo a los usuarios que escriban comandos aquí, robando el contenido de su billetera. No use esta consola sin entender completamente las ramificaciones de un comando</translation>
-=======
         <translation>ADVERTENCIA: los estafadores han estado activos pidiendo a los usuarios que escriban comandos aquí, robando el contenido de su monedero. No use esta consola sin entender completamente las ramificaciones de un comando.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Network activity disabled</source>
@@ -2305,7 +2034,7 @@
     </message>
     <message>
         <source>Yes</source>
-        <translation>Si </translation>
+        <translation>Sí</translation>
     </message>
     <message>
         <source>No</source>
@@ -2331,12 +2060,8 @@
         <translation>Mensaje:</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-<<<<<<< HEAD
-        <translation>Mensaje opcional para agregar a la solicitud de pago, el cual será mostrado cuando la solicitud este abierta. Nota: El mensaje no se manda con el pago a travéz de la red de Bitcoin.</translation>
-=======
-        <translation>Mensaje opcional para agregar a la solicitud de pago, el cual será mostrado cuando la solicitud esté abierta. Nota: El mensaje no se enviará con el pago a través de la red de Bitcoin.</translation>
->>>>>>> 0.19
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Zentoshi network.</source>
+        <translation>Mensaje opcional para agregar a la solicitud de pago, el cual será mostrado cuando la solicitud esté abierta. Nota: El mensaje no se enviará con el pago a través de la red de Zentoshi.</translation>
     </message>
     <message>
         <source>An optional label to associate with the new receiving address.</source>
@@ -2348,11 +2073,7 @@
     </message>
     <message>
         <source>An optional amount to request. Leave this empty or zero to not request a specific amount.</source>
-<<<<<<< HEAD
-        <translation>Monto opcional a solicitar. Dejarlo vacion o en cero no solicita un monto especifico.</translation>
-=======
         <translation>Monto opcional a solicitar. Dejarlo vacío o en cero para no solicitar un monto específico.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>&amp;Create new receiving address</source>
@@ -2388,11 +2109,7 @@
     </message>
     <message>
         <source>Remove the selected entries from the list</source>
-<<<<<<< HEAD
-        <translation>Borrar de la lista las direcciónes actualmente seleccionadas</translation>
-=======
         <translation>Eliminar de la lista las direcciones actualmente seleccionadas.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Remove</source>
@@ -2533,15 +2250,11 @@
     </message>
     <message>
         <source>Fee:</source>
-        <translation>Tasa:</translation>
+        <translation>Comisión:</translation>
     </message>
     <message>
         <source>After Fee:</source>
-<<<<<<< HEAD
-        <translation>Después de tasas:</translation>
-=======
         <translation>Después de la comisión:</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Change:</source>
@@ -2549,11 +2262,7 @@
     </message>
     <message>
         <source>If this is activated, but the change address is empty or invalid, change will be sent to a newly generated address.</source>
-<<<<<<< HEAD
-        <translation>Al activarse, si la dirección esta vacía o es inválida, las monedas serán enviadas a una nueva dirección generada.</translation>
-=======
         <translation>Al activarse, si la dirección de cambio está vacía o es inválida, las monedas serán enviadas a una nueva dirección generada.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Custom change address</source>
@@ -2561,11 +2270,7 @@
     </message>
     <message>
         <source>Transaction Fee:</source>
-<<<<<<< HEAD
-        <translation>Comisión de transacción:</translation>
-=======
         <translation>Comisión por transacción: </translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Choose...</source>
@@ -2577,7 +2282,7 @@
     </message>
     <message>
         <source>Warning: Fee estimation is currently not possible.</source>
-        <translation>Advertencia: En este momento no se puede estimar la cuota.</translation>
+        <translation>Advertencia: En este momento no se puede estimar la comisión.</translation>
     </message>
     <message>
         <source>collapse fee-settings</source>
@@ -2597,11 +2302,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Hide</source>
-<<<<<<< HEAD
-        <translation>Esconder</translation>
-=======
         <translation>Ocultar</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Recommended:</source>
@@ -2632,20 +2333,12 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>Polvo:</translation>
     </message>
     <message>
-        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for bitcoin transactions than the network can process.</source>
-<<<<<<< HEAD
-        <translation>Cuando hay menos volumen de transacciónes que espacio en los bloques, los mineros y los nodos de retransmisión pueden imponer una comisión mínima. Pagar solo esta comisión mínima está bien, pero tenga en cuenta que esto puede resultar en una transacción nunca confirmada una vez que haya más demanda de transacciones de Bitcoin de la que la red puede procesar.</translation>
-    </message>
-    <message>
-        <source>A too low fee might result in a never confirming transaction (read the tooltip)</source>
-        <translation>Una comisión muy pequeña puede derivar en una transacción que nunca será confirmada</translation>
-=======
-        <translation>Cuando hay menos volumen de transacciones que espacio en los bloques, los mineros y los nodos de retransmisión pueden imponer una comisión mínima. Pagar solo esta comisión mínima está bien, pero tenga en cuenta que esto puede resultar en una transacción nunca confirmada una vez que haya más demanda de transacciones de Bitcoin de la que la red puede procesar.</translation>
+        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for zentoshi transactions than the network can process.</source>
+        <translation>Cuando hay menos volumen de transacciones que espacio en los bloques, los mineros y los nodos de retransmisión pueden imponer una comisión mínima. Pagar solo esta comisión mínima está bien, pero tenga en cuenta que esto puede resultar en una transacción nunca confirmada una vez que haya más demanda de transacciones de Zentoshi de la que la red puede procesar.</translation>
     </message>
     <message>
         <source>A too low fee might result in a never confirming transaction (read the tooltip)</source>
         <translation>Una comisión muy pequeña puede derivar en una transacción que nunca será confirmada (leer herramientas de información).</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Confirmation time target:</source>
@@ -2689,11 +2382,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Copy after fee</source>
-<<<<<<< HEAD
-        <translation>Copiar después de la tarifa</translation>
-=======
         <translation>Copiar después de la comisión</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Copy bytes</source>
@@ -2733,11 +2422,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>You can increase the fee later (signals Replace-By-Fee, BIP-125).</source>
-<<<<<<< HEAD
-        <translation>Puede incrementar la comisión más tarde (usa Replace-By-Fee, BIP-125).</translation>
-=======
         <translation>Puede incrementar la comisión más tarde (use Replace-By-Fee, BIP-125).</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Please, review your transaction.</source>
@@ -2757,29 +2442,6 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>To review recipient list click "Show Details..."</source>
-<<<<<<< HEAD
-        <translation>Para ver la lista de receptores haga click en "Mostrar detalles"</translation>
-    </message>
-    <message>
-        <source>Confirm send coins</source>
-        <translation>Confirmar el envió de monedas</translation>
-    </message>
-    <message>
-        <source>The recipient address is not valid. Please recheck.</source>
-        <translation>La dirección de envío no es válida. Por favor revisala.</translation>
-    </message>
-    <message>
-        <source>The amount to pay must be larger than 0.</source>
-        <translation>La cantidad por pagar tiene que ser mayor que 0.</translation>
-    </message>
-    <message>
-        <source>The amount exceeds your balance.</source>
-        <translation>El monto sobrepasa tu saldo.</translation>
-    </message>
-    <message>
-        <source>The total exceeds your balance when the %1 transaction fee is included.</source>
-        <translation>El total sobrepasa tu saldo cuando se incluyen %1 como comisión de envió.</translation>
-=======
         <translation>Para ver la lista de receptores haga clic en "Mostrar detalles"</translation>
     </message>
     <message>
@@ -2801,7 +2463,6 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     <message>
         <source>The total exceeds your balance when the %1 transaction fee is included.</source>
         <translation>El total sobrepasa su saldo cuando se incluyen %1 como comisión por transacción.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Duplicate address found: addresses should only be used once each.</source>
@@ -2817,11 +2478,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>A fee higher than %1 is considered an absurdly high fee.</source>
-<<<<<<< HEAD
-        <translation>Una comisión mayor que %1 se considera como una comisión absurda-mente alta.</translation>
-=======
         <translation>Una comisión mayor que %1 se considera una comisión absurdamente alta.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Payment request expired.</source>
@@ -2832,8 +2489,8 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation><numerusform>Estimado para empezar la confirmación dentro de %n bloque.</numerusform><numerusform>Estimado para empezar la confirmación dentro de %n bloques.</numerusform></translation>
     </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>Peligro: Dirección de Bitcoin inválida</translation>
+        <source>Warning: Invalid Zentoshi address</source>
+        <translation>Peligro: Dirección de Zentoshi inválida</translation>
     </message>
     <message>
         <source>Warning: Unknown change address</source>
@@ -2845,11 +2502,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>The address you selected for change is not part of this wallet. Any or all funds in your wallet may be sent to this address. Are you sure?</source>
-<<<<<<< HEAD
-        <translation>La dirección de cambio que ingresaste no es parte de tu monedero. Parte de tus fondos serán enviados a esta dirección. ¿Estás seguro?</translation>
-=======
         <translation>La dirección de cambio seleccionada no es parte de su monedero. Parte de sus fondos serán enviados a esta dirección. ¿Está seguro?</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>(no label)</source>
@@ -2879,12 +2532,8 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>Esto es un pago ordinario.</translation>
     </message>
     <message>
-        <source>The Bitcoin address to send the payment to</source>
-<<<<<<< HEAD
-        <translation>Dirección Bitcoin a enviar el pago</translation>
-=======
-        <translation>Dirección Bitcoin a la que se enviará el pago</translation>
->>>>>>> 0.19
+        <source>The Zentoshi address to send the payment to</source>
+        <translation>Dirección Zentoshi a la que se enviará el pago</translation>
     </message>
     <message>
         <source>Alt+A</source>
@@ -2931,8 +2580,8 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>Introduzca una etiqueta para esta dirección para añadirla a la lista de direcciones utilizadas</translation>
     </message>
     <message>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
-        <translation>Un mensaje que se adjuntó a la bitcoin: URL que será almacenada con la transacción para su referencia. Nota: Este mensaje no se envía a través de la red Bitcoin.</translation>
+        <source>A message that was attached to the zentoshi: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Zentoshi network.</source>
+        <translation>Un mensaje que se adjuntó a la zentoshi: URL que será almacenada con la transacción para su referencia. Nota: Este mensaje no se envía a través de la red Zentoshi.</translation>
     </message>
     <message>
         <source>Pay To:</source>
@@ -2944,22 +2593,14 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Enter a label for this address to add it to your address book</source>
-<<<<<<< HEAD
-        <translation>Introduce una etiqueta a esta dirección para añadirla a tu guía</translation>
-=======
         <translation>Introduzca una etiqueta para esta dirección para añadirla a su libro de direcciones.</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
     <name>SendConfirmationDialog</name>
     <message>
         <source>Yes</source>
-<<<<<<< HEAD
-        <translation>Si </translation>
-=======
         <translation>Sí. </translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -2970,11 +2611,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Do not shut down the computer until this window disappears.</source>
-<<<<<<< HEAD
-        <translation>No apague su computadora hasta que esta ventana desaparesca.</translation>
-=======
         <translation>No apague el equipo hasta que esta ventana desaparezca.</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -2992,8 +2629,8 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>Puede firmar los mensajes con sus direcciones para demostrar que las posee. Tenga cuidado de no firmar cualquier cosa de manera vaga o aleatoria, pues los ataques de phishing pueden tratar de engañarle firmando su identidad a través de ellos. Sólo firme declaraciones totalmente detalladas con las que usted esté de acuerdo.</translation>
     </message>
     <message>
-        <source>The Bitcoin address to sign the message with</source>
-        <translation>Dirección Bitcoin con la que firmar el mensaje</translation>
+        <source>The Zentoshi address to sign the message with</source>
+        <translation>Dirección Zentoshi con la que firmar el mensaje</translation>
     </message>
     <message>
         <source>Choose previously used address</source>
@@ -3024,8 +2661,8 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>Copiar la firma actual al portapapeles del sistema</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Firmar el mensaje para demostrar que se posee esta dirección Bitcoin</translation>
+        <source>Sign the message to prove you own this Zentoshi address</source>
+        <translation>Firmar el mensaje para demostrar que se posee esta dirección Zentoshi</translation>
     </message>
     <message>
         <source>Sign &amp;Message</source>
@@ -3048,12 +2685,12 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>Introduzca la dirección para la firma, el mensaje (asegurándose de copiar tal cual los saltos de línea, espacios, tabulaciones, etc.) y la firma a continuación para verificar el mensaje. Tenga cuidado de no asumir más información de lo que dice el propio mensaje firmado para evitar fraudes basados en ataques de tipo man-in-the-middle.</translation>
     </message>
     <message>
-        <source>The Bitcoin address the message was signed with</source>
-        <translation>La dirección Bitcoin con la que se firmó el mensaje</translation>
+        <source>The Zentoshi address the message was signed with</source>
+        <translation>La dirección Zentoshi con la que se firmó el mensaje</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Verificar el mensaje para comprobar que fue firmado con la dirección Bitcoin indicada</translation>
+        <source>Verify the message to ensure it was signed with the specified Zentoshi address</source>
+        <translation>Verificar el mensaje para comprobar que fue firmado con la dirección Zentoshi indicada</translation>
     </message>
     <message>
         <source>Verify &amp;Message</source>
@@ -3065,11 +2702,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Click "Sign Message" to generate signature</source>
-<<<<<<< HEAD
-        <translation>Click en "Firmar mensaje" para generar una firma</translation>
-=======
         <translation>Clic en "Firmar mensaje" para generar una firma.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>The entered address is invalid.</source>
@@ -3077,11 +2710,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Please check the address and try again.</source>
-<<<<<<< HEAD
-        <translation>Por favor, revisa la dirección e intenta nuevamente.</translation>
-=======
         <translation>Por favor, revise la dirección e inténtelo nuevamente.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>The entered address does not refer to a key.</source>
@@ -3109,11 +2738,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Please check the signature and try again.</source>
-<<<<<<< HEAD
-        <translation>Por favor compruebe la firma e intente de nuevo.</translation>
-=======
         <translation>Por favor, compruebe la firma e inténtelo de nuevo.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>The signature did not match the message digest.</source>
@@ -3147,11 +2772,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>conflicted with a transaction with %1 confirmations</source>
-<<<<<<< HEAD
-        <translation>Hay un conflicto con la traducción de las confirmaciones %1</translation>
-=======
         <translation>Hay un conflicto con una transacción con %1 confirmaciones.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>0/unconfirmed, %1</source>
@@ -3159,19 +2780,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>in memory pool</source>
-<<<<<<< HEAD
-        <translation>en el equipo de memoria</translation>
-    </message>
-    <message>
-        <source>not in memory pool</source>
-        <translation>no en el equipo de memoria</translation>
-=======
         <translation>en el "pool" de memoria</translation>
     </message>
     <message>
         <source>not in memory pool</source>
         <translation>no está en el "pool" de memoria</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>abandoned</source>
@@ -3393,11 +3006,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Payment to yourself</source>
-<<<<<<< HEAD
-        <translation>Pago a ti mismo</translation>
-=======
         <translation>Pago a usted mismo.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Mined</source>
@@ -3405,11 +3014,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>watch-only</source>
-<<<<<<< HEAD
-        <translation>Solo observación</translation>
-=======
         <translation>Solo-ver.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>(n/a)</source>
@@ -3421,11 +3026,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Transaction status. Hover over this field to show number of confirmations.</source>
-<<<<<<< HEAD
-        <translation>Estado de transacción. Pasa el ratón sobre este campo para ver el numero de confirmaciones.</translation>
-=======
         <translation>Estado de transacción. Pase el ratón sobre este campo para ver el número de confirmaciones.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Date and time that the transaction was received.</source>
@@ -3488,7 +3089,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>To yourself</source>
-        <translation>A ti mismo</translation>
+        <translation>A usted mismo</translation>
     </message>
     <message>
         <source>Mined</source>
@@ -3592,7 +3193,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Exporting Successful</source>
-        <translation>Exportación exitosa</translation>
+        <translation>Exportación finalizada</translation>
     </message>
     <message>
         <source>The transaction history was successfully saved to %1.</source>
@@ -3622,19 +3223,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Are you sure you wish to close the wallet &lt;i&gt;%1&lt;/i&gt;?</source>
-<<<<<<< HEAD
-        <translation>¿Está seguro que desea cerra el monedero &lt;i&gt;%1&lt;/i&gt;?</translation>
-    </message>
-    <message>
-        <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
-        <translation>Cerrar la monedero durante demasiado tiempo puede causar resincronizado de toda la cadena si la poda es habilitado.</translation>
-=======
         <translation>¿Está seguro que desea cerrar el monedero &lt;i&gt;%1&lt;/i&gt;?</translation>
     </message>
     <message>
         <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
         <translation>Cerrar el monedero durante demasiado tiempo puede causar la resincronización de toda la cadena si la poda es habilitada.</translation>
->>>>>>> 0.19
     </message>
 </context>
 <context>
@@ -3652,19 +3245,15 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Fee bump error</source>
-        <translation>Error de incremento de cuota</translation>
+        <translation>Error de incremento de comisión</translation>
     </message>
     <message>
         <source>Increasing transaction fee failed</source>
-<<<<<<< HEAD
-        <translation>Ha fallado el incremento de la cuota de transacción.</translation>
-=======
         <translation>Ha fallado el incremento de la comisión por transacción.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Do you want to increase the fee?</source>
-        <translation>¿Desea incrementar la cuota?</translation>
+        <translation>¿Desea incrementar la comisión?</translation>
     </message>
     <message>
         <source>Current fee:</source>
@@ -3735,18 +3324,14 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>zentoshi-core</name>
     <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation>Distribuido bajo la licencia de software MIT, vea el archivo adjunto %s o %s</translation>
     </message>
     <message>
         <source>Prune configured below the minimum of %d MiB.  Please use a higher number.</source>
-<<<<<<< HEAD
-        <translation>La Poda se ha configurado por debajo del mínimo de %d MiB. Por favor utiliza un valor mas alto.</translation>
-=======
         <translation>La Poda se ha configurado por debajo del mínimo de %d MiB. Por favor, utilice un valor mas alto.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)</source>
@@ -3754,19 +3339,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Rescans are not possible in pruned mode. You will need to use -reindex which will download the whole blockchain again.</source>
-<<<<<<< HEAD
-        <translation>No es es posible re-escanear en modo prune. Debes usar -reindex el cual descargara toda la blockchain de nuevo.</translation>
-    </message>
-    <message>
-        <source>Error: A fatal internal error occurred, see debug.log for details</source>
-        <translation>Error: Un error interno fatal ha ocurrido, ver debug.log para detalles</translation>
-=======
         <translation>No es posible re-escanear en modo prune. Debe usar -reindex el cual descargara toda la blockchain de nuevo.</translation>
     </message>
     <message>
         <source>Error: A fatal internal error occurred, see debug.log for details</source>
         <translation>Error: Un error interno fatal ha ocurrido. Ver debug.log para detalles</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Pruning blockstore...</source>
@@ -3782,11 +3359,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Can't generate a change-address key. No keys in the internal keypool and can't generate any keys.</source>
-<<<<<<< HEAD
-        <translation>No se puede generar una clave de cambio-de-dirección. No hay claves en el cojunto de claves internas y no se pueden generar claves.</translation>
-=======
         <translation>No se puede generar una clave de cambio-de-dirección. No hay claves en el conjunto de claves internas y no se pueden generar claves.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Cannot obtain a lock on data directory %s. %s is probably already running.</source>
@@ -3798,19 +3371,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Error reading %s! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-<<<<<<< HEAD
-        <translation>Error leyendo %s!. Todas las claves se han leido correctamente, pero los datos de transacciones o la libreta de direcciones pueden faltar o ser incorrectos.</translation>
-    </message>
-    <message>
-        <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
-        <translation>Por favor, compruebe si la fecha y hora en su computadora son correctas! Si su reloj esta mal, %s no trabajara correctamente.</translation>
-=======
         <translation>Error leyendo %s!. Todas las claves se han leído correctamente, pero los datos de la transacción o el libro de direcciones pueden faltar o ser incorrectos.</translation>
     </message>
     <message>
         <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
         <translation>¡Por favor, compruebe si la fecha y hora en su computadora son correctas! Si su reloj está mal, %s no trabajará correctamente.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Please contribute if you find %s useful. Visit %s for further information about the software.</source>
@@ -3869,10 +3434,6 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
         <translation>La configuración para %s solo se aplica en la red %s cuando son en la sección [%s].</translation>
     </message>
     <message>
-        <source>Config setting for %s only applied on %s network when in [%s] section.</source>
-        <translation>La configuración para %s solo se aplica en la red %s cuando son en la sección [%s].</translation>
-    </message>
-    <message>
         <source>Copyright (C) %i-%i</source>
         <translation>Copyright (C) %i-%i</translation>
     </message>
@@ -3882,11 +3443,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Do you want to rebuild the block database now?</source>
-<<<<<<< HEAD
-        <translation>¿Quieres reconstruir la base de datos de bloques ahora?</translation>
-=======
         <translation>¿Quiere reconstruir la base de datos de bloques ahora?</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Error initializing block database</source>
@@ -3910,11 +3467,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Error loading %s: Wallet requires newer version of %s</source>
-<<<<<<< HEAD
-        <translation>Error cargando %s: Monedero requiere una versión mas reciente de %s</translation>
-=======
         <translation>Error cargando %s: El monedero requiere una versión más reciente de %s</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Error loading block database</source>
@@ -3950,17 +3503,6 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Invalid amount for -%s=&lt;amount&gt;: '%s'</source>
-<<<<<<< HEAD
-        <translation>Monto invalido para -%s=&lt;amount&gt;: '%s'</translation>
-    </message>
-    <message>
-        <source>Invalid amount for -discardfee=&lt;amount&gt;: '%s'</source>
-        <translation>Monto invalido para -discardfee=&lt;amount&gt;: '%s'</translation>
-    </message>
-    <message>
-        <source>Invalid amount for -fallbackfee=&lt;amount&gt;: '%s'</source>
-        <translation>Monto invalido para -fallbackfee=&lt;amount&gt;: '%s'</translation>
-=======
         <translation>Monto inválido para -%s=&lt;amount&gt;: '%s'</translation>
     </message>
     <message>
@@ -3970,7 +3512,6 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     <message>
         <source>Invalid amount for -fallbackfee=&lt;amount&gt;: '%s'</source>
         <translation>Monto inválido para -fallbackfee=&lt;amount&gt;: '%s'</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Specified blocks directory "%s" does not exist.</source>
@@ -4070,19 +3611,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain</source>
-<<<<<<< HEAD
-        <translation>Necesitas reconstruir la base de datos utilizando -reindex para volver al modo sin recorte. Esto volverá a descargar toda la cadena de bloques</translation>
-    </message>
-    <message>
-        <source>Error reading from database, shutting down.</source>
-        <translation>Error al leer la base de datos, cerrando aplicación.</translation>
-=======
         <translation>Necesita reconstruir la base de datos utilizando -reindex para volver al modo sin recorte. Esto volverá a descargar toda la cadena de bloques</translation>
     </message>
     <message>
         <source>Error reading from database, shutting down.</source>
         <translation>Error al leer la base de datos, cerrando la aplicación.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Error upgrading chainstate database</source>
@@ -4148,11 +3681,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>The transaction amount is too small to pay the fee</source>
-<<<<<<< HEAD
-        <translation>El monto a transferir es muy pequeño para pagar el impuesto</translation>
-=======
         <translation>El monto de la transacción es muy pequeño para pagar la comisión</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>This is experimental software.</source>
@@ -4160,11 +3689,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Transaction amount too small</source>
-<<<<<<< HEAD
-        <translation>Monto de la transacción muy pequeño</translation>
-=======
         <translation>El monto de la transacción es demasiado pequeño para pagar la comisión.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Transaction too large</source>
@@ -4188,11 +3713,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Verifying wallet(s)...</source>
-<<<<<<< HEAD
-        <translation>Verificando billetera(s)...</translation>
-=======
         <translation>Verificando monedero...</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Warning: unknown new rules activated (versionbit %i)</source>
@@ -4204,19 +3725,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>-maxtxfee is set very high! Fees this large could be paid on a single transaction.</source>
-<<<<<<< HEAD
-        <translation>-maxtxfee tiene un valor muy elevado! Comisiones muy grandes podrían ser pagadas en una única transacción.</translation>
-    </message>
-    <message>
-        <source>This is the transaction fee you may pay when fee estimates are not available.</source>
-        <translation>Impuesto por transacción que pagarás cuando la estimación de impuesto no esté disponible.</translation>
-=======
         <translation>-maxtxfee tiene un valor muy elevado. Comisiones muy grandes podrían ser pagadas en una única transacción.</translation>
     </message>
     <message>
         <source>This is the transaction fee you may pay when fee estimates are not available.</source>
         <translation>Esta es la comisión por transacción que deberá pagar cuando la estimación de comisión no esté disponible.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.</source>
@@ -4228,19 +3741,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Warning: Wallet file corrupt, data salvaged! Original %s saved as %s in %s; if your balance or transactions are incorrect you should restore from a backup.</source>
-<<<<<<< HEAD
-        <translation>Advertencia: Archivo de monedero corrupto, datos recuperados! Original %s guardado como %s en %s; si su balance de transacciones es incorrecto, debe restaurar desde una copia de seguridad.</translation>
-    </message>
-    <message>
-        <source>%s is set very high!</source>
-        <translation>¡%s esta configurado muy alto!</translation>
-=======
         <translation>Advertencia: ¡Archivo de monedero corrupto, datos recuperados! Original %s guardado como %s en %s; si su balance de transacciones es incorrecto, debe restaurar desde una copia de seguridad.</translation>
     </message>
     <message>
         <source>%s is set very high!</source>
         <translation>¡%s está configurado muy alto!</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
@@ -4252,11 +3757,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>The wallet will avoid paying less than the minimum relay fee.</source>
-<<<<<<< HEAD
-        <translation>La billetera no permitirá pagar menos que la fee de transmisión mínima (relay fee).</translation>
-=======
         <translation>El monedero no permitirá pagar menos que la comisión mínima para retransmitir llamada relay fee.</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>This is the minimum transaction fee you pay on every transaction.</source>
@@ -4264,19 +3765,11 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>This is the transaction fee you will pay if you send a transaction.</source>
-<<<<<<< HEAD
-        <translation>Esta es la tarifa a pagar si realizas una transacción.</translation>
-    </message>
-    <message>
-        <source>Transaction amounts must not be negative</source>
-        <translation>Los montos de la transacción no debe ser negativo</translation>
-=======
         <translation>Esta es la comisión por transacción a pagar si realiza una transacción.</translation>
     </message>
     <message>
         <source>Transaction amounts must not be negative</source>
         <translation>Los montos de la transacción no deben ser negativos</translation>
->>>>>>> 0.19
     </message>
     <message>
         <source>Transaction has too long of a mempool chain</source>
@@ -4328,11 +3821,7 @@ Nota: Dado que la comisión se calcula por byte, una comisión de "100 satoshis 
     </message>
     <message>
         <source>Done loading</source>
-<<<<<<< HEAD
-        <translation>Generado pero no aceptado</translation>
-=======
         <translation>Se terminó de cargar</translation>
->>>>>>> 0.19
     </message>
 </context>
 </TS>
