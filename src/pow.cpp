@@ -89,13 +89,13 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
 
     arith_uint256 kgw_dual1(PastDifficultyAverage);
     arith_uint256 kgw_dual2;
-    kgw_dual2.SetCompact(pindexLast->nBits);
+    kgw_dual2.SetCompact(GetLastBlockIndex(pindexLast, fProofOfStake)->nBits);
     if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
         kgw_dual1 *= PastRateActualSeconds;
         kgw_dual1 /= PastRateTargetSeconds;
     }
-    int64_t nActualTime1 =
-            pindexLast->GetBlockTime() - pindexLast->pprev->GetBlockTime();
+    int64_t nActualTime1 = GetLastBlockIndex(pindexLast, fProofOfStake)->GetBlockTime() -
+                           GetLastBlockIndex(pindexLast, fProofOfStake)->pprev->GetBlockTime();
     int64_t nActualTimespanshort = nActualTime1;
 
     if (nActualTime1 < 0) nActualTime1 = Blocktime;
