@@ -633,7 +633,7 @@ void SetupServerArgs()
     gArgs.AddArg("-masternode=<n>", "Enable the client to act as a masternode (0-1, default: false", false, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-mnconf=<file>", "Specify masternode configuration file (default: masternode.conf)", false, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-mnconflock=<n>", "Lock masternodes from masternode configuration file (default: %u)", false, OptionsCategory::MASTERNODE);
-    gArgs.AddArg("-masternodeprivkey=<n>", "Set the masternode private key", false, OptionsCategory::MASTERNODE);
+    gArgs.AddArg("-masternodeblsprivkey=<n>", "Set the masternode BLS private key", ArgsManager::ALLOW_ANY, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-clearmncache", "Clears mncache on startup", false, OptionsCategory::MASTERNODE);
     gArgs.AddArg("-watchquorums=<n>", strprintf("Watch and validate quorum communication (default: %u)", llmq::DEFAULT_WATCH_QUORUMS), false, OptionsCategory::MASTERNODE);
 
