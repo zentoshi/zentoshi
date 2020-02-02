@@ -17,9 +17,10 @@
 #include <qt/walletmodel.h>
 #include <qt/darksendconfig.h>
 #include <util/system.h>
-
+#include <wallet/coincontrol.h>
 #include <shutdown.h>
 
+#include <interfaces/wallet.h>
 #include <masternode/masternode-sync.h>
 #include <privatesend/privatesend-client.h>
 
@@ -127,6 +128,9 @@ void PrivateSendPage::setWalletModel(WalletModel *model)
         connect(model, SIGNAL(balanceChanged(interfaces::WalletBalances)), this, SLOT(setBalance(interfaces::WalletBalances)));
 
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
+
+        // explicitly update PS frame and transaction list to reflect actual settings
+        updateAdvancedPSUI(true);
 
         if(!privateSendClient.fEnablePrivateSend) return;
 
@@ -290,6 +294,10 @@ void PrivateSendPage::privateSendStatus()
 {
     if(!masternodeSync.IsBlockchainSynced() || ShutdownRequested()) return;
 
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet* const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+
+    if (!pwallet) return;
     static int64_t nLastDSProgressBlockTime = 0;
     int nBestHeight = clientModel->getNumBlocks();
 
@@ -297,9 +305,9 @@ void PrivateSendPage::privateSendStatus()
     if(((nBestHeight - privateSendClient.nCachedNumBlocks) / (GetTimeMillis() - nLastDSProgressBlockTime + 1) > 1)) return;
     nLastDSProgressBlockTime = GetTimeMillis();
 
-    QString strKeysLeftText(tr("keys left: %1").arg(walletModel->wallet().getKeysLeftSinceAutoBackup()));
-    if(vpwallets[0]->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
-        strKeysLeftText = "<span style='color:red;'>" + strKeysLeftText + "</span>";
+    QString strKeysLeftText(tr("keys left: %1").arg(pwallet->nKeysLeftSinceAutoBackup));
+    if(pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+        strKeysLeftText = "<span>" + strKeysLeftText + "</span>";
     }
     ui->labelPrivateSendEnabled->setToolTip(strKeysLeftText);
 
@@ -321,8 +329,47 @@ void PrivateSendPage::privateSendStatus()
     }
 
     // Construct status string
-    QString strEnabled = privateSendClient.fEnablePrivateSend ? tr("Enabled") : tr("Disabled");
-    strEnabled += ", " + strKeysLeftText;
+    if (nWalletBackups > 0 && pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+        QSettings settings;
+        if(settings.value("fLowKeysWarning").toBool()) {
+            QString strWarn =   tr("Very low number of keys left since last automatic backup!") + "<br><br>" +
+                                tr("We are about to create a new automatic backup for you, however "
+                                   "<span style='color:red;'> you should always make sure you have backups "
+                                   "saved in some safe place</span>!") + "<br><br>" +
+                                tr("Note: You can turn this message off in options.");
+            ui->labelPrivateSendEnabled->setToolTip(strWarn);
+            LogPrint(BCLog::PRIVATESEND, "OverviewPage::privateSendStatus -- Very low number of keys left since last automatic backup, warning user and trying to create new backup...\n");
+            QMessageBox::warning(this, tr("PrivateSend"), strWarn, QMessageBox::Ok, QMessageBox::Ok);
+        } else {
+            LogPrint(BCLog::PRIVATESEND, "OverviewPage::privateSendStatus -- Very low number of keys left since last automatic backup, skipping warning and trying to create new backup...\n");
+        }
+
+        std::string strBackupWarning;
+        std::string strBackupError;
+        if(!AutoBackupWallet(vpwallets[0], "", strBackupWarning, strBackupError)) {
+            if (!strBackupWarning.empty()) {
+                // It's still more or less safe to continue but warn user anyway
+                LogPrint(BCLog::PRIVATESEND, "OverviewPage::privateSendStatus -- WARNING! Something went wrong on automatic backup: %s\n", strBackupWarning);
+
+                QMessageBox::warning(this, tr("PrivateSend"),
+                    tr("WARNING! Something went wrong on automatic backup") + ":<br><br>" + strBackupWarning.c_str(),
+                    QMessageBox::Ok, QMessageBox::Ok);
+            }
+            if (!strBackupError.empty()) {
+                // Things are really broken, warn user and stop mixing immediately
+                LogPrint(BCLog::PRIVATESEND, "OverviewPage::privateSendStatus -- ERROR! Failed to create automatic backup: %s\n", strBackupError);
+
+                QMessageBox::warning(this, tr("PrivateSend"),
+                    tr("ERROR! Failed to create automatic backup") + ":<br><br>" + strBackupError.c_str() + "<br>" +
+                    tr("Mixing is disabled, please close your wallet and fix the issue!"),
+                    QMessageBox::Ok, QMessageBox::Ok);
+            }
+        }
+    }
+
+    QString strEnabled = privateSendClient.fPrivateSendRunning ? tr("Enabled") : tr("Disabled");
+    // Show how many keys left in advanced PS UI mode only
+    if(fShowAdvancedPSUI) strEnabled += ", " + strKeysLeftText;
     ui->labelPrivateSendEnabled->setText(strEnabled);
 
     if(nWalletBackups == -1) {
@@ -350,10 +397,10 @@ void PrivateSendPage::privateSendStatus()
 
     QString strStatus = QString(privateSendClient.GetStatuses().c_str());
 
-    QString s = tr("Last ShadowSend message:\n") + strStatus;
+    QString s = tr("Last PrivateSend message:\n") + strStatus;
 
     if(s != ui->labelPrivateSendLastMessage->text())
-        LogPrint(BCLog::PRIVATESEND, "PrivateSendPage::privateSendStatus -- Last ShadowSend message: %s\n", strStatus.toStdString());
+        LogPrint(BCLog::PRIVATESEND, "OverviewPage::privateSendStatus -- Last PrivateSend message: %s\n", strStatus.toStdString());
 
     ui->labelPrivateSendLastMessage->setText(s);
 
@@ -372,7 +419,12 @@ void PrivateSendPage::privateSendReset(){
         QMessageBox::Ok, QMessageBox::Ok);
 }
 
-void PrivateSendPage::togglePrivateSend(){
+void PrivateSendPage::togglePrivateSend()
+{
+    std::vector<std::shared_ptr<CWallet>> wallets = GetWallets();
+    CWallet * const pwallet = (wallets.size() > 0) ? wallets[0].get() : nullptr;
+    if(!pwallet) return;
+
     QSettings settings;
     // Popup some information on first mixing
     QString hasMixed = settings.value("hasMixed").toString();
@@ -383,8 +435,10 @@ void PrivateSendPage::togglePrivateSend(){
         settings.setValue("hasMixed", "hasMixed");
     }
     if(!privateSendClient.fEnablePrivateSend){
+        CCoinControl coin_control;
+        CAmount nBalance = pwallet->GetBalance(0, coin_control.m_avoid_address_reuse).m_mine_trusted;
         const CAmount nMinAmount = CPrivateSend::GetSmallestDenomination() + CPrivateSend::GetMaxCollateralAmount();
-        if(m_balances.balance < nMinAmount){
+        if(nBalance < nMinAmount){
             QString strMinAmount(BitcoinUnits::formatWithUnit(nDisplayUnit, nMinAmount));
             QMessageBox::warning(this, tr("ShadowSend"),
                 tr("ShadowSend requires at least %1 to use.").arg(strMinAmount),

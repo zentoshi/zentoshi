@@ -670,6 +670,11 @@ bool CWallet::Unlock(const SecureString& strWalletPassphrase, bool stakingOnly)
             if (!crypter.Decrypt(pMasterKey.second.vchCryptedKey, _vMasterKey))
                 continue; // try another master key
             if (Unlock(_vMasterKey, stakingOnly)) {
+                if(nWalletBackups == -2) {
+                    TopUpKeyPool();
+                    LogPrintf("Keypool replenished, re-initializing automatic backups.\n");
+                    nWalletBackups = gArgs.GetArg("-createwalletbackups", 10);
+                }
                 // Now that we've unlocked, upgrade the key metadata
                 UpgradeKeyMetadata();
                 fWalletUnlockStakingOnly = stakingOnly;
@@ -2765,6 +2770,7 @@ CAmount CWallet::GetUnconfirmedBalance() const
                 nTotal += wtx.GetAvailableCredit(*locked_chain);
         }
     } // locked_chain and cs_wallet
+    return nTotal;
 }
 
 CAmount CWallet::GetImmatureBalance() const
@@ -2778,6 +2784,7 @@ CAmount CWallet::GetImmatureBalance() const
             nTotal += wtx.GetImmatureCredit(*locked_chain);
         }
     }
+    return nTotal;
 }
 
 /** @} */ // end of mapWallet
@@ -4520,6 +4527,8 @@ DBErrors CWallet::ZapWalletTx(std::vector<CWalletTx>& vWtx)
             setInternalKeyPool.clear();
             setExternalKeyPool.clear();
             m_pool_key_to_index.clear();
+            nKeysLeftSinceAutoBackup = 0;
+
             // Note: can't top-up keypool here, because wallet is locked.
             // User will be prompted to unlock wallet the next operation
             // that requires a new key.
@@ -4620,6 +4629,9 @@ bool CWallet::NewKeyPool()
 
         m_pool_key_to_index.clear();
 
+        privateSendClient.fEnablePrivateSend = false;
+        nKeysLeftSinceAutoBackup = 0;
+
         if (!TopUpKeyPool()) {
             return false;
         }
@@ -4655,47 +4667,75 @@ void CWallet::LoadKeyPool(int64_t nIndex, const CKeyPool& keypool)
         mapKeyMetadata[keyid] = CKeyMetadata(keypool.nTime);
 }
 
+size_t CWallet::KeypoolCountInternalKeys()
+{
+    AssertLockHeld(cs_wallet); // setInternalKeyPool
+    return setInternalKeyPool.size();
+}
+
 bool CWallet::TopUpKeyPool(unsigned int kpSize)
 {
-    if (!CanGenerateKeys()) {
-        return false;
-    }
     {
         LOCK(cs_wallet);
 
-        if (IsLocked()) return false;
+        if (IsLocked())
+            return false;
 
         // Top up key pool
         unsigned int nTargetSize;
         if (kpSize > 0)
             nTargetSize = kpSize;
         else
-            nTargetSize = std::max(gArgs.GetArg("-keypool", DEFAULT_KEYPOOL_SIZE), (int64_t)0);
+            nTargetSize = std::max(gArgs.GetArg("-keypool", DEFAULT_KEYPOOL_SIZE), (int64_t) 0);
 
         // count amount of available keys (internal, external)
         // make sure the keypool of external and internal keys fits the user selected target (-keypool)
-        int64_t missingExternal = std::max(std::max((int64_t)nTargetSize, (int64_t)1) - (int64_t)setExternalKeyPool.size(), (int64_t)0);
-        int64_t missingInternal = std::max(std::max((int64_t)nTargetSize, (int64_t)1) - (int64_t)setInternalKeyPool.size(), (int64_t)0);
+        int64_t amountExternal = setExternalKeyPool.size();
+        int64_t amountInternal = setInternalKeyPool.size();
+        int64_t missingExternal = std::max(std::max((int64_t) nTargetSize, (int64_t) 1) - amountExternal, (int64_t) 0);
+        int64_t missingInternal = std::max(std::max((int64_t) nTargetSize, (int64_t) 1) - amountInternal, (int64_t) 0);
 
-        if (!IsHDEnabled() || !CanSupportFeature(FEATURE_HD_SPLIT)) {
+        if (!IsHDEnabled())
+        {
             // don't create extra internal keys
             missingInternal = 0;
+        } else {
+            nTargetSize *= 2;
         }
-        bool internal = false;
-        WalletBatch batch(*database);
-        for (int64_t i = missingInternal + missingExternal; i--;) {
+        bool fInternal = false;
+        WalletBatch walletdb(*database);
+        for (int64_t i = missingInternal + missingExternal; i--;)
+        {
             if (i < missingInternal) {
-                internal = true;
+                fInternal = true;
             }
 
-            CPubKey pubkey(GenerateNewKey(batch, internal));
-            AddKeypoolPubkeyWithDB(pubkey, internal, batch);
-        }
-        if (missingInternal + missingExternal > 0) {
-            WalletLogPrintf("keypool added %d keys (%d internal), size=%u (%u internal)\n", missingInternal + missingExternal, missingInternal, setInternalKeyPool.size() + setExternalKeyPool.size() + set_pre_split_keypool.size(), setInternalKeyPool.size());
+            assert(m_max_keypool_index < std::numeric_limits<int64_t>::max()); // How in the hell did you use so many keys?
+            int64_t index = ++m_max_keypool_index;
+
+            // TODO: implement keypools for all accounts?
+            CPubKey pubkey(GenerateNewKey(walletdb, fInternal));
+            if (!walletdb.WritePool(index, CKeyPool(pubkey, fInternal))) {
+                throw std::runtime_error(std::string(__func__) + ": writing generated key failed");
+            }
+
+            if (fInternal) {
+                setInternalKeyPool.insert(index);
+            } else {
+                setExternalKeyPool.insert(index);
+            }
+
+            m_pool_key_to_index[pubkey.GetID()] = index;
+            if (missingInternal + missingExternal > 0) {
+                LogPrintf("keypool added %d keys (%d internal), size=%u (%u internal)\n",
+                          missingInternal + missingExternal, missingInternal,
+                          setInternalKeyPool.size() + setExternalKeyPool.size(), setInternalKeyPool.size());
+            }
+
+            double dProgress = 100.f * index / (nTargetSize + 1);
+            LogPrintf("Loading wallet... (%3.2f %%)", dProgress);
         }
     }
-    NotifyCanGetAddressesChanged();
     return true;
 }
 
@@ -5707,6 +5747,8 @@ std::shared_ptr<CWallet> CWallet::CreateWalletFromFile(interfaces::Chain& chain,
     walletInstance->SetBroadcastTransactions(gArgs.GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
 
     {
+        walletInstance->WalletLogPrintf("setExternalKeyPool.size() = %u\n", walletInstance->KeypoolCountExternalKeys());
+        walletInstance->WalletLogPrintf("setInternalKeyPool.size() = %u\n", walletInstance->KeypoolCountInternalKeys());
         walletInstance->WalletLogPrintf("setKeyPool.size() = %u\n", walletInstance->GetKeyPoolSize());
         walletInstance->WalletLogPrintf("mapWallet.size() = %u\n", walletInstance->mapWallet.size());
         walletInstance->WalletLogPrintf("mapAddressBook.size() = %u\n", walletInstance->mapAddressBook.size());
