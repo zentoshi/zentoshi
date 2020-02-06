@@ -123,7 +123,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>Start/Stop Mixing</string>
+                 <string>Start Mixing</string>
                 </property>
                </widget>
               </item>
@@ -170,7 +170,7 @@
             </widget>
            </item>
            <item row="1" column="0">
-            <widget class="QFrame" name="">
+            <widget class="QFrame" name="frame">
              <property name="styleSheet">
               <string notr="true"/>
              </property>
@@ -304,7 +304,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>Enabled/Disabled</string>
+                 <string>Disabled</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

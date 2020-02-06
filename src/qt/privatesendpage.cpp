@@ -53,7 +53,7 @@ PrivateSendPage::PrivateSendPage(const PlatformStyle *platformStyle, QWidget *pa
     icon.addPixmap(icon.pixmap(QSize(64,64), QIcon::Normal), QIcon::Disabled); // also set the disabled icon because we are using a disabled QPushButton to work around missing HiDPI support of QLabel (https://bugreports.qt.io/browse/QTBUG-42503)
 
     // Disable any PS UI for masternode or when autobackup is disabled or failed for whatever reason
-    if(fMasternodeMode || nWalletBackups <= 0){
+    if(fMasternodeMode || nWalletBackups <= 0) {
         DisablePrivateSendCompletely();
         if (nWalletBackups <= 0) {
             ui->labelPrivateSendEnabled->setToolTip(tr("Automatic backups are disabled, no mixing available!"));
@@ -187,37 +187,32 @@ void PrivateSendPage::updatePrivateSendProgress()
         // when balance is zero just show info from settings
         strPrivateSendAmount = strPrivateSendAmount.remove(strPrivateSendAmount.indexOf("."), BitcoinUnits::decimals(nDisplayUnit) + 1);
         strAmountAndRounds = strPrivateSendAmount + " / " + tr("%n Rounds", "", privateSendClient.nPrivateSendRounds);
-
         ui->labelAmountRounds->setToolTip(tr("No inputs detected"));
         ui->labelAmountRounds->setText(strAmountAndRounds);
         return;
     }
 
     CAmount nAnonymizableBalance = walletModel->wallet().GetAnonymizableBalance(false, false);
-
     CAmount nMaxToAnonymize = nAnonymizableBalance + m_balances.anonymized_balance;
+
     // If it's more than the anon threshold, limit to that.
-    if(nMaxToAnonymize > privateSendClient.nPrivateSendAmount*COIN) nMaxToAnonymize = privateSendClient.nPrivateSendAmount*COIN;
+    if(nMaxToAnonymize > privateSendClient.nPrivateSendAmount*COIN)
+       nMaxToAnonymize = privateSendClient.nPrivateSendAmount*COIN;
 
     if(nMaxToAnonymize == 0) return;
 
     if(nMaxToAnonymize >= privateSendClient.nPrivateSendAmount * COIN) {
-        ui->labelAmountRounds->setToolTip(tr("Found enough compatible inputs to anonymize %1")
-                                          .arg(strPrivateSendAmount));
+        ui->labelAmountRounds->setToolTip(tr("Found enough compatible inputs to anonymize %1").arg(strPrivateSendAmount));
         strPrivateSendAmount = strPrivateSendAmount.remove(strPrivateSendAmount.indexOf("."), BitcoinUnits::decimals(nDisplayUnit) + 1);
         strAmountAndRounds = strPrivateSendAmount + " / " + tr("%n Rounds", "", privateSendClient.nPrivateSendRounds);
     } else {
         QString strMaxToAnonymize = BitcoinUnits::formatHtmlWithUnit(nDisplayUnit, nMaxToAnonymize, false, BitcoinUnits::separatorAlways);
         ui->labelAmountRounds->setToolTip(tr("Not enough compatible inputs to anonymize <span style='color:red;'>%1</span>,<br>"
-                                             "will anonymize <span style='color:red;'>%2</span> instead")
-                                          .arg(strPrivateSendAmount)
-                                          .arg(strMaxToAnonymize));
+                                             "will anonymize <span style='color:red;'>%2</span> instead").arg(strPrivateSendAmount).arg(strMaxToAnonymize));
         strMaxToAnonymize = strMaxToAnonymize.remove(strMaxToAnonymize.indexOf("."), BitcoinUnits::decimals(nDisplayUnit) + 1);
-        strAmountAndRounds = "<span style='color:red;'>" +
-                QString(BitcoinUnits::factor(nDisplayUnit) == 1 ? "" : "~") + strMaxToAnonymize +
-                " / " + tr("%n Rounds", "", privateSendClient.nPrivateSendRounds) + "</span>";
+        strAmountAndRounds = "<span style='color:red;'>" + QString(BitcoinUnits::factor(nDisplayUnit) == 1 ? "" : "~") + strMaxToAnonymize +
+                             " / " + tr("%n Rounds", "", privateSendClient.nPrivateSendRounds) + "</span>";
     }
-
     ui->labelAmountRounds->setText(strAmountAndRounds);
 
     if (!fShowAdvancedPSUI) return;
@@ -231,6 +226,7 @@ void PrivateSendPage::updatePrivateSendProgress()
     nDenominatedUnconfirmedBalance = walletModel->wallet().GetDenominatedBalance(true);
     nNormalizedAnonymizedBalance = walletModel->wallet().GetNormalizedAnonymizedBalance();
     nAverageAnonymizedRounds = walletModel->wallet().GetAverageAnonymizedRounds();
+
     // calculate parts of the progress, each of them shouldn't be higher than 1
     // progress of denominating
     float denomPart = 0;
@@ -305,8 +301,8 @@ void PrivateSendPage::privateSendStatus()
     if(((nBestHeight - privateSendClient.nCachedNumBlocks) / (GetTimeMillis() - nLastDSProgressBlockTime + 1) > 1)) return;
     nLastDSProgressBlockTime = GetTimeMillis();
 
-    QString strKeysLeftText(tr("keys left: %1").arg(pwallet->nKeysLeftSinceAutoBackup));
-    if(pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+    QString strKeysLeftText(tr("keys left: %1").arg(GetMainWallet()->nKeysLeftSinceAutoBackup));
+    if(GetMainWallet()->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
         strKeysLeftText = "<span>" + strKeysLeftText + "</span>";
     }
     ui->labelPrivateSendEnabled->setToolTip(strKeysLeftText);
@@ -329,7 +325,7 @@ void PrivateSendPage::privateSendStatus()
     }
 
     // Construct status string
-    if (nWalletBackups > 0 && pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+    if (nWalletBackups > 0 && GetMainWallet()->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
         QSettings settings;
         if(settings.value("fLowKeysWarning").toBool()) {
             QString strWarn =   tr("Very low number of keys left since last automatic backup!") + "<br><br>" +
@@ -346,7 +342,7 @@ void PrivateSendPage::privateSendStatus()
 
         std::string strBackupWarning;
         std::string strBackupError;
-        if(!AutoBackupWallet(vpwallets[0], "", strBackupWarning, strBackupError)) {
+        if(!AutoBackupWallet(GetMainWallet(), "", strBackupWarning, strBackupError)) {
             if (!strBackupWarning.empty()) {
                 // It's still more or less safe to continue but warn user anyway
                 LogPrint(BCLog::PRIVATESEND, "OverviewPage::privateSendStatus -- WARNING! Something went wrong on automatic backup: %s\n", strBackupWarning);
@@ -434,9 +430,10 @@ void PrivateSendPage::togglePrivateSend()
                 QMessageBox::Ok, QMessageBox::Ok);
         settings.setValue("hasMixed", "hasMixed");
     }
+
     if(!privateSendClient.fEnablePrivateSend){
         CCoinControl coin_control;
-        CAmount nBalance = pwallet->GetBalance(0, coin_control.m_avoid_address_reuse).m_mine_trusted;
+        CAmount nBalance = GetMainWallet()->GetBalance(0, coin_control.m_avoid_address_reuse).m_mine_trusted;
         const CAmount nMinAmount = CPrivateSend::GetSmallestDenomination() + CPrivateSend::GetMaxCollateralAmount();
         if(nBalance < nMinAmount){
             QString strMinAmount(BitcoinUnits::formatWithUnit(nDisplayUnit, nMinAmount));
@@ -460,10 +457,12 @@ void PrivateSendPage::togglePrivateSend()
 
     }
 
-    privateSendClient.fEnablePrivateSend = !privateSendClient.fEnablePrivateSend;
+    if (privateSendClient.fEnablePrivateSend) {
+        privateSendClient.fPrivateSendRunning = !privateSendClient.fPrivateSendRunning;
+    }
     privateSendClient.nCachedNumBlocks = std::numeric_limits<int>::max();
 
-    if(!privateSendClient.fEnablePrivateSend){
+    if(!privateSendClient.fPrivateSendRunning) {
         ui->togglePrivateSend->setText(tr("Start Mixing"));
         privateSendClient.ResetPool();
     } else {

@@ -372,6 +372,8 @@ protected:
 
     void SetNull();
 
+    bool IsValidInOuts(const std::vector<CTxIn>& vin, const std::vector<CTxOut>& vout, PoolMessage& nMessageIDRet, bool* fConsumeCollateralRet) const;
+
 public:
     int nSessionDenom; //Users must submit a denom matching this
 
@@ -463,6 +465,7 @@ public:
     static CPrivateSendBroadcastTx GetDSTX(const uint256& hash);
 
     static void UpdatedBlockTip(const CBlockIndex* pindex);
+    static void NotifyChainLock(const CBlockIndex* pindex);
 
     static void UpdateDSTXConfirmedHeight(const CTransactionRef& tx, int nHeight);
     static void TransactionAddedToMempool(const CTransactionRef& tx);

@@ -97,7 +97,6 @@ bool CPrivateSendBroadcastTx::Sign()
 {
     if (!fMasternodeMode) return false;
 
-
     uint256 hash = GetSignatureHash();
 
     CBLSSignature sig = activeMasternodeInfo.blsKeyOperator->Sign(hash);
@@ -111,7 +110,6 @@ bool CPrivateSendBroadcastTx::Sign()
 
 bool CPrivateSendBroadcastTx::CheckSignature(const CBLSPublicKey& blsPubKey) const
 {
-
     uint256 hash = GetSignatureHash();
 
     CBLSSignature sig;
@@ -227,6 +225,94 @@ std::string CPrivateSendBaseSession::GetStateString() const
     }
 }
 
+bool CPrivateSendBaseSession::IsValidInOuts(const std::vector<CTxIn>& vin, const std::vector<CTxOut>& vout, PoolMessage& nMessageIDRet, bool* fConsumeCollateralRet) const
+{
+    std::set<CScript> setScripPubKeys;
+    nMessageIDRet = MSG_NOERR;
+    if (fConsumeCollateralRet) *fConsumeCollateralRet = false;
+
+    if (vin.size() != vout.size()) {
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::%s -- ERROR: inputs vs outputs size mismatch! %d vs %d\n", __func__, vin.size(), vout.size());
+        nMessageIDRet = ERR_SIZE_MISMATCH;
+        if (fConsumeCollateralRet) *fConsumeCollateralRet = true;
+        return false;
+    }
+
+    auto checkTxOut = [&](const CTxOut& txout) {
+        std::vector<CTxOut> vecTxOut{txout};
+        int nDenom = CPrivateSend::GetDenominations(vecTxOut);
+        if (nDenom != nSessionDenom) {
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::IsValidInOuts -- ERROR: incompatible denom %d (%s) != nSessionDenom %d (%s)\n",
+                    nDenom, CPrivateSend::GetDenominationsToString(nDenom), nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom));
+            nMessageIDRet = ERR_DENOM;
+            if (fConsumeCollateralRet) *fConsumeCollateralRet = true;
+            return false;
+        }
+        if (!txout.scriptPubKey.IsPayToPublicKeyHash()) {
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::IsValidInOuts -- ERROR: invalid script! scriptPubKey=%s\n", ScriptToAsmStr(txout.scriptPubKey));
+            nMessageIDRet = ERR_INVALID_SCRIPT;
+            if (fConsumeCollateralRet) *fConsumeCollateralRet = true;
+            return false;
+        }
+        if (!setScripPubKeys.insert(txout.scriptPubKey).second) {
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::IsValidInOuts -- ERROR: already have this script! scriptPubKey=%s\n", ScriptToAsmStr(txout.scriptPubKey));
+            nMessageIDRet = ERR_ALREADY_HAVE;
+            if (fConsumeCollateralRet) *fConsumeCollateralRet = true;
+            return false;
+        }
+        // IsPayToPublicKeyHash() above already checks for scriptPubKey size,
+        // no need to double check, hence no usage of ERR_NON_STANDARD_PUBKEY
+        return true;
+    };
+
+    CAmount nFees{0};
+
+    for (const auto& txout : vout) {
+        if (!checkTxOut(txout)) {
+            return false;
+        }
+        nFees -= txout.nValue;
+    }
+
+    CCoinsViewCache& chain_view = ::ChainstateActive().CoinsTip();
+    CCoinsViewMemPool viewMemPool(&chain_view, ::mempool);
+
+    for (const auto& txin : vin) {
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::%s -- txin=%s\n", __func__, txin.ToString());
+
+        if (txin.prevout.IsNull()) {
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::%s -- ERROR: invalid input!\n", __func__);
+            nMessageIDRet = ERR_INVALID_INPUT;
+            if (fConsumeCollateralRet) *fConsumeCollateralRet = true;
+            return false;
+        }
+
+        Coin coin;
+        if (!viewMemPool.GetCoin(txin.prevout, coin) || coin.IsSpent() ||
+            (coin.nHeight == MEMPOOL_HEIGHT && !llmq::quorumInstantSendManager->IsLocked(txin.prevout.hash))) {
+            LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::%s -- ERROR: missing, spent or non-locked mempool input! txin=%s\n", __func__, txin.ToString());
+            nMessageIDRet = ERR_MISSING_TX;
+            return false;
+        }
+
+        if (!checkTxOut(coin.out)) {
+            return false;
+        }
+
+        nFees += coin.out.nValue;
+    }
+
+    // The same size and denom for inputs and outputs ensures their total value is also the same,
+    // no need to double check. If not, we are doing smth wrong, bail out.
+    if (nFees != 0) {
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendBaseSession::%s -- ERROR: non-zero fees! fees: %lld\n", __func__, nFees);
+        nMessageIDRet = ERR_FEES;
+        return false;
+    }
+
+    return true;
+}
+
 // Definitions for static data members
 std::vector<CAmount> CPrivateSend::vecStandardDenominations;
 std::map<uint256, CPrivateSendBroadcastTx> CPrivateSend::mapDSTX;
@@ -296,6 +382,7 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
     }
 
     LogPrint(BCLog::PRIVATESEND, "CPrivateSend::IsCollateralValid -- %s", txCollateral.ToString());
+
     {
         LOCK(cs_main);
         CValidationState validationState;
@@ -514,6 +601,13 @@ void CPrivateSend::CheckDSTXes(const CBlockIndex* pindex)
 }
 
 void CPrivateSend::UpdatedBlockTip(const CBlockIndex* pindex)
+{
+    if (pindex && masternodeSync.IsBlockchainSynced()) {
+        CheckDSTXes(pindex);
+    }
+}
+
+void CPrivateSend::NotifyChainLock(const CBlockIndex* pindex)
 {
     if (pindex && masternodeSync.IsBlockchainSynced()) {
         CheckDSTXes(pindex);

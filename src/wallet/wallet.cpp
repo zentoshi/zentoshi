@@ -3876,11 +3876,6 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                         }
                     }
 
-                    if (fUseInstantSend && nValueIn > sporkManager.GetSporkValue(SPORK_5_INSTANTSEND_MAX_VALUE) * COIN) {
-                        strFailReason += " " + strprintf(_("InstantSend doesn't support sending values that high yet. Transactions are currently limited to %1 DASH."), sporkManager.GetSporkValue(SPORK_5_INSTANTSEND_MAX_VALUE)).translated;
-                        return false;
-                    }
-
                     for (auto pcoin : setCoins) {
                         CAmount nCredit = pcoin.txout.nValue;
                         //The coin age after the next block (depth+1) is used instead of the current,

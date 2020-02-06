@@ -735,14 +735,14 @@ bool CPrivateSendClientManager::CheckAutomaticBackup()
     if (pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_STOP) {
         // We should never get here via mixing itself but probably smth else is still actively using keypool
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d, no mixing available.\n", pwallet->nKeysLeftSinceAutoBackup);
-        strAutoDenomResult = strprintf(("Very low number of keys left: %d"), vpwallets[0]->nKeysLeftSinceAutoBackup);
+        strAutoDenomResult = strprintf(("Very low number of keys left: %d"), GetMainWallet()->nKeysLeftSinceAutoBackup);
         // It's getting really dangerous, stop mixing
         fPrivateSendRunning = false;
         return false;
-    } else if (vpwallets[0]->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
+    } else if (GetMainWallet()->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING) {
         // Low number of keys left but it's still more or less safe to continue
-        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d\n", vpwallets[0]->nKeysLeftSinceAutoBackup);
-        strAutoDenomResult = strprintf(("Very low number of keys left: %d"), vpwallets[0]->nKeysLeftSinceAutoBackup);
+        LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Very low number of keys left: %d\n", GetMainWallet()->nKeysLeftSinceAutoBackup);
+        strAutoDenomResult = strprintf(("Very low number of keys left: %d"), GetMainWallet()->nKeysLeftSinceAutoBackup);
 
         if (fCreateAutoBackups) {
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Trying to create new backup.\n");
@@ -767,7 +767,7 @@ bool CPrivateSendClientManager::CheckAutomaticBackup()
         }
     }
 
-    LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Keys left since latest backup: %d\n", vpwallets[0]->nKeysLeftSinceAutoBackup);
+    LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientManager::CheckAutomaticBackup -- Keys left since latest backup: %d\n", GetMainWallet()->nKeysLeftSinceAutoBackup);
 
     return true;
 }
@@ -797,7 +797,7 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
     {
         LOCK2(cs_main, pwallet->cs_wallet);
 
-        if (!fDryRun && vpwallets[0]->IsLocked()) {
+        if (!fDryRun && GetMainWallet()->IsLocked()) {
             strAutoDenomResult = ("Wallet is locked.");
             return false;
         }
@@ -820,7 +820,7 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         }
 
         // check if there is anything left to do
-        CAmount nBalanceAnonymized = vpwallets[0]->GetAnonymizedBalance();
+        CAmount nBalanceAnonymized = GetMainWallet()->GetAnonymizedBalance();
         nBalanceNeedsAnonymized = privateSendClient.nPrivateSendAmount*COIN - nBalanceAnonymized;
 
         if (nBalanceNeedsAnonymized < 0) {
@@ -832,13 +832,13 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         CAmount nValueMin = CPrivateSend::GetSmallestDenomination();
 
         // if there are no confirmed DS collateral inputs yet
-        if (!vpwallets[0]->HasCollateralInputs()) {
+        if (!GetMainWallet()->HasCollateralInputs()) {
             // should have some additional amount for them
             nValueMin += CPrivateSend::GetMaxCollateralAmount();
         }
 
         // including denoms but applying some restrictions
-        CAmount nBalanceAnonymizable = vpwallets[0]->GetAnonymizableBalance();
+        CAmount nBalanceAnonymizable = GetMainWallet()->GetAnonymizableBalance();
 
         // anonymizable balance is way too small
         if (nBalanceAnonymizable < nValueMin) {
@@ -848,10 +848,10 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         }
 
         // excluding denoms
-        CAmount nBalanceAnonimizableNonDenom = vpwallets[0]->GetAnonymizableBalance(true);
+        CAmount nBalanceAnonimizableNonDenom = GetMainWallet()->GetAnonymizableBalance(true);
         // denoms
-        CAmount nBalanceDenominatedConf = vpwallets[0]->GetDenominatedBalance();
-        CAmount nBalanceDenominatedUnconf = vpwallets[0]->GetDenominatedBalance(true);
+        CAmount nBalanceDenominatedConf = GetMainWallet()->GetDenominatedBalance();
+        CAmount nBalanceDenominatedUnconf = GetMainWallet()->GetDenominatedBalance(true);
         CAmount nBalanceDenominated = nBalanceDenominatedConf + nBalanceDenominatedUnconf;
         CAmount nBalanceToDenominate = privateSendClient.nPrivateSendAmount * COIN - nBalanceDenominated;
 
@@ -900,8 +900,8 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         }
 
         //check if we have the collateral sized inputs
-        if (!vpwallets[0]->HasCollateralInputs()) {
-            return !vpwallets[0]->HasCollateralInputs(false) && MakeCollateralAmounts(connman);
+        if (!GetMainWallet()->HasCollateralInputs()) {
+            return !GetMainWallet()->HasCollateralInputs(false) && MakeCollateralAmounts(connman);
         }
 
         if (nSessionID) {
@@ -925,20 +925,20 @@ bool CPrivateSendClientSession::DoAutomaticDenominating(CConnman& connman, bool 
         //check our collateral and create new if needed
         std::string strReason;
         if (txMyCollateral == CMutableTransaction()) {
-            if (!vpwallets[0]->CreateCollateralTransaction(txMyCollateral, strReason)) {
+            if (!GetMainWallet()->CreateCollateralTransaction(txMyCollateral, strReason)) {
                 LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- create collateral error:%s\n", strReason);
                 return false;
             }
         } else {
             if (!CPrivateSend::IsCollateralValid(txMyCollateral)) {
                 LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- invalid collateral, recreating...\n");
-                if (!vpwallets[0]->CreateCollateralTransaction(txMyCollateral, strReason)) {
+                if (!GetMainWallet()->CreateCollateralTransaction(txMyCollateral, strReason)) {
                     LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::DoAutomaticDenominating -- create collateral error: %s\n", strReason);
                     return false;
                 }
             }
         }
-    } // LOCK2(cs_main, vpwallets[0]->cs_wallet);
+    } // LOCK2(cs_main, GetMainWallet()->cs_wallet);
 
     // Always attempt to join an existing queue
     if (JoinExistingQueue(nBalanceNeedsAnonymized, connman)) {
@@ -962,7 +962,7 @@ bool CPrivateSendClientManager::DoAutomaticDenominating(CConnman& connman, bool 
         return false;
     }
 
-    if (!fDryRun && vpwallets[0]->IsLocked()) {
+    if (!fDryRun && GetMainWallet()->IsLocked()) {
         strAutoDenomResult = ("Wallet is locked.");
         return false;
     }
@@ -1511,7 +1511,7 @@ bool CPrivateSendClientSession::MakeCollateralAmounts(const CompactTallyItem& ta
     // use the same nCachedLastSuccessBlock as for DS mixing to prevent race
     CValidationState state;
     mapValue_t mapValue;
-    if (!vpwallets[0]->CommitTransaction(wtx, std::move(mapValue), {}, state)) {
+    if (!GetMainWallet()->CommitTransaction(wtx, std::move(mapValue), {}, state)) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::MakeCollateralAmounts -- CommitTransaction failed! Reason given: %s\n", state.GetRejectReason());
         return false;
     }
@@ -1526,14 +1526,14 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
 {
     if (!privateSendClient.fEnablePrivateSend || !privateSendClient.fPrivateSendRunning) return false;
 
-    LOCK2(cs_main, vpwallets[0]->cs_wallet);
+    LOCK2(cs_main, GetMainWallet()->cs_wallet);
 
     // NOTE: We do not allow txes larger than 100kB, so we have to limit number of inputs here.
     // We still want to consume a lot of inputs to avoid creating only smaller denoms though.
     // Knowing that each CTxIn is at least 148b big, 400 inputs should take 400 x ~148b = ~60kB.
     // This still leaves more than enough room for another data of typical CreateDenominated tx.
     std::vector<CompactTallyItem> vecTally;
-    if (!vpwallets[0]->SelectCoinsGroupedByAddresses(vecTally, true, true, true, 400)) {
+    if (!GetMainWallet()->SelectCoinsGroupedByAddresses(vecTally, true, true, true, 400)) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- SelectCoinsGroupedByAddresses can't find any inputs!\n");
         return false;
     }
@@ -1543,7 +1543,7 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
         return a.nAmount > b.nAmount;
     });
 
-    bool fCreateMixingCollaterals = !vpwallets[0]->HasCollateralInputs();
+    bool fCreateMixingCollaterals = !GetMainWallet()->HasCollateralInputs();
 
     for (const auto& item : vecTally) {
         if (!CreateDenominated(nBalanceToDenominate, item, fCreateMixingCollaterals, connman)) continue;
@@ -1598,7 +1598,7 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
         }
 
         // find new denoms to skip if any (ignore the largest one)
-        if (nDenomValue != vecStandardDenoms.front() && vpwallets[0]->CountInputsWithAmount(nDenomValue) > privateSendClient.nPrivateSendDenoms) {
+        if (nDenomValue != vecStandardDenoms.front() && GetMainWallet()->CountInputsWithAmount(nDenomValue) > privateSendClient.nPrivateSendDenoms) {
             strAutoDenomResult = strprintf(("Too many %f denominations, removing."), (float)nDenomValue / COIN);
             LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- %s\n", strAutoDenomResult);
             privateSendClient.AddSkippedDenom(nDenomValue);
@@ -1657,7 +1657,7 @@ bool CPrivateSendClientSession::CreateDenominated(CAmount nBalanceToDenominate, 
     // make our change address
     ReserveDestination reservekeyChange(pwallet);
 
-    bool fSuccess = vpwallets[0]->CreateTransaction(vecSend, wtx, /*reservekeyChange,*/ nFeeRet, nChangePosRet, strFail, coinControl);
+    bool fSuccess = GetMainWallet()->CreateTransaction(vecSend, wtx, /*reservekeyChange,*/ nFeeRet, nChangePosRet, strFail, coinControl);
     if (!fSuccess) {
         LogPrint(BCLog::PRIVATESEND, "CPrivateSendClientSession::CreateDenominated -- Error: %s\n", strFail);
         keyHolderStorageDenom.ReturnAll();
