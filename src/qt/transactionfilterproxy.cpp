@@ -21,6 +21,7 @@ TransactionFilterProxy::TransactionFilterProxy(QObject *parent) :
     m_search_string(),
     typeFilter(ALL_TYPES),
     watchOnlyFilter(WatchOnlyFilter_All),
+    instantsendFilter(InstantSendFilter_All),
     minAmount(0),
     limitRows(-1),
     showInactive(true)
@@ -30,7 +31,7 @@ TransactionFilterProxy::TransactionFilterProxy(QObject *parent) :
 bool TransactionFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
-
+    bool lockedByInstantSend = index.data(TransactionTableModel::InstantSendRole).toBool();
     int status = index.data(TransactionTableModel::StatusRole).toInt();
     if (!showInactive && status == TransactionStatus::Conflicted)
         return false;
@@ -47,6 +48,11 @@ bool TransactionFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &
 
     QDateTime datetime = index.data(TransactionTableModel::DateRole).toDateTime();
     if (datetime < dateFrom || datetime > dateTo)
+        return false;
+
+    if (lockedByInstantSend && instantsendFilter == InstantSendFilter_No)
+        return false;
+    if (!lockedByInstantSend && instantsendFilter == InstantSendFilter_Yes)
         return false;
 
     QString address = index.data(TransactionTableModel::AddressRole).toString();
@@ -94,6 +100,12 @@ void TransactionFilterProxy::setMinAmount(const CAmount& minimum)
 void TransactionFilterProxy::setWatchOnlyFilter(WatchOnlyFilter filter)
 {
     this->watchOnlyFilter = filter;
+    invalidateFilter();
+}
+
+void TransactionFilterProxy::setInstantSendFilter(InstantSendFilter filter)
+{
+    this->instantsendFilter = filter;
     invalidateFilter();
 }
 

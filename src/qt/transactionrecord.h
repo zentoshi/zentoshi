@@ -24,8 +24,9 @@ class TransactionStatus
 {
 public:
     TransactionStatus():
-        countsForBalance(false), sortKey(""),
-        matures_in(0), status(Unconfirmed), depth(0), open_for(0), cur_num_blocks(-1)
+        countsForBalance(false), lockedByInstantSend(false), lockedByChainLocks(false), sortKey(""),
+        matures_in(0), status(Offline), depth(0), open_for(0), cur_num_blocks(-1),
+        cachedChainLockHeight(-1), needsUpdate(false)
     { }
 
     enum Status {
@@ -47,7 +48,12 @@ public:
     /// Transaction counts towards available balance
     bool countsForBalance;
     /// Sorting key based on status
+    bool lockedByInstantSend;
+    /// Transaction was locked via ChainLocks
+    bool lockedByChainLocks;
     std::string sortKey;
+    /// Label
+    QString label;
 
     /** @name Generated (mined) transactions
        @{*/
@@ -65,6 +71,11 @@ public:
 
     /** Current number of blocks (to know whether cached status is still valid) */
     int cur_num_blocks;
+
+    //** Know when to update transaction for IS-locks **/
+    int cachedNumISLocks;
+    //** Know when to update transaction for chainlocks **/
+    int cachedChainLockHeight;
 
     bool needsUpdate;
 };
@@ -141,18 +152,18 @@ public:
     bool involvesWatchAddress;
 
     /** Return the unique identifier for this transaction (part) */
-    QString getTxHash() const;
+    QString getTxID() const;
 
     /** Return the output index of the subtransaction  */
     int getOutputIndex() const;
 
     /** Update status from core wallet tx.
      */
-    void updateStatus(const interfaces::WalletTxStatus& wtx, int numBlocks, int64_t block_time);
+    void updateStatus(const interfaces::WalletTxStatus& wtx, int numBlocks, int64_t block_time, int numISLocks, int chainLockHeight);
 
     /** Return whether a status update is needed.
      */
-    bool statusUpdateNeeded(int numBlocks) const;
+    bool statusUpdateNeeded(int numBlocks, int numISLocks, int chainLockHeight) const;
 };
 
 #endif // BITCOIN_QT_TRANSACTIONRECORD_H

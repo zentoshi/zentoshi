@@ -10,19 +10,26 @@
 #include <chain.h>
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
+#include <evo/providertx.h>
 #include <fs.h>
+#include <governance/governance.h>
 #include <interfaces/chain.h>
 #include <interfaces/wallet.h>
 #include <kernel.h>
 #include <key.h>
 #include <key_io.h>
+#include <llmq/quorums_chainlocks.h>
+#include <llmq/quorums_instantsend.h>
+#include <masternode/masternode-payments.h>
 #include <policy/fees.h>
 #include <policy/policy.h>
 #include <primitives/block.h>
 #include <primitives/transaction.h>
+#include <privatesend/privatesend-client.h>
 #include <script/descriptor.h>
 #include <script/script.h>
 #include <script/signingprovider.h>
+#include <spork.h>
 #include <util/bip32.h>
 #include <util/error.h>
 #include <util/fees.h>
@@ -33,17 +40,6 @@
 #include <validation.h>
 #include <wallet/coincontrol.h>
 #include <wallet/fees.h>
-
-#include <governance/governance.h>
-
-#include <privatesend/privatesend-client.h>
-#include <spork.h>
-
-#include <evo/providertx.h>
-
-#include <llmq/quorums_chainlocks.h>
-#include <llmq/quorums_instantsend.h>
-#include <masternode/masternode-payments.h>
 
 #include <algorithm>
 #include <assert.h>
@@ -1359,7 +1355,7 @@ bool CWallet::AbandonTransaction(interfaces::Chain::Lock& locked_chain, const ui
     auto it = mapWallet.find(hashTx);
     assert(it != mapWallet.end());
     CWalletTx& origtx = it->second;
-    if (origtx.GetDepthInMainChain(locked_chain) != 0 || origtx.InMempool()) {
+    if (origtx.GetDepthInMainChain(locked_chain) != 0 || origtx.InMempool() || origtx.IsLockedByInstantSend()) {
         return false;
     }
 
@@ -2311,7 +2307,7 @@ void CWallet::ReacceptWalletTransactions(interfaces::Chain::Lock& locked_chain)
 
         int nDepth = wtx.GetDepthInMainChain(locked_chain);
 
-        if (!(wtx.IsCoinBase() || wtx.IsCoinStake()) && (nDepth == 0 && !wtx.isAbandoned())) {
+        if (!(wtx.IsCoinBase() || wtx.IsCoinStake()) && !wtx.IsLockedByInstantSend() && (nDepth == 0 && !wtx.isAbandoned())) {
             mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
         }
     }
@@ -2766,7 +2762,7 @@ CAmount CWallet::GetUnconfirmedBalance() const
         LOCK(cs_wallet);
         for (const auto& entry : mapWallet) {
             const CWalletTx& wtx = entry.second;
-            if (!wtx.IsTrusted(*locked_chain) && wtx.GetDepthInMainChain(*locked_chain) == 0 && wtx.InMempool())
+            if (!wtx.IsTrusted(*locked_chain) && wtx.GetDepthInMainChain(*locked_chain) == 0 && !wtx.IsLockedByInstantSend() && wtx.InMempool())
                 nTotal += wtx.GetAvailableCredit(*locked_chain);
         }
     } // locked_chain and cs_wallet
@@ -4932,7 +4928,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances(interfaces::Chain:
                 continue;
 
             int nDepth = wtx.GetDepthInMainChain(locked_chain);
-            if (nDepth < (wtx.IsFromMe(ISMINE_ALL) ? 0 : 1))
+            if ((nDepth < (wtx.IsFromMe(ISMINE_ALL) ? 0 : 1)) && !wtx.IsLockedByInstantSend())
                 continue;
 
             for (unsigned int i = 0; i < wtx.tx->vout.size(); i++)
@@ -5950,6 +5946,15 @@ bool CWalletTx::IsImmatureCoinBase(interfaces::Chain::Lock& locked_chain) const
 {
     // note GetBlocksToMaturity is 0 for non-coinbase tx
     return GetBlocksToMaturity(locked_chain) > 0;
+}
+
+bool CWalletTx::IsChainLocked() const
+{
+    AssertLockHeld(cs_main);
+    BlockMap::iterator mi = ::BlockIndex().find(hashBlock);
+    if (mi != ::BlockIndex().end() && mi->second != nullptr)
+        return llmq::chainLocksHandler->HasChainLock(mi->second->nHeight, hashBlock);
+    return false;
 }
 
 bool CWalletTx::AcceptToMemoryPool(interfaces::Chain::Lock& locked_chain, CValidationState& state)

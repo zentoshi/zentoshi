@@ -53,8 +53,9 @@ public:
     enum ColumnWidths {
         STATUS_COLUMN_WIDTH = 30,
         WATCHONLY_COLUMN_WIDTH = 23,
+        INSTANTSEND_COLUMN_WIDTH = 23,
         DATE_COLUMN_WIDTH = 120,
-        TYPE_COLUMN_WIDTH = 113,
+        TYPE_COLUMN_WIDTH = 140,
         AMOUNT_MINIMUM_COLUMN_WIDTH = 120,
         MINIMUM_COLUMN_WIDTH = 23
     };
@@ -63,11 +64,11 @@ private:
     WalletModel *model;
     TransactionFilterProxy *transactionProxyModel;
     QTableView *transactionView;
-
     QComboBox *dateWidget;
     QComboBox *typeWidget;
     QComboBox *watchOnlyWidget;
     QLineEdit *search_widget;
+    QComboBox *instantsendWidget;
     QLineEdit *amountWidget;
 
     QMenu *contextMenu;
@@ -114,6 +115,7 @@ public Q_SLOTS:
     void chooseDate(int idx);
     void chooseType(int idx);
     void chooseWatchonly(int idx);
+    void chooseInstantSend(int idx);
     void changedAmount();
     void changedSearch();
     void exportClicked();

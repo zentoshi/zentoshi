@@ -78,6 +78,8 @@ WalletTxStatus MakeWalletTxStatus(interfaces::Chain::Lock& locked_chain, const C
     result.is_coinbase = wtx.IsCoinBase();
     result.is_coinstake = wtx.IsCoinStake();
     result.is_in_main_chain = wtx.IsInMainChain(locked_chain);
+    result.is_chain_locked = wtx.IsChainLocked();
+    result.is_locked_instantsend = wtx.IsLockedByInstantSend();
     return result;
 }
 
@@ -512,6 +514,14 @@ public:
     std::unique_ptr<Handler> handleCanGetAddressesChanged(CanGetAddressesChangedFn fn) override
     {
         return MakeHandler(m_wallet->NotifyCanGetAddressesChanged.connect(fn));
+    }
+    std::unique_ptr<Handler> handleNotifyISLockReceived(NotifyISLockReceivedFn fn) override
+    {
+        return MakeHandler(m_wallet->NotifyISLockReceived.connect(fn));
+    }
+    std::unique_ptr<Handler> handleChainLockReceived(ChainLockReceivedFn fn) override
+    {
+        return MakeHandler(m_wallet->NotifyChainLockReceived.connect(fn));
     }
     std::shared_ptr<CWallet> m_wallet;
 };

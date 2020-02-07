@@ -485,6 +485,17 @@ static void NotifyTransactionChanged(WalletModel *walletmodel, const uint256 &ha
     assert(invoked);
 }
 
+static void NotifyISLockReceived(WalletModel *walletmodel)
+{
+    QMetaObject::invokeMethod(walletmodel, "updateNumISLocks", Qt::QueuedConnection);
+}
+
+static void NotifyChainLockReceived(WalletModel *walletmodel, int chainLockHeight)
+{
+    QMetaObject::invokeMethod(walletmodel, "updateChainLockHeight", Qt::QueuedConnection,
+                              Q_ARG(int, chainLockHeight));
+}
+
 static void ShowProgress(WalletModel *walletmodel, const std::string &title, int nProgress)
 {
     // emits signal "showProgress"

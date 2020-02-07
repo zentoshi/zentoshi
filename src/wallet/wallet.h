@@ -406,6 +406,43 @@ struct COutputEntry
 class CMerkleTx
 {
 public:
+    CTransactionRef tx;
+    uint256 hashBlock;
+
+    /* An nIndex == -1 means that hashBlock (in nonzero) refers to the earliest
+     * block in the chain we know this or any in-wallet dependency conflicts
+     * with. Older clients interpret nIndex == -1 as unconfirmed for backward
+     * compatibility.
+     */
+    int nIndex;
+
+    CMerkleTx()
+    {
+        SetTx(MakeTransactionRef());
+        Init();
+    }
+
+    CMerkleTx(CTransactionRef arg)
+    {
+        SetTx(std::move(arg));
+        Init();
+    }
+
+    /** Helper conversion operator to allow passing CMerkleTx where CTransaction is expected.
+     *  TODO: adapt callers and remove this operator. */
+    operator const CTransaction&() const { return *tx; }
+
+    void Init()
+    {
+        hashBlock = uint256();
+        nIndex = -1;
+    }
+
+    void SetTx(CTransactionRef arg)
+    {
+        tx = std::move(arg);
+    }
+
     template<typename Stream>
     void Unserialize(Stream& s)
     {
@@ -416,6 +453,7 @@ public:
 
         s >> tx >> hashBlock >> vMerkleBranch >> nIndex;
     }
+    const uint256& GetHash() const { return tx->GetHash(); }
 };
 
 //Get the marginal bytes of spending the specified output
@@ -425,7 +463,7 @@ int CalculateMaximumSignedInputSize(const CTxOut& txout, const CWallet* pwallet,
  * A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
  */
-class CWalletTx
+class CWalletTx : public CMerkleTx
 {
 private:
     const CWallet* pwallet;
@@ -957,6 +995,9 @@ private:
     void GenerateNewHDChain();
     bool SetCryptedHDChain(const CHDChain& chain, bool memonly);
     bool GetDecryptedHDChain(CHDChain& hdChainRet);
+
+    bool IsLockedByInstantSend() const;
+    bool IsChainLocked() const;
 
     /**
      * Private version of AddWatchOnly method which does not accept a
