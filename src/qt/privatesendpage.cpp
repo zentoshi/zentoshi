@@ -192,7 +192,7 @@ void PrivateSendPage::updatePrivateSendProgress()
         return;
     }
 
-    CAmount nAnonymizableBalance = walletModel->wallet().GetAnonymizableBalance(false, false);
+    CAmount nAnonymizableBalance = GetMainWallet()->GetAnonymizableBalance(false, false);
     CAmount nMaxToAnonymize = nAnonymizableBalance + m_balances.anonymized_balance;
 
     // If it's more than the anon threshold, limit to that.
@@ -222,10 +222,10 @@ void PrivateSendPage::updatePrivateSendProgress()
     CAmount nNormalizedAnonymizedBalance;
     float nAverageAnonymizedRounds;
 
-    nDenominatedConfirmedBalance = walletModel->wallet().GetDenominatedBalance();
-    nDenominatedUnconfirmedBalance = walletModel->wallet().GetDenominatedBalance(true);
-    nNormalizedAnonymizedBalance = walletModel->wallet().GetNormalizedAnonymizedBalance();
-    nAverageAnonymizedRounds = walletModel->wallet().GetAverageAnonymizedRounds();
+    nDenominatedConfirmedBalance = GetMainWallet()->GetDenominatedBalance();
+    nDenominatedUnconfirmedBalance = GetMainWallet()->GetDenominatedBalance(true);
+    nNormalizedAnonymizedBalance = GetMainWallet()->GetNormalizedAnonymizedBalance();
+    nAverageAnonymizedRounds = GetMainWallet()->GetAverageAnonymizedRounds();
 
     // calculate parts of the progress, each of them shouldn't be higher than 1
     // progress of denominating
@@ -244,7 +244,7 @@ void PrivateSendPage::updatePrivateSendProgress()
     anonNormPart = anonNormPart > 1 ? 1 : anonNormPart;
     anonNormPart *= 100;
 
-    anonFullPart = (float)m_balances.anonymized_balance / nMaxToAnonymize;
+    anonFullPart = (float)nNormalizedAnonymizedBalance / nMaxToAnonymize;
     anonFullPart = anonFullPart > 1 ? 1 : anonFullPart;
     anonFullPart *= 100;
 

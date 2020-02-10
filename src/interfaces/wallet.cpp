@@ -57,9 +57,14 @@ WalletTx MakeWalletTx(interfaces::Chain::Lock& locked_chain, CWallet& wallet, co
     result.change = wtx.GetChange();
     result.time = wtx.GetTxTime();
     result.value_map = wtx.mapValue;
+    result.is_abandoned = wtx.isAbandoned();
     result.is_coinbase = wtx.IsCoinBase();
     result.is_coinstake = wtx.IsCoinStake();
+    result.is_in_mempool = wtx.InMempool();
+    result.time_received = wtx.nTimeReceived;
+    result.request_count = wtx.GetRequestCount();
     result.is_in_main_chain = wtx.IsInMainChain(locked_chain);
+    result.depth_in_main_chain = wtx.GetDepthInMainChain(locked_chain);
     return result;
 }
 
@@ -79,7 +84,10 @@ WalletTxStatus MakeWalletTxStatus(interfaces::Chain::Lock& locked_chain, const C
     result.is_coinstake = wtx.IsCoinStake();
     result.is_in_main_chain = wtx.IsInMainChain(locked_chain);
     result.is_chain_locked = wtx.IsChainLocked();
+    result.is_in_mempool = wtx.InMempool();
+    result.request_count = wtx.GetRequestCount();
     result.is_locked_instantsend = wtx.IsLockedByInstantSend();
+    result.depth_in_main_chain = wtx.GetDepthInMainChain(locked_chain);
     return result;
 }
 

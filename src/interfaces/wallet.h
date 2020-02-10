@@ -372,10 +372,17 @@ struct WalletTx
     CAmount debit;
     CAmount change;
     int64_t time;
+    unsigned int time_received;
     std::map<std::string, std::string> value_map;
+    bool is_abandoned;
     bool is_coinbase;
     bool is_coinstake;
+    bool is_chain_locked;
+    bool is_locked_instantsend;
     bool is_in_main_chain;
+    bool is_in_mempool;
+    int request_count = -1;
+    int depth_in_main_chain = -1;
 };
 
 //! Updated transaction status.
@@ -393,6 +400,8 @@ struct WalletTxStatus
     bool is_coinstake;
     bool is_in_main_chain;
     bool is_chain_locked;
+    bool is_in_mempool;
+    int request_count = -1;
     bool is_locked_instantsend;
 };
 

@@ -405,6 +405,10 @@ struct COutputEntry
  * a CWalletTx, but the deserialized values are discarded.**/
 class CMerkleTx
 {
+private:
+  /** Constant used in hashBlock to indicate tx has been abandoned */
+    static const uint256 ABANDON_HASH;
+
 public:
     CTransactionRef tx;
     uint256 hashBlock;
@@ -453,6 +457,7 @@ public:
 
         s >> tx >> hashBlock >> vMerkleBranch >> nIndex;
     }
+    bool hashUnset() const { return (hashBlock.IsNull() || hashBlock == ABANDON_HASH); }
     const uint256& GetHash() const { return tx->GetHash(); }
 };
 
@@ -467,11 +472,6 @@ class CWalletTx : public CMerkleTx
 {
 private:
     const CWallet* pwallet;
-
-    /** Constant used in hashBlock to indicate tx has been abandoned, only used at
-     * serialization/deserialization to avoid ambiguity with conflicted.
-     */
-    static const uint256 ABANDON_HASH;
 
 public:
     /**
@@ -756,6 +756,7 @@ public:
     bool IsTrusted(interfaces::Chain::Lock& locked_chain) const;
 
     int64_t GetTxTime() const;
+    int GetRequestCount() const;
 
     // Pass this transaction to node for mempool insertion and relay to peers if flag set to true
     bool SubmitMemoryPoolAndRelay(std::string& err_string, bool relay, interfaces::Chain::Lock& locked_chain);

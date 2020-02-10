@@ -37,15 +37,32 @@ QString TransactionDesc::FormatTxStatus(const interfaces::WalletTx& wtx, const i
     }
     else
     {
-        int nDepth = status.depth_in_main_chain;
-        if (nDepth < 0)
-            return tr("conflicted with a transaction with %1 confirmations").arg(-nDepth);
-        else if (nDepth == 0)
-            return tr("0/unconfirmed, %1").arg((inMempool ? tr("in memory pool") : tr("not in memory pool"))) + (status.is_abandoned ? ", "+tr("abandoned") : "");
-        else if (nDepth < 6)
-            return tr("%1/unconfirmed").arg(nDepth);
-        else
-            return tr("%1 confirmations").arg(nDepth);
+        int nDepth = wtx.depth_in_main_chain;
+        if (nDepth < 0) return tr("conflicted");
+
+        QString strTxStatus;
+        bool fOffline = (GetAdjustedTime() - wtx.time_received > 2 * 60) && (wtx.request_count == 0);
+        bool fChainLocked = wtx.is_chain_locked;
+
+        if (fOffline) {
+            strTxStatus = tr("%1/offline").arg(nDepth);
+        } else if (nDepth == 0) {
+            strTxStatus = tr("0/unconfirmed, %1").arg((wtx.is_in_mempool ? tr("in memory pool") : tr("not in memory pool"))) + (wtx.is_abandoned ? ", "+tr("abandoned") : "");
+        } else if (!fChainLocked && nDepth < 6) {
+            strTxStatus = tr("%1/unconfirmed").arg(nDepth);
+        } else {
+            strTxStatus = tr("%1 confirmations").arg(nDepth);
+            if (fChainLocked) {
+                strTxStatus += " (" + tr("locked via LLMQ based ChainLocks") + ")";
+                return strTxStatus;
+            }
+        }
+
+        if (wtx.is_locked_instantsend) {
+            strTxStatus += " (" + tr("verified via LLMQ based InstantSend") + ")";
+        }
+
+        return strTxStatus;
     }
 }
 
