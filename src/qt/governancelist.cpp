@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Zentoshi LLC
+// Copyright (c) 2019-2020 Zentoshi LLC
 
 #include "qt/governancelist.h"
 #include "qt/forms/ui_governancelist.h"

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Zentoshi LLC
+// Copyright (c) 2019-2020 Zentoshi LLC
 
 #ifndef GOVERNANCELIST_H
 #define GOVERNANCELIST_H
