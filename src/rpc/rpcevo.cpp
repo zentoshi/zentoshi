@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 The Dash Core developers
+// Copyright (c) 2018-2020 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -66,9 +66,14 @@ std::string GetHelpString(int nParamNum, std::string strParamName)
             "                              Only allowed when the ProRegTx had a non-zero operatorReward value.\n"
             "                              If set to an empty string, the currently active payout address is reused.\n"
         },
-        {"operatorPubKey",
+        {"operatorPubKey_register",
             "%d. \"operatorPubKey\"           (string, required) The operator BLS public key. The private key does not have to be known.\n"
             "                              It has to match the private key which is later used when operating the masternode.\n"
+        },
+        {"operatorPubKey_update",
+            "%d. \"operatorPubKey\"           (string, required) The operator BLS public key. The private key does not have to be known.\n"
+            "                              It has to match the private key which is later used when operating the masternode.\n"
+            "                              If set to an empty string, the currently active operator BLS public key is reused.\n"
         },
         {"operatorReward",
             "%d. \"operatorReward\"           (numeric, required) The fraction in %% to share with the operator. The value must be\n"
@@ -79,8 +84,12 @@ std::string GetHelpString(int nParamNum, std::string strParamName)
             "                              The private key belonging to this address must be known in your wallet. The address must\n"
             "                              be unused and must differ from the collateralAddress\n"
         },
-        {"payoutAddress",
+        {"payoutAddress_register",
             "%d. \"payoutAddress\"            (string, required) The zentoshi address to use for masternode reward payments.\n"
+        },
+        {"payoutAddress_update",
+            "%d. \"payoutAddress\"            (string, required) The zentoshi address to use for masternode reward payments.\n"
+            "                              If set to an empty string, the currently active payout address is reused.\n"
         },
         {"proTxHash",
             "%d. \"proTxHash\"                (string, required) The hash of the initial ProRegTx.\n"
@@ -88,10 +97,15 @@ std::string GetHelpString(int nParamNum, std::string strParamName)
         {"reason",
             "%d. reason                     (numeric, optional) The reason for masternode service revocation.\n"
         },
-        {"votingAddress",
+        {"votingAddress_register",
             "%d. \"votingAddress\"            (string, required) The voting key address. The private key does not have to be known by your wallet.\n"
             "                              It has to match the private key which is later used when voting on proposals.\n"
             "                              If set to an empty string, ownerAddress will be used.\n"
+        },
+        {"votingAddress_update",
+            "%d. \"votingAddress\"            (string, required) The voting key address. The private key does not have to be known by your wallet.\n"
+            "                              It has to match the private key which is later used when voting on proposals.\n"
+            "                              If set to an empty string, the currently active voting key address is reused.\n"
         },
     };
 
@@ -102,7 +116,7 @@ std::string GetHelpString(int nParamNum, std::string strParamName)
     return strprintf(it->second, nParamNum);
 }
 
-// Allows to specify Dash address or priv key. In case of Dash address, the priv key is taken from the wallet
+// Allows to specify Zentoshi address or priv key. In case of Zentoshi address, the priv key is taken from the wallet
 static CKey ParsePrivKey(CWallet* pwallet, const std::string &strKeyOrAddress, bool allowAddresses = true) {
     CTxDestination address = DecodeDestination(strKeyOrAddress);
     if (allowAddresses && IsValidDestination(address)) {
@@ -167,7 +181,7 @@ static CBLSSecretKey ParseBLSSecretKey(const std::string& hexKey, const std::str
 template<typename SpecialTxPayload>
 static void FundSpecialTx(CWallet* pwallet, CMutableTransaction& tx, const SpecialTxPayload& payload, const CTxDestination& fundDest)
 {
-    assert(pwallet != NULL);
+    assert(pwallet != nullptr);
     LOCK2(cs_main, pwallet->cs_wallet);
 
     CTxDestination nodest = CNoDestination();
@@ -299,7 +313,7 @@ void protx_register_fund_help(CWallet* const pwallet)
 {
     throw std::runtime_error(
             "protx register_fund \"collateralAddress\" \"ipAndPort\" \"ownerAddress\" \"operatorPubKey\" \"votingAddress\" operatorReward \"payoutAddress\" ( \"fundAddress\" )\n"
-            "\nCreates, funds and sends a ProTx to the network. The resulting transaction will move 1000 Dash\n"
+            "\nCreates, funds and sends a ProTx to the network. The resulting transaction will move 1000 Zentoshi\n"
             "to the address specified by collateralAddress and will then function as the collateral of your\n"
             "masternode.\n"
             "A few of the limitations you see in the arguments are temporary and might be lifted after DIP3\n"
@@ -309,10 +323,10 @@ void protx_register_fund_help(CWallet* const pwallet)
             + GetHelpString(1, "collateralAddress")
             + GetHelpString(2, "ipAndPort")
             + GetHelpString(3, "ownerAddress")
-            + GetHelpString(4, "operatorPubKey")
-            + GetHelpString(5, "votingAddress")
+            + GetHelpString(4, "operatorPubKey_register")
+            + GetHelpString(5, "votingAddress_register")
             + GetHelpString(6, "operatorReward")
-            + GetHelpString(7, "payoutAddress")
+            + GetHelpString(7, "payoutAddress_register")
             + GetHelpString(8, "fundAddress") +
             "\nResult:\n"
             "\"txid\"                        (string) The transaction id.\n"
@@ -334,10 +348,10 @@ void protx_register_help(CWallet* const pwallet)
             + GetHelpString(2, "collateralIndex")
             + GetHelpString(3, "ipAndPort")
             + GetHelpString(4, "ownerAddress")
-            + GetHelpString(5, "operatorPubKey")
-            + GetHelpString(6, "votingAddress")
+            + GetHelpString(5, "operatorPubKey_register")
+            + GetHelpString(6, "votingAddress_register")
             + GetHelpString(7, "operatorReward")
-            + GetHelpString(8, "payoutAddress")
+            + GetHelpString(8, "payoutAddress_register")
             + GetHelpString(9, "feeSourceAddress") +
             "\nResult:\n"
             "\"txid\"                        (string) The transaction id.\n"
@@ -358,10 +372,10 @@ void protx_register_prepare_help()
             + GetHelpString(2, "collateralIndex")
             + GetHelpString(3, "ipAndPort")
             + GetHelpString(4, "ownerAddress")
-            + GetHelpString(5, "operatorPubKey")
-            + GetHelpString(6, "votingAddress")
+            + GetHelpString(5, "operatorPubKey_register")
+            + GetHelpString(6, "votingAddress_register")
             + GetHelpString(7, "operatorReward")
-            + GetHelpString(8, "payoutAddress")
+            + GetHelpString(8, "payoutAddress_register")
             + GetHelpString(9, "feeSourceAddress") +
             "\nResult:\n"
             "{                             (json object)\n"
@@ -693,9 +707,9 @@ void protx_update_registrar_help(CWallet* const pwallet)
             + HelpRequiringPassphrase(pwallet) + "\n"
             "\nArguments:\n"
             + GetHelpString(1, "proTxHash")
-            + GetHelpString(2, "operatorPubKey")
-            + GetHelpString(3, "votingAddress")
-            + GetHelpString(4, "payoutAddress")
+            + GetHelpString(2, "operatorPubKey_update")
+            + GetHelpString(3, "votingAddress_update")
+            + GetHelpString(4, "payoutAddress_update")
             + GetHelpString(5, "feeSourceAddress") +
             "\nResult:\n"
             "\"txid\"                        (string) The transaction id.\n"
@@ -1277,4 +1291,3 @@ void RegisterEvoRPCCommands(CRPCTable &tableRPC)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
     }
 }
-

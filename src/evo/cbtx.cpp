@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 The Dash Core developers
+// Copyright (c) 2017-2019 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -237,16 +237,4 @@ std::string CCbTx::ToString() const
 {
     return strprintf("CCbTx(nHeight=%d, nVersion=%d, merkleRootMNList=%s, merkleRootQuorums=%s)",
         nVersion, nHeight, merkleRootMNList.ToString(), merkleRootQuorums.ToString());
-}
-
-void CCbTx::ToJson(UniValue& obj) const
-{
-    obj.clear();
-    obj.setObject();
-    obj.pushKV("version", (int)nVersion);
-    obj.pushKV("height", (int)nHeight);
-    obj.pushKV("merkleRootMNList", merkleRootMNList.ToString());
-    if (nVersion >= 2) {
-        obj.pushKV("merkleRootQuorums", merkleRootQuorums.ToString());
-    }
 }

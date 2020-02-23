@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 The Dash Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -230,7 +230,8 @@ UniValue gobject_prepare(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "CommitTransaction failed! Reason given: " + state.GetRejectReason());
     }
 
-    LogPrint(BCLog::GOBJECT, "gobject_prepare -- GetDataAsPlainString = %s, hash = %s, txid = %s\n", govobj.GetDataAsPlainString(), govobj.GetHash().ToString(), wtx->GetHash().ToString());
+    LogPrint(BCLog::GOBJECT, "gobject_prepare -- GetDataAsPlainString = %s, hash = %s, txid = %s\n",
+                govobj.GetDataAsPlainString(), govobj.GetHash().ToString(), wtx->GetHash().ToString());
 
     return wtx->GetHash().ToString();
 }
@@ -317,11 +318,10 @@ UniValue gobject_submit(const JSONRPCRequest& request)
     std::string strHash = govobj.GetHash().ToString();
 
     std::string strError = "";
-    bool fMissingMasternode;
     bool fMissingConfirmations;
     {
         LOCK(cs_main);
-        if (!govobj.IsValidLocally(strError, fMissingMasternode, fMissingConfirmations, true) && !fMissingConfirmations) {
+        if (!govobj.IsValidLocally(strError, fMissingConfirmations, true) && !fMissingConfirmations) {
             LogPrintf("gobject(submit) -- Object submission rejected because object is not valid - hash = %s, strError = %s\n", strHash, strError);
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Governance object is not valid - " + strHash + " - " + strError);
         }
@@ -1093,10 +1093,7 @@ UniValue getsuperblockbudget(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
-    CAmount nBudget = CSuperblock::GetPaymentsLimit(nBlockHeight);
-    std::string strBudget = FormatMoney(nBudget);
-
-    return strBudget;
+    return ValueFromAmount(CSuperblock::GetPaymentsLimit(nBlockHeight));
 }
 
 static const CRPCCommand commands[] =
@@ -1115,4 +1112,3 @@ void RegisterGovernanceRPCCommands(CRPCTable &t)
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
-

@@ -7,6 +7,7 @@
 
 #include "consensus/validation.h"
 #include "primitives/transaction.h"
+#include "univalue.h"
 
 class CBlock;
 class CBlockIndex;
@@ -40,7 +41,17 @@ public:
     }
 
     std::string ToString() const;
-    void ToJson(UniValue& obj) const;
+    void ToJson(UniValue& obj) const
+    {
+        obj.clear();
+        obj.setObject();
+        obj.pushKV("version", (int)nVersion);
+        obj.pushKV("height", (int)nHeight);
+        obj.pushKV("merkleRootMNList", merkleRootMNList.ToString());
+        if (nVersion >= 2) {
+            obj.pushKV("merkleRootQuorums", merkleRootQuorums.ToString());
+        }
+    }
 };
 
 bool CheckCbTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state);

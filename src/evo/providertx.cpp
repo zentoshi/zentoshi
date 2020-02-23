@@ -43,7 +43,7 @@ static bool CheckHashSig(const ProTx& proTx, const CKeyID& keyID, CValidationSta
 {
     std::string strError;
     if (!CHashSigner::VerifyHash(::SerializeHash(proTx), keyID, proTx.vchSig, strError)) {
-        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-protx-sig"/*, false, strError*/);
+        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-protx-sig");
     }
     return true;
 }
@@ -53,7 +53,7 @@ static bool CheckStringSig(const ProTx& proTx, const CKeyID& keyID, CValidationS
 {
     std::string strError;
     if (!CMessageSigner::VerifyMessage(keyID, proTx.vchSig, proTx.MakeSignString(), strError)) {
-        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-protx-sig"/*, false, strError*/);
+        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-protx-sig");
     }
     return true;
 }
@@ -62,7 +62,7 @@ template <typename ProTx>
 static bool CheckHashSig(const ProTx& proTx, const CBLSPublicKey& pubKey, CValidationState& state)
 {
     if (!proTx.sig.VerifyInsecure(pubKey, ::SerializeHash(proTx))) {
-        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-protx-sig"/*, false*/);
+        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "bad-protx-sig");
     }
     return true;
 }

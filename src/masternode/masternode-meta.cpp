@@ -24,20 +24,6 @@ void CMasternodeMetaInfo::RemoveGovernanceObject(const uint256& nGovernanceObjec
     mapGovernanceObjectsVotedOn.erase(nGovernanceObjectHash);
 }
 
-/**
-*   FLAG GOVERNANCE ITEMS AS DIRTY
-*
-*   - When masternode come and go on the network, we must flag the items they voted on to recalc it's cached flags
-*
-*/
-void CMasternodeMetaInfo::FlagGovernanceItemsAsDirty()
-{
-    LOCK(cs);
-    for (auto& govObjHashPair : mapGovernanceObjectsVotedOn) {
-        mmetaman.AddDirtyGovernanceObjectHash(govObjHashPair.first);
-    }
-}
-
 CMasternodeMetaInfoPtr CMasternodeMetaMan::GetMetaInfo(const uint256& proTxHash, bool fCreate)
 {
     LOCK(cs);
@@ -87,12 +73,6 @@ void CMasternodeMetaMan::RemoveGovernanceObject(const uint256& nGovernanceObject
     }
 }
 
-void CMasternodeMetaMan::AddDirtyGovernanceObjectHash(const uint256& nHash)
-{
-    LOCK(cs);
-    vecDirtyGovernanceObjectHashes.push_back(nHash);
-}
-
 std::vector<uint256> CMasternodeMetaMan::GetAndClearDirtyGovernanceObjectHashes()
 {
     LOCK(cs);
@@ -118,7 +98,6 @@ std::string CMasternodeMetaMan::ToString() const
     std::ostringstream info;
 
     info << "Masternodes: meta infos object count: " << (int)metaInfos.size() <<
-         ", deterministic masternode count: " << deterministicMNManager->GetListAtChainTip().GetAllMNsCount() <<
          ", nDsqCount: " << (int)nDsqCount;
     return info.str();
 }

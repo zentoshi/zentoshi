@@ -33,102 +33,6 @@
 
 UniValue masternodelist(const JSONRPCRequest& request);
 
-#ifdef ENABLE_WALLET
-UniValue privatesend(const JSONRPCRequest& request)
-{
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
-
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
-        return NullUniValue;
-
-    if (request.fHelp || request.params.size() != 1)
-        throw std::runtime_error(
-            "privatesend \"command\"\n"
-            "\nArguments:\n"
-            "1. \"command\"        (string or set of strings, required) The command to execute\n"
-            "\nAvailable commands:\n"
-            "  start       - Start mixing\n"
-            "  stop        - Stop mixing\n"
-            "  reset       - Reset mixing\n"
-            );
-
-    if (fMasternodeMode)
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Client-side mixing is not supported on masternodes");
-
-    if (request.params[0].get_str() == "start") {
-        {
-            LOCK(pwallet->cs_wallet);
-            if (pwallet->IsLocked())
-                throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please unlock wallet for mixing with walletpassphrase first.");
-        }
-
-        privateSendClient.fEnablePrivateSend = true;
-        bool result = privateSendClient.DoAutomaticDenominating(*g_connman);
-        return "Mixing " + (result ? "started successfully" : ("start failed: " + privateSendClient.GetStatuses() + ", will retry"));
-    }
-
-    if (request.params[0].get_str() == "stop") {
-        privateSendClient.fEnablePrivateSend = false;
-        return "Mixing was stopped";
-    }
-
-    if (request.params[0].get_str() == "reset") {
-        privateSendClient.ResetPool();
-        return "Mixing was reset";
-    }
-
-    return "Unknown command, please see \"help privatesend\"";
-}
-#endif // ENABLE_WALLET
-
-UniValue getpoolinfo(const JSONRPCRequest& request)
-{
-    if (request.fHelp || request.params.size() != 0)
-        throw std::runtime_error(
-            "getpoolinfo\n"
-            "Returns an object containing mixing pool related information.\n");
-
-#ifdef ENABLE_WALLET
-    CPrivateSendBaseManager* pprivateSendBaseManager = fMasternodeMode ? (CPrivateSendBaseManager*)&privateSendServer : (CPrivateSendBaseManager*)&privateSendClient;
-
-    UniValue obj(UniValue::VOBJ);
-    // TODO:
-    // obj.pushKV("state",             pprivateSendBase->GetStateString());
-    obj.pushKV("queue",             pprivateSendBaseManager->GetQueueSize());
-    // obj.pushKV("entries",           pprivateSendBase->GetEntriesCount());
-    obj.pushKV("status",            privateSendClient.GetStatuses());
-
-    std::vector<CDeterministicMNCPtr> vecDmns;
-    if (privateSendClient.GetMixingMasternodesInfo(vecDmns)) {
-        UniValue pools(UniValue::VARR);
-        for (const auto& dmn : vecDmns) {
-            UniValue pool(UniValue::VOBJ);
-            pool.pushKV("outpoint",      dmn->collateralOutpoint.ToStringShort());
-            pool.pushKV("addr",          dmn->pdmnState->addr.ToString());
-            pools.push_back(pool);
-        }
-        obj.pushKV("pools", pools);
-    }
-
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
-
-    if (pwallet) {
-        obj.pushKV("keys_left",     pwallet->nKeysLeftSinceAutoBackup);
-        obj.pushKV("warnings",      pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING
-                                    ? "WARNING: keypool is almost depleted!" : "");
-    }
-#else // ENABLE_WALLET
-    UniValue obj(UniValue::VOBJ);
-    obj.pushKV("state",             privateSendServer.GetStateString());
-    obj.pushKV("queue",             privateSendServer.GetQueueSize());
-    obj.pushKV("entries",           privateSendServer.GetEntriesCount());
-#endif // ENABLE_WALLET
-
-    return obj;
-}
-
 void masternode_list_help()
 {
     throw std::runtime_error(
@@ -358,7 +262,7 @@ UniValue masternode_status(const JSONRPCRequest& request)
     mnObj.pushKV("outpoint", activeMasternodeInfo.outpoint.ToStringShort());
     mnObj.pushKV("service", activeMasternodeInfo.service.ToString());
 
-    auto dmn = activeMasternodeManager->GetDMN();
+    auto dmn = deterministicMNManager->GetListAtChainTip().GetMN(activeMasternodeInfo.proTxHash);
     if (dmn) {
         mnObj.pushKV("proTxHash", dmn->proTxHash.ToString());
         mnObj.pushKV("collateralHash", dmn->collateralOutpoint.hash.ToString());
@@ -447,11 +351,6 @@ UniValue masternode(const JSONRPCRequest& request)
     if (request.params.size() >= 1) {
         strCommand = request.params[0].get_str();
     }
-
-#ifdef ENABLE_WALLET
-    if (strCommand == "start-many")
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "DEPRECATED, please use start-all instead");
-#endif // ENABLE_WALLET
 
     if (request.fHelp && strCommand.empty()) {
         masternode_help();
@@ -629,10 +528,6 @@ static const CRPCCommand commands[] =
   //  --------------------- ------------------------  -----------------------  ------ ----------
     { "zentoshi",           "masternode",             &masternode,             {} },
     { "zentoshi",           "masternodelist",         &masternodelist,         {} },
-    { "zentoshi",           "getpoolinfo",            &getpoolinfo,            {} },
-#ifdef ENABLE_WALLET
-    { "zentoshi",           "privatesend",            &privatesend,            {} },
-#endif // ENABLE_WALLET
 };
 
 void RegisterMasternodeRPCCommands(CRPCTable &t)

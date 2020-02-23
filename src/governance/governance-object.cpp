@@ -235,6 +235,7 @@ void CGovernanceObject::ClearMasternodeVotes()
         if (!mnList.HasMNByCollateral(it->first)) {
             fileVotes.RemoveVotesFromMasternode(it->first);
             mapCurrentMNVotes.erase(it++);
+            fDirtyCache = true;
         } else {
             ++it;
         }
@@ -459,15 +460,13 @@ void CGovernanceObject::UpdateLocalValidity()
 
 bool CGovernanceObject::IsValidLocally(std::string& strError, bool fCheckCollateral) const
 {
-    bool fMissingMasternode = false;
     bool fMissingConfirmations = false;
 
-    return IsValidLocally(strError, fMissingMasternode, fMissingConfirmations, fCheckCollateral);
+    return IsValidLocally(strError, fMissingConfirmations, fCheckCollateral);
 }
 
-bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMasternode, bool& fMissingConfirmations, bool fCheckCollateral) const
+bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingConfirmations, bool fCheckCollateral) const
 {
-    fMissingMasternode = false;
     fMissingConfirmations = false;
 
     if (fUnparsable) {

@@ -249,6 +249,11 @@ public:
         return fExpired;
     }
 
+    void SetExpired()
+    {
+        fExpired = true;
+    }
+
     const CGovernanceObjectVoteFile& GetVoteFile() const
     {
         return fileVotes;
@@ -267,7 +272,7 @@ public:
 
     bool IsValidLocally(std::string& strError, bool fCheckCollateral) const;
 
-    bool IsValidLocally(std::string& strError, bool& fMissingMasternode, bool& fMissingConfirmations, bool fCheckCollateral) const;
+    bool IsValidLocally(std::string& strError, bool& fMissingConfirmations, bool fCheckCollateral) const;
 
     /// Check the collateral transaction for the budget proposal/finalized budget
     bool IsCollateralValid(std::string& strError, bool& fMissingConfirmations) const;
@@ -275,6 +280,14 @@ public:
     void UpdateLocalValidity();
 
     void UpdateSentinelVariables();
+
+    void PrepareDeletion(int64_t nDeletionTime_)
+    {
+        fCachedDelete = true;
+        if (nDeletionTime == 0) {
+            nDeletionTime = nDeletionTime_;
+        }
+    }
 
     CAmount GetMinCollateralFee() const;
 

@@ -98,7 +98,6 @@ endif
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrdb.h \
-  masternode/activemasternode.h \
   addrman.h \
   attributes.h \
   banman.h \
@@ -180,6 +179,7 @@ BITCOIN_CORE_H = \
   llmq/quorums_signing.h \
   llmq/quorums_signing_shares.h \
   llmq/quorums_utils.h \
+  masternode/activemasternode.h \
   masternode/masternode-meta.h \
   masternode/masternode-payments.h \
   masternode/masternode-sync.h \
@@ -307,7 +307,6 @@ libzentoshi_util_a-clientversion.$(OBJEXT): obj/build.h
 libzentoshi_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libzentoshi_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libzentoshi_server_a_SOURCES = \
-  masternode/activemasternode.cpp \
   addrdb.cpp \
   addrman.cpp \
   addrdb.cpp \
@@ -355,6 +354,7 @@ libzentoshi_server_a_SOURCES = \
   llmq/quorums_signing.cpp \
   llmq/quorums_signing_shares.cpp \
   llmq/quorums_utils.cpp \
+  masternode/activemasternode.cpp \
   masternode/masternode-meta.cpp \
   masternode/masternode-payments.cpp \
   masternode/masternode-sync.cpp \
@@ -390,6 +390,7 @@ libzentoshi_server_a_SOURCES = \
   rpc/rpcevo.cpp \
   rpc/rpcquorums.cpp \
   rpc/server.cpp \
+  rpc/privatesend.cpp \
   script/sigcache.cpp \
   shutdown.cpp \
   spork.cpp \

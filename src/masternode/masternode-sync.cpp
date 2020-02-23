@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 The Dash Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,12 +16,6 @@
 
 class CMasternodeSync;
 CMasternodeSync masternodeSync;
-
-void CMasternodeSync::Fail()
-{
-    nTimeLastFailure = GetTime();
-    nCurrentAsset = MASTERNODE_SYNC_FAILED;
-}
 
 void CMasternodeSync::Reset()
 {
@@ -117,6 +111,9 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
     static int nTick = 0;
     nTick++;
 
+    const static int64_t nSyncStart = GetTimeMillis();
+    const static std::string strAllow = strprintf("allow-sync-%lld", nSyncStart);
+
     // reset the sync process if the last call to this function was more than 60 minutes ago (client was in sleep mode)
     static int64_t nTimeLastProcess = GetTime();
     if(GetTime() - nTimeLastProcess > 60*60) {
@@ -185,15 +182,12 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
 
         // NORMAL NETWORK MODE - TESTNET/MAINNET
         {
-#if 0
-            if(netfulfilledman.HasFulfilledRequest(pnode->addr, "full-sync")) {
-                // We already fully synced from this node recently,
-                // disconnect to free this connection slot for another peer.
-                pnode->fDisconnect = true;
-                LogPrint(BCLog::MASTERNODE, "CMasternodeSync::ProcessTick -- disconnecting from recently synced peer=%d\n", pnode->GetId());
-                continue;
+            if ((pnode->m_legacyWhitelisted || pnode->m_manual_connection) && !netfulfilledman.HasFulfilledRequest(pnode->addr, strAllow)) {
+                netfulfilledman.RemoveAllFulfilledRequests(pnode->addr);
+                netfulfilledman.AddFulfilledRequest(pnode->addr, strAllow);
+                LogPrintf("CMasternodeSync::ProcessTick -- skipping mnsync restrictions for peer=%d\n", pnode->GetId());
             }
-#endif
+
             // SPORK : ALWAYS ASK FOR SPORKS AS WE SYNC
 
             if(!netfulfilledman.HasFulfilledRequest(pnode->addr, "spork-sync")) {
@@ -207,6 +201,12 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
             // INITIAL TIMEOUT
 
             if(nCurrentAsset == MASTERNODE_SYNC_WAITING) {
+                if(!pnode->fInbound && gArgs.GetBoolArg("-syncmempool", DEFAULT_SYNC_MEMPOOL) && !netfulfilledman.HasFulfilledRequest(pnode->addr, "mempool-sync")) {
+                    netfulfilledman.AddFulfilledRequest(pnode->addr, "mempool-sync");
+                    connman.PushMessage(pnode, msgMaker.Make(NetMsgType::MEMPOOL));
+                    LogPrintf("CMasternodeSync::ProcessTick -- nTick %d nCurrentAsset %d -- syncing mempool from peer=%d\n", nTick, nCurrentAsset, pnode->GetId());
+                }
+
                 if(GetTime() - nTimeLastBumped > MASTERNODE_SYNC_TIMEOUT_SECONDS) {
                     // At this point we know that:
                     // a) there are peers (because we are looping on at least one of them);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Dash Core developers
+// Copyright (c) 2019-2020 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -55,14 +55,16 @@ void CMNAuth::ProcessMessage(CNode* pnode, const std::string& strCommand, CDataS
         CMNAuth mnauth;
         vRecv >> mnauth;
 
+        // only one MNAUTH allowed
+        bool fAlreadyHaveMNAUTH = false;
         {
             LOCK(pnode->cs_mnauth);
-            // only one MNAUTH allowed
-            if (!pnode->verifiedProRegTxHash.IsNull()) {
-                LOCK(cs_main);
-                Misbehaving(pnode->GetId(), 100);
-                return;
-            }
+            fAlreadyHaveMNAUTH = !pnode->verifiedProRegTxHash.IsNull();
+        }
+        if (fAlreadyHaveMNAUTH) {
+            LOCK(cs_main);
+            Misbehaving(pnode->GetId(), 100);
+            return;
         }
 
         if (mnauth.proRegTxHash.IsNull() || !mnauth.sig.IsValid()) {
@@ -99,11 +101,15 @@ void CMNAuth::ProcessMessage(CNode* pnode, const std::string& strCommand, CDataS
 
         connman.ForEachNode([&](CNode* pnode2) {
             if (pnode2->verifiedProRegTxHash == mnauth.proRegTxHash) {
-                LogPrint(BCLog::NET, "CMNAuth::ProcessMessage -- Masternode %s has already verified as peer %d, dropping old connection. peer=%d\n",
+                LogPrint(BCLog::NET, "CMNAuth::ProcessMessage -- Masternode %s has already verified as peer %d, dropping new connection. peer=%d\n",
                         mnauth.proRegTxHash.ToString(), pnode2->GetId(), pnode->GetId());
-                pnode2->fDisconnect = true;
+                pnode->fDisconnect = true;
             }
         });
+
+        if (pnode->fDisconnect) {
+            return;
+        }
 
         {
             LOCK(pnode->cs_mnauth);
