@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 The Dash Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,7 +42,7 @@ enum PoolMessage : int32_t {
     ERR_MAXIMUM,
     ERR_MN_LIST,
     ERR_MODE,
-    ERR_NON_STANDARD_PUBKEY,
+    ERR_NON_STANDARD_PUBKEY, // not used
     ERR_NOT_A_MN, // not used
     ERR_QUEUE_FULL,
     ERR_RECENT,
@@ -108,7 +108,7 @@ public:
     {
         READWRITE(nSessionID);
         READWRITE(nState);
-        if (s.GetVersion() <= 70215) {
+        if (s.GetVersion() <= 702015) { //! coda says this is standard
             READWRITE(nEntriesCount);
         }
         READWRITE(nStatusUpdate);

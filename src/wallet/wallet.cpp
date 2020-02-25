@@ -4763,7 +4763,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             }
 
             double dProgress = 100.f * index / (nTargetSize + 1);
-            LogPrintf("Loading wallet... (%3.2f %%)", dProgress);
+            LogPrintf("Loading wallet... (%3.2f %%) - ", dProgress);
         }
     }
     return true;

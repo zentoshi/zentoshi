@@ -704,8 +704,9 @@ UniValue getstakingstatus(const JSONRPCRequest& request)
     return obj;
 }
 
+// clang-format off
 static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         okSafeMode
+{ //  category              name                      actor (function)         argNames
   //  --------------------- ------------------------  -----------------------  ----------
     { "control",            "getmemoryinfo",          &getmemoryinfo,          {"mode"} },
     { "util",               "validateaddress",        &validateaddress,        {"address"} },
@@ -716,7 +717,6 @@ static const CRPCCommand commands[] =
     { "util",               "signmessagewithprivkey", &signmessagewithprivkey, {"privkey","message"} },
     { "util",               "getstakingstatus",       &getstakingstatus,       {} },
 
-    /* Dash features */
     { "zentoshi",           "mnsync",                 &mnsync,                 {} },
     { "zentoshi",           "spork",                  &spork,                  {"mode"} },
 
@@ -725,6 +725,7 @@ static const CRPCCommand commands[] =
     { "hidden",             "echo",                   &echo,                   {"arg0","arg1","arg2","arg3","arg4","arg5","arg6","arg7","arg8","arg9"}},
     { "hidden",             "echojson",               &echo,                   {"arg0","arg1","arg2","arg3","arg4","arg5","arg6","arg7","arg8","arg9"}},
 };
+// clang-format on
 
 void RegisterMiscRPCCommands(CRPCTable &t)
 {

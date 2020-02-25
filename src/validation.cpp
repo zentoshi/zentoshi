@@ -3426,10 +3426,10 @@ bool CChainState::InvalidateBlock(CValidationState& state, const CChainParams& c
             }
             it++;
         }
-        it++;
+
+        InvalidChainFound(to_mark_failed);
     }
 
-    InvalidChainFound(pindex);
     mempool.removeForReorg(&::ChainstateActive().CoinsTip(), ::ChainActive().Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
     GetMainSignals().UpdatedBlockTip(::ChainActive().Tip(), NULL, ::ChainstateActive().IsInitialBlockDownload());
     uiInterface.NotifyBlockTip(::ChainstateActive().IsInitialBlockDownload(), pindex->pprev);
@@ -3480,6 +3480,8 @@ void ResetBlockFailureFlags(CBlockIndex *pindex) {
 
 CBlockIndex* BlockManager::AddToBlockIndex(const CBlockHeader& block, bool fProofOfStake, enum BlockStatus nStatus = BLOCK_VALID_TREE)
 {
+    AssertLockHeld(cs_main);
+
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator it = m_block_index.find(hash);
@@ -3488,8 +3490,6 @@ CBlockIndex* BlockManager::AddToBlockIndex(const CBlockHeader& block, bool fProo
 
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
-    assert(pindexNew);
-
     // We assign the sequence id to blocks only when the full data is available,
     // to avoid miners withholding blocks but broadcasting headers, to get a
     // competitive advantage.
@@ -4297,6 +4297,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, CVali
     }
 
     // Write block to history file
+    if (fNewBlock) *fNewBlock = true;
     try {
         FlatFilePos blockPos = SaveBlockToDisk(block, pindex->nHeight, chainparams, dbp);
         if (blockPos.IsNull()) {

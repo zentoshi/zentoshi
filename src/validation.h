@@ -126,7 +126,7 @@ static const unsigned int DEFAULT_BANSCORE_THRESHOLD = 100;
 /** Default for -persistmempool */
 static const bool DEFAULT_PERSIST_MEMPOOL = true;
 /** Default for -syncmempool */
-static const bool DEFAULT_SYNC_MEMPOOL = true;
+static const bool DEFAULT_SYNC_MEMPOOL = false;
 /** Default for -mempoolreplacement */
 static const bool DEFAULT_ENABLE_REPLACEMENT = false;
 /** Default for using fee filter */

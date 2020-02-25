@@ -548,10 +548,6 @@ std::string CPrivateSend::GetMessageByID(PoolMessage nMessageID)
         return ("Not in the Masternode list.");
     case ERR_MODE:
         return ("Incompatible mode.");
-    case ERR_NON_STANDARD_PUBKEY:
-        return ("Non-standard public key detected.");
-    case ERR_NOT_A_MN:
-        return ("This is not a Masternode."); // not used
     case ERR_QUEUE_FULL:
         return ("Masternode queue is full.");
     case ERR_RECENT:
@@ -568,6 +564,10 @@ std::string CPrivateSend::GetMessageByID(PoolMessage nMessageID)
         return ("Transaction created successfully.");
     case MSG_ENTRIES_ADDED:
         return ("Your entries added successfully.");
+    case ERR_SIZE_MISMATCH:
+        return ("Inputs vs outputs size mismatch.");
+    case ERR_NON_STANDARD_PUBKEY:
+    case ERR_NOT_A_MN:
     default:
         return ("Unknown response.");
     }

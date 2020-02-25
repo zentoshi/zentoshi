@@ -67,8 +67,8 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     instantsendWidget->addItem(tr("All"), TransactionFilterProxy::InstantSendFilter_All);
     instantsendWidget->addItem(tr("Locked by InstantSend"), TransactionFilterProxy::InstantSendFilter_Yes);
     instantsendWidget->addItem(tr("Not locked by InstantSend"), TransactionFilterProxy::InstantSendFilter_No);
-
     hlayout->addWidget(instantsendWidget);
+
     dateWidget = new QComboBox(this);
     if (platformStyle->getUseExtraSpacing()) {
         dateWidget->setFixedWidth(121);
@@ -117,7 +117,9 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     hlayout->addWidget(search_widget);
 
     amountWidget = new QLineEdit(this);
+#if QT_VERSION >= 0x040700
     amountWidget->setPlaceholderText(tr("Min amount"));
+#endif
     if (platformStyle->getUseExtraSpacing()) {
         amountWidget->setFixedWidth(97);
     } else {
@@ -150,6 +152,7 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     vlayout->addWidget(createDateRangeWidget());
     vlayout->addWidget(view);
     vlayout->setSpacing(0);
+#ifndef Q_OS_MAC
     int width = view->verticalScrollBar()->sizeHint().width();
     // Cover scroll bar width with spacing
     if (platformStyle->getUseExtraSpacing()) {
@@ -159,6 +162,7 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     }
     // Always show scroll bar
     view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+#endif
     view->setTabKeyNavigation(false);
     view->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -416,6 +420,8 @@ void TransactionView::exportClicked()
 
 void TransactionView::contextualMenu(const QPoint &point)
 {
+    if (!transactionView || !transactionView->selectionModel())
+        return;
     QModelIndex index = transactionView->indexAt(point);
     QModelIndexList selection = transactionView->selectionModel()->selectedRows(0);
     if (selection.empty())

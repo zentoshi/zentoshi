@@ -338,6 +338,7 @@ void ClientModel::unsubscribeFromCoreSignals()
     m_handler_banned_list_changed->disconnect();
     m_handler_notify_block_tip->disconnect();
     m_handler_notify_header_tip->disconnect();
+    m_handler_notify_masternode_list_changed->disconnect();
     m_handler_additional_data_sync_progress_changed->disconnect();
 }
 
