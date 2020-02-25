@@ -214,7 +214,4 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
 void GenerateZentoshis(bool fGenerate, int nThreads, const CChainParams& chainparams, CConnman &connman, std::shared_ptr<CWallet> pwallet);
 void ThreadStakeMinter(const CChainParams &chainparams, CConnman &connman, std::shared_ptr<CWallet> pwallet);
 
-extern double dHashesPerSec;
-extern int64_t nHPSTimerStart;
-
 #endif // BITCOIN_MINER_H

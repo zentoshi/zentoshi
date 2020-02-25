@@ -140,8 +140,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getrawmempool", 0, "verbose" },
     { "getsuperblockbudget", 0, "index"},
     { "spork", 1, "value" },
-    { "setgenerate", 0, "generate" },
-    { "setgenerate", 1, "genproclimit" },
     { "estimatesmartfee", 0, "conf_target" },
     { "estimaterawfee", 0, "conf_target" },
     { "estimaterawfee", 1, "threshold" },
