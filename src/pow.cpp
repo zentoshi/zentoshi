@@ -43,7 +43,7 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     uint64_t PastBlocksMax = pastSecondsMax / Blocktime;
     const arith_uint256 bnLimit = fProofOfStake ? UintToArith256(params.posLimit) : UintToArith256(params.powLimit);
 
-    if (BlockLastSolved == NULL || BlockLastSolved->nHeight == 0 ||
+    if (BlockLastSolved == nullptr || BlockLastSolved->nHeight == 0 ||
             (uint64_t)BlockLastSolved->nHeight < PastBlocksMin)
         return bnLimit.GetCompact();
 
@@ -99,25 +99,17 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
 
     int64_t nActualTime = GetLastBlockIndex(pindexLast, fProofOfStake)->GetBlockTime() -
                           GetLastBlockIndex(pindexLast, fProofOfStake)->pprev->GetBlockTime();
-    int64_t nActualTimespanshort = nActualTime;
     if (nActualTime < 0)
         nActualTime = Blocktime;
     if (nActualTime < Blocktime / Resolution)
         nActualTime = Blocktime / Resolution;
     if (nActualTime > Blocktime * Resolution)
         nActualTime = Blocktime * Resolution;
+
     kgw_dual2 *= nActualTime;
     kgw_dual2 /= Blocktime;
     arith_uint256 bnNew;
     bnNew = ((kgw_dual2 + kgw_dual1) / 2);
-
-    if (nActualTimespanshort < Blocktime / 6) {
-        const int nLongShortNew1 = 85;
-        const int nLongShortNew2 = 100;
-        bnNew = bnNew * nLongShortNew1;
-        bnNew = bnNew / nLongShortNew2;
-    }
-
     if (bnNew > bnLimit) bnNew = bnLimit;
 
     return bnNew.GetCompact();
