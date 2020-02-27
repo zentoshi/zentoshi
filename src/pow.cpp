@@ -23,7 +23,7 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 
 unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& params, bool fProofOfStake)
 {
-    const CBlockIndex* BlockLastSolved = GetLastBlockIndex(pindexLast, fProofOfStake);
+    const CBlockIndex* BlockLastSolved = GetLastBlockIndex(pindexLast, fProofOfStake)->pprev;
     const CBlockIndex* BlockReading = GetLastBlockIndex(pindexLast, fProofOfStake);
     int64_t PastBlocksMass = 0;
     int64_t PastRateActualSeconds = 0;
@@ -34,7 +34,7 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     double EventHorizonDeviation;
     double EventHorizonDeviationFast;
     double EventHorizonDeviationSlow;
-    static const int64_t Resolution = 20;
+    static const int64_t Resolution = 6;
     static const int64_t Blocktime = fProofOfStake ? params.nPosTargetSpacing : params.nPowTargetSpacing;
     static const unsigned int timeDaySeconds = 86400;
     uint64_t pastSecondsMin = timeDaySeconds * 0.025;

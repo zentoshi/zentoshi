@@ -210,6 +210,7 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999;   // December 31, 2008
@@ -412,9 +413,9 @@ public:
          * a large 32-bit integer with any alignment.
          */
         pchMessageStart[0] = 0x1f;
-        pchMessageStart[1] = 0x1f;
+        pchMessageStart[1] = 0x2f;
         pchMessageStart[2] = 0x1f;
-        pchMessageStart[3] = 0x1f;
+        pchMessageStart[3] = 0x2f;
         nDefaultPort = 49152;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 1;
@@ -422,8 +423,8 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1580367437;
-        uint32_t nNonce = 30981;
+        uint32_t nTime = 1582819900;
+        uint32_t nNonce = 66908;
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
