@@ -278,6 +278,11 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlockHeader& blockFrom, con
     arith_uint256 bnWeight = arith_uint256(nValueIn);
     bnTarget *= bnWeight;
 
+    //! enforce minimum stake amount
+    const CAmount minStakeAmount = Params().GetConsensus().MinStakeAmount();
+    if (nValueIn < minStakeAmount)
+        return error("CheckStakeKernelHash() : min stake amount not met");
+
     // Calculate hash
     CDataStream ss(SER_GETHASH, 0);
     uint64_t nStakeModifier = 0;
@@ -337,6 +342,25 @@ bool CheckKernelScript(CScript scriptVin, CScript scriptVout)
     return extractKeyID(scriptVin) == extractKeyID(scriptVout);
 }
 
+bool HasStakeMinDepth(int contextHeight, int utxoFromBlockHeight)
+{
+    const int minHistoryRequired = Params().GetConsensus().MinStakeHistory();
+    return (contextHeight - utxoFromBlockHeight >= minHistoryRequired);
+}
+
+int GetLastHeight(uint256 txHash)
+{
+    uint256 hashBlock;
+    CTransactionRef stakeInput;
+    if (!GetTransaction(txHash, stakeInput, Params().GetConsensus(), hashBlock))
+        return 0;
+
+    if (hashBlock == uint256())
+        return 0;
+
+    return ::LookupBlockIndex(hashBlock)->nHeight;
+}
+
 // Check kernel hash target and coinstake signature
 bool CheckProofOfStake(const CBlock &block, uint256& hashProofOfStake, const CBlockIndex* pindexPrev)
 {
@@ -356,6 +380,17 @@ bool CheckProofOfStake(const CBlock &block, uint256& hashProofOfStake, const CBl
         return error("CheckProofOfStake() : INFO: read txPrev failed");
 
     CTxOut prevTxOut = txPrev->vout[txin.prevout.n];
+
+    // Enforce minimum stake depth
+    const int nPreviousBlockHeight = pindexPrev->nHeight;
+    const int nBlockFromHeight = GetLastHeight(txin.prevout.hash);
+
+    // returning zero from GetLastHeight() indicates error
+    if (nBlockFromHeight == 0)
+        return false;
+
+    if (!HasStakeMinDepth(nPreviousBlockHeight+1, nBlockFromHeight))
+        return error("CheckProofOfStake() : min stake depth not met");
 
     // Find block index
     CBlockIndex* pindex = nullptr;

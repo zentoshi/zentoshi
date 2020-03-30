@@ -197,13 +197,15 @@ public:
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("007ffff000000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("0007ffff00000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 300;
         consensus.nPowTargetSpacing = 60;
-        consensus.nPosTargetTimespan = consensus.nPowTargetTimespan * 3;
-        consensus.nPosTargetSpacing = consensus.nPowTargetSpacing * 2;
-        consensus.nStakeMinAge = 60 * 30;
+        consensus.nPosTargetTimespan = consensus.nPowTargetTimespan / 2;
+        consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
+        consensus.nStakeMinAge = 60 * 60;
         consensus.nStakeMaxAge = 60 * 60 * 24 * 30;
+        consensus.nMinStakeAmount = 0.5 * COIN;
+        consensus.nMinStakeHistory = 60;
         consensus.nModifierInterval = 60;
         consensus.nCoinbaseMaturity = 20;
         consensus.fPowAllowMinDifficultyBlocks = false;
@@ -308,8 +310,7 @@ public:
         m_is_test_chain = false;
 
         checkpointData = {{{ 0, consensus.hashGenesisBlock }}};
-        chainTxData =    ChainTxData {};
-
+        chainTxData = ChainTxData {};
     }
 };
 
@@ -353,13 +354,15 @@ public:
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("007ffff000000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("0007ffff00000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 300;
         consensus.nPowTargetSpacing = 60;
-        consensus.nPosTargetTimespan = consensus.nPowTargetTimespan * 3;
-        consensus.nPosTargetSpacing = consensus.nPowTargetSpacing * 2;
-        consensus.nStakeMinAge = 60 * 30;
+        consensus.nPosTargetTimespan = consensus.nPowTargetTimespan / 2;
+        consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
+        consensus.nStakeMinAge = 60 * 60;
         consensus.nStakeMaxAge = 60 * 60 * 24 * 30;
+        consensus.nMinStakeAmount = 0.5 * COIN;
+        consensus.nMinStakeHistory = 60;
         consensus.nModifierInterval = 60;
         consensus.nCoinbaseMaturity = 20;
         consensus.fPowAllowMinDifficultyBlocks = false;
@@ -464,7 +467,7 @@ public:
         m_is_test_chain = false;
 
         checkpointData = {{{ 0, consensus.hashGenesisBlock }}};
-        chainTxData =    ChainTxData {};
+        chainTxData = ChainTxData {};
     }
 };
 

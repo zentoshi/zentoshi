@@ -201,6 +201,10 @@ struct Params {
     int nCoinbaseMaturity;
     std::map<LLMQType, LLMQParams> llmqs;
     bool fLLMQAllowDummyCommitments;
+    CAmount nMinStakeAmount;
+    int nMinStakeHistory;
+    CAmount MinStakeAmount() const { return nMinStakeAmount; }
+    int MinStakeHistory() const { return nMinStakeHistory; }
     LLMQType llmqTypeChainLocks;
     LLMQType llmqTypeInstantSend{LLMQ_NONE};
 };
