@@ -1,4 +1,4 @@
-packages:=boost openssl libevent zeromq gmp chia_bls
+packages:=boost openssl libevent gmp chia_bls
 
 protobuf_native_packages = native_protobuf
 protobuf_packages = protobuf
