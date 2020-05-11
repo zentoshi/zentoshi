@@ -21,6 +21,7 @@
 #include <hash.h>
 #include <index/txindex.h>
 #include <init.h>
+#include <kernel.h>
 #include <policy/fees.h>
 #include <policy/policy.h>
 #include <policy/settings.h>
@@ -49,17 +50,13 @@
 #include <validationinterface.h>
 #include <warnings.h>
 
-#include <kernel.h>
-
-#include <masternode/masternode-payments.h>
-
 #include <evo/specialtx.h>
 #include <evo/providertx.h>
 #include <evo/deterministicmns.h>
 #include <evo/cbtx.h>
-
-#include "llmq/quorums_instantsend.h"
-#include "llmq/quorums_chainlocks.h"
+#include <llmq/quorums_instantsend.h>
+#include <llmq/quorums_chainlocks.h>
+#include <masternode/masternode-payments.h>
 
 #include <atomic>
 #include <future>
@@ -129,6 +126,7 @@ CChain& ChainActive() {
  * chainstate at the same time.
  */
 RecursiveMutex cs_main;
+
 std::map<COutPoint, int> mapStakeSpent;
 CBlockIndex *pindexBestHeader = nullptr;
 Mutex g_best_block_mutex;
@@ -145,8 +143,6 @@ bool fCheckpointsEnabled = DEFAULT_CHECKPOINTS_ENABLED;
 size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
-
-PrevBlockMap mapPrevBlockIndex;
 
 std::atomic<bool> fDIP0001ActiveAtTip{false};
 std::atomic<bool> fDIP0003ActiveAtTip{false};
@@ -617,18 +613,16 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     if (!CheckTransaction(tx, state))
         return false; // state filled in by CheckTransaction
 
+    if (tx.nVersion == 3 && tx.nType == TRANSACTION_QUORUM_COMMITMENT)
+        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "qc-not-allowed");
+
     if (!ContextualCheckTransaction(tx, state, Params().GetConsensus(), ::ChainActive().Tip()))
         return error("%s: ContextualCheckTransaction: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
 
-    if (tx.nVersion == 3 && tx.nType == TRANSACTION_QUORUM_COMMITMENT) {
-        return state.Invalid(ValidationInvalidReason::CBTX_INVALID, false, REJECT_INVALID, "qc-not-allowed");
-    }
-
-    // Coinbase is only valid in a block, not as a loose transaction
+    // Coinbase/stake is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
         return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "coinbase as individual tx");
 
-    //Coinstake is also only valid in a block, not as a loose transaction
     if (tx.IsCoinStake())
         return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "coinstake as individual tx");
 
@@ -777,7 +771,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     bool fSpendsCoinbase = false;
     for (const CTxIn &txin : tx.vin) {
         const Coin &coin = m_view.AccessCoin(txin.prevout);
-        if (coin.IsCoinBase()) {
+        if (coin.IsCoinBase() || coin.IsCoinStake()) {
             fSpendsCoinbase = true;
             break;
         }
@@ -1847,19 +1841,6 @@ DisconnectResult CChainState::DisconnectBlock(const CBlock& block, const CBlockI
                 Coin coin;
                 bool is_spent = view.SpendCoin(out, &coin);
                 if (!is_spent || tx.vout[o] != coin.out || pindex->nHeight != coin.nHeight || is_coinbase != coin.fCoinBase || is_coinstake != coin.fCoinStake) {
-                    LogPrintf("(%d, %d) %d (%s, %s) == %d, "
-                              "(%d, %d) == %d %d, "
-                              "(%d, %d, %d) == %d %d %d\n",
-                              i, o, is_spent, tx.vout[o].ToString(), coin.out.ToString(), tx.vout[o] != coin.out,
-                              is_coinbase != coin.fCoinBase, is_coinstake != coin.fCoinStake, pindex->nHeight, coin.nHeight,
-                              is_coinbase, is_coinstake, coin.fCoinBase, coin.fCoinStake, is_coinbase != coin.fCoinBase, is_coinstake != coin.fCoinStake);
-                    {
-                              if (!is_spent) LogPrintf("!is_spent\n");
-                              if (tx.vout[o] != coin.out) LogPrintf("tx.vout[o] != coin.out\n");
-                              if (pindex->nHeight != coin.nHeight) LogPrintf("pindex->nHeight != coin.nHeight\n");
-                              if (is_coinbase != coin.fCoinBase) LogPrintf("is_coinbase != coin.fCoinBase\n");
-                              if (is_coinstake != coin.fCoinStake) LogPrintf("is_coinstake != coin.fCoinStake\n");
-                    }
                     fClean = false; // transaction output mismatch
                 }
             }
@@ -4614,7 +4595,7 @@ bool BlockManager::LoadBlockIndex(
 
         // build mapPrevBlockIndex
         if (pindex->pprev) {
-            mapPrevBlockIndex.emplace(pindex->pprev->GetBlockHash(), pindex);
+            ::PrevBlockIndex().emplace(pindex->pprev->GetBlockHash(), pindex);
         }
     }
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
@@ -4708,7 +4689,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams) EXCLUSIVE_LOCKS_RE
 
         // build PrevBlockIndex
         if (pindex->pprev)
-            g_blockman.m_prev_block_index.emplace(pindex->pprev->GetBlockHash(), pindex);
+            ::PrevBlockIndex().emplace(pindex->pprev->GetBlockHash(), pindex);
     }
     for (std::set<int>::iterator it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
     {

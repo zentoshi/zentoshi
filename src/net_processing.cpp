@@ -2559,7 +2559,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         return true;
     }
 
-
     if (strCommand == NetMsgType::GETDATA) {
         std::vector<CInv> vInv;
         vRecv >> vInv;
@@ -2649,7 +2648,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         return true;
     }
 
-
     if (strCommand == NetMsgType::GETBLOCKTXN) {
         BlockTransactionsRequest req;
         vRecv >> req;
@@ -2698,7 +2696,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         SendBlockTransactions(block, req, pfrom, connman);
         return true;
     }
-
 
     if (strCommand == NetMsgType::GETHEADERS) {
         CBlockLocator locator;
@@ -2766,7 +2763,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::HEADERS, vHeaders));
         return true;
     }
-
 
     if (strCommand == NetMsgType::TX || strCommand == NetMsgType::DSTX || strCommand == NetMsgType::LEGACYTXLOCKREQUEST) {
         // Stop processing the transaction early if
@@ -2988,7 +2984,9 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         CBlockHeaderAndShortTxIDs cmpctblock;
         vRecv >> cmpctblock;
+
         bool received_new_header = false;
+
         {
         LOCK(cs_main);
 
@@ -3520,7 +3518,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         return true;
     }
 
-
     if (strCommand == NetMsgType::FILTERLOAD) {
         CBloomFilter filter;
         vRecv >> filter;
@@ -3576,7 +3573,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         pfrom->m_tx_relay->fRelayTxes = true;
         return true;
     }
-
 
     if (strCommand == NetMsgType::FEEFILTER) {
         CAmount newFeeFilter = 0;
