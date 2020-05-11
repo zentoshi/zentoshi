@@ -235,10 +235,15 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     timerStakingIcon->start(2500);
     setStakingStatus();
 
-    QTimer* timerQuorumStatusIcon = new QTimer();
-    connect(timerQuorumStatusIcon, SIGNAL(timeout()), this, SLOT(setQuorumFeatures()));
+    QTimer* timerQuorumStatusIcon = new QTimer(labelQuorumIcon);
+    connect(timerQuorumStatusIcon, SIGNAL(timeout()), this, SLOT(setQuorumStatus()));
     timerQuorumStatusIcon->start(2500);
-    setQuorumFeatures();
+    setQuorumStatus();
+
+    QTimer* timerChainLocksStatusIcon = new QTimer(labelChainLocksIcon);
+    connect(timerChainLocksStatusIcon, SIGNAL(timeout()), this, SLOT(setChainLocksStatus()));
+    timerChainLocksStatusIcon->start(2500);
+    setChainLockStatus();
 }
 
 BitcoinGUI::~BitcoinGUI()
@@ -1075,12 +1080,6 @@ void BitcoinGUI::setNetworkActive(bool networkActive)
     updateNetworkState();
 }
 
-void BitcoinGUI::setQuorumFeatures()
-{
-    setQuorumStatus(sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED));
-    setChainLockStatus(sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED));
-}
-
 void BitcoinGUI::updateHeadersSyncProgressLabel()
 {
     int64_t headersTipTime = clientModel->getHeaderTipTime();
@@ -1450,9 +1449,10 @@ bool BitcoinGUI::handlePaymentRequest(const SendCoinsRecipient& recipient)
     return false;
 }
 
-void BitcoinGUI::setQuorumStatus(bool status)
+void BitcoinGUI::setQuorumStatus()
 {
     labelQuorumIcon->show();
+    bool status = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED);
     if(status) {
         labelQuorumIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/quorum_active").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
         labelQuorumIcon->setToolTip(tr("Quorums are active"));
@@ -1462,9 +1462,10 @@ void BitcoinGUI::setQuorumStatus(bool status)
     }
 }
 
-void BitcoinGUI::setChainLockStatus(bool status)
+void BitcoinGUI::setChainLockStatus()
 {
     labelChainLocksIcon->show();
+    bool status = sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED);
     if(status) {
         labelChainLocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/chainlocks_active").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
         labelChainLocksIcon->setToolTip(tr("Chainlocks are active"));
