@@ -146,7 +146,10 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     // Disable size grip because it looks ugly and nobody needs it
     statusBar()->setSizeGripEnabled(true);
     statusBar()->addWidget(new QSizeGrip(statusBar()));
-    statusBar()->setStyleSheet("background-color: #021928; QSizeGrip { width: 3px; height: 20px; border: 0px solid black; } \n QStatusBar::item { border: 0px solid black; }");
+    statusBar()->setStyleSheet("background-color: #021928; color: white; \n"
+                               "QSizeGrip { width: 3px; height: 20px; border: 0px solid black; } \n"
+                               "QStatusBar::item { border: 0px solid black; } \n"
+                               "QToolTip { color: #000000; background-color: #ffffff; border: 0px; } \n");
 
     // Status bar notification icons
     QFrame *frameBlocks = new QFrame();
@@ -193,15 +196,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     progressBar->setAlignment(Qt::AlignCenter);
     progressBar->setVisible(false);
 
-    // Override style sheet for progress bar for styles that have a segmented progress bar,
-    // as they make the text unreadable (workaround for issue #1071)
-    // See https://doc.qt.io/qt-5/gallery.html
     QString curStyle = QApplication::style()->metaObject()->className();
-    if(curStyle == "QWindowsStyle" || curStyle == "QWindowsXPStyle")
-    {
-        progressBar->setStyleSheet("QProgressBar { background-color: #e8e8e8; border: 1px solid grey; border-radius: 7px; padding: 1px; text-align: center; } QProgressBar::chunk { background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #FF8000, stop: 1 orange); border-radius: 7px; margin: 0px; }");
-    }
-
     statusBar()->addWidget(progressBarLabel);
     statusBar()->addWidget(progressBar);
     statusBar()->addPermanentWidget(frameBlocks);

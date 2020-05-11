@@ -72,6 +72,14 @@ QLabel#overriddenByCommandLineLabel{
 #labelTokenAddressText{
     color: #969696;
 }
+/*--------------------------------------------
+Tooltip CSS
+---------------------------------------------*/
+QToolTip {
+color: #000000;
+background-color: #ffffff;
+border: 0px;
+}
 /*-------------------------------------------- 
 Line Edit CSS
 --------------------------------------------*/
