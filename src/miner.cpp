@@ -191,7 +191,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     CAmount blockReward = GetBlockSubsidy(pindexPrev->nHeight, Params().GetConsensus());
     std::vector<const CWalletTx*> vwtxPrev;
 
-    bool fTryStaking = fProofOfStake && nHeight >= chainparams.GetConsensus().nFirstPoSBlock;
+    bool fTryStaking = fProofOfStake && nHeight >= chainparams.GetConsensus().nFirstPoSBlock && StakingPermitted();
 
     if(fTryStaking)
     {
@@ -614,7 +614,7 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
 
             if(fProofOfStake) {
                 if (::ChainActive().Tip()->nHeight+1 < chainparams.GetConsensus().nFirstPoSBlock ||
-                    pwallet->IsLocked() || !masternodeSync.IsSynced()) {
+                    pwallet->IsLocked() || !masternodeSync.IsSynced() || !StakingPermitted()) {
                     nLastCoinStakeSearchInterval = 0;
                     MilliSleep(5000);
                     continue;
@@ -642,7 +642,7 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
                       ::GetSerializeSize(*pblock));
 
             //Sign block
-            if (fProofOfStake) {
+            if (fProofOfStake || StakingPermitted()) {
                 LogPrintf("CPUMiner : proof-of-stake block found %s \n", pblock->GetHash().ToString().c_str());
                 if (!SignBlock(*pblock, *pwallet)) {
                     LogPrintf("ZentoshiMiner(): Signing new block failed\n");

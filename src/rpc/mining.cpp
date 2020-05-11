@@ -116,13 +116,16 @@ static UniValue generateBlocks(const CScript& coinbase_script, int nGenerate, ui
         nHeight = ::ChainActive().Height();
         nHeightEnd = nHeight+nGenerate;
     }
+    m_miner_active = true;
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
     while (nHeight < nHeightEnd && !ShutdownRequested())
     {
         std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbase_script));
-        if (!pblocktemplate.get())
+        if (!pblocktemplate.get()) {
+            m_miner_active = false;
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
+        }
         CBlock *pblock = &pblocktemplate->block;
         {
             LOCK(cs_main);
@@ -139,11 +142,14 @@ static UniValue generateBlocks(const CScript& coinbase_script, int nGenerate, ui
             continue;
         }
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
-        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr))
+        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr)) {
+            m_miner_active = false;
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+        }
         ++nHeight;
         blockHashes.push_back(pblock->GetPoWHash().GetHex());
     }
+    m_miner_active = false;
     return blockHashes;
 }
 

@@ -173,6 +173,9 @@ extern bool fEnableReplacement;
 extern bool fLargeWorkForkFound;
 extern bool fLargeWorkInvalidChainFound;
 
+extern bool m_miner_active;
+extern bool m_staking_allowed;
+
 extern std::map<uint256, int64_t> mapRejectedBlocks;
 
 extern std::atomic<bool> fDIP0001ActiveAtTip;
@@ -849,5 +852,8 @@ inline bool IsBlockPruned(const CBlockIndex* pblockindex)
 {
     return (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0);
 }
+
+bool MinerCurrentlyActive();
+bool StakingPermitted();
 
 #endif // BITCOIN_VALIDATION_H

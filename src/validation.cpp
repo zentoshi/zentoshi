@@ -158,6 +158,10 @@ CTxMemPool mempool(&feeEstimator);
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
+//! reflects internal staking/mining state
+bool m_miner_active = false;
+bool m_staking_allowed = true;
+
 // Internal stuff
 namespace {
     CBlockIndex* pindexBestInvalid = nullptr;
@@ -176,6 +180,7 @@ namespace {
 
     /** Dirty block file entries. */
     std::set<int> setDirtyFileInfo;
+
 } // anon namespace
 
 CBlockIndex* LookupBlockIndex(const uint256& hash)
@@ -5657,6 +5662,19 @@ double GuessVerificationProgress(const ChainTxData& data, const CBlockIndex *pin
     }
 
     return pindex->nChainTx / fTxTotal;
+}
+
+//! Returns if the internal miner is currently running
+bool MinerCurrentlyActive()
+{
+    return m_miner_active;
+}
+
+//! Returns if the internal staker is permitted to run
+bool StakingPermitted()
+{
+    m_staking_allowed = !m_miner_active;
+    return m_staking_allowed;
 }
 
 class CMainCleanup
