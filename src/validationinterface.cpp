@@ -18,6 +18,7 @@
 #include <boost/signals2/signal.hpp>
 
 struct ValidationInterfaceConnections {
+    boost::signals2::scoped_connection SynchronousUpdatedBlockTip;
     boost::signals2::scoped_connection UpdatedBlockTip;
     boost::signals2::scoped_connection TransactionAddedToMempool;
     boost::signals2::scoped_connection BlockConnected;
@@ -38,6 +39,7 @@ struct ValidationInterfaceConnections {
 
 struct MainSignalsInstance {
     boost::signals2::signal<void (const CBlockIndex *, const CBlockIndex *, bool fInitialDownload)> UpdatedBlockTip;
+    boost::signals2::signal<void (const CBlockIndex *, const CBlockIndex *, bool fInitialDownload)> SynchronousUpdatedBlockTip;
     boost::signals2::signal<void (const CTransactionRef &)> TransactionAddedToMempool;
     boost::signals2::signal<void (const std::shared_ptr<const CBlock> &, const CBlockIndex *pindex, const std::vector<CTransactionRef>&)> BlockConnected;
     boost::signals2::signal<void (const std::shared_ptr<const CBlock> &, const CBlockIndex *pindexDisconnected)> BlockDisconnected;
@@ -99,6 +101,7 @@ void RegisterValidationInterface(CValidationInterface* pwalletIn) {
     conns.AcceptedBlockHeader = g_signals.m_internals->AcceptedBlockHeader.connect(std::bind(&CValidationInterface::AcceptedBlockHeader, pwalletIn, std::placeholders::_1));
     conns.NotifyHeaderTip = g_signals.m_internals->NotifyHeaderTip.connect(std::bind(&CValidationInterface::NotifyHeaderTip, pwalletIn, std::placeholders::_1, std::placeholders::_2));
     conns.UpdatedBlockTip = g_signals.m_internals->UpdatedBlockTip.connect(std::bind(&CValidationInterface::UpdatedBlockTip, pwalletIn, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    conns.SynchronousUpdatedBlockTip = g_signals.m_internals->SynchronousUpdatedBlockTip.connect(std::bind(&CValidationInterface::SynchronousUpdatedBlockTip, pwalletIn, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     conns.SyncTransaction = g_signals.m_internals->SyncTransaction.connect(std::bind(&CValidationInterface::SyncTransaction, pwalletIn, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     conns.NotifyTransactionLock = g_signals.m_internals->NotifyTransactionLock.connect(std::bind(&CValidationInterface::NotifyTransactionLock, pwalletIn, std::placeholders::_1, std::placeholders::_2));
     conns.TransactionAddedToMempool = g_signals.m_internals->TransactionAddedToMempool.connect(std::bind(&CValidationInterface::TransactionAddedToMempool, pwalletIn, std::placeholders::_1));
@@ -145,6 +148,10 @@ void CMainSignals::UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockInd
     m_internals->UpdatedBlockTip(pindexNew, pindexFork, fInitialDownload);
 }
 
+void CMainSignals::SynchronousUpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) {
+    m_internals->SynchronousUpdatedBlockTip(pindexNew, pindexFork, fInitialDownload);
+}
+
 void CMainSignals::TransactionAddedToMempool(const CTransactionRef &ptx) {
     m_internals->TransactionAddedToMempool(ptx);
 }
@@ -180,15 +187,15 @@ void CMainSignals::NewPoWValidBlock(const CBlockIndex *pindex, const std::shared
 }
 
 void CMainSignals::NotifyTransactionLock(const CTransaction &tx, const llmq::CInstantSendLock& islock) {
-        m_internals->NotifyTransactionLock(tx, islock);
+    m_internals->NotifyTransactionLock(tx, islock);
 }
 
 void CMainSignals::NotifyChainLock(const CBlockIndex* pindex, const llmq::CChainLockSig& clsig) {
-        m_internals->NotifyChainLock(pindex, clsig);
+    m_internals->NotifyChainLock(pindex, clsig);
 }
 
 void CMainSignals::NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload) {
-        m_internals->NotifyHeaderTip(pindexNew, fInitialDownload);
+    m_internals->NotifyHeaderTip(pindexNew, fInitialDownload);
 }
 
 void CMainSignals::AcceptedBlockHeader(const CBlockIndex *pindexNew) {
@@ -196,17 +203,17 @@ void CMainSignals::AcceptedBlockHeader(const CBlockIndex *pindexNew) {
 }
 
 void CMainSignals::NotifyGovernanceVote(const CGovernanceVote &vote) {
-        m_internals->NotifyGovernanceVote(vote);
+    m_internals->NotifyGovernanceVote(vote);
 }
 
 void CMainSignals::NotifyGovernanceObject(const CGovernanceObject &object) {
-        m_internals->NotifyGovernanceObject(object);
+    m_internals->NotifyGovernanceObject(object);
 }
 
 void CMainSignals::NotifyInstantSendDoubleSpendAttempt(const CTransaction &currentTx, const CTransaction &previousTx) {
-        m_internals->NotifyInstantSendDoubleSpendAttempt(currentTx, previousTx);
+    m_internals->NotifyInstantSendDoubleSpendAttempt(currentTx, previousTx);
 }
 
 void CMainSignals::NotifyMasternodeListChanged(bool undo, const CDeterministicMNList& oldMNList, const CDeterministicMNListDiff& diff) {
-        m_internals->NotifyMasternodeListChanged(undo, oldMNList, diff);
+    m_internals->NotifyMasternodeListChanged(undo, oldMNList, diff);
 }

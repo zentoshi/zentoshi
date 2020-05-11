@@ -95,6 +95,10 @@ protected:
      */
     virtual void UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) {}
     /**
+     * Same as UpdatedBlockTip, but called from the caller's thread
+     */
+    virtual void SynchronousUpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) {}
+    /**
      * Notifies listeners of a transaction having been added to mempool.
      *
      * Called on a background thread.
@@ -191,6 +195,7 @@ public:
     static const int SYNC_TRANSACTION_NOT_IN_BLOCK = -1;
 
     void UpdatedBlockTip(const CBlockIndex *, const CBlockIndex *, bool fInitialDownload);
+    void SynchronousUpdatedBlockTip(const CBlockIndex *, const CBlockIndex *, bool fInitialDownload);
     void SyncTransaction(const CTransaction &tx, const CBlockIndex *pindex, int posInBlock);
     void NotifyMasternodeListChanged(bool undo, const CDeterministicMNList& oldMNList, const CDeterministicMNListDiff& diff);
     void NotifyChainLock(const CBlockIndex* pindex, const llmq::CChainLockSig& clsig);
