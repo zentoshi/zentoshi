@@ -146,7 +146,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     // Disable size grip because it looks ugly and nobody needs it
     statusBar()->setSizeGripEnabled(true);
     statusBar()->addWidget(new QSizeGrip(statusBar()));
-    statusBar()->setStyleSheet("QSizeGrip { width: 3px; height: 20px; border: 0px solid black; } \n QStatusBar::item { border: 0px solid black; }");
+    statusBar()->setStyleSheet("background-color: #021928; QSizeGrip { width: 3px; height: 20px; border: 0px solid black; } \n QStatusBar::item { border: 0px solid black; }");
 
     // Status bar notification icons
     QFrame *frameBlocks = new QFrame();
@@ -187,6 +187,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
 
     // Progress bar and label for blocks download
     progressBarLabel = new QLabel();
+    progressBarLabel->setStyleSheet("color: white");
     progressBarLabel->setVisible(false);
     progressBar = new GUIUtil::ProgressBar();
     progressBar->setAlignment(Qt::AlignCenter);
