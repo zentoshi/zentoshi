@@ -182,9 +182,28 @@ CDBWrapper::~CDBWrapper()
 
 bool CDBWrapper::WriteBatch(CDBBatch& batch, bool fSync)
 {
+    const bool log_memory = LogAcceptCategory(BCLog::LEVELDB);
+    double mem_before = 0;
+    if (log_memory) {
+        mem_before = DynamicMemoryUsage() / 1024.0 / 1024;
+    }
     leveldb::Status status = pdb->Write(fSync ? syncoptions : writeoptions, &batch.batch);
     dbwrapper_private::HandleError(status);
+    if (log_memory) {
+        double mem_after = DynamicMemoryUsage() / 1024.0 / 1024;
+        LogPrint(BCLog::LEVELDB, "WriteBatch memory usage: db=%s, before=%.1fMiB, after=%.1fMiB\n",
+                 m_name, mem_before, mem_after);
+    }
     return true;
+}
+
+size_t CDBWrapper::DynamicMemoryUsage() const {
+    std::string memory;
+    if (!pdb->GetProperty("leveldb.approximate-memory-usage", &memory)) {
+        LogPrint(BCLog::LEVELDB, "Failed to get approximate-memory-usage property\n");
+        return 0;
+    }
+    return stoul(memory);
 }
 
 // Prefixed with null character to avoid collisions with other keys
@@ -215,7 +234,7 @@ bool CDBWrapper::IsEmpty()
 }
 
 CDBIterator::~CDBIterator() { delete piter; }
-bool CDBIterator::Valid() { return piter->Valid(); }
+bool CDBIterator::Valid() const { return piter->Valid(); }
 void CDBIterator::SeekToFirst() { piter->SeekToFirst(); }
 void CDBIterator::Next() { piter->Next(); }
 

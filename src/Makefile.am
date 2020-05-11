@@ -659,7 +659,7 @@ zentoshid_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-zentoshid_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(BLS_LIBS)
+zentoshid_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_CFLAGS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(BLS_LIBS)
 
 # zentoshi-cli binary #
 zentoshi_cli_SOURCES = zentoshi-cli.cpp

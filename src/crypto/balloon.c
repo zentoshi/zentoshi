@@ -342,14 +342,6 @@ extern "C" {
     balloon_evp_cipher aes_128_ctr = { 904, 1, 16, 16, 0x5, aes_init_key, aes_ctr_cipher, NULL, 264, NULL, NULL };
     balloon_evp_cipher* balloon_evp_aes_128_ctr(void) { return &aes_128_ctr; }
 
-    void sha256(const void* input, void* output, int len)
-    {
-        SHA256_CTX c;
-        SHA256_Init(&c);
-        SHA256_Update(&c, input, len);
-        SHA256_Final(output, &c);
-    }
-
     void balloon_hash(const void* input, void* output, const int buflen)
     {
         const int exprounds = buflen / 32;
@@ -368,7 +360,7 @@ extern "C" {
         memset(&s.bstream.ctx, 0, 160);
         memcpy(&hashmix[0], input+48, 32);
         memcpy(&hashmix[32], blkpadding, 12);
-        sha256(hashmix, key_bytes, 44);
+        SHA256(hashmix, 44, key_bytes);
         s.bstream.ctx.cipher = balloon_evp_aes_128_ctr();
         s.bstream.ctx.cipher_data = malloc(264);
         s.bstream.ctx.key_len = 16;
@@ -377,14 +369,14 @@ extern "C" {
         memcpy(&hashmix[8], input+48, 32);
         memcpy(&hashmix[40], input, 80);
         memcpy(&hashmix[120], blkpadding, 12);
-        sha256(hashmix, s.buffer, 132);
+        SHA256(hashmix, 132, s.buffer);
         s.counter++;
         uint8_t* blocks[1] = { s.buffer };
         uint8_t* cur = s.buffer + 32;
         for (int i = 1; i < exprounds; i++) {
             memcpy(&hashmix[0], &s.counter, 8);
             memcpy(&hashmix[8], blocks[0], 32);
-            sha256(hashmix, cur, 40);
+            SHA256(hashmix, 40, cur);
             s.counter++;
             blocks[0] += 32;
             cur += 32;
@@ -411,7 +403,7 @@ extern "C" {
                 memcpy(&hashmix[72], blocks[2], 32);
                 memcpy(&hashmix[104], blocks[3], 32);
                 memcpy(&hashmix[136], blocks[4], 32);
-                sha256(hashmix, cur_block, 168);
+                SHA256(hashmix, 168, cur_block);
                 s.counter += 1;
             }
         }
