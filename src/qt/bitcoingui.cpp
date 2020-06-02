@@ -1451,10 +1451,10 @@ void BitcoinGUI::setQuorumStatus()
     bool status = sporkManager.IsSporkActive(SPORK_17_QUORUM_DKG_ENABLED);
     if(status) {
         labelQuorumIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/quorum_active").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-        labelQuorumIcon->setToolTip(tr("Quorums are active"));
+        labelQuorumIcon->setToolTip(tr("Quorums active"));
     } else {
         labelQuorumIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/quorum_inactive").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-        labelQuorumIcon->setToolTip(tr("Quorums are inactive"));
+        labelQuorumIcon->setToolTip(tr("Quorums inactive"));
     }
 }
 
@@ -1464,10 +1464,10 @@ void BitcoinGUI::setChainLockStatus()
     bool status = sporkManager.IsSporkActive(SPORK_19_CHAINLOCKS_ENABLED);
     if(status) {
         labelChainLocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/chainlocks_active").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-        labelChainLocksIcon->setToolTip(tr("Chainlocks are active"));
+        labelChainLocksIcon->setToolTip(tr("Chainlocks active"));
     } else {
         labelChainLocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/chainlocks_inactive").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-        labelChainLocksIcon->setToolTip(tr("Chainlocks are inactive"));
+        labelChainLocksIcon->setToolTip(tr("Chainlocks inactive"));
     }
 }
 
