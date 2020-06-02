@@ -2844,7 +2844,7 @@ CWallet::Balance CWallet::GetBalance(const int min_depth, bool avoid_reuse) cons
     isminefilter reuse_filter = avoid_reuse ? ISMINE_NO : ISMINE_USED;
     {
         auto locked_chain = chain().lock();
-        LOCK(cs_wallet);
+        LOCK2(cs_main, cs_wallet);
         for (const auto& entry : mapWallet)
         {
             const CWalletTx& wtx = entry.second;
@@ -5801,7 +5801,6 @@ void CWallet::handleNotifications()
 void CWallet::postInitProcess()
 {
     auto locked_chain = chain().lock();
-    LOCK(cs_wallet);
 
     // Add wallet transactions that aren't already in a block to mempool
     // Do this here as mempool requires genesis block to be loaded
