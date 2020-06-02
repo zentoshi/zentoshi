@@ -2459,12 +2459,13 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     }
 
     // add new entries
+    int64_t nTime6 = GetTimeMicros();
     for (const CTransactionRef ptx: block.vtx) {
         const CTransaction& tx = *ptx;
         if (tx.IsCoinBase())
             continue;
         for (const CTxIn in: tx.vin) {
-            LogPrintf("mapStakeSpent: Insert %s | %u\n", in.prevout.ToString(), pindex->nHeight);
+            //! LogPrintf("mapStakeSpent: Insert %s | %u\n", in.prevout.ToString(), pindex->nHeight);
             mapStakeSpent.insert(std::make_pair(in.prevout, pindex->nHeight));
         }
     }
@@ -2472,12 +2473,15 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     // delete old entries
     for (auto it = mapStakeSpent.begin(); it != mapStakeSpent.end();) {
         if (it->second < pindex->nHeight - Params().MaxReorganizationDepth()) {
-            LogPrintf("mapStakeSpent: Erase %s | %u\n", it->first.ToString(), it->second);
+            //! LogPrintf("mapStakeSpent: Erase %s | %u\n", it->first.ToString(), it->second);
             it = mapStakeSpent.erase(it);
         }else {
             it++;
         }
     }
+    int64_t nTime7 = GetTimeMicros();
+
+    LogPrint(BCLog::BNCH, "    - Stake duplicate tests: %.2fms [%.2fs]\n", 0.001 * (nTime7 - nTime6), nTimeIndex * 0.000001);
 
     // add this block to the view's block chain
     view.SetBestBlock(pindex->GetBlockHash());
@@ -2490,8 +2494,8 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         }
     }
 
-    int64_t nTime6 = GetTimeMicros(); nTimeIndex += nTime6 - nTime5;
-    LogPrint(BCLog::BNCH, "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeIndex * 0.000001);
+    int64_t nTime8 = GetTimeMicros(); nTimeIndex += nTime8 - nTime7;
+    LogPrint(BCLog::BNCH, "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime8 - nTime7), nTimeIndex * 0.000001);
 
     // Watch for changes to the previous coinbase transaction.
     static uint256 hashPrevBestCoinBase;
@@ -2500,8 +2504,8 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
     evoDb->WriteBestBlock(pindex->GetBlockHash());
 
-    int64_t nTime7 = GetTimeMicros(); nTimeCallbacks += nTime7 - nTime6;
-    LogPrint(BCLog::BNCH, "    - Callbacks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime7 - nTime6), nTimeCallbacks * MICRO, nTimeCallbacks * MILLI / nBlocksTotal);
+    int64_t nTime9 = GetTimeMicros(); nTimeCallbacks += nTime9 - nTime8;
+    LogPrint(BCLog::BNCH, "    - Callbacks: %.2fms [%.2fs (%.2fms/blk)]\n", MILLI * (nTime9 - nTime8), nTimeCallbacks * MICRO, nTimeCallbacks * MILLI / nBlocksTotal);
 
     return true;
 }
@@ -4099,6 +4103,9 @@ bool BlockManager::AcceptBlockHeader(const CBlockHeader& block, CValidationState
 
     if (ppindex)
         *ppindex = pindex;
+
+    // Notify external listeners about accepted block header
+    GetMainSignals().AcceptedBlockHeader(pindex);
 
     return true;
 }
