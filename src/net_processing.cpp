@@ -2528,28 +2528,32 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             }
             else
             {
-                static std::set<int> legacyMNObjs = {
-                        MSG_MASTERNODE_PAYMENT_VOTE,
-                        MSG_MASTERNODE_PAYMENT_BLOCK,
-                        MSG_MASTERNODE_ANNOUNCE,
-                        MSG_MASTERNODE_PING,
-                        MSG_MASTERNODE_VERIFY,
-                };
                 static std::set<int> allowWhileInIBDObjs = {
                         MSG_SPORK
                 };
-                if (legacyMNObjs.count(inv.type) && deterministicMNManager->IsDIP3Enforced()) {
-                    LogPrint(BCLog::NET, "ignoring (%s) inv of legacy type %d peer=%d\n", inv.hash.ToString(), inv.type, pfrom->GetId());
-                    continue;
-                }
 
                 pfrom->AddInventoryKnown(inv);
                 if (fBlocksOnly) {
-                    LogPrint(BCLog::NET, "transaction (%s) inv sent in violation of protocol, disconnecting peer=%d\n", inv.hash.ToString(), pfrom->GetId());
-                    pfrom->fDisconnect = true;
-                    return true;
-                } else if (!fAlreadyHave && !fImporting && !fReindex && !::ChainstateActive().IsInitialBlockDownload()) {
-                    RequestTx(State(pfrom->GetId()), inv.hash, current_time);
+                    LogPrint(BCLog::NET, "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(),
+                             pfrom->GetId());
+                } else if (!fAlreadyHave) {
+                    bool allowWhileInIBD = allowWhileInIBDObjs.count(inv.type);
+                    if (allowWhileInIBD || (!fImporting && !fReindex && !::ChainstateActive().IsInitialBlockDownload())) {
+                        int64_t doubleRequestDelay = 2 * 60 * 1000000;
+                        // some messages need to be re-requested faster when the first announcing peer did not answer to GETDATA
+                        switch (inv.type) {
+                            case MSG_QUORUM_RECOVERED_SIG:
+                                doubleRequestDelay = 15 * 1000000;
+                                break;
+                            case MSG_CLSIG:
+                                doubleRequestDelay = 5 * 1000000;
+                                break;
+                            case MSG_ISLOCK:
+                                doubleRequestDelay = 10 * 1000000;
+                                break;
+                        }
+                        pfrom->AskFor(inv, doubleRequestDelay);
+                    }
                 }
             }
 
