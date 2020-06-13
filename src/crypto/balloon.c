@@ -357,7 +357,7 @@ extern "C" {
         uint8_t blkpadding[12] = {0};
         memset(blkpadding, 0x80, 1);
         memset(blkpadding+8, 0x04, 1);
-        memset(&s.bstream.ctx, 0, 160);
+        memset(&s.bstream.ctx, 0, 152);
         memcpy(&hashmix[0], input+48, 32);
         memcpy(&hashmix[32], blkpadding, 12);
         SHA256(hashmix, 44, key_bytes);
