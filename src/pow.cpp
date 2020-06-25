@@ -13,6 +13,13 @@
 #include <util/system.h>
 #include <validation.h>
 
+arith_uint256 GetMinLimit(const Consensus::Params& params, bool fProofOfStake)
+{
+    if (fProofOfStake)
+        return UintToArith256(params.posLimit);
+    return UintToArith256(params.powLimit);
+}
+
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
 {
     while (pindex && pindex->pprev && (pindex->IsProofOfStake() != fProofOfStake)) {
@@ -31,53 +38,41 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     double PastRateAdjustmentRatio = double(1);
     arith_uint256 PastDifficultyAverage;
     arith_uint256 PastDifficultyAveragePrev;
-    double EventHorizonDeviation;
-    double EventHorizonDeviationFast;
-    double EventHorizonDeviationSlow;
-    static const int64_t Resolution = 6;
+    static const int64_t Resolution = 20;
     static const int64_t Blocktime = fProofOfStake ? params.nPosTargetSpacing : params.nPowTargetSpacing;
+    static const int64_t AdjBlocktime = Blocktime * 2;
     static const unsigned int timeDaySeconds = 86400;
-    uint64_t pastSecondsMin = timeDaySeconds * 0.025;
-    uint64_t pastSecondsMax = timeDaySeconds * 7;
-    uint64_t PastBlocksMin = pastSecondsMin / Blocktime;
-    uint64_t PastBlocksMax = pastSecondsMax / Blocktime;
-    const arith_uint256 bnLimit = fProofOfStake ? UintToArith256(params.posLimit) : UintToArith256(params.powLimit);
+    uint64_t PastBlocksMin = (timeDaySeconds * 0.025) / AdjBlocktime;
+    uint64_t PastBlocksMax = (timeDaySeconds * 7) / AdjBlocktime;
+    const arith_uint256 bnLimit = fProofOfStake ? GetMinLimit(params, true) : GetMinLimit(params, false);
 
-    if (BlockLastSolved == nullptr || BlockLastSolved->nHeight == 0 ||
-            (uint64_t)BlockLastSolved->nHeight < PastBlocksMin)
+    if (BlockLastSolved == nullptr || BlockLastSolved->nHeight == 0 || (uint64_t)BlockLastSolved->nHeight < PastBlocksMin)
         return bnLimit.GetCompact();
 
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
-        if (PastBlocksMax > 0 && i > PastBlocksMax) break;
+        if (PastBlocksMax > 0 && i > PastBlocksMax)
+            break;
         PastBlocksMass++;
         PastDifficultyAverage.SetCompact(BlockReading->nBits);
         if (i > 1) {
             if (PastDifficultyAverage >= PastDifficultyAveragePrev)
-                PastDifficultyAverage =
-                        ((PastDifficultyAverage - PastDifficultyAveragePrev) / i) +
-                        PastDifficultyAveragePrev;
+                PastDifficultyAverage = ((PastDifficultyAverage - PastDifficultyAveragePrev) / i) + PastDifficultyAveragePrev;
             else
-                PastDifficultyAverage =
-                        PastDifficultyAveragePrev -
-                        ((PastDifficultyAveragePrev - PastDifficultyAverage) / i);
+                PastDifficultyAverage = PastDifficultyAveragePrev - ((PastDifficultyAveragePrev - PastDifficultyAverage) / i);
         }
         PastDifficultyAveragePrev = PastDifficultyAverage;
-        PastRateActualSeconds =
-                BlockLastSolved->GetBlockTime() - BlockReading->GetBlockTime();
-        PastRateTargetSeconds = Blocktime * PastBlocksMass;
+        PastRateActualSeconds = BlockLastSolved->GetBlockTime() - BlockReading->GetBlockTime();
+        PastRateTargetSeconds = AdjBlocktime * PastBlocksMass;
         PastRateAdjustmentRatio = double(1);
-        if (PastRateActualSeconds < 0) PastRateActualSeconds = 0;
+        if (PastRateActualSeconds < 0)
+            PastRateActualSeconds = 0;
         if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0)
-            PastRateAdjustmentRatio =
-                    double(PastRateTargetSeconds) / double(PastRateActualSeconds);
-        EventHorizonDeviation =
-                1 + (0.7084 * pow((double(PastBlocksMass) / double(72)), -1.228));
-        EventHorizonDeviationFast = EventHorizonDeviation;
-        EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
-
+            PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
+        double EventHorizonDeviation = 1 + (0.7084 * pow((double(PastBlocksMass) / double(72)), -1.228));
+        double EventHorizonDeviationFast = EventHorizonDeviation;
+        double EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
         if (PastBlocksMass >= PastBlocksMin) {
-            if ((PastRateAdjustmentRatio <= EventHorizonDeviationSlow) ||
-                    (PastRateAdjustmentRatio >= EventHorizonDeviationFast)) {
+            if ((PastRateAdjustmentRatio <= EventHorizonDeviationSlow) || (PastRateAdjustmentRatio >= EventHorizonDeviationFast)) {
                 assert(BlockReading);
                 break;
             }
@@ -97,20 +92,26 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
         kgw_dual1 /= PastRateTargetSeconds;
     }
 
-    int64_t nActualTime = GetLastBlockIndex(pindexLast, fProofOfStake)->GetBlockTime() -
-                          GetLastBlockIndex(pindexLast, fProofOfStake)->pprev->GetBlockTime();
+    int64_t nActualTime = GetLastBlockIndex(pindexLast, fProofOfStake)->GetBlockTime() - GetLastBlockIndex(pindexLast, fProofOfStake)->pprev->GetBlockTime();
     if (nActualTime < 0)
-        nActualTime = Blocktime;
-    if (nActualTime < Blocktime / Resolution)
-        nActualTime = Blocktime / Resolution;
-    if (nActualTime > Blocktime * Resolution)
-        nActualTime = Blocktime * Resolution;
+        nActualTime = AdjBlocktime;
+    if (nActualTime < AdjBlocktime / Resolution)
+        nActualTime = AdjBlocktime / Resolution;
+    if (nActualTime > AdjBlocktime * Resolution)
+        nActualTime = AdjBlocktime * Resolution;
 
     kgw_dual2 *= nActualTime;
-    kgw_dual2 /= Blocktime;
+    kgw_dual2 /= AdjBlocktime;
     arith_uint256 bnNew;
     bnNew = ((kgw_dual2 + kgw_dual1) / 2);
-    if (bnNew > bnLimit) bnNew = bnLimit;
+    if (bnNew > bnLimit)
+        bnNew = bnLimit;
+
+    if (gArgs.IsArgSet("-debug")) {
+        LogPrintf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
+        LogPrintf("Before: %08x  %s\n", BlockLastSolved->nBits, ArithToUint256(arith_uint256().SetCompact(BlockLastSolved->nBits)).ToString().c_str());
+        LogPrintf("After:  %08x  %s\n", bnNew.GetCompact(), ArithToUint256(bnNew).ToString().c_str());
+    }
 
     return bnNew.GetCompact();
 }
