@@ -426,8 +426,8 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1582819900;
-        uint32_t nNonce = 66908;
+        uint32_t nTime = 1593114293;
+        uint32_t nNonce = 24521;
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 

@@ -9,7 +9,8 @@
 #include <streams.h>
 #include <tinyformat.h>
 #include <crypto/common.h>
-#include <crypto/balloon.h>
+#include <crypto/scrypt.h>
+#include <util/strencodings.h>
 
 uint256 CBlockHeader::GetHash() const
 {
@@ -19,10 +20,7 @@ uint256 CBlockHeader::GetHash() const
 uint256 CBlockHeader::GetPoWHash() const
 {
     uint256 thash;
-    std::vector<unsigned char> vch(80);
-    CVectorWriter ss(SER_NETWORK, PROTOCOL_VERSION, vch, 0);
-    ss << *this;
-    balloon((char*)vch.data(), &thash);
+    scrypt_1024_1_1_256(BEGIN(nVersion), BEGIN(thash));
     return thash;
 }
 
