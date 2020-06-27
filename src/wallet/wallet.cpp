@@ -4373,6 +4373,13 @@ bool CWallet::CreateCoinStake(unsigned int nBits, CAmount blockReward, CMutableT
         return false;
     }
 
+    // Sign
+    int nIn = 0;
+    for (const auto pcoin : vwtxPrev) {
+        if (!SignSignature(*this, *pcoin, txNew, nIn++, SIGHASH_ALL))
+            return error("CreateCoinStake : failed to sign coinstake");
+    }
+
     nLastStakeSetUpdate = 0;
     return true;
 }

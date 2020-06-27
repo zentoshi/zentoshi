@@ -28,13 +28,9 @@ bool GetKeyIDFromUTXO(const CTxOut& txout, CKeyID& keyID)
     } else if (whichType == TX_PUBKEYHASH) {
         resultType = 2;
         keyID = CKeyID(uint160(vSolutions[0]));
-    } else if (whichType == TX_WITNESS_V0_SCRIPTHASH ||
-               whichType == TX_WITNESS_V0_KEYHASH) {
-        resultType = 3;
-        keyID = CKeyID(uint160(vSolutions[0]));
     }
-    LogPrintf("GetKeyIDFromUTXO()::Type %d\n", resultType);
 
+    LogPrintf("GetKeyIDFromUTXO()::Type %d\n", resultType);
     return true;
 }
 
