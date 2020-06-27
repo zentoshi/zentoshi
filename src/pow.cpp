@@ -13,8 +13,9 @@
 #include <util/system.h>
 #include <validation.h>
 
-arith_uint256 GetMinLimit(const Consensus::Params& params, bool fProofOfStake)
+arith_uint256 GetMinLimit(bool fProofOfStake)
 {
+    const Consensus::Params& params = Params().GetConsensus();
     if (fProofOfStake)
         return UintToArith256(params.posLimit);
     return UintToArith256(params.powLimit);
@@ -44,7 +45,7 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     static const unsigned int timeDaySeconds = 86400;
     uint64_t PastBlocksMin = (timeDaySeconds * 0.025) / AdjBlocktime;
     uint64_t PastBlocksMax = (timeDaySeconds * 7) / AdjBlocktime;
-    const arith_uint256 bnLimit = fProofOfStake ? GetMinLimit(params, true) : GetMinLimit(params, false);
+    const arith_uint256 bnLimit = fProofOfStake ? GetMinLimit(true) : GetMinLimit(false);
 
     if (BlockLastSolved == nullptr || BlockLastSolved->nHeight == 0 || (uint64_t)BlockLastSolved->nHeight < PastBlocksMin)
         return bnLimit.GetCompact();
@@ -107,8 +108,8 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     if (bnNew > bnLimit)
         bnNew = bnLimit;
 
-    if (gArgs.IsArgSet("-debug")) {
-        LogPrintf("PastRateAdjustmentRatio = %g\n", PastRateAdjustmentRatio);
+    if (gArgs.GetBoolArg("-debug", true)) {
+        LogPrintf("%s - adjustment for %s (PastRateAdjustmentRatio = %g)\n", __func__, fProofOfStake ? "PoS" : "PoW", PastRateAdjustmentRatio);
         LogPrintf("Before: %08x  %s\n", BlockLastSolved->nBits, ArithToUint256(arith_uint256().SetCompact(BlockLastSolved->nBits)).ToString().c_str());
         LogPrintf("After:  %08x  %s\n", bnNew.GetCompact(), ArithToUint256(bnNew).ToString().c_str());
     }

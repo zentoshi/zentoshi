@@ -3824,11 +3824,6 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationSta
             return state.Invalid(ValidationInvalidReason::BLOCK_CHECKPOINT, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight), REJECT_CHECKPOINT, "bad-fork-prior-to-checkpoint");
     }
 
-    // Test PoW block difficulty
-    if ((block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, false)) && block.nNonce != 0) {
-        return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "bad-diffbits", "incorrect proof of work");
-    }
-
     // Limit damage by PoSv3 potential vulnerabilities (barrystyle/giaki3003 2019)
     if ((block.GetBlockTime() > nAdjustedTime + MAX_FUTURE_STAKE_TIME) && block.nNonce == 0) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "time-too-new", "block's timestamp is too early");
@@ -3894,13 +3889,13 @@ static bool ContextualCheckBlock(const CBlock& block, CValidationState& state, c
     }
 
     // Only enforce nBits for PoW blocks; PoS can set it as they please (they must satisfy hashProof still..)
-    if (block.nBits != GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())) {
+    auto blockBits = GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake());
+    if (block.nBits != blockBits) {
         return state.Invalid(ValidationInvalidReason::CONSENSUS, error("CheckBlock(): incorrect difficulty: block pow=%s bits=%08x calc=%08x",
-                             block.IsProofOfWork() ? "Y" : "N", block.nBits, GetNextWorkRequired(pindexPrev, consensusParams, block.IsProofOfStake())));
+                             block.IsProofOfWork() ? "Y" : "N", block.nBits, blockBits));
     } else {
-        LogPrintf("Block pow=%s bits=%08x found=%08x %s=%s\n", block.IsProofOfWork() ? "Y" : "N", GetNextWorkRequired(pindexPrev,
-                  consensusParams, block.IsProofOfStake()), block.nBits, block.IsProofOfWork() ? "powhash" : "hashproof",
-                  block.IsProofOfWork() ? block.GetPoWHash().ToString().c_str() : hashProofOfStake.ToString().c_str());
+        LogPrintf("Block pow=%s bits=%08x found=%08x %s=%s\n", block.IsProofOfWork() ? "Y" : "N", blockBits, block.nBits,
+                  block.IsProofOfWork() ? "powhash" : "hashproof", block.IsProofOfWork() ? block.GetPoWHash().ToString().c_str() : hashProofOfStake.ToString().c_str());
     }
 
     // Start enforcing BIP113 (Median Time Past).

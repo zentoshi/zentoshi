@@ -355,11 +355,11 @@ public:
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
         consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007ffff00000000000000000000000000000000000000000000000000000000");
-        consensus.nPowTargetTimespan = 300;
         consensus.nPowTargetSpacing = 60;
-        consensus.nPosTargetTimespan = consensus.nPowTargetTimespan / 2;
-        consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
-        consensus.nStakeMinAge = 60 * 60;
+        consensus.nPosTargetSpacing = 90;
+        consensus.nPowTargetTimespan = consensus.nPowTargetSpacing;
+        consensus.nPosTargetTimespan = consensus.nPosTargetSpacing;
+        consensus.nStakeMinAge = 30 * 60;
         consensus.nStakeMaxAge = 60 * 60 * 24 * 30;
         consensus.nMinStakeAmount = 0.5 * COIN;
         consensus.nMinStakeHistory = 60;
