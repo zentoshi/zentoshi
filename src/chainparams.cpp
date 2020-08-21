@@ -353,7 +353,7 @@ public:
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
-        consensus.powLimit = uint256S("0000ffff00000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.posLimit = uint256S("0007ffff00000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetSpacing = 60;
         consensus.nPosTargetSpacing = 90;
@@ -415,8 +415,8 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0x1f;
-        pchMessageStart[1] = 0x2f;
+        pchMessageStart[0] = 0xef;
+        pchMessageStart[1] = 0xaf;
         pchMessageStart[2] = 0x1f;
         pchMessageStart[3] = 0x2f;
         nDefaultPort = 49152;
@@ -426,9 +426,9 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1593114293;
-        uint32_t nNonce = 24521;
-        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f00ffff, 1, 0 * COIN);
+        uint32_t nTime = 1598000000;
+        uint32_t nNonce = 307;
+        genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,80);
