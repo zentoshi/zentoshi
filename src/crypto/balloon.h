@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2015-2016, Henry Corrigan-Gibbs (https://github.com/henrycg/balloon)
- * Copyright (c) 2018-2019, barrystyle (https://github.com/barrystyle/balloon)
+ * Copyright (c) 2018-2020, barrystyle (https://github.com/barrystyle/balloon)
  *
- * balloon² - improving on the original balloon hashing algorithm
+ * balloon² - improving on the original balloon hashing pow algorithm
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,14 +17,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdint.h>
+int alx_init_balloon_buffer();
+void alx_balloon(const void* input, void* output);
+void alx_free_balloon_buffer();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    void balloon(const void* input, void* output);
-
-#ifdef __cplusplus
-}
-#endif
