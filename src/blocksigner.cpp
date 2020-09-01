@@ -5,81 +5,56 @@
 #include <script/signingprovider.h>
 #include <util/strencodings.h>
 #include <util/system.h>
+#include <wallet/wallet.h>
 
-typedef std::vector<uint8_t> valtype;
-
-bool SignBlockWithKey(CBlock& block, const CKey& key)
+typedef std::vector<unsigned char> valtype;
+bool SignBlock(CBlock& block, const CWallet& pwallet)
 {
-    if (!key.Sign(block.GetHash(), block.vchBlockSig))
-        return error("%s: failed to sign block hash with key", __func__);
-
-    return true;
-}
-
-bool GetKeyIDFromUTXO(const CTxOut& txout, CKeyID& keyID)
-{
-    int resultType = 0;
     std::vector<valtype> vSolutions;
+    const CTxOut& txout = block.IsProofOfStake()? block.vtx[1]->vout[1] : block.vtx[0]->vout[0];
     txnouttype whichType = Solver(txout.scriptPubKey, vSolutions);
 
-    if (whichType == TX_PUBKEY) {
-        resultType = 1;
-        keyID = CPubKey(vSolutions[0]).GetID();
-    } else if (whichType == TX_PUBKEYHASH) {
-        resultType = 2;
-        keyID = CKeyID(uint160(vSolutions[0]));
-    }
-
-    LogPrintf("GetKeyIDFromUTXO()::Type %d\n", resultType);
-    return true;
-}
-
-bool SignBlock(CBlock& block, FillableSigningProvider& keystore)
-{
-    std::vector<valtype> vSolutions;
     CKeyID keyID;
-    if (block.IsProofOfWork()) {
-        bool fFoundID = false;
-        for (const CTxOut& txout :block.vtx[0]->vout) {
-            if (!GetKeyIDFromUTXO(txout, keyID))
-                continue;
-            fFoundID = true;
-            break;
-        }
-        if (!fFoundID)
-            return error("%s: failed to find key for PoW", __func__);
-    } else {
-        if (!GetKeyIDFromUTXO(block.vtx[1]->vout[1], keyID))
-            return error("%s: failed to find key for PoS", __func__);
-    }
+
+    if (whichType == TX_PUBKEYHASH)
+        keyID = CKeyID(uint160(vSolutions[0]));
+    else if (whichType == TX_PUBKEY)
+        keyID = CPubKey(vSolutions[0]).GetID();
 
     CKey key;
-    if (!keystore.GetKey(keyID, key))
-        return error("%s: failed to get key from keystore", __func__);
-
-    return SignBlockWithKey(block, key);
+    if (!pwallet.GetKey(keyID, key)) return false;
+    if (!key.Sign(block.GetHash(), block.vchBlockSig)) return false;
+    return true;
 }
 
 bool CheckBlockSignature(const CBlock& block)
 {
-    std::vector<valtype> vSolutions;
-
     if (block.IsProofOfWork())
         return block.vchBlockSig.empty();
 
-    if (block.vchBlockSig.empty())
-        return error("%s: vchBlockSig is empty!", __func__);
-
-    CPubKey pubkey;
+    std::vector<valtype> vSolutions;
+    txnouttype whichType;
     const CTxOut& txout = block.vtx[1]->vout[1];
-    txnouttype whichType = Solver(txout.scriptPubKey, vSolutions);
-    if (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) {
-        valtype& vchPubKey = vSolutions[0];
-        pubkey = CPubKey(vchPubKey);
+
+    whichType = Solver(txout.scriptPubKey, vSolutions);
+    valtype& vchPubKey = vSolutions[0];
+    if (whichType == TX_PUBKEY)
+    {
+        CPubKey key(vchPubKey);
+        if (block.vchBlockSig.empty()) return false;
+        return key.Verify(block.GetHash(), block.vchBlockSig);
+    }
+    else if (whichType == TX_PUBKEYHASH)
+    {
+        CKeyID keyID;
+        keyID = CKeyID(uint160(vchPubKey));
+        CPubKey pubkey(vchPubKey);
+
+        if (!pubkey.IsValid()) return false;
+        if (block.vchBlockSig.empty()) return false;
+        return pubkey.Verify(block.GetHash(), block.vchBlockSig);
     }
 
-    if (!pubkey.IsValid())
-        return error("%s: invalid pubkey %s", __func__, HexStr(pubkey));
-
-    return pubkey.Verify(block.GetHash(), block.vchBlockSig);
+    return false;
 }
+

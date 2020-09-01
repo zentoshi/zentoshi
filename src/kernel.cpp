@@ -365,21 +365,18 @@ int GetLastHeight(uint256 txHash)
 bool CheckProofOfStake(const CBlock &block, uint256& hashProofOfStake, const CBlockIndex* pindexPrev)
 {
     const CTransactionRef &tx = block.vtx[1];
+
     if (!tx->IsCoinStake())
         return error("CheckProofOfStake() : called on non-coinstake %s", tx->GetHash().ToString().c_str());
 
     // Kernel (input 0) must match the stake hash target per coin age (nBits)
     const CTxIn& txin = tx->vin[0];
 
-    // First try finding the previous transaction in database
-    uint256 hashBlock;
-    CTransactionRef txPrev;
-    const auto &cons = Params().GetConsensus();
+    // Get transaction index for the previous transaction
+    CDiskTxPos postx;
 
-    if (!GetTransaction(txin.prevout.hash, txPrev, cons, hashBlock))
-        return error("CheckProofOfStake() : INFO: read txPrev failed");
-
-    CTxOut prevTxOut = txPrev->vout[txin.prevout.n];
+    if (!pblocktree->ReadTxIndex(txin.prevout.hash, postx))
+        return error("CheckProofOfStake() : tx index not found"); // tx index not found
 
     // Enforce minimum stake depth
     const int nPreviousBlockHeight = pindexPrev->nHeight;
@@ -392,23 +389,25 @@ bool CheckProofOfStake(const CBlock &block, uint256& hashProofOfStake, const CBl
     if (!HasStakeMinDepth(nPreviousBlockHeight+1, nBlockFromHeight))
         return error("CheckProofOfStake() : min stake depth not met");
 
-    // Find block index
-    CBlockIndex* pindex = nullptr;
-    BlockMap::iterator it = ::BlockIndex().find(hashBlock);
-    if (it != ::BlockIndex().end())
-        pindex = it->second;
-    else
-        return error("CheckProofOfStake() : read block failed");
+    // Read txPrev and header of its block
+    CBlockHeader header;
+    CTransactionRef txPrev;
+    {
+        CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
 
-    // Read block header
-    CBlock blockprev;
-    if (!ReadBlockFromDisk(blockprev, pindex->GetBlockPos(), cons))
-        return error("CheckProofOfStake(): INFO: failed to find block");
+        try {
+            file >> header;
+            fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+            file >> txPrev;
+        } catch (std::exception& e) {
+            return error("%s() : deserialize or I/O error in CheckProofOfStake()", __PRETTY_FUNCTION__);
+        }
 
-    if(!CheckKernelScript(prevTxOut.scriptPubKey, tx->vout[1].scriptPubKey))
-        return error("CheckProofOfStake() : INFO: check kernel script failed on coinstake %s, hashProof=%s \n", tx->GetHash().ToString().c_str(), hashProofOfStake.ToString().c_str());
+        if (txPrev->GetHash() != txin.prevout.hash)
+            return error("%s() : txid mismatch in CheckProofOfStake()", __PRETTY_FUNCTION__);
+    }
 
-    if (!CheckStakeKernelHash(block.nBits, blockprev, txPrev, txin.prevout, block.nTime, hashProofOfStake))
+    if (!CheckStakeKernelHash(block.nBits, header, txPrev, txin.prevout, block.nTime, hashProofOfStake))
         return error("CheckProofOfStake() : INFO: check kernel failed on coinstake %s, hashProof=%s \n", tx->GetHash().ToString().c_str(), hashProofOfStake.ToString().c_str());
 
     return true;

@@ -5,6 +5,7 @@
 
 #include <txdb.h>
 
+#include <kernel.h>
 #include <pow.h>
 #include <random.h>
 #include <shutdown.h>
@@ -21,7 +22,7 @@ static const char DB_COIN = 'C';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_BLOCK_INDEX = 'b';
-
+static const char DB_TXINDEX = 't';
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_HEAD_BLOCKS = 'H';
 static const char DB_FLAG = 'F';
@@ -233,6 +234,17 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
     return WriteBatch(batch, true);
 }
 
+bool CBlockTreeDB::ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) {
+    return Read(std::make_pair(DB_TXINDEX, txid), pos);
+}
+
+bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> >&vect) {
+    CDBBatch batch(*this);
+    for (std::vector<std::pair<uint256,CDiskTxPos> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+        batch.Write(std::make_pair(DB_TXINDEX, it->first), it->second);
+    return WriteBatch(batch);
+}
+
 bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
     return Write(std::make_pair(DB_FLAG, name), fValue ? '1' : '0');
 }
@@ -259,7 +271,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
             CDiskBlockIndex diskindex;
             if (pcursor->GetValue(diskindex)) {
-                // Construct block index object
                 CBlockIndex* pindexNew      = insertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev            = insertBlockIndex(diskindex.hashPrev);
                 pindexNew->nHeight          = diskindex.nHeight;
@@ -274,7 +285,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->nStatus          = diskindex.nStatus;
                 pindexNew->nTx              = diskindex.nTx;
 
-                //Proof Of Stake
                 pindexNew->nMint            = diskindex.nMint;
                 pindexNew->nMoneySupply     = diskindex.nMoneySupply;
                 pindexNew->nFlags           = diskindex.nFlags;
@@ -282,6 +292,13 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->prevoutStake     = diskindex.prevoutStake;
                 pindexNew->nStakeTime       = diskindex.nStakeTime;
                 pindexNew->hashProofOfStake = diskindex.hashProofOfStake;
+
+                bool isPoS = (pindexNew->nNonce == 0);
+
+                //! check proof of work
+                if (!isPoS && !CheckProofOfWork(pindexNew->GetBlockHeader().GetPoWHash(), pindexNew->nBits, consensusParams)) {
+                    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
+                }
 
                 pcursor->Next();
             } else {

@@ -131,6 +131,8 @@ static UniValue generateBlocks(const CScript& coinbase_script, int nGenerate, ui
             LOCK(cs_main);
             IncrementExtraNonce(pblock, ::ChainActive().Tip(), nExtraNonce);
         }
+        //! start the nonce off at 1 to avoid tripping up PoS detection
+        ++pblock->nNonce;
         while (nMaxTries > 0 && pblock->nNonce < std::numeric_limits<uint32_t>::max() && !CheckProofOfWork(pblock->GetPoWHash(), pblock->nBits, Params().GetConsensus()) && !ShutdownRequested()) {
             ++pblock->nNonce;
             --nMaxTries;
@@ -464,6 +466,7 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
+#if 0
     if(!g_connman)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
@@ -472,6 +475,7 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
 
     if (::ChainstateActive().IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zentoshi is downloading blocks...");
+#endif
 
     // Get expected MN/superblock payees. The call to GetBlockTxOuts might fail on regtest/devnet or when
     // testnet is reset. This is fine and we ignore failure (blocks will be accepted)
