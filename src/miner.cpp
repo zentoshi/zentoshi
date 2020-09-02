@@ -638,8 +638,7 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
             auto pblock = std::make_shared<CBlock>(pblocktemplate->block);
             IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
-            LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-                      ::GetSerializeSize(*pblock, PROTOCOL_VERSION));
+            LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block\n", pblock->vtx.size());
 
             //Sign block
             if (fProofOfStake) {

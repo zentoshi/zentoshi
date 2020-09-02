@@ -44,8 +44,6 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (!(s.GetType() & SER_GETHASH) && s.GetType() & SER_POSMARKER)
-            READWRITE(nFlags);
     }
 
     void SetNull()
@@ -104,7 +102,8 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
-        READWRITE(vchBlockSig);
+        if (vtx.size() > 1 && vtx[1]->IsCoinStake())
+            READWRITE(vchBlockSig);
     }
 
     void SetNull()
