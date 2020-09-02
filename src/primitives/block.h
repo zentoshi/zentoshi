@@ -27,6 +27,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
+    int32_t nFlags;
 
     CBlockHeader()
     {
@@ -43,6 +44,8 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        if (!(s.GetType() & SER_GETHASH) && s.GetType() & SER_POSMARKER)
+            READWRITE(nFlags);
     }
 
     void SetNull()
@@ -53,6 +56,7 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
+        nFlags = 0;
     }
 
     bool IsNull() const
@@ -98,12 +102,9 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITEAS(CBlockHeader, *this);
+        READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
-        if(vtx.size() > 1 && vtx[1]->IsCoinStake())
-        {
-            READWRITE(vchBlockSig);
-        }
+        READWRITE(vchBlockSig);
     }
 
     void SetNull()
@@ -123,6 +124,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nFlags         = nFlags;
         return block;
     }
 

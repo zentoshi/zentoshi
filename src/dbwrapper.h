@@ -623,7 +623,7 @@ public:
 
     template <typename V>
     void Write(const CDataStream& ssKey, const V& v) {
-        auto valueMemoryUsage = ::GetSerializeSize(v);
+        auto valueMemoryUsage = ::GetSerializeSize(v, PROTOCOL_VERSION);
 
         if (deletes.erase(ssKey)) {
             memoryUsage -= ssKey.size();

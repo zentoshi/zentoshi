@@ -561,9 +561,18 @@ bool CWallet::LoadCScript(const CScript& redeemScript)
 
 static bool ExtractPubKey(const CScript &dest, CPubKey& pubKeyOut)
 {
-    std::vector<std::vector<unsigned char>> solutions;
-    return Solver(dest, solutions) == TX_PUBKEY &&
-        (pubKeyOut = CPubKey(solutions[0])).IsFullyValid();
+    //TODO: Use Solver to extract this?
+    CScript::const_iterator pc = dest.begin();
+    opcodetype opcode;
+    std::vector<unsigned char> vch;
+    if (!dest.GetOp(pc, opcode, vch) || !CPubKey::ValidSize(vch))
+        return false;
+    pubKeyOut = CPubKey(vch);
+    if (!pubKeyOut.IsFullyValid())
+        return false;
+    if (!dest.GetOp(pc, opcode, vch) || opcode != OP_CHECKSIG || dest.GetOp(pc, opcode, vch))
+        return false;
+    return true;
 }
 
 bool CWallet::AddWatchOnlyInMem(const CScript &dest)
@@ -3226,11 +3235,9 @@ bool CWallet::SelectStakeCoins(StakeCoinsSet &setCoins, CAmount nTargetAmount, b
 {
     auto locked_chain = chain().lock();
     std::vector<COutput> vCoins;
-    CCoinControl coinControl;
-    coinControl.fAllowWatchOnly = !scriptFilterPubKey.empty();
     {
         LOCK2(cs_main, cs_wallet);
-        AvailableCoins(*locked_chain, vCoins, !scriptFilterPubKey.empty(), &coinControl);
+        AvailableCoins(*locked_chain, vCoins);
     }
     CAmount nAmountSelected = 0;
 
@@ -3240,9 +3247,6 @@ bool CWallet::SelectStakeCoins(StakeCoinsSet &setCoins, CAmount nTargetAmount, b
 
         CScript scriptPubKeyKernel;
         scriptPubKeyKernel = out.tx->tx->vout[out.i].scriptPubKey;
-
-        if(!coinControl.fAllowWatchOnly && !out.fSpendable)
-            continue;
 
         CTxDestination dest;
         if(!ExtractDestination(scriptPubKeyKernel, dest))
@@ -3823,7 +3827,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                 scriptChange = GetScriptForDestination(dest);
             }
             CTxOut change_prototype_txout(0, scriptChange);
-            coin_selection_params.change_output_size = ::GetSerializeSize(change_prototype_txout);
+            coin_selection_params.change_output_size = ::GetSerializeSize(change_prototype_txout, PROTOCOL_VERSION);
 
             CFeeRate discard_rate = GetDiscardRate(*this);
 
@@ -3868,7 +3872,7 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                         }
                     }
                     // Include the fee cost for outputs. Note this is only used for BnB right now
-                    coin_selection_params.tx_noinputs_size += ::GetSerializeSize(txout);
+                    coin_selection_params.tx_noinputs_size += ::GetSerializeSize(txout, PROTOCOL_VERSION);
 
                     if (IsDust(txout, chain().relayDustFee()))
                     {

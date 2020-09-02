@@ -39,7 +39,7 @@ unsigned int DualKGW3(const CBlockIndex* pindexLast, const Consensus::Params& pa
     double PastRateAdjustmentRatio = double(1);
     arith_uint256 PastDifficultyAverage;
     arith_uint256 PastDifficultyAveragePrev;
-    static const int64_t Resolution = 20;
+    static const int64_t Resolution = 5;
     static const int64_t Blocktime = fProofOfStake ? params.nPosTargetSpacing : params.nPowTargetSpacing;
     static const int64_t AdjBlocktime = Blocktime * 2;
     static const unsigned int timeDaySeconds = 86400;

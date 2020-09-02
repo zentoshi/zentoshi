@@ -191,13 +191,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     CAmount blockReward = GetBlockSubsidy(pindexPrev->nHeight, Params().GetConsensus());
     std::vector<const CWalletTx*> vwtxPrev;
 
-    bool fTryStaking = fProofOfStake && nHeight >= chainparams.GetConsensus().nFirstPoSBlock && StakingPermitted();
+    bool fTryStaking = fProofOfStake && nHeight >= chainparams.GetConsensus().nFirstPoSBlock;
 
     if(fTryStaking)
     {
         assert(pwallet);
         boost::this_thread::interruption_point();
-        pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), true);
+        pblock->nBits = GetNextWorkRequired(pindexPrev, chainparams.GetConsensus(), fProofOfStake);
         int64_t nSearchTime = pblock->nTime;
         bool fStakeFound = false;
         if (nSearchTime >= nLastCoinStakeSearchTime) {
@@ -284,7 +284,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     // Test block validity
     CValidationState state;
-    if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false)) {
+    if (fProofOfStake && !TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false)) {
         throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
     }
     int64_t nTime2 = GetTimeMicros();
@@ -614,7 +614,7 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
 
             if(fProofOfStake) {
                 if (::ChainActive().Tip()->nHeight+1 < chainparams.GetConsensus().nFirstPoSBlock ||
-                    pwallet->IsLocked() || !masternodeSync.IsSynced() || !StakingPermitted()) {
+                    pwallet->IsLocked() || !masternodeSync.IsSynced()) {
                     nLastCoinStakeSearchInterval = 0;
                     MilliSleep(5000);
                     continue;
@@ -639,10 +639,10 @@ void static ZentoshiMiner(const CChainParams& chainparams, CConnman& connman, st
             IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
             LogPrintf("ZentoshiMiner -- Running miner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-                      ::GetSerializeSize(*pblock));
+                      ::GetSerializeSize(*pblock, PROTOCOL_VERSION));
 
             //Sign block
-            if (fProofOfStake || StakingPermitted()) {
+            if (fProofOfStake) {
                 LogPrintf("CPUMiner : proof-of-stake block found %s \n", pblock->GetHash().ToString().c_str());
                 if (!SignBlock(*pblock, *pwallet)) {
                     LogPrintf("ZentoshiMiner(): Signing new block failed\n");
