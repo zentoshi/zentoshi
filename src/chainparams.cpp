@@ -196,10 +196,10 @@ public:
         consensus.DIP0003EnforcementHeight = 1048576;
         consensus.DIP0003EnforcementHash = uint256S("0000000000000000000000000000000000000000000000000000000000000000");
         consensus.DIP0008Height = consensus.nFirstPoSBlock * 4;
-        consensus.powLimit = uint256S("07fff00000000000000000000000000000000000000000000000000000000000");
-        consensus.posLimit = uint256S("07fff00000000000000000000000000000000000000000000000000000000000");
+        consensus.powLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
+        consensus.posLimit = uint256S("007fff0000000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 300;
-        consensus.nPowTargetSpacing = 60;
+        consensus.nPowTargetSpacing = 150;
         consensus.nPosTargetTimespan = consensus.nPowTargetTimespan / 2;
         consensus.nPosTargetSpacing = consensus.nPowTargetSpacing;
         consensus.nStakeMinAge = 60 * 60;
@@ -269,8 +269,9 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1576801004;
-        uint32_t nNonce = 593;
+        uint32_t nTime = 1608323211;
+        uint32_t nNonce = 461;
+
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
@@ -303,7 +304,7 @@ public:
         nPoolMinParticipants = 3;
         nPoolMaxParticipants = 5;
         nFulfilledRequestExpireTime = 60*60;
-        vSporkAddresses = {"ZXoR9MgySWXAkoWvso96pcog5J7VXiGPHm"};
+        vSporkAddresses = {"ZJW1L2adZKqbN19Hw8PG8LqbCyrfce6mna"};
         nMinSporkKeys = 1;
         fBIP9CheckMasternodesUpgraded = true;
         consensus.fLLMQAllowDummyCommitments = false;
@@ -694,9 +695,6 @@ const CChainParams &Params()
 
 std::unique_ptr<CChainParams> CreateChainParams(const std::string& chain)
 {
-    ///////////////////////////////////////////////////////////
-    return std::unique_ptr<CChainParams>(new CTestNetParams());
-
     ///////////////////////////////////////////////////////////
     if(chain == CBaseChainParams::MAIN)
         return std::unique_ptr<CChainParams>(new CMainParams());
