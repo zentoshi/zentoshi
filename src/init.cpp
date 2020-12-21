@@ -1334,8 +1334,15 @@ bool AppInitMain(InitInterfaces& interfaces)
         InitWarning(strprintf(_("The specified config file %s does not exist\n").translated, config_file_path.string()));
     } else {
         // Not categorizing as "Warning" because it's the default behavior
-        LogPrintf("Config file: %s (not found, skipping)\n", config_file_path.string());
-    }
+        LogPrintf("Config file: %s (not found, creating new one...)\n", config_file_path.string());
+	fs::ofstream conf_file_stream {config_file_path};
+	conf_file_stream << "addnode=69.195.156.246\n"
+		<< "addnode=45.32.239.65\n"
+		<< "addnode=66.42.91.38\n"
+		<< "addnode=149.28.197.118\n"
+		<< "addnode=139.180.135.147\n"
+		<< "addnode=139.180.174.246\n";
+	}
 
     LogPrintf("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
 
