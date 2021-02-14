@@ -3658,6 +3658,10 @@ static bool FindUndoPos(CValidationState &state, int nFile, FlatFilePos &pos, un
 static bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPoW = true)
 {
     bool isPoS = !block.nNonce;
+	
+	if (isPoS && block.nTime > 1611153634) {
+		return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "PoS disabled", "proof of stake was disabled");
+	}
     if (fCheckPoW && isPoS && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams)) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "high-hash", "proof of work failed");
     }
@@ -3671,6 +3675,9 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     if (block.fChecked)
         return true;
 
+	if (block.GetBlockTime() > 1611153634 && block.IsProofOfStake())
+		return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "pos-block", "PoS is disabled after block 2876");
+	
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(block, state, consensusParams, block.IsProofOfWork()))

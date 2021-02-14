@@ -191,7 +191,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     CAmount blockReward = GetBlockSubsidy(pindexPrev->nHeight, Params().GetConsensus());
     std::vector<const CWalletTx*> vwtxPrev;
 
-    bool fTryStaking = fProofOfStake && nHeight >= chainparams.GetConsensus().nFirstPoSBlock;
+    bool fTryStaking = false;
 
     if(fTryStaking)
     {

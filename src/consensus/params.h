@@ -191,6 +191,7 @@ struct Params {
     int64_t nPosTargetSpacing;
     int64_t nPosTargetTimespan;
     int nFirstPoSBlock;
+	int nLastPoSBlock;
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
     CAmount MasternodeCollateral() const { return nMasternodeCollateral; }
     uint256 nMinimumChainWork;

@@ -167,6 +167,7 @@ public:
         strNetworkID = "main";
 
         consensus.nFirstPoSBlock = 50;
+		consensus.nLastPoSBlock = 2877;
         consensus.nMasternodePaymentsStartBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreaseBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreasePeriod = 576*30;
