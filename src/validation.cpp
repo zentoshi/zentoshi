@@ -1315,7 +1315,7 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
     const CAmount nStandardReward = 2 * COIN;
 
     if (nPrevHeight < 1)
-        return 2500000 * COIN;
+        return 2505125 * COIN;
 
     return fSuperblockPartOnly ? nBudgetPerBlock : nStandardReward;
 }
@@ -3659,10 +3659,10 @@ static bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
 {
     bool isPoS = !block.nNonce;
 	
-	if (isPoS && block.nTime > 1611153634) {
+	if (isPoS) {
 		return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "PoS disabled", "proof of stake was disabled");
 	}
-    if (fCheckPoW && isPoS && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams)) {
+    if (fCheckPoW && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams)) {
         return state.Invalid(ValidationInvalidReason::BLOCK_INVALID_HEADER, false, REJECT_INVALID, "high-hash", "proof of work failed");
     }
     return true;
@@ -3675,8 +3675,8 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     if (block.fChecked)
         return true;
 
-	if (block.GetBlockTime() > 1611153634 && block.IsProofOfStake())
-		return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "pos-block", "PoS is disabled after block 2876");
+	if (block.IsProofOfStake())
+		return state.Invalid(ValidationInvalidReason::CONSENSUS, false, REJECT_INVALID, "pos-block", "PoS is disabled");
 	
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.

@@ -167,7 +167,7 @@ public:
         strNetworkID = "main";
 
         consensus.nFirstPoSBlock = 50;
-		consensus.nLastPoSBlock = 2877;
+		consensus.nLastPoSBlock = 55;
         consensus.nMasternodePaymentsStartBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreaseBlock = consensus.nFirstPoSBlock;
         consensus.nMasternodePaymentsIncreasePeriod = 576*30;
@@ -270,8 +270,8 @@ public:
         nMaxReorganizationDepth = 100;
 
         // genesis
-        uint32_t nTime = 1608323211;
-        uint32_t nNonce = 461;
+        uint32_t nTime = 1618116605;
+        uint32_t nNonce = 930;
 
         genesis = CreateGenesisBlock(nTime, nNonce, 0x1f7fff00, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -305,13 +305,17 @@ public:
         nPoolMinParticipants = 3;
         nPoolMaxParticipants = 5;
         nFulfilledRequestExpireTime = 60*60;
-        vSporkAddresses = {"ZJW1L2adZKqbN19Hw8PG8LqbCyrfce6mna"};
+        vSporkAddresses = {"ZLqUkgCSkJzX87LNkVHspnvz6CncfBffHG"};
         nMinSporkKeys = 1;
         fBIP9CheckMasternodesUpgraded = true;
         consensus.fLLMQAllowDummyCommitments = false;
         m_is_test_chain = false;
 
-        checkpointData = {{{ 0, consensus.hashGenesisBlock }}};
+        checkpointData = {
+            {
+                { 0, uint256S("0x34ac6a9b1e696430f98e616a21355b19b4d2c76f2319cc3fe4a92a57ed39dcd1")},
+            }
+        };
         chainTxData = ChainTxData {};
     }
 };
@@ -427,7 +431,7 @@ public:
         m_assumed_chain_state_size = 0.5;
         nMaxReorganizationDepth = 100;
 
-        uint32_t nTime{1598960150};
+        uint32_t nTime{1618116605};
         uint32_t nNonce{0};
         while(UintToArith256(genesis.GetPoWHash()) > UintToArith256(consensus.powLimit)) {
            ++nNonce;

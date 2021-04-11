@@ -26,7 +26,6 @@ RBFTransactionState IsRBFOptIn(const CTransaction& tx, const CTxMemPool& pool)
     // signaled for RBF if any unconfirmed parents have signaled.
     uint64_t noLimit = std::numeric_limits<uint64_t>::max();
     std::string dummy;
-#if 0
     auto entry = *pool.mapTx.find(tx.GetHash());
     pool.CalculateMemPoolAncestors(entry, setAncestors, noLimit, noLimit, noLimit, noLimit, dummy, false);
 
@@ -36,5 +35,4 @@ RBFTransactionState IsRBFOptIn(const CTransaction& tx, const CTxMemPool& pool)
         }
     }
     return RBFTransactionState::FINAL;
-#endif
 }
