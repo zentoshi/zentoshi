@@ -82,7 +82,6 @@ unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const Conse
 unsigned int static DarkGravityWave(const CBlockIndex* pindexLast, const Consensus::Params& params) {
     /* current difficulty formula, zenx - DarkGravity v3, written by Evan Duffield - evan@zenx.org */
     const arith_uint256 bnPowLimit = UintToArith256(params.powBalloonLimit);
-    const arith_uint256 bnPowLimit = UintToArith256(params.powBalloonLimit);
 
     if (pindexLast->nHeight > 1628 && pindexLast->nHeight < 1660)
 	return bnPowLimit.GetCompact();
