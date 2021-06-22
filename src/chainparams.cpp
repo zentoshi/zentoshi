@@ -320,6 +320,8 @@ public:
         consensus.DIP0003EnforcementHeight = 2;
         consensus.DIP0003EnforcementHash = uint256();
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20
+		consensus.powBalloonLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+		consensus.BallonStartTime = 1624211100;
         consensus.nPowTargetTimespan = 24 * 60 * 60; // ZenX: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // ZenX: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = false;

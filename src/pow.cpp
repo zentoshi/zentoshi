@@ -81,7 +81,12 @@ unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const Conse
 
 unsigned int static DarkGravityWave(const CBlockIndex* pindexLast, const Consensus::Params& params) {
     /* current difficulty formula, zenx - DarkGravity v3, written by Evan Duffield - evan@zenx.org */
-    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
+    const arith_uint256 bnPowLimit = UintToArith256(params.powBalloonLimit);
+    const arith_uint256 bnPowLimit = UintToArith256(params.powBalloonLimit);
+
+    if (pindexLast->nHeight > 1628 && pindexLast->nHeight < 1660)
+	return bnPowLimit.GetCompact();
+
     int64_t nPastBlocks = 24;
 
     // make sure we have at least (nPastBlocks + 1) blocks, otherwise just return powLimit
@@ -230,7 +235,7 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
     return bnNew.GetCompact();
 }
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, uint32_t nTime, const Consensus::Params& params)
 {
     bool fNegative;
     bool fOverflow;
@@ -238,9 +243,11 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
 
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
+    if (nTime < params.BallonStartTime)
+	return true;
     // Check range
-    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
-        return false;
+    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powBalloonLimit))
+	return false;
 
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget)
@@ -248,3 +255,4 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
 
     return true;
 }
+

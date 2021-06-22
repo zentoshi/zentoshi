@@ -5,7 +5,7 @@
 
 DIST_SUBDIRS = secp256k1 univalue
 
-AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(HARDENED_LDFLAGS)
+AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(HARDENED_LDFLAGS) -lcrypto -lssl
 AM_CXXFLAGS = $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS)
 AM_CPPFLAGS = $(HARDENED_CPPFLAGS)
 EXTRA_LIBRARIES =
@@ -432,6 +432,8 @@ crypto_libzenx_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
 
 # x11
 crypto_libzenx_crypto_base_a_SOURCES += \
+  crypto/balloon.cpp \
+  crypto/balloon.h \
   crypto/blake.c \
   crypto/bmw.c \
   crypto/cubehash.c \
