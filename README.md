@@ -3,20 +3,17 @@ Zentoshi Core staging tree 0.16
 
 `master:` [![Build Status](https://travis-ci.org/zenxpay/zenx.svg?branch=master)](https://travis-ci.org/zenxpay/zenx) `develop:` [![Build Status](https://travis-ci.org/zenxpay/zenx.svg?branch=develop)](https://travis-ci.org/zenxpay/zenx/branches)
 
-https://www.zenx.org
+https://www.zentoshi.com
 
 
-What is ZenX?
+What is Zentoshi?
 -------------
 
-ZenX is an experimental digital currency that enables instant, private
+Zentoshi is an experimental digital currency that enables instant, private
 payments to anyone, anywhere in the world. ZenX uses peer-to-peer technology
 to operate with no central authority: managing transactions and issuing money
 are carried out collectively by the network. Zentoshi Core is the name of the open
 source software which enables the use of this currency.
-
-For more information, as well as an immediately useable, binary version of
-the Zentoshi Core software, see https://www.zenx.org/get-zenx/.
 
 
 License
@@ -73,5 +70,3 @@ Translations are periodically pulled from Transifex and merged into the git repo
 
 **Important**: We do not accept translation changes as GitHub pull requests because the next
 pull from Transifex would automatically overwrite them again.
-
-Translators should also follow the [forum](https://www.zenx.org/forum/topic/zenx-worldwide-collaboration.88/).
