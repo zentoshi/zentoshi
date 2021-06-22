@@ -10,7 +10,7 @@
 class CDSNotificationInterface : public CValidationInterface
 {
 public:
-    CDSNotificationInterface(CConnman& connmanIn): connman(connmanIn) {}
+    explicit CDSNotificationInterface(CConnman& connmanIn): connman(connmanIn) {}
     virtual ~CDSNotificationInterface() = default;
 
     // a small helper to initialize current block height in sub-modules on startup
@@ -22,7 +22,7 @@ protected:
     void NotifyHeaderTip(const CBlockIndex *pindexNew, bool fInitialDownload) override;
     void SynchronousUpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) override;
     void UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload) override;
-    void TransactionAddedToMempool(const CTransactionRef& tx) override;
+    void TransactionAddedToMempool(const CTransactionRef& tx, int64_t nAcceptTime) override;
     void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted) override;
     void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected) override;
     void NotifyMasternodeListChanged(bool undo, const CDeterministicMNList& oldMNList, const CDeterministicMNListDiff& diff) override;

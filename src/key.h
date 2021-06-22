@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -69,12 +69,6 @@ public:
             memcmp(a.keydata.data(), b.keydata.data(), a.size()) == 0;
     }
 
-    friend bool operator<(const CKey& a, const CKey& b)
-    {
-        return a.fCompressed == b.fCompressed && a.size() == b.size() &&
-               memcmp(a.keydata.data(), b.keydata.data(), a.size()) < 0;
-    }
-
     //! Initialize using begin and end iterators to byte data.
     template <typename T>
     void Set(const T pbegin, const T pend, bool fCompressedIn)
@@ -90,36 +84,10 @@ public:
         }
     }
 
-    void Set(const unsigned char *p, bool fCompressedIn)
-    {
-        if (Check(p)) {
-            memcpy(keydata.data(), p, keydata.size());
-            fValid = true;
-            fCompressed = fCompressedIn;
-        } else {
-            fValid = false;
-        }
-    }
-
-    void Clear()
-    {
-        //memory_cleanse(vch, sizeof(vch));
-        memset(keydata.data(), 0, size());
-        fCompressed = true;
-        fValid = false;
-    }
-
-    void SetFlags(bool fValidIn, bool fCompressedIn)
-    {
-        fValid = fValidIn;
-        fCompressed = fCompressedIn;
-    }
-
     //! Simple read-only vector-like interface.
     unsigned int size() const { return (fValid ? keydata.size() : 0); }
     const unsigned char* begin() const { return keydata.data(); }
     const unsigned char* end() const { return keydata.data() + size(); }
-    unsigned char* begin_nc() { return keydata.data(); }
 
     //! Check whether this private key is valid.
     bool IsValid() const { return fValid; }
@@ -127,14 +95,8 @@ public:
     //! Check whether the public key corresponding to this private key is (to be) compressed.
     bool IsCompressed() const { return fCompressed; }
 
-    //! Initialize from a CPrivKey (serialized OpenSSL private key data).
-    bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
-
     //! Generate a new private key using a cryptographic PRNG.
     void MakeNewKey(bool fCompressed);
-
-    //! Negate private key
-    bool Negate();
 
     /**
      * Convert the private key to a CPrivKey (serialized OpenSSL private key data).
@@ -152,7 +114,7 @@ public:
      * Create a DER-serialized signature.
      * The test_case parameter tweaks the deterministic nonce.
      */
-    bool Sign(const uint256& hash, std::vector<unsigned char>& vchSig, bool grind = true, uint32_t test_case = 0) const;
+    bool Sign(const uint256& hash, std::vector<unsigned char>& vchSig, uint32_t test_case = 0) const;
 
     /**
      * Create a compact signature (65 bytes), which allows reconstructing the used public key.
@@ -196,7 +158,7 @@ struct CExtKey {
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
     bool Derive(CExtKey& out, unsigned int nChild) const;
     CExtPubKey Neuter() const;
-    void SetSeed(const unsigned char* seed, unsigned int nSeedLen);
+    void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
     template <typename Stream>
     void Serialize(Stream& s) const
     {
@@ -219,12 +181,12 @@ struct CExtKey {
 };
 
 /** Initialize the elliptic curve support. May not be called twice without calling ECC_Stop first. */
-void ECC_Start();
+void ECC_Start(void);
 
 /** Deinitialize the elliptic curve support. No-op if ECC_Start wasn't called first. */
-void ECC_Stop();
+void ECC_Stop(void);
 
 /** Check that required EC support is available at runtime. */
-bool ECC_InitSanityCheck();
+bool ECC_InitSanityCheck(void);
 
 #endif // BITCOIN_KEY_H

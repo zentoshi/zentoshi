@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 The Bitcoin Core developers
+// Copyright (c) 2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,7 +6,7 @@
 #define BITCOIN_COMPAT_BYTESWAP_H
 
 #if defined(HAVE_CONFIG_H)
-#include <config/zentoshi-config.h>
+#include <config/zenx-config.h>
 #endif
 
 #include <stdint.h>
@@ -15,7 +15,7 @@
 #include <byteswap.h>
 #endif
 
-#if defined(MAC_OSX)
+#if defined(__APPLE__)
 
 #if !defined(bswap_16)
 
@@ -61,6 +61,6 @@ inline uint64_t bswap_64(uint64_t x)
 }
 #endif // HAVE_DECL_BSWAP64 == 0
 
-#endif // defined(MAC_OSX)
+#endif // defined(__APPLE__)
 
 #endif // BITCOIN_COMPAT_BYTESWAP_H

@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 The Bitcoin Core developers
+// Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,6 +8,8 @@
 #include <zmq/zmqconfig.h>
 
 class CBlockIndex;
+class CGovernanceObject;
+class CGovernanceVote;
 class CZMQAbstractNotifier;
 
 namespace llmq {
@@ -20,9 +22,7 @@ typedef CZMQAbstractNotifier* (*CZMQNotifierFactory)();
 class CZMQAbstractNotifier
 {
 public:
-    static const int DEFAULT_ZMQ_SNDHWM {1000};
-
-    CZMQAbstractNotifier() : psocket(nullptr), outbound_message_high_water_mark(DEFAULT_ZMQ_SNDHWM) { }
+    CZMQAbstractNotifier() : psocket(nullptr) { }
     virtual ~CZMQAbstractNotifier();
 
     template <typename T>
@@ -35,12 +35,6 @@ public:
     void SetType(const std::string &t) { type = t; }
     std::string GetAddress() const { return address; }
     void SetAddress(const std::string &a) { address = a; }
-    int GetOutboundMessageHighWaterMark() const { return outbound_message_high_water_mark; }
-    void SetOutboundMessageHighWaterMark(const int sndhwm) {
-        if (sndhwm >= 0) {
-            outbound_message_high_water_mark = sndhwm;
-        }
-    }
 
     virtual bool Initialize(void *pcontext) = 0;
     virtual void Shutdown() = 0;
@@ -49,12 +43,15 @@ public:
     virtual bool NotifyChainLock(const CBlockIndex *pindex, const llmq::CChainLockSig& clsig);
     virtual bool NotifyTransaction(const CTransaction &transaction);
     virtual bool NotifyTransactionLock(const CTransaction &transaction, const llmq::CInstantSendLock& islock);
+    virtual bool NotifyGovernanceVote(const CGovernanceVote &vote);
+    virtual bool NotifyGovernanceObject(const CGovernanceObject &object);
+    virtual bool NotifyInstantSendDoubleSpendAttempt(const CTransaction &currentTx, const CTransaction &previousTx);
+
 
 protected:
     void *psocket;
     std::string type;
     std::string address;
-    int outbound_message_high_water_mark; // aka SNDHWM
 };
 
 #endif // BITCOIN_ZMQ_ZMQABSTRACTNOTIFIER_H

@@ -1,12 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <protocol.h>
 
-#include <util/system.h>
-#include <util/strencodings.h>
+#include <util.h>
+#include <utilstrencodings.h>
 
 #ifndef WIN32
 # include <arpa/inet.h>
@@ -36,12 +36,11 @@ const char *FILTERADD="filteradd";
 const char *FILTERCLEAR="filterclear";
 const char *REJECT="reject";
 const char *SENDHEADERS="sendheaders";
-const char *FEEFILTER="feefilter";
 const char *SENDCMPCT="sendcmpct";
 const char *CMPCTBLOCK="cmpctblock";
 const char *GETBLOCKTXN="getblocktxn";
 const char *BLOCKTXN="blocktxn";
-// Dash message types
+// ZenX message types
 const char *LEGACYTXLOCKREQUEST="ix";
 const char *SPORK="spork";
 const char *GETSPORKS="getsporks";
@@ -72,10 +71,11 @@ const char *QSIGSHARESINV="qsigsinv";
 const char *QGETSIGSHARES="qgetsigs";
 const char *QBSIGSHARES="qbsigs";
 const char *QSIGREC="qsigrec";
+const char *QSIGSHARE="qsigshare";
 const char *CLSIG="clsig";
 const char *ISLOCK="islock";
 const char *MNAUTH="mnauth";
-};
+}; // namespace NetMsgType
 
 /** All known message types. Keep this in the same order as the list of
  * messages above and in protocol.h.
@@ -102,12 +102,11 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::FILTERCLEAR,
     NetMsgType::REJECT,
     NetMsgType::SENDHEADERS,
-    NetMsgType::FEEFILTER,
     NetMsgType::SENDCMPCT,
     NetMsgType::CMPCTBLOCK,
     NetMsgType::GETBLOCKTXN,
     NetMsgType::BLOCKTXN,
-    // Dash message types
+    // ZenX message types
     // NOTE: do NOT include non-implmented here, we want them to be "Unknown command" in ProcessMessage()
     NetMsgType::LEGACYTXLOCKREQUEST,
     NetMsgType::SPORK,
@@ -139,6 +138,7 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::QGETSIGSHARES,
     NetMsgType::QBSIGSHARES,
     NetMsgType::QSIGREC,
+    NetMsgType::QSIGSHARE,
     NetMsgType::CLSIG,
     NetMsgType::ISLOCK,
     NetMsgType::MNAUTH,
@@ -200,9 +200,9 @@ bool CMessageHeader::IsValid(const MessageStartChars& pchMessageStartIn) const
 
 ServiceFlags GetDesirableServiceFlags(ServiceFlags services) {
     if ((services & NODE_NETWORK_LIMITED) && g_initial_block_download_completed) {
-        return ServiceFlags(NODE_NETWORK_LIMITED | NODE_WITNESS);
+        return ServiceFlags(NODE_NETWORK_LIMITED);
     }
-    return ServiceFlags(NODE_NETWORK | NODE_WITNESS);
+    return ServiceFlags(NODE_NETWORK);
 }
 
 void SetServiceFlagsIBDCache(bool state) {
@@ -233,11 +233,7 @@ CInv::CInv()
     hash.SetNull();
 }
 
-CInv::CInv(int typeIn, const uint256& hashIn)
-{
-    type = typeIn;
-    hash = hashIn;
-}
+CInv::CInv(int typeIn, const uint256& hashIn) : type(typeIn), hash(hashIn) {}
 
 bool operator<(const CInv& a, const CInv& b)
 {
@@ -273,6 +269,15 @@ const char* CInv::GetCommandInternal() const
         default:
             return nullptr;
     }
+}
+
+std::string CInv::GetCommand() const
+{
+    auto cmd = GetCommandInternal();
+    if (cmd == nullptr) {
+        throw std::out_of_range(strprintf("CInv::GetCommand(): type=%d unknown type", type));
+    }
+    return cmd;
 }
 
 std::string CInv::ToString() const

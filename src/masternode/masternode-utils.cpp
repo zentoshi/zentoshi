@@ -9,7 +9,6 @@
 #ifdef ENABLE_WALLET
 #include <privatesend/privatesend-client.h>
 #endif
-#include <shutdown.h>
 #include <validation.h>
 
 struct CompareScoreMN
@@ -31,7 +30,7 @@ void CMasternodeUtils::ProcessMasternodeConnections(CConnman& connman)
     // Don't disconnect masternode connections when we have less then the desired amount of outbound nodes
     int nonMasternodeCount = 0;
     connman.ForEachNode(CConnman::AllNodes, [&](CNode* pnode) {
-        if (!pnode->fInbound && !pnode->fFeeler && !pnode->m_manual_connection && !pnode->fMasternode) {
+        if (!pnode->fInbound && !pnode->fFeeler && !pnode->m_manual_connection && !pnode->fMasternode && !pnode->fMasternodeProbe) {
             nonMasternodeCount++;
         }
     });
@@ -40,20 +39,31 @@ void CMasternodeUtils::ProcessMasternodeConnections(CConnman& connman)
     }
 
     connman.ForEachNode(CConnman::AllNodes, [&](CNode* pnode) {
-        if (pnode->fMasternode && !connman.IsMasternodeQuorumNode(pnode)) {
+        // we're only disconnecting fMasternode connections
+        if (!pnode->fMasternode) return;
+        // we're only disconnecting outbound connections
+        if (pnode->fInbound) return;
+        // we're not disconnecting LLMQ connections
+        if (connman.IsMasternodeQuorumNode(pnode)) return;
+        // we're not disconnecting masternode probes for at least a few seconds
+        if (pnode->fMasternodeProbe && GetSystemTimeInSeconds() - pnode->nTimeConnected < 5) return;
+
 #ifdef ENABLE_WALLET
-            bool fFound = false;
-            for (const auto& dmn : vecDmns) {
-                if (pnode->addr == dmn->pdmnState->addr) {
-                    fFound = true;
-                    break;
-                }
+        bool fFound = false;
+        for (const auto& dmn : vecDmns) {
+            if (pnode->addr == dmn->pdmnState->addr) {
+                fFound = true;
+                break;
             }
-            if (fFound) return; // do NOT disconnect mixing masternodes
-#endif // ENABLE_WALLET
-            LogPrintf("Closing Masternode connection: peer=%d, addr=%s\n", pnode->GetId(), pnode->addr.ToString());
-            pnode->fDisconnect = true;
         }
+        if (fFound) return; // do NOT disconnect mixing masternodes
+#endif // ENABLE_WALLET
+        if (fLogIPs) {
+            LogPrintf("Closing Masternode connection: peer=%d, addr=%s\n", pnode->GetId(), pnode->addr.ToString());
+        } else {
+            LogPrintf("Closing Masternode connection: peer=%d\n", pnode->GetId());
+        }
+        pnode->fDisconnect = true;
     });
 }
 

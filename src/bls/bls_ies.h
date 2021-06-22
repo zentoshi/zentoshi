@@ -2,11 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CRYPTO_BLS_IES_H
-#define DASH_CRYPTO_BLS_IES_H
+#ifndef ZENX_CRYPTO_BLS_IES_H
+#define ZENX_CRYPTO_BLS_IES_H
 
-#include "bls.h"
-#include "streams.h"
+#include <bls/bls.h>
+#include <streams.h>
 
 class CBLSIESEncryptedBlob
 {
@@ -29,7 +29,7 @@ public:
             valid = false;
         }
         READWRITE(ephemeralPubKey);
-        READWRITE(iv);
+        READWRITE(FLATDATA(iv));
         READWRITE(data);
         if (ser_action.ForRead()) {
             valid = true;
@@ -161,4 +161,4 @@ public:
     }
 };
 
-#endif // DASH_CRYPTO_BLS_IES_H
+#endif // ZENX_CRYPTO_BLS_IES_H

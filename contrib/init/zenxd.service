@@ -1,0 +1,25 @@
+# It is not recommended to modify this file in-place, because it will
+# be overwritten during package upgrades. If you want to add further
+# options or overwrite existing ones then use
+# $ systemctl edit zenxd.service
+# See "man systemd.service" for details.
+
+# Note that almost all daemon options could be specified in
+# /etc/zenx/zenx.conf
+
+[Unit]
+Description=ZenX daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/zenxd -daemon -conf=/etc/zenx/zenx.conf -pid=/run/zenxd/zenxd.pid
+# Creates /run/zenx owned by zenxcore
+RuntimeDirectory=zenxd
+User=zenxcore
+Type=forking
+PIDFile=/run/zenxd/zenxd.pid
+Restart=on-failure
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

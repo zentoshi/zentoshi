@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Name=Zentoshi Core
+Comment=ZenX P2P Cryptocurrency
+Comment[de]=Verbinde mit dem ZenX peer-to-peer Netzwerk
+Comment[fr]=ZenX, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=ZenX, eşten eşe kriptografik sanal para birimi
+Exec=zenx-qt %u
+Terminal=false
+Type=Application
+Icon=zenx128
+MimeType=x-scheme-handler/zenx;
+Categories=Office;Finance;
+StartupWMClass=ZenX-qt

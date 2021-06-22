@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,15 +7,12 @@
 
 #include <amount.h>
 #include <qt/masternodelist.h>
-#include <qt/governancelist.h>
 
 #include <QStackedWidget>
 
 class BitcoinGUI;
 class ClientModel;
 class OverviewPage;
-class PlatformStyle;
-class PrivateSendPage;
 class ReceiveCoinsDialog;
 class SendCoinsDialog;
 class SendCoinsRecipient;
@@ -24,6 +21,7 @@ class WalletModel;
 class AddressBookPage;
 
 QT_BEGIN_NAMESPACE
+class QLabel;
 class QModelIndex;
 class QProgressDialog;
 QT_END_NAMESPACE
@@ -39,7 +37,7 @@ class WalletView : public QStackedWidget
     Q_OBJECT
 
 public:
-    explicit WalletView(const PlatformStyle *platformStyle, QWidget *parent);
+    explicit WalletView(QWidget* parent);
     ~WalletView();
 
     void setBitcoinGUI(BitcoinGUI *gui);
@@ -66,16 +64,15 @@ private:
     QWidget *transactionsPage;
     ReceiveCoinsDialog *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
+    SendCoinsDialog* privateSendCoinsPage;
     AddressBookPage *usedSendingAddressesPage;
     AddressBookPage *usedReceivingAddressesPage;
     MasternodeList *masternodeListPage;
-    GovernanceList *governanceListPage;
-    PrivateSendPage *privatesendPage;
 
     TransactionView *transactionView;
 
     QProgressDialog *progressDialog;
-    const PlatformStyle *platformStyle;
+    QLabel *transactionSum;
 
 public Q_SLOTS:
     /** Switch to overview (home) page */
@@ -84,14 +81,12 @@ public Q_SLOTS:
     void gotoHistoryPage();
     /** Switch to masternode page */
     void gotoMasternodePage();
-    /** Switch to governance page */
-    void gotoGovernancePage();
-    /** Switch to privatesend page */
-    void gotoPrivateSendPage();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to PrivateSend coins page */
+    void gotoPrivateSendCoinsPage(QString addr = "");
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -104,13 +99,13 @@ public Q_SLOTS:
     */
     void processNewTransaction(const QModelIndex& parent, int start, int /*end*/);
     /** Encrypt the wallet */
-    void encryptWallet(bool status);
+    void encryptWallet();
     /** Backup the wallet */
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
-    void unlockWallet();
+    void unlockWallet(bool fAnonymizeOnly=false);
     /** Lock wallet */
     void lockWallet();
 
@@ -128,17 +123,20 @@ public Q_SLOTS:
     /** User has requested more information about the out of sync state */
     void requestedSyncWarningInfo();
 
+
+    /** Update selected ZENX amount from transactionview */
+    void trxAmount(QString amount);
 Q_SIGNALS:
     /** Signal that we want to show the main window */
     void showNormalIfMinimized();
     /**  Fired when a message should be reported to the user */
     void message(const QString &title, const QString &message, unsigned int style);
     /** Encryption status of wallet changed */
-    void encryptionStatusChanged();
+    void encryptionStatusChanged(int status);
     /** HD-Enabled status of wallet changed (only possible during startup) */
-    void hdEnabledStatusChanged();
+    void hdEnabledStatusChanged(int hdEnabled);
     /** Notify that a new transaction appeared */
-    void incomingTransaction(const QString& date, int unit, const CAmount& amount, const QString& type, const QString& address, const QString& label, const QString& walletName);
+    void incomingTransaction(const QString& date, int unit, const CAmount& amount, const QString& type, const QString& address, const QString& label);
     /** Notify that the out of sync warning icon has been pressed */
     void outOfSyncWarningClicked();
 };

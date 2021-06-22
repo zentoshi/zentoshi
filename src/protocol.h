@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2019 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -48,10 +48,10 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
-        READWRITE(pchMessageStart);
-        READWRITE(pchCommand);
+        READWRITE(FLATDATA(pchMessageStart));
+        READWRITE(FLATDATA(pchCommand));
         READWRITE(nMessageSize);
-        READWRITE(pchChecksum);
+        READWRITE(FLATDATA(pchChecksum));
     }
 
     char pchMessageStart[MESSAGE_START_SIZE];
@@ -206,49 +206,40 @@ extern const char *REJECT;
  * @see https://bitcoin.org/en/developer-reference#sendheaders
  */
 extern const char *SENDHEADERS;
-/**
- * The feefilter message tells the receiving peer not to inv us any txs
- * which do not meet the specified min fee rate.
- * @since protocol version 70013 as described by BIP133
- */
-extern const char *FEEFILTER;
+
 /**
  * Contains a 1-byte bool and 8-byte LE version number.
  * Indicates that a node is willing to provide blocks via "cmpctblock" messages.
  * May indicate that a node prefers to receive new block announcements via a
  * "cmpctblock" message rather than an "inv", depending on message contents.
- * @since protocol version 70014 as described by BIP 152
+ * @since protocol version 70209 as described by BIP 152
  */
 extern const char *SENDCMPCT;
 /**
  * Contains a CBlockHeaderAndShortTxIDs object - providing a header and
  * list of "short txids".
- * @since protocol version 70014 as described by BIP 152
+ * @since protocol version 70209 as described by BIP 152
  */
 extern const char *CMPCTBLOCK;
 /**
  * Contains a BlockTransactionsRequest
  * Peer should respond with "blocktxn" message.
- * @since protocol version 70014 as described by BIP 152
+ * @since protocol version 70209 as described by BIP 152
  */
 extern const char *GETBLOCKTXN;
 /**
  * Contains a BlockTransactions.
  * Sent in response to a "getblocktxn" message.
- * @since protocol version 70014 as described by BIP 152
+ * @since protocol version 70209 as described by BIP 152
  */
 extern const char *BLOCKTXN;
 
-// Dash message types
+// ZenX message types
 // NOTE: do NOT declare non-implmented here, we don't want them to be exposed to the outside
 // TODO: add description
 extern const char *LEGACYTXLOCKREQUEST; // only present for backwards compatibility
 extern const char *SPORK;
 extern const char *GETSPORKS;
-extern const char *MASTERNODEPAYMENTVOTE;
-extern const char *MASTERNODEPAYMENTSYNC;
-extern const char *MNANNOUNCE;
-extern const char *MNPING;
 extern const char *DSACCEPT;
 extern const char *DSVIN;
 extern const char *DSFINALTX;
@@ -257,19 +248,15 @@ extern const char *DSCOMPLETE;
 extern const char *DSSTATUSUPDATE;
 extern const char *DSTX;
 extern const char *DSQUEUE;
-extern const char *DSEG;
 extern const char *SENDDSQUEUE;
 extern const char *SYNCSTATUSCOUNT;
 extern const char *MNGOVERNANCESYNC;
 extern const char *MNGOVERNANCEOBJECT;
 extern const char *MNGOVERNANCEOBJECTVOTE;
-extern const char *MNVERIFY;
 extern const char *GETMNLISTDIFF;
 extern const char *MNLISTDIFF;
 extern const char *QSENDRECSIGS;
 extern const char *QFCOMMITMENT;
-extern const char *QJUSTIFICATION;
-extern const char *QPCOMMITMENT;
 extern const char *QCONTRIB;
 extern const char *QCOMPLAINT;
 extern const char *QJUSTIFICATION;
@@ -280,6 +267,7 @@ extern const char *QSIGSHARESINV;
 extern const char *QGETSIGSHARES;
 extern const char *QBSIGSHARES;
 extern const char *QSIGREC;
+extern const char *QSIGSHARE;
 extern const char *CLSIG;
 extern const char *ISLOCK;
 extern const char *MNAUTH;
@@ -293,21 +281,21 @@ enum ServiceFlags : uint64_t {
     // Nothing
     NODE_NONE = 0,
     // NODE_NETWORK means that the node is capable of serving the complete block chain. It is currently
-    // set by all Bitcoin Core non pruned nodes, and is unset by SPV clients or other light clients.
+    // set by all Zentoshi Core non pruned nodes, and is unset by SPV clients or other light clients.
     NODE_NETWORK = (1 << 0),
     // NODE_GETUTXO means the node is capable of responding to the getutxo protocol request.
-    // Bitcoin Core does not support this but a patch set called Bitcoin XT does.
+    // Zentoshi Core does not support this but a patch set called Bitcoin XT does.
     // See BIP 64 for details on how this is implemented.
     NODE_GETUTXO = (1 << 1),
     // NODE_BLOOM means the node is capable and willing to handle bloom-filtered connections.
-    // Bitcoin Core nodes used to support this by default, without advertising this bit,
-    // but no longer do as of protocol version 70011 (= NO_BLOOM_VERSION)
+    // Zentoshi Core nodes used to support this by default, without advertising this bit,
+    // but no longer do as of protocol version 70201 (= NO_BLOOM_VERSION)
     NODE_BLOOM = (1 << 2),
-    // NODE_WITNESS indicates that a node can be asked for blocks and transactions including
-    // witness data.
-    NODE_WITNESS = (1 << 3),
+    // NODE_XTHIN means the node supports Xtreme Thinblocks
+    // If this is turned off then the node will not service nor make xthin requests
+    NODE_XTHIN = (1 << 4),
     // NODE_NETWORK_LIMITED means the same as NODE_NETWORK with the limitation of only
-    // serving the last 288 (2 day) blocks
+    // serving the last 288 blocks
     // See BIP159 for details on how this is implemented.
     NODE_NETWORK_LIMITED = (1 << 10),
 
@@ -337,7 +325,7 @@ enum ServiceFlags : uint64_t {
  * Thus, generally, avoid calling with peerServices == NODE_NONE, unless
  * state-specific flags must absolutely be avoided. When called with
  * peerServices == NODE_NONE, the returned desirable service flags are
- * guaranteed to not change dependent on state - ie they are suitable for
+ * guaranteed to not change dependant on state - ie they are suitable for
  * use when describing peers which we know to be desirable, but for which
  * we do not have a confirmed set of service flags.
  *
@@ -390,8 +378,8 @@ public:
             READWRITE(nTime);
         uint64_t nServicesInt = nServices;
         READWRITE(nServicesInt);
-        nServices = static_cast<ServiceFlags>(nServicesInt);
-        READWRITEAS(CService, *this);
+        nServices = (ServiceFlags)nServicesInt;
+        READWRITE(*(CService*)this);
     }
 
     // TODO: make private (improves encapsulation)
@@ -402,30 +390,22 @@ public:
     unsigned int nTime;
 };
 
-/** getdata message type flags */
-const uint32_t MSG_WITNESS_FLAG = 1 << 30;
-const uint32_t MSG_TYPE_MASK    = 0xffffffff >> 2;
-
 /** getdata / inv message types.
  * These numbers are defined by the protocol. When adding a new value, be sure
  * to mention it in the respective BIP.
  */
-enum GetDataMsg
-{
+enum GetDataMsg {
     UNDEFINED = 0,
     MSG_TX = 1,
     MSG_BLOCK = 2,
     // The following can only occur in getdata. Invs always use TX or BLOCK.
     MSG_FILTERED_BLOCK = 3,  //!< Defined in BIP37
-    MSG_WITNESS_BLOCK = MSG_BLOCK | MSG_WITNESS_FLAG, //!< Defined in BIP144
-    MSG_WITNESS_TX = MSG_TX | MSG_WITNESS_FLAG,       //!< Defined in BIP144
-    MSG_FILTERED_WITNESS_BLOCK = MSG_FILTERED_BLOCK | MSG_WITNESS_FLAG,
-    // Dash message types
+    // ZenX message types
     // NOTE: declare non-implmented here, we must keep this enum consistent and backwards compatible
     MSG_LEGACY_TXLOCK_REQUEST = 4,
     /* MSG_TXLOCK_VOTE = 5, Legacy InstantSend and not used anymore  */
     MSG_SPORK = 6,
-    /* 7 - 15 were used in old Dash versions and were mainly budget and MN broadcast/ping related*/
+    /* 7 - 15 were used in old ZenX versions and were mainly budget and MN broadcast/ping related*/
     MSG_DSTX = 16,
     MSG_GOVERNANCE_OBJECT = 17,
     MSG_GOVERNANCE_OBJECT_VOTE = 18,
@@ -475,5 +455,6 @@ public:
     int type;
     uint256 hash;
 };
+
 
 #endif // BITCOIN_PROTOCOL_H

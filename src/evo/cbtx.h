@@ -1,17 +1,16 @@
-// Copyright (c) 2017-2018 The Dash Core developers
+// Copyright (c) 2017-2019 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CBTX_H
-#define DASH_CBTX_H
+#ifndef ZENX_CBTX_H
+#define ZENX_CBTX_H
 
-#include "consensus/validation.h"
-#include "primitives/transaction.h"
-#include "univalue.h"
+#include <consensus/validation.h>
+#include <primitives/transaction.h>
+#include <univalue.h>
 
 class CBlock;
 class CBlockIndex;
-class UniValue;
 
 // coinbase transaction
 class CCbTx
@@ -41,15 +40,16 @@ public:
     }
 
     std::string ToString() const;
+
     void ToJson(UniValue& obj) const
     {
         obj.clear();
         obj.setObject();
-        obj.pushKV("version", (int)nVersion);
-        obj.pushKV("height", (int)nHeight);
-        obj.pushKV("merkleRootMNList", merkleRootMNList.ToString());
+        obj.push_back(Pair("version", (int)nVersion));
+        obj.push_back(Pair("height", (int)nHeight));
+        obj.push_back(Pair("merkleRootMNList", merkleRootMNList.ToString()));
         if (nVersion >= 2) {
-            obj.pushKV("merkleRootQuorums", merkleRootQuorums.ToString());
+            obj.push_back(Pair("merkleRootQuorums", merkleRootQuorums.ToString()));
         }
     }
 };
@@ -60,4 +60,4 @@ bool CheckCbTxMerkleRoots(const CBlock& block, const CBlockIndex* pindex, CValid
 bool CalcCbTxMerkleRootMNList(const CBlock& block, const CBlockIndex* pindexPrev, uint256& merkleRootRet, CValidationState& state);
 bool CalcCbTxMerkleRootQuorums(const CBlock& block, const CBlockIndex* pindexPrev, uint256& merkleRootRet, CValidationState& state);
 
-#endif //DASH_CBTX_H
+#endif //ZENX_CBTX_H

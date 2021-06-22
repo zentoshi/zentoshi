@@ -1,9 +1,9 @@
-// Copyright (c) 2019 The Dash Core developers
+// Copyright (c) 2019-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_QUORUMS_CHAINLOCKS_H
-#define DASH_QUORUMS_CHAINLOCKS_H
+#ifndef ZENX_QUORUMS_CHAINLOCKS_H
+#define ZENX_QUORUMS_CHAINLOCKS_H
 
 #include <llmq/quorums.h>
 #include <llmq/quorums_signing.h>
@@ -13,6 +13,8 @@
 
 #include <atomic>
 #include <unordered_set>
+
+#include <boost/thread.hpp>
 
 class CBlockIndex;
 class CScheduler;
@@ -52,6 +54,7 @@ class CChainLocksHandler : public CRecoveredSigsListener
 
 private:
     CScheduler* scheduler;
+    boost::thread* scheduler_thread;
     CCriticalSection cs;
     bool tryLockChainTipScheduled{false};
     bool isSporkActive{false};
@@ -78,7 +81,7 @@ private:
     int64_t lastCleanupTime{0};
 
 public:
-    CChainLocksHandler(CScheduler* _scheduler);
+    explicit CChainLocksHandler();
     ~CChainLocksHandler();
 
     void Start();
@@ -92,7 +95,7 @@ public:
     void ProcessNewChainLock(NodeId from, const CChainLockSig& clsig, const uint256& hash);
     void AcceptedBlockHeader(const CBlockIndex* pindexNew);
     void UpdatedBlockTip(const CBlockIndex* pindexNew);
-    void TransactionAddedToMempool(const CTransactionRef& tx);
+    void TransactionAddedToMempool(const CTransactionRef& tx, int64_t nAcceptTime);
     void BlockConnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindex, const std::vector<CTransactionRef>& vtxConflicted);
     void BlockDisconnected(const std::shared_ptr<const CBlock>& pblock, const CBlockIndex* pindexDisconnected);
     void CheckActiveState();
@@ -110,7 +113,7 @@ private:
     bool InternalHasChainLock(int nHeight, const uint256& blockHash);
     bool InternalHasConflictingChainLock(int nHeight, const uint256& blockHash);
 
-    void DoInvalidateBlock(const CBlockIndex* pindex, bool activateBestChain);
+    void DoInvalidateBlock(const CBlockIndex* pindex);
 
     BlockTxs::mapped_type GetBlockTxs(const uint256& blockHash);
 
@@ -120,6 +123,6 @@ private:
 extern CChainLocksHandler* chainLocksHandler;
 
 
-}
+} // namespace llmq
 
-#endif //DASH_QUORUMS_CHAINLOCKS_H
+#endif //ZENX_QUORUMS_CHAINLOCKS_H

@@ -11,21 +11,21 @@
 #ifdef ENABLE_WALLET
 #include <privatesend/privatesend-client.h>
 #endif // ENABLE_WALLET
-#include "validation.h"
+#include <validation.h>
 
-#include "evo/deterministicmns.h"
-#include "evo/mnauth.h"
+#include <evo/deterministicmns.h>
+#include <evo/mnauth.h>
 
-#include "llmq/quorums.h"
-#include "llmq/quorums_chainlocks.h"
-#include "llmq/quorums_instantsend.h"
-#include "llmq/quorums_dkgsessionmgr.h"
+#include <llmq/quorums.h>
+#include <llmq/quorums_chainlocks.h>
+#include <llmq/quorums_instantsend.h>
+#include <llmq/quorums_dkgsessionmgr.h>
 
 void CDSNotificationInterface::InitializeCurrentBlockTip()
 {
     LOCK(cs_main);
-    SynchronousUpdatedBlockTip(::ChainActive().Tip(), nullptr, ::ChainstateActive().IsInitialBlockDownload());
-    UpdatedBlockTip(::ChainActive().Tip(), nullptr, ::ChainstateActive().IsInitialBlockDownload());
+    SynchronousUpdatedBlockTip(chainActive.Tip(), nullptr, IsInitialBlockDownload());
+    UpdatedBlockTip(chainActive.Tip(), nullptr, IsInitialBlockDownload());
 }
 
 void CDSNotificationInterface::AcceptedBlockHeader(const CBlockIndex *pindexNew)
@@ -65,21 +65,19 @@ void CDSNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindexNew, con
     privateSendClient.UpdatedBlockTip(pindexNew);
 #endif // ENABLE_WALLET
 
-    if (fLiteMode)
-        return;
-
     llmq::quorumInstantSendManager->UpdatedBlockTip(pindexNew);
     llmq::chainLocksHandler->UpdatedBlockTip(pindexNew);
 
-    governance.UpdatedBlockTip(pindexNew, connman);
     llmq::quorumManager->UpdatedBlockTip(pindexNew, fInitialDownload);
     llmq::quorumDKGSessionManager->UpdatedBlockTip(pindexNew, fInitialDownload);
+
+    if (!fDisableGovernance) governance.UpdatedBlockTip(pindexNew, connman);
 }
 
-void CDSNotificationInterface::TransactionAddedToMempool(const CTransactionRef& ptx)
+void CDSNotificationInterface::TransactionAddedToMempool(const CTransactionRef& ptx, int64_t nAcceptTime)
 {
     llmq::quorumInstantSendManager->TransactionAddedToMempool(ptx);
-    llmq::chainLocksHandler->TransactionAddedToMempool(ptx);
+    llmq::chainLocksHandler->TransactionAddedToMempool(ptx, nAcceptTime);
     CPrivateSend::TransactionAddedToMempool(ptx);
 }
 

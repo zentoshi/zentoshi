@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -30,14 +30,6 @@ typedef uint256 ChainCode;
 class CPubKey
 {
 public:
-
-    enum class InputScriptType {
-        SPENDP2SHWITNESS,
-        SPENDWITNESS,
-        SPENDP2PKH,
-        SPENDUNKNOWN
-    };
-
     /**
      * secp256k1:
      */
@@ -78,11 +70,6 @@ private:
     }
 
 public:
-
-    bool static ValidSize(const std::vector<unsigned char> &vch) {
-      return vch.size() > 0 && GetLen(vch[0]) == vch.size();
-    }
-
     //! Construct an invalid public key.
     CPubKey()
     {
@@ -115,7 +102,6 @@ public:
 
     //! Simple read-only vector-like interface to the pubkey data.
     unsigned int size() const { return GetLen(vch[0]); }
-    const unsigned char* data() const { return vch; }
     const unsigned char* begin() const { return vch; }
     const unsigned char* end() const { return vch + size(); }
     const unsigned char& operator[](unsigned int pos) const { return vch[pos]; }
@@ -190,11 +176,6 @@ public:
         return size() == COMPRESSED_PUBLIC_KEY_SIZE;
     }
 
-    std::vector<unsigned char> Raw() const
-    {
-        return std::vector<unsigned char>(vch, vch + size());
-    }
-
     /**
      * Verify a DER signature (~72 bytes).
      * If this public key is not fully valid, the return value will be false.
@@ -207,7 +188,7 @@ public:
     static bool CheckLowS(const std::vector<unsigned char>& vchSig);
 
     //! Recover a public key from a compact signature.
-    bool RecoverCompact(const uint256& hash, const std::vector<unsigned char>& vchSig, InputScriptType &inputScriptType);
+    bool RecoverCompact(const uint256& hash, const std::vector<unsigned char>& vchSig);
 
     //! Turn this public key into an uncompressed public key.
     bool Decompress();

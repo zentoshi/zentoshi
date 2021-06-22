@@ -1,0 +1,33 @@
+# /etc/conf.d/zenxd: config file for /etc/init.d/zenxd
+
+# Config file location
+#BITCOIND_CONFIGFILE="/etc/zenxcore/zenx.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOIND_USER)
+#BITCOIND_PIDDIR="/var/run/zenxd"
+
+# What filename to give the pidfile
+#BITCOIND_PIDFILE="${BITCOIND_PIDDIR}/zenxd.pid"
+
+# Where to write zenxd data (be mindful that the blockchain is large)
+#BITCOIND_DATADIR="/var/lib/zenxd"
+
+# User and group to own zenxd process
+#BITCOIND_USER="zenxcore"
+#BITCOIND_GROUP="zenxcore"
+
+# Path to zenxd executable
+#BITCOIND_BIN="/usr/bin/zenxd"
+
+# Nice value to run zenxd under
+#BITCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#BITCOIND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for zenxd to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+BITCOIND_SIGTERM_TIMEOUT=60

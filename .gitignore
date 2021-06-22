@@ -1,24 +1,20 @@
-bench_inv
-bench_ecdh
-bench_ecmult
-bench_sign
-bench_verify
-bench_schnorr_verify
-bench_recover
-bench_internal
-tests
-exhaustive_tests
-gen_context
+*.sublime-project
+*.sublime-workspace
+todo.txt
+reset-files.bash
+
+*.tar.gz
+
 *.exe
-*.pdb
-src/bitcoin
-src/bitcoind
-src/bitcoin-cli
-src/bitcoin-tx
-src/bitcoin-wallet
-src/test/test_bitcoin
-src/test/test_bitcoin_fuzzy
-src/qt/test/test_bitcoin-qt
+src/zenx
+src/zenxd
+src/zenx-cli
+src/zenx-tx
+src/test/test_zenx
+src/test/test_zenx_fuzzy
+src/qt/test/test_zenx-qt
+src/qt/res/css/colors/*
+src/bench/bench_zenx
 
 # autoreconf
 Makefile.in
@@ -41,10 +37,9 @@ config.log
 config.status
 configure
 libtool
-src/config/bitcoin-config.h
-src/config/bitcoin-config.h.in
+src/config/zenx-config.h
+src/config/zenx-config.h.in
 src/config/stamp-h1
-src/obj
 share/setup.nsi
 share/qt/Info.plist
 
@@ -55,12 +50,7 @@ src/qt/moc_*.cpp
 src/qt/forms/ui_*.h
 
 src/qt/test/moc*.cpp
-
-src/qt/bitcoin-qt.config
-src/qt/bitcoin-qt.creator
-src/qt/bitcoin-qt.creator.user
-src/qt/bitcoin-qt.files
-src/qt/bitcoin-qt.includes
+libconftest.dylib*
 
 .deps
 .dirstamp
@@ -73,10 +63,11 @@ src/qt/bitcoin-qt.includes
 *.pyc
 *.o
 *.o-*
+*.patch
+!depends/patches/*/*.patch
 *.a
 *.pb.cc
 *.pb.h
-*.dat
 
 *.log
 *.trs
@@ -85,10 +76,6 @@ src/qt/bitcoin-qt.includes
 *.json.h
 *.raw.h
 
-# Only ignore unexpected patches
-*.patch
-!depends/patches/**/*.patch
-
 #libtool object files
 *.lo
 *.la
@@ -96,17 +83,14 @@ src/qt/bitcoin-qt.includes
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
-!depends/Makefile
-bitcoin-qt
-Bitcoin-Qt.app
+zenx-qt
+ZenX-Qt.app
 background.tiff*
-
-# Qt Creator
-Makefile.am.user
+!/depends/Makefile
 
 # Unit-tests
 Makefile.test
-bitcoin-qt_test
+zenx-qt_test
 
 # Resources cpp
 qrc_*.cpp
@@ -119,7 +103,7 @@ build
 *.gcno
 *.gcda
 /*.info
-test_bitcoin.coverage/
+test_zenx.coverage/
 total.coverage/
 coverage_percent.txt
 
@@ -132,17 +116,24 @@ test/cache/*
 
 !src/leveldb*/Makefile
 
+.cproject
+.project
+.autotools
 /doc/doxygen/
 
-libbitcoinconsensus.pc
+libzenxconsensus.pc
 contrib/devtools/split-debug.sh
+src/qt/zenx-qt.bash
+qa/pull-tester/tests-config.sh
 
-# Output from running db4 installation
-db4/
+#development symlinks
+zenx-cli
+zenxd
+zenx-qt
+make
 
-# clang-check
-*.plist
+/docker/bin
 
-osx_volname
-dist/
-*.background.tiff
+# CLion
+.idea
+cmake-build-debug

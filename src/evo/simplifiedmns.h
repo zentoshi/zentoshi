@@ -1,16 +1,16 @@
-// Copyright (c) 2017-2018 The Dash Core developers
+// Copyright (c) 2017-2020 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_SIMPLIFIEDMNS_H
-#define DASH_SIMPLIFIEDMNS_H
+#ifndef ZENX_SIMPLIFIEDMNS_H
+#define ZENX_SIMPLIFIEDMNS_H
 
-#include "bls/bls.h"
-#include "merkleblock.h"
-#include "netaddress.h"
-#include "pubkey.h"
-#include "serialize.h"
-#include "version.h"
+#include <bls/bls.h>
+#include <merkleblock.h>
+#include <netaddress.h>
+#include <pubkey.h>
+#include <serialize.h>
+#include <version.h>
 
 class UniValue;
 class CDeterministicMNList;
@@ -19,7 +19,7 @@ class CDeterministicMN;
 namespace llmq
 {
     class CFinalCommitment;
-}
+} // namespace llmq
 
 class CSimplifiedMNListEntry
 {
@@ -33,7 +33,7 @@ public:
 
 public:
     CSimplifiedMNListEntry() {}
-    CSimplifiedMNListEntry(const CDeterministicMN& dmn);
+    explicit CSimplifiedMNListEntry(const CDeterministicMN& dmn);
 
     bool operator==(const CSimplifiedMNListEntry& rhs) const
     {
@@ -78,10 +78,10 @@ public:
 
 public:
     CSimplifiedMNList() {}
-    CSimplifiedMNList(const std::vector<CSimplifiedMNListEntry>& smlEntries);
-    CSimplifiedMNList(const CDeterministicMNList& dmnList);
+    explicit CSimplifiedMNList(const std::vector<CSimplifiedMNListEntry>& smlEntries);
+    explicit CSimplifiedMNList(const CDeterministicMNList& dmnList);
 
-    uint256 CalcMerkleRoot(bool* pmutated = NULL) const;
+    uint256 CalcMerkleRoot(bool* pmutated = nullptr) const;
 };
 
 /// P2P messages
@@ -147,4 +147,4 @@ public:
 
 bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& blockHash, CSimplifiedMNListDiff& mnListDiffRet, std::string& errorRet);
 
-#endif //DASH_SIMPLIFIEDMNS_H
+#endif //ZENX_SIMPLIFIEDMNS_H

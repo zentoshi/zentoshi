@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,9 +7,11 @@
 
 #include <amount.h>
 
+#include <QValidator>
 #include <QWidget>
 
-class AmountSpinBox;
+class AmountLineEdit;
+class BitcoinUnits;
 
 QT_BEGIN_NAMESPACE
 class QValueComboBox;
@@ -26,22 +28,10 @@ class BitcoinAmountField: public QWidget
     Q_PROPERTY(qint64 value READ value WRITE setValue NOTIFY valueChanged USER true)
 
 public:
-    explicit BitcoinAmountField(QWidget *parent = nullptr);
+    explicit BitcoinAmountField(QWidget *parent = 0);
 
-    CAmount value(bool *value=nullptr) const;
+    CAmount value(bool *value=0) const;
     void setValue(const CAmount& value);
-
-    /** If allow empty is set to false the field will be set to the minimum allowed value if left empty. **/
-    void SetAllowEmpty(bool allow);
-
-    /** Set the minimum value in satoshis **/
-    void SetMinValue(const CAmount& value);
-
-    /** Set the maximum value in satoshis **/
-    void SetMaxValue(const CAmount& value);
-
-    /** Set single step in satoshis **/
-    void setSingleStep(const CAmount& step);
 
     /** Make read-only **/
     void setReadOnly(bool fReadOnly);
@@ -73,12 +63,10 @@ protected:
     bool eventFilter(QObject *object, QEvent *event);
 
 private:
-    AmountSpinBox *amount;
-    QValueComboBox *unit;
+    AmountLineEdit *amount;
+    BitcoinUnits *units;
 
-private Q_SLOTS:
     void unitChanged(int idx);
-
 };
 
 #endif // BITCOIN_QT_BITCOINAMOUNTFIELD_H

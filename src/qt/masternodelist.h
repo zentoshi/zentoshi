@@ -1,18 +1,12 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#ifndef BITCOIN_QT_MASTERNODELIST_H
-#define BITCOIN_QT_MASTERNODELIST_H
+#ifndef MASTERNODELIST_H
+#define MASTERNODELIST_H
 
 #include <primitives/transaction.h>
-#include <qt/platformstyle.h>
 #include <sync.h>
-#include <util/system.h>
+#include <util.h>
 
 #include <evo/deterministicmns.h>
 
-#include <QClipboard>
 #include <QMenu>
 #include <QTimer>
 #include <QWidget>
@@ -38,7 +32,7 @@ class MasternodeList : public QWidget
     Q_OBJECT
 
 public:
-    explicit MasternodeList(const PlatformStyle* platformStyle, QWidget* parent = 0);
+    explicit MasternodeList(QWidget* parent = 0);
     ~MasternodeList();
 
     void setClientModel(ClientModel* clientModel);

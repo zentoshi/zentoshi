@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The Dash Core developers
+// Copyright (c) 2018-2019 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,8 +9,6 @@
 #include <validation.h>
 
 #include <evo/specialtx.h>
-
-#include <univalue.h>
 
 namespace llmq
 {
@@ -24,7 +22,7 @@ CFinalCommitment::CFinalCommitment(const Consensus::LLMQParams& params, const ui
 }
 
 #define LogPrintfFinalCommitment(...) do { \
-    LogPrint(BCLog::QUORUM, "CFinalCommitment::%s -- %s", __func__, tinyformat::format(__VA_ARGS__)); \
+    LogPrintStr(strprintf("CFinalCommitment::%s -- %s", __func__, tinyformat::format(__VA_ARGS__))); \
 } while(0)
 
 bool CFinalCommitment::Verify(const std::vector<CDeterministicMNCPtr>& members, bool checkSigs) const
@@ -133,72 +131,50 @@ bool CFinalCommitment::VerifySizes(const Consensus::LLMQParams& params) const
     return true;
 }
 
-void CFinalCommitment::ToJson(UniValue& obj) const
-{
-    obj.setObject();
-    obj.pushKV("version", (int)nVersion);
-    obj.pushKV("llmqType", (int)llmqType);
-    obj.pushKV("quorumHash", quorumHash.ToString());
-    obj.pushKV("signersCount", CountSigners());
-    obj.pushKV("validMembersCount", CountValidMembers());
-    obj.pushKV("quorumPublicKey", quorumPublicKey.ToString());
-}
-
-void CFinalCommitmentTxPayload::ToJson(UniValue& obj) const
-{
-    obj.setObject();
-    obj.pushKV("version", (int)nVersion);
-    obj.pushKV("height", (int)nHeight);
-
-    UniValue qcObj;
-    commitment.ToJson(qcObj);
-    obj.pushKV("commitment", qcObj);
-}
-
 bool CheckLLMQCommitment(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state)
 {
     CFinalCommitmentTxPayload qcTx;
     if (!GetTxPayload(tx, qcTx)) {
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-payload");
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-payload");
     }
 
     if (qcTx.nVersion == 0 || qcTx.nVersion > CFinalCommitmentTxPayload::CURRENT_VERSION) {
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-version");
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-version");
     }
 
     if (qcTx.nHeight != pindexPrev->nHeight + 1) {
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-height");
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-height");
     }
 
-    if (!::BlockIndex().count(qcTx.commitment.quorumHash)) {
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-quorum-hash");
+    if (!mapBlockIndex.count(qcTx.commitment.quorumHash)) {
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-quorum-hash");
     }
 
-    const CBlockIndex* pindexQuorum = ::BlockIndex()[qcTx.commitment.quorumHash];
+    const CBlockIndex* pindexQuorum = mapBlockIndex[qcTx.commitment.quorumHash];
 
     if (pindexQuorum != pindexPrev->GetAncestor(pindexQuorum->nHeight)) {
         // not part of active chain
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-quorum-hash");
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-quorum-hash");
     }
 
     if (!Params().GetConsensus().llmqs.count((Consensus::LLMQType)qcTx.commitment.llmqType)) {
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-type");
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-type");
     }
     const auto& params = Params().GetConsensus().llmqs.at((Consensus::LLMQType)qcTx.commitment.llmqType);
 
     if (qcTx.commitment.IsNull()) {
         if (!qcTx.commitment.VerifyNull()) {
-            return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-invalid-null");
+            return state.DoS(100, false, REJECT_INVALID, "bad-qc-invalid-null");
         }
         return true;
     }
 
     auto members = CLLMQUtils::GetAllQuorumMembers(params.type, pindexQuorum);
     if (!qcTx.commitment.Verify(members, false)) {
-        return state.Invalid(ValidationInvalidReason::QC_INVALID, "bad-qc-invalid");
+        return state.DoS(100, false, REJECT_INVALID, "bad-qc-invalid");
     }
 
     return true;
 }
 
-}
+} // namespace llmq

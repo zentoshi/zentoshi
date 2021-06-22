@@ -1,22 +1,21 @@
-// Copyright (c) 2014-2018 The Dash Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <base58.h>
 #include <hash.h>
-#include <key_io.h>
+#include <validation.h> // For strMessageMagic
 #include <messagesigner.h>
-#include <pubkey.h>
 #include <tinyformat.h>
-#include <util/strencodings.h>
-#include <util/validation.h>
-#include <validation.h>
+#include <utilstrencodings.h>
 
 bool CMessageSigner::GetKeysFromSecret(const std::string& strSecret, CKey& keyRet, CPubKey& pubkeyRet)
 {
-    keyRet = DecodeSecret(strSecret);
-    if (!keyRet.IsValid())
-        return false;
+    CBitcoinSecret vchSecret;
 
+    if(!vchSecret.SetString(strSecret)) return false;
+
+    keyRet = vchSecret.GetKey();
     pubkeyRet = keyRet.GetPubKey();
 
     return true;
@@ -58,8 +57,7 @@ bool CHashSigner::VerifyHash(const uint256& hash, const CPubKey& pubkey, const s
 bool CHashSigner::VerifyHash(const uint256& hash, const CKeyID& keyID, const std::vector<unsigned char>& vchSig, std::string& strErrorRet)
 {
     CPubKey pubkeyFromSig;
-    CPubKey::InputScriptType inputScriptType;
-    if(!pubkeyFromSig.RecoverCompact(hash, vchSig, inputScriptType)) {
+    if(!pubkeyFromSig.RecoverCompact(hash, vchSig)) {
         strErrorRet = "Error recovering public key.";
         return false;
     }
@@ -67,7 +65,7 @@ bool CHashSigner::VerifyHash(const uint256& hash, const CKeyID& keyID, const std
     if(pubkeyFromSig.GetID() != keyID) {
         strErrorRet = strprintf("Keys don't match: pubkey=%s, pubkeyFromSig=%s, hash=%s, vchSig=%s",
                     keyID.ToString(), pubkeyFromSig.GetID().ToString(), hash.ToString(),
-                    EncodeBase64(&vchSig[0], vchSig.size()));
+                    EncodeBase64(vchSig.data(), vchSig.size()));
         return false;
     }
 

@@ -18,19 +18,52 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTabWidget" name="tabWidget">
+    <layout class="QHBoxLayout" name="horizontalLayout_Buttons_2">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="btnSignMessage">
+       <property name="text">
+        <string>&amp;Sign Message</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnVerifyMessage">
+       <property name="text">
+        <string>&amp;Verify Message</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QStackedWidget" name="stackedWidgetSig">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabSignMessage">
-      <attribute name="title">
-       <string>&amp;Sign Message</string>
-      </attribute>
+     <widget class="QWidget" name="pageSignMessage">
       <layout class="QVBoxLayout" name="verticalLayout_SM">
        <item>
         <widget class="QLabel" name="infoLabel_SM">
          <property name="text">
-          <string>You can sign messages/agreements with your addresses to prove you can receive bitcoins sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</string>
+          <string>You can sign messages/agreements with your addresses to prove you can receive ZenX sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</string>
          </property>
          <property name="textFormat">
           <enum>Qt::PlainText</enum>
@@ -48,47 +81,33 @@
          <item>
           <widget class="QValidatedLineEdit" name="addressIn_SM">
            <property name="toolTip">
-            <string>The Zentoshi address to sign the message with</string>
+            <string>The ZenX address to sign the message with</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="addressBookButton_SM">
+          <widget class="QToolButton" name="addressBookButton_SM">
            <property name="toolTip">
             <string>Choose previously used address</string>
            </property>
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/address-book</normaloff>:/icons/address-book</iconset>
-           </property>
            <property name="shortcut">
             <string>Alt+A</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pasteButton_SM">
+          <widget class="QToolButton" name="pasteButton_SM">
            <property name="toolTip">
             <string>Paste address from clipboard</string>
            </property>
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/editpaste</normaloff>:/icons/editpaste</iconset>
-           </property>
            <property name="shortcut">
             <string>Alt+P</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -118,30 +137,18 @@
          </property>
          <item>
           <widget class="QLineEdit" name="signatureOut_SM">
-           <property name="font">
-            <font>
-             <italic>true</italic>
-            </font>
-           </property>
            <property name="readOnly">
             <bool>true</bool>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="copySignatureButton_SM">
+          <widget class="QToolButton" name="copySignatureButton_SM">
            <property name="toolTip">
             <string>Copy the current signature to the system clipboard</string>
            </property>
            <property name="text">
             <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/editcopy</normaloff>:/icons/editcopy</iconset>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -152,14 +159,10 @@
          <item>
           <widget class="QPushButton" name="signMessageButton_SM">
            <property name="toolTip">
-            <string>Sign the message to prove you own this Zentoshi address</string>
+            <string>Sign the message to prove you own this ZenX address</string>
            </property>
            <property name="text">
             <string>Sign &amp;Message</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/edit</normaloff>:/icons/edit</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
@@ -173,10 +176,6 @@
            </property>
            <property name="text">
             <string>Clear &amp;All</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
@@ -198,12 +197,6 @@
          </item>
          <item>
           <widget class="QLabel" name="statusLabel_SM">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
            <property name="text">
             <string/>
            </property>
@@ -229,10 +222,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabVerifyMessage">
-      <attribute name="title">
-       <string>&amp;Verify Message</string>
-      </attribute>
+     <widget class="QWidget" name="pageVerifyMessage">
       <layout class="QVBoxLayout" name="verticalLayout_VM">
        <item>
         <widget class="QLabel" name="infoLabel_VM">
@@ -258,27 +248,20 @@
          <item>
           <widget class="QValidatedLineEdit" name="addressIn_VM">
            <property name="toolTip">
-            <string>The Zentoshi address the message was signed with</string>
+            <string>The ZenX address the message was signed with</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="addressBookButton_VM">
+          <widget class="QToolButton" name="addressBookButton_VM">
            <property name="toolTip">
             <string>Choose previously used address</string>
            </property>
            <property name="text">
             <string/>
            </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/address-book</normaloff>:/icons/address-book</iconset>
-           </property>
            <property name="shortcut">
             <string>Alt+A</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -295,14 +278,10 @@
          <item>
           <widget class="QPushButton" name="verifyMessageButton_VM">
            <property name="toolTip">
-            <string>Verify the message to ensure it was signed with the specified Zentoshi address</string>
+            <string>Verify the message to ensure it was signed with the specified ZenX address</string>
            </property>
            <property name="text">
             <string>Verify &amp;Message</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/transaction_0</normaloff>:/icons/transaction_0</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
@@ -316,10 +295,6 @@
            </property>
            <property name="text">
             <string>Clear &amp;All</string>
-           </property>
-           <property name="icon">
-            <iconset resource="../bitcoin.qrc">
-             <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
@@ -341,12 +316,6 @@
          </item>
          <item>
           <widget class="QLabel" name="statusLabel_VM">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
            <property name="text">
             <string/>
            </property>
@@ -384,7 +353,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../bitcoin.qrc"/>
+  <include location="../zenx.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -1,9 +1,9 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_POLICY_FEES_H
-#define BITCOIN_POLICY_FEES_H
+#ifndef BITCOIN_POLICYESTIMATOR_H
+#define BITCOIN_POLICYESTIMATOR_H
 
 #include <amount.h>
 #include <policy/feerate.h>
@@ -22,9 +22,54 @@ class CTxMemPoolEntry;
 class CTxMemPool;
 class TxConfirmStats;
 
+/** \class CBlockPolicyEstimator
+ * The BlockPolicyEstimator is used for estimating the feerate needed
+ * for a transaction to be included in a block within a certain number of
+ * blocks.
+ *
+ * At a high level the algorithm works by grouping transactions into buckets
+ * based on having similar feerates and then tracking how long it
+ * takes transactions in the various buckets to be mined.  It operates under
+ * the assumption that in general transactions of higher feerate will be
+ * included in blocks before transactions of lower feerate.   So for
+ * example if you wanted to know what feerate you should put on a transaction to
+ * be included in a block within the next 5 blocks, you would start by looking
+ * at the bucket with the highest feerate transactions and verifying that a
+ * sufficiently high percentage of them were confirmed within 5 blocks and
+ * then you would look at the next highest feerate bucket, and so on, stopping at
+ * the last bucket to pass the test.   The average feerate of transactions in this
+ * bucket will give you an indication of the lowest feerate you can put on a
+ * transaction and still have a sufficiently high chance of being confirmed
+ * within your desired 5 blocks.
+ *
+ * Here is a brief description of the implementation:
+ * When a transaction enters the mempool, we track the height of the block chain
+ * at entry.  All further calculations are conducted only on this set of "seen"
+ * transactions. Whenever a block comes in, we count the number of transactions
+ * in each bucket and the total amount of feerate paid in each bucket. Then we
+ * calculate how many blocks Y it took each transaction to be mined.  We convert
+ * from a number of blocks to a number of periods Y' each encompassing "scale"
+ * blocks.  This is is tracked in 3 different data sets each up to a maximum
+ * number of periods. Within each data set we have an array of counters in each
+ * feerate bucket and we increment all the counters from Y' up to max periods
+ * representing that a tx was successfully confirmed in less than or equal to
+ * that many periods. We want to save a history of this information, so at any
+ * time we have a counter of the total number of transactions that happened in a
+ * given feerate bucket and the total number that were confirmed in each of the
+ * periods or less for any bucket.  We save this history by keeping an
+ * exponentially decaying moving average of each one of these stats.  This is
+ * done for a different decay in each of the 3 data sets to keep relevant data
+ * from different time horizons.  Furthermore we also keep track of the number
+ * unmined (in mempool or left mempool without being included in a block)
+ * transactions in each bucket and for how many blocks they have been
+ * outstanding and use both of these numbers to increase the number of transactions
+ * we've seen in that feerate bucket when calculating an estimate for any number
+ * of confirmations below the number of blocks they've been outstanding.
+ */
+
 /* Identifier for each of the 3 different TxConfirmStats which will track
  * history over different time horizons. */
-enum class FeeEstimateHorizon {
+enum FeeEstimateHorizon {
     SHORT_HALFLIFE = 0,
     MED_HALFLIFE = 1,
     LONG_HALFLIFE = 2
@@ -43,14 +88,19 @@ enum class FeeReason {
     PAYTXFEE,
     FALLBACK,
     REQUIRED,
+    MAXTXFEE,
 };
+
+std::string StringForFeeReason(FeeReason reason);
 
 /* Used to determine type of fee estimation requested */
 enum class FeeEstimateMode {
-    UNSET,        //!< Use default settings based on other criteria
-    ECONOMICAL,   //!< Force estimateSmartFee to use non-conservative estimates
-    CONSERVATIVE, //!< Force estimateSmartFee to use conservative estimates
+    UNSET,        //! Use default settings based on other criteria
+    ECONOMICAL,   //! Force estimateSmartFee to use non-conservative estimates
+    CONSERVATIVE, //! Force estimateSmartFee to use conservative estimates
 };
+
+bool FeeModeFromString(const std::string& mode_string, FeeEstimateMode& fee_estimate_mode);
 
 /* Used to return detailed information about a feerate bucket */
 struct EstimatorBucket
@@ -80,50 +130,7 @@ struct FeeCalculation
     int returnedTarget = 0;
 };
 
-/** \class CBlockPolicyEstimator
- * The BlockPolicyEstimator is used for estimating the feerate needed
- * for a transaction to be included in a block within a certain number of
- * blocks.
- *
- * At a high level the algorithm works by grouping transactions into buckets
- * based on having similar feerates and then tracking how long it
- * takes transactions in the various buckets to be mined.  It operates under
- * the assumption that in general transactions of higher feerate will be
- * included in blocks before transactions of lower feerate.   So for
- * example if you wanted to know what feerate you should put on a transaction to
- * be included in a block within the next 5 blocks, you would start by looking
- * at the bucket with the highest feerate transactions and verifying that a
- * sufficiently high percentage of them were confirmed within 5 blocks and
- * then you would look at the next highest feerate bucket, and so on, stopping at
- * the last bucket to pass the test.   The average feerate of transactions in this
- * bucket will give you an indication of the lowest feerate you can put on a
- * transaction and still have a sufficiently high chance of being confirmed
- * within your desired 5 blocks.
- *
- * Here is a brief description of the implementation:
- * When a transaction enters the mempool, we track the height of the block chain
- * at entry.  All further calculations are conducted only on this set of "seen"
- * transactions. Whenever a block comes in, we count the number of transactions
- * in each bucket and the total amount of feerate paid in each bucket. Then we
- * calculate how many blocks Y it took each transaction to be mined.  We convert
- * from a number of blocks to a number of periods Y' each encompassing "scale"
- * blocks.  This is tracked in 3 different data sets each up to a maximum
- * number of periods. Within each data set we have an array of counters in each
- * feerate bucket and we increment all the counters from Y' up to max periods
- * representing that a tx was successfully confirmed in less than or equal to
- * that many periods. We want to save a history of this information, so at any
- * time we have a counter of the total number of transactions that happened in a
- * given feerate bucket and the total number that were confirmed in each of the
- * periods or less for any bucket.  We save this history by keeping an
- * exponentially decaying moving average of each one of these stats.  This is
- * done for a different decay in each of the 3 data sets to keep relevant data
- * from different time horizons.  Furthermore we also keep track of the number
- * unmined (in mempool or left mempool without being included in a block)
- * transactions in each bucket and for how many blocks they have been
- * outstanding and use both of these numbers to increase the number of transactions
- * we've seen in that feerate bucket when calculating an estimate for any number
- * of confirmations below the number of blocks they've been outstanding.
- *
+/**
  *  We want to be able to estimate feerates that are needed on tx's to be included in
  * a certain number of blocks.  Every time a block is added to the best chain, this class records
  * stats on the transactions included in that block
@@ -143,11 +150,11 @@ private:
     /** Historical estimates that are older than this aren't valid */
     static const unsigned int OLDEST_ESTIMATE_HISTORY = 6 * 1008;
 
-    /** Decay of .962 is a half-life of 18 blocks or about 3 hours */
+    /** Decay of .962 is a half-life of 18 blocks or about 45 minutes */
     static constexpr double SHORT_DECAY = .962;
-    /** Decay of .998 is a half-life of 144 blocks or about 1 day */
+    /** Decay of .998 is a half-life of 144 blocks or about 6 hours */
     static constexpr double MED_DECAY = .9952;
-    /** Decay of .9995 is a half-life of 1008 blocks or about 1 week */
+    /** Decay of .9995 is a half-life of 1008 blocks or about 2 days */
     static constexpr double LONG_DECAY = .99931;
 
     /** Require greater than 60% of X feerate transactions to be confirmed within Y/2 blocks*/
@@ -217,18 +224,16 @@ public:
     bool Read(CAutoFile& filein);
 
     /** Empty mempool transactions on shutdown to record failure to confirm for txs still in mempool */
-    void FlushUnconfirmed();
+    void FlushUnconfirmed(CTxMemPool& pool);
 
     /** Calculation of highest target that estimates are tracked for */
     unsigned int HighestTargetTracked(FeeEstimateHorizon horizon) const;
 
 private:
-    mutable CCriticalSection m_cs_fee_estimator;
-
-    unsigned int nBestSeenHeight GUARDED_BY(m_cs_fee_estimator);
-    unsigned int firstRecordedHeight GUARDED_BY(m_cs_fee_estimator);
-    unsigned int historicalFirst GUARDED_BY(m_cs_fee_estimator);
-    unsigned int historicalBest GUARDED_BY(m_cs_fee_estimator);
+    unsigned int nBestSeenHeight;
+    unsigned int firstRecordedHeight;
+    unsigned int historicalFirst;
+    unsigned int historicalBest;
 
     struct TxStatsInfo
     {
@@ -238,54 +243,34 @@ private:
     };
 
     // map of txids to information about that transaction
-    std::map<uint256, TxStatsInfo> mapMemPoolTxs GUARDED_BY(m_cs_fee_estimator);
+    std::map<uint256, TxStatsInfo> mapMemPoolTxs;
 
     /** Classes to track historical data on transaction confirmations */
-    std::unique_ptr<TxConfirmStats> feeStats PT_GUARDED_BY(m_cs_fee_estimator);
-    std::unique_ptr<TxConfirmStats> shortStats PT_GUARDED_BY(m_cs_fee_estimator);
-    std::unique_ptr<TxConfirmStats> longStats PT_GUARDED_BY(m_cs_fee_estimator);
+    std::unique_ptr<TxConfirmStats> feeStats;
+    std::unique_ptr<TxConfirmStats> shortStats;
+    std::unique_ptr<TxConfirmStats> longStats;
 
-    unsigned int trackedTxs GUARDED_BY(m_cs_fee_estimator);
-    unsigned int untrackedTxs GUARDED_BY(m_cs_fee_estimator);
+    unsigned int trackedTxs;
+    unsigned int untrackedTxs;
 
-    std::vector<double> buckets GUARDED_BY(m_cs_fee_estimator); // The upper-bound of the range for the bucket (inclusive)
-    std::map<double, unsigned int> bucketMap GUARDED_BY(m_cs_fee_estimator); // Map of bucket upper-bound to index into all vectors by bucket
+    std::vector<double> buckets;              // The upper-bound of the range for the bucket (inclusive)
+    std::map<double, unsigned int> bucketMap; // Map of bucket upper-bound to index into all vectors by bucket
+
+    mutable CCriticalSection cs_feeEstimator;
 
     /** Process a transaction confirmed in a block*/
-    bool processBlockTx(unsigned int nBlockHeight, const CTxMemPoolEntry* entry) EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
+    bool processBlockTx(unsigned int nBlockHeight, const CTxMemPoolEntry* entry);
 
     /** Helper for estimateSmartFee */
-    double estimateCombinedFee(unsigned int confTarget, double successThreshold, bool checkShorterHorizon, EstimationResult *result) const EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
+    double estimateCombinedFee(unsigned int confTarget, double successThreshold, bool checkShorterHorizon, EstimationResult *result) const;
     /** Helper for estimateSmartFee */
-    double estimateConservativeFee(unsigned int doubleTarget, EstimationResult *result) const EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
+    double estimateConservativeFee(unsigned int doubleTarget, EstimationResult *result) const;
     /** Number of blocks of data recorded while fee estimates have been running */
-    unsigned int BlockSpan() const EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
+    unsigned int BlockSpan() const;
     /** Number of blocks of recorded fee estimate data represented in saved data file */
-    unsigned int HistoricalBlockSpan() const EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
+    unsigned int HistoricalBlockSpan() const;
     /** Calculation of highest target that reasonable estimate can be provided for */
-    unsigned int MaxUsableEstimate() const EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
+    unsigned int MaxUsableEstimate() const;
 };
 
-class FeeFilterRounder
-{
-private:
-    static constexpr double MAX_FILTER_FEERATE = 1e7;
-    /** FEE_FILTER_SPACING is just used to provide some quantization of fee
-     * filter results.  Historically it reused FEE_SPACING, but it is completely
-     * unrelated, and was made a separate constant so the two concepts are not
-     * tied together */
-    static constexpr double FEE_FILTER_SPACING = 1.1;
-
-public:
-    /** Create new FeeFilterRounder */
-    explicit FeeFilterRounder(const CFeeRate& minIncrementalFee);
-
-    /** Quantize a minimum fee for privacy purpose before broadcast **/
-    CAmount round(CAmount currentMinFee);
-
-private:
-    std::set<double> feeset;
-    FastRandomContext insecure_rand;
-};
-
-#endif // BITCOIN_POLICY_FEES_H
+#endif /*BITCOIN_POLICYESTIMATOR_H */

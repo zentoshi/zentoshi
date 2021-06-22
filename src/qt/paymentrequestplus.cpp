@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,7 +9,7 @@
 
 #include <qt/paymentrequestplus.h>
 
-#include <util/system.h>
+#include <util.h>
 
 #include <stdexcept>
 
@@ -97,10 +97,12 @@ bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant) c
             qWarning() << "PaymentRequestPlus::getMerchant: Payment request: certificate expired or not yet active: " << qCert;
             return false;
         }
+#if QT_VERSION >= 0x050000
         if (qCert.isBlacklisted()) {
             qWarning() << "PaymentRequestPlus::getMerchant: Payment request: certificate blacklisted: " << qCert;
             return false;
         }
+#endif
         const unsigned char *data = (const unsigned char *)certChain.certificate(i).data();
         X509 *cert = d2i_X509(nullptr, &data, certChain.certificate(i).size());
         if (cert)
@@ -142,6 +144,7 @@ bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant) c
         if (result != 1) {
             int error = X509_STORE_CTX_get_error(store_ctx);
             // For testing payment requests, we allow self signed root certs!
+            // This option is just shown in the UI options, if -help-debug is enabled.
             if (!(error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT && gArgs.GetBoolArg("-allowselfsignedrootcertificates", DEFAULT_SELFSIGNED_ROOTCERTS))) {
                 throw SSLVerifyError(X509_verify_cert_error_string(error));
             } else {
@@ -164,13 +167,16 @@ bool PaymentRequestPlus::getMerchant(X509_STORE* certStore, QString& merchant) c
         EVP_MD_CTX *ctx;
         ctx = &_ctx;
 #endif
+
         EVP_PKEY *pubkey = X509_get_pubkey(signing_cert);
+
         EVP_MD_CTX_init(ctx);
         if (!EVP_VerifyInit_ex(ctx, digestAlgorithm, nullptr) ||
             !EVP_VerifyUpdate(ctx, data_to_verify.data(), data_to_verify.size()) ||
             !EVP_VerifyFinal(ctx, (const unsigned char*)paymentRequest.signature().data(), (unsigned int)paymentRequest.signature().size(), pubkey)) {
             throw SSLVerifyError("Bad signature, invalid payment request.");
         }
+
 #if HAVE_DECL_EVP_MD_CTX_NEW
         EVP_MD_CTX_free(ctx);
 #endif

@@ -1,19 +1,22 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifdef HAVE_CONFIG_H
-#include <config/zentoshi-config.h>
-#endif
-
 #include <qt/walletmodeltransaction.h>
 
-#include <policy/policy.h>
+#include <wallet/wallet.h>
 
 WalletModelTransaction::WalletModelTransaction(const QList<SendCoinsRecipient> &_recipients) :
     recipients(_recipients),
+    walletTransaction(0),
     fee(0)
 {
+    walletTransaction = new CWalletTx();
+}
+
+WalletModelTransaction::~WalletModelTransaction()
+{
+    delete walletTransaction;
 }
 
 QList<SendCoinsRecipient> WalletModelTransaction::getRecipients() const
@@ -21,14 +24,14 @@ QList<SendCoinsRecipient> WalletModelTransaction::getRecipients() const
     return recipients;
 }
 
-CTransactionRef& WalletModelTransaction::getWtx()
+CWalletTx *WalletModelTransaction::getTransaction() const
 {
-    return wtx;
+    return walletTransaction;
 }
 
 unsigned int WalletModelTransaction::getTransactionSize()
 {
-    return wtx ? GetVirtualTransactionSize(*wtx) : 0;
+    return (!walletTransaction ? 0 : (::GetSerializeSize(*walletTransaction->tx, SER_NETWORK, PROTOCOL_VERSION)));
 }
 
 CAmount WalletModelTransaction::getTransactionFee() const
@@ -41,15 +44,13 @@ void WalletModelTransaction::setTransactionFee(const CAmount& newFee)
     fee = newFee;
 }
 
-void WalletModelTransaction::reassignAmounts(int nChangePosRet)
+void WalletModelTransaction::reassignAmounts()
 {
-    const CTransaction* walletTransaction = wtx.get();
-    int i = 0;
+    // For each recipient look for a matching CTxOut in walletTransaction and reassign amounts
     for (QList<SendCoinsRecipient>::iterator it = recipients.begin(); it != recipients.end(); ++it)
     {
         SendCoinsRecipient& rcp = (*it);
 
-#ifdef ENABLE_BIP70
         if (rcp.paymentRequest.IsInitialized())
         {
             CAmount subtotal = 0;
@@ -58,20 +59,26 @@ void WalletModelTransaction::reassignAmounts(int nChangePosRet)
             {
                 const payments::Output& out = details.outputs(j);
                 if (out.amount() <= 0) continue;
-                if (i == nChangePosRet)
-                    i++;
-                subtotal += walletTransaction->vout[i].nValue;
-                i++;
+                const unsigned char* scriptStr = (const unsigned char*)out.script().data();
+                CScript scriptPubKey(scriptStr, scriptStr+out.script().size());
+                for (const auto& txout : walletTransaction->tx->vout) {
+                    if (txout.scriptPubKey == scriptPubKey) {
+                        subtotal += txout.nValue;
+                        break;
+                    }
+                }
             }
             rcp.amount = subtotal;
         }
         else // normal recipient (no payment request)
-#endif
         {
-            if (i == nChangePosRet)
-                i++;
-            rcp.amount = walletTransaction->vout[i].nValue;
-            i++;
+            for (const auto& txout : walletTransaction->tx->vout) {
+                CScript scriptPubKey = GetScriptForDestination(DecodeDestination(rcp.address.toStdString()));
+                if (txout.scriptPubKey == scriptPubKey) {
+                    rcp.amount = txout.nValue;
+                    break;
+                }
+            }
         }
     }
 }
@@ -84,4 +91,14 @@ CAmount WalletModelTransaction::getTotalTransactionAmount() const
         totalTransactionAmount += rcp.amount;
     }
     return totalTransactionAmount;
+}
+
+void WalletModelTransaction::newPossibleKeyChange(CWallet *wallet)
+{
+    keyChange.reset(new CReserveKey(wallet));
+}
+
+CReserveKey *WalletModelTransaction::getPossibleKeyChange()
+{
+    return keyChange.get();
 }

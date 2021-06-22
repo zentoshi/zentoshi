@@ -1,20 +1,19 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include <config/zentoshi-config.h>
+#include <config/zenx-config.h>
 #endif
 
 #include <fs.h>
 #include <qt/intro.h>
 #include <qt/forms/ui_intro.h>
 
-#include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 
-#include <interfaces/node.h>
-#include <util/system.h>
+#include <util.h>
 
 #include <QFileDialog>
 #include <QSettings>
@@ -22,6 +21,11 @@
 
 #include <cmath>
 
+static const uint64_t GB_BYTES = 1000000000LL;
+/* Minimum free space (in GB) needed for data directory */
+static const uint64_t BLOCK_CHAIN_SIZE = 30;
+/* Minimum free space (in GB) needed for data directory when pruned; Does not include prune target */
+static const uint64_t CHAIN_STATE_SIZE = 1;
 /* Total required space (in GB) depending on user choice (prune, not prune) */
 static uint64_t requiredSpace;
 
@@ -110,35 +114,43 @@ void FreespaceChecker::check()
 }
 
 
-Intro::Intro(QWidget *parent, uint64_t blockchain_size, uint64_t chain_state_size) :
+Intro::Intro(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Intro),
-    thread(nullptr),
-    signalled(false),
-    m_blockchain_size(blockchain_size),
-    m_chain_state_size(chain_state_size)
+    thread(0),
+    signalled(false)
 {
     ui->setupUi(this);
-    ui->welcomeLabel->setText(ui->welcomeLabel->text().arg(PACKAGE_NAME));
-    ui->storageLabel->setText(ui->storageLabel->text().arg(PACKAGE_NAME));
+    ui->welcomeLabel->setText(ui->welcomeLabel->text().arg(tr(PACKAGE_NAME)));
+    ui->storageLabel->setText(ui->storageLabel->text().arg(tr(PACKAGE_NAME)));
 
     ui->lblExplanation1->setText(ui->lblExplanation1->text()
-        .arg(PACKAGE_NAME)
-        .arg(m_blockchain_size)
-        .arg(2009)
-        .arg(tr("Zentoshi"))
+        .arg(tr(PACKAGE_NAME))
+        .arg(BLOCK_CHAIN_SIZE)
+        .arg(2014)
+        .arg("ZenX")
     );
-    ui->lblExplanation2->setText(ui->lblExplanation2->text().arg(PACKAGE_NAME));
+    ui->lblExplanation2->setText(ui->lblExplanation2->text().arg(tr(PACKAGE_NAME)));
 
-    requiredSpace = m_blockchain_size;
+    uint64_t pruneTarget = std::max<int64_t>(0, gArgs.GetArg("-prune", 0));
+    requiredSpace = BLOCK_CHAIN_SIZE;
     QString storageRequiresMsg = tr("At least %1 GB of data will be stored in this directory, and it will grow over time.");
-    requiredSpace += m_chain_state_size;
+    if (pruneTarget) {
+        uint64_t prunedGBs = std::ceil(pruneTarget * 1024 * 1024.0 / GB_BYTES);
+        if (prunedGBs <= requiredSpace) {
+            requiredSpace = prunedGBs;
+            storageRequiresMsg = tr("Approximately %1 GB of data will be stored in this directory.");
+        }
+        ui->lblExplanation3->setVisible(true);
+    } else {
+        ui->lblExplanation3->setVisible(false);
+    }
+    requiredSpace += CHAIN_STATE_SIZE;
     ui->sizeWarningLabel->setText(
-        tr("%1 will download and store a copy of the Zentoshi chain.").arg(tr(PACKAGE_NAME)) + " " +
+        tr("%1 will download and store a copy of the ZenX block chain.").arg(tr(PACKAGE_NAME)) + " " +
         storageRequiresMsg.arg(requiredSpace) + " " +
         tr("The wallet will also be stored in this directory.")
     );
-    this->adjustSize();
     startThread();
 }
 
@@ -146,7 +158,7 @@ Intro::~Intro()
 {
     delete ui;
     /* Ensure thread is finished before it is deleted */
-    thread->quit();
+    Q_EMIT stopThread();
     thread->wait();
 }
 
@@ -158,7 +170,7 @@ QString Intro::getDataDirectory()
 void Intro::setDataDirectory(const QString &dataDir)
 {
     ui->dataDirectory->setText(dataDir);
-    if(dataDir == GUIUtil::getDefaultDataDirectory())
+    if(dataDir == getDefaultDataDirectory())
     {
         ui->dataDirDefault->setChecked(true);
         ui->dataDirectory->setEnabled(false);
@@ -170,34 +182,33 @@ void Intro::setDataDirectory(const QString &dataDir)
     }
 }
 
-bool Intro::showIfNeeded(interfaces::Node& node, bool& did_show_intro, bool& prune)
+QString Intro::getDefaultDataDirectory()
 {
-    did_show_intro = false;
+    return GUIUtil::boostPathToQString(GetDefaultDataDir());
+}
 
+bool Intro::pickDataDirectory()
+{
     QSettings settings;
     /* If data directory provided on command line, no need to look at settings
        or show a picking dialog */
     if(!gArgs.GetArg("-datadir", "").empty())
         return true;
     /* 1) Default data directory for operating system */
-    QString dataDir = GUIUtil::getDefaultDataDirectory();
+    QString dataDirDefaultCurrent = getDefaultDataDirectory();
     /* 2) Allow QSettings to override default dir */
-    dataDir = settings.value("strDataDir", dataDir).toString();
+    QString dataDir = settings.value("strDataDir", dataDirDefaultCurrent).toString();
+    /* 3) Check to see if default datadir is the one we expect */
+    QString dataDirDefaultSettings = settings.value("strDataDirDefault").toString();
 
-    if(!fs::exists(GUIUtil::qstringToBoostPath(dataDir)) || gArgs.GetBoolArg("-choosedatadir", DEFAULT_CHOOSE_DATADIR) || settings.value("fReset", false).toBool() || gArgs.GetBoolArg("-resetguisettings", false))
+    if(!fs::exists(GUIUtil::qstringToBoostPath(dataDir)) || gArgs.GetBoolArg("-choosedatadir", DEFAULT_CHOOSE_DATADIR) || dataDirDefaultCurrent != dataDirDefaultSettings)
     {
-        /* Use selectParams here to guarantee Params() can be used by node interface */
-        try {
-            node.selectParams(gArgs.GetChainName());
-        } catch (const std::exception&) {
-            return false;
-        }
-
-        /* If current default data directory does not exist, let the user choose one */
-        Intro intro(0, node.getAssumedBlockchainSize(), node.getAssumedChainStateSize());
-        intro.setDataDirectory(dataDir);
+        /* Let the user choose one */
+        Intro intro;
+        GUIUtil::disableMacFocusRect(&intro);
+        GUIUtil::loadStyleSheet(&intro);
+        intro.setDataDirectory(dataDirDefaultCurrent);
         intro.setWindowIcon(QIcon(":icons/bitcoin"));
-        did_show_intro = true;
 
         while(true)
         {
@@ -214,22 +225,21 @@ bool Intro::showIfNeeded(interfaces::Node& node, bool& did_show_intro, bool& pru
                 }
                 break;
             } catch (const fs::filesystem_error&) {
-                QMessageBox::critical(nullptr, PACKAGE_NAME,
+                QMessageBox::critical(0, tr(PACKAGE_NAME),
                     tr("Error: Specified data directory \"%1\" cannot be created.").arg(dataDir));
                 /* fall through, back to choosing screen */
             }
         }
 
         settings.setValue("strDataDir", dataDir);
-        settings.setValue("fReset", false);
+        settings.setValue("strDataDirDefault", dataDirDefaultCurrent);
     }
     /* Only override -datadir if different from the default, to make it possible to
-     * override -datadir in the bitcoin.conf file in the default data directory
-     * (to be consistent with bitcoind behavior)
+     * override -datadir in the zenx.conf file in the default data directory
+     * (to be consistent with zenxd behavior)
      */
-    if(dataDir != GUIUtil::getDefaultDataDirectory()) {
-        node.softSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string()); // use OS locale for path setting
-    }
+    if(dataDir != dataDirDefaultCurrent)
+        gArgs.SoftSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string()); // use OS locale for path setting
     return true;
 }
 
@@ -243,7 +253,7 @@ void Intro::setStatus(int status, const QString &message, quint64 bytesAvailable
         break;
     case FreespaceChecker::ST_ERROR:
         ui->errorMessage->setText(tr("Error") + ": " + message);
-        ui->errorMessage->setStyleSheet("QLabel { color: #800000 }");
+        ui->errorMessage->setStyleSheet(GUIUtil::getThemedStyleQString(GUIUtil::ThemedStyle::TS_ERROR));
         break;
     }
     /* Indicate number of bytes available */
@@ -251,14 +261,11 @@ void Intro::setStatus(int status, const QString &message, quint64 bytesAvailable
     {
         ui->freeSpace->setText("");
     } else {
-        QString freeString = tr("%n GB of free space available", "", bytesAvailable/GB_BYTES);
+        QString freeString = tr("%1 GB of free space available").arg(bytesAvailable/GB_BYTES);
         if(bytesAvailable < requiredSpace * GB_BYTES)
         {
-            freeString += " " + tr("(of %n GB needed)", "", requiredSpace);
-            ui->freeSpace->setStyleSheet("QLabel { color: #800000 }");
-        } else if (bytesAvailable / GB_BYTES - requiredSpace < 10) {
-            freeString += " " + tr("(%n GB needed for full chain)", "", requiredSpace);
-            ui->freeSpace->setStyleSheet("QLabel { color: #999900 }");
+            freeString += " " + tr("(of %1 GB needed)").arg(requiredSpace);
+            ui->freeSpace->setStyleSheet(GUIUtil::getThemedStyleQString(GUIUtil::ThemedStyle::TS_ERROR));
         } else {
             ui->freeSpace->setStyleSheet("");
         }
@@ -277,14 +284,14 @@ void Intro::on_dataDirectory_textChanged(const QString &dataDirStr)
 
 void Intro::on_ellipsisButton_clicked()
 {
-    QString dir = QDir::toNativeSeparators(QFileDialog::getExistingDirectory(nullptr, "Choose data directory", ui->dataDirectory->text()));
+    QString dir = QDir::toNativeSeparators(QFileDialog::getExistingDirectory(0, "Choose data directory", ui->dataDirectory->text()));
     if(!dir.isEmpty())
         ui->dataDirectory->setText(dir);
 }
 
 void Intro::on_dataDirDefault_clicked()
 {
-    setDataDirectory(GUIUtil::getDefaultDataDirectory());
+    setDataDirectory(getDefaultDataDirectory());
 }
 
 void Intro::on_dataDirCustom_clicked()
@@ -299,10 +306,11 @@ void Intro::startThread()
     FreespaceChecker *executor = new FreespaceChecker(this);
     executor->moveToThread(thread);
 
-    connect(executor, &FreespaceChecker::reply, this, &Intro::setStatus);
-    connect(this, &Intro::requestCheck, executor, &FreespaceChecker::check);
+    connect(executor, SIGNAL(reply(int,QString,quint64)), this, SLOT(setStatus(int,QString,quint64)));
+    connect(this, SIGNAL(requestCheck()), executor, SLOT(check()));
     /*  make sure executor object is deleted in its own thread */
-    connect(thread, &QThread::finished, executor, &QObject::deleteLater);
+    connect(this, SIGNAL(stopThread()), executor, SLOT(deleteLater()));
+    connect(this, SIGNAL(stopThread()), thread, SLOT(quit()));
 
     thread->start();
 }

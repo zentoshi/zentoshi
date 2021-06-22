@@ -8,7 +8,7 @@
 #include <masternode/masternode-sync.h>
 #include <netbase.h>
 #include <protocol.h>
-#include <shutdown.h>
+#include <validation.h>
 #include <warnings.h>
 
 // Keep track of the active Masternode
@@ -68,11 +68,11 @@ void CActiveMasternodeManager::Init(const CBlockIndex* pindex)
     if (!deterministicMNManager->IsDIP3Enforced(pindex->nHeight)) return;
 
     // Check that our local network configuration is correct
-    if (!fListen) {
-        // listen option is probably overwritten by smth else, no good
+    if (!fListen && Params().RequireRoutableExternalIP()) {
+        // listen option is probably overwritten by something else, no good
         state = MASTERNODE_ERROR;
         strError = "Masternode must accept connections from outside. Make sure listen configuration option is not overwritten by some another parameter.";
-        LogPrintf("CActiveDeterministicMasternodeManager::Init -- ERROR: %s\n", strError);
+        LogPrintf("CActiveMasternodeManager::Init -- ERROR: %s\n", strError);
         return;
     }
 
@@ -107,19 +107,23 @@ void CActiveMasternodeManager::Init(const CBlockIndex* pindex)
         return;
     }
 
-    if (Params().NetworkIDString() != CBaseChainParams::REGTEST) {
-        // Check socket connectivity
-        LogPrintf("CActiveDeterministicMasternodeManager::Init -- Checking inbound connection to '%s'\n", activeMasternodeInfo.service.ToString());
-        SOCKET hSocket;
-        bool fConnected = ConnectSocket(activeMasternodeInfo.service, hSocket, nConnectTimeout) && IsSelectableSocket(hSocket);
-        CloseSocket(hSocket);
+    // Check socket connectivity
+    LogPrintf("CActiveMasternodeManager::Init -- Checking inbound connection to '%s'\n", activeMasternodeInfo.service.ToString());
+    SOCKET hSocket = CreateSocket(activeMasternodeInfo.service);
+    if (hSocket == INVALID_SOCKET) {
+        state = MASTERNODE_ERROR;
+        strError = "Could not create socket to connect to " + activeMasternodeInfo.service.ToString();
+        LogPrintf("CActiveMasternodeManager::Init -- ERROR: %s\n", strError);
+        return;
+    }
+    bool fConnected = ConnectSocketDirectly(activeMasternodeInfo.service, hSocket, nConnectTimeout) && IsSelectableSocket(hSocket);
+    CloseSocket(hSocket);
 
-        if (!fConnected) {
-            state = MASTERNODE_ERROR;
-            strError = "Could not connect to " + activeMasternodeInfo.service.ToString();
-            LogPrintf("CActiveDeterministicMasternodeManager::Init -- ERROR: %s\n", strError);
-            return;
-        }
+    if (!fConnected && Params().RequireRoutableExternalIP()) {
+        state = MASTERNODE_ERROR;
+        strError = "Could not connect to " + activeMasternodeInfo.service.ToString();
+        LogPrintf("CActiveMasternodeManager::Init -- ERROR: %s\n", strError);
+        return;
     }
 
     activeMasternodeInfo.proTxHash = dmn->proTxHash;
@@ -186,7 +190,7 @@ bool CActiveMasternodeManager::GetLocalAddress(CService& addrRet)
     if (LookupHost("8.8.8.8", addrDummyPeer, false)) {
         fFoundLocal = GetLocal(addrRet, &addrDummyPeer) && IsValidNetAddr(addrRet);
     }
-    if (!fFoundLocal && Params().NetworkIDString() == CBaseChainParams::REGTEST) {
+    if (!fFoundLocal && !Params().RequireRoutableExternalIP()) {
         if (Lookup("127.0.0.1", addrRet, GetListenPort(), false)) {
             fFoundLocal = true;
         }
@@ -214,6 +218,6 @@ bool CActiveMasternodeManager::IsValidNetAddr(CService addrIn)
 {
     // TODO: regtest is fine with any addresses for now,
     // should probably be a bit smarter if one day we start to implement tests for this
-    return Params().NetworkIDString() == CBaseChainParams::REGTEST ||
+    return !Params().RequireRoutableExternalIP() ||
            (addrIn.IsIPv4() && IsReachable(addrIn) && addrIn.IsRoutable());
 }

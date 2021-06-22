@@ -1,0 +1,6 @@
+usr/local/bin/zenx-qt usr/bin
+share/pixmaps/zenx32.xpm usr/share/pixmaps
+share/pixmaps/zenx16.xpm usr/share/pixmaps
+share/pixmaps/zenx128.png usr/share/pixmaps
+debian/zenx-qt.desktop usr/share/applications
+debian/zenx-qt.protocol usr/share/kde4/services/

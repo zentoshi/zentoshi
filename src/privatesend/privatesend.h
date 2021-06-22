@@ -5,14 +5,15 @@
 #ifndef PRIVATESEND_H
 #define PRIVATESEND_H
 
-#include "bls/bls.h"
-#include "chain.h"
-#include "chainparams.h"
-#include "primitives/transaction.h"
-#include "pubkey.h"
-#include "sync.h"
-#include "timedata.h"
-#include "tinyformat.h"
+#include <bls/bls.h>
+#include <chain.h>
+#include <chainparams.h>
+#include <primitives/transaction.h>
+#include <pubkey.h>
+#include <sync.h>
+#include <spork.h>
+#include <timedata.h>
+#include <tinyformat.h>
 
 class CPrivateSend;
 class CConnman;
@@ -65,9 +66,8 @@ enum PoolState : int32_t {
     POOL_STATE_ACCEPTING_ENTRIES,
     POOL_STATE_SIGNING,
     POOL_STATE_ERROR,
-    POOL_STATE_SUCCESS,
     POOL_STATE_MIN = POOL_STATE_IDLE,
-    POOL_STATE_MAX = POOL_STATE_SUCCESS
+    POOL_STATE_MAX = POOL_STATE_ERROR
 };
 template<> struct is_serializable_enum<PoolState> : std::true_type {};
 
@@ -108,7 +108,7 @@ public:
     {
         READWRITE(nSessionID);
         READWRITE(nState);
-        if (s.GetVersion() <= 702015) { //! coda says this is standard
+        if (s.GetVersion() <= 702015) {
             READWRITE(nEntriesCount);
         }
         READWRITE(nStatusUpdate);
@@ -116,7 +116,7 @@ public:
     }
 };
 
-/** Holds an mixing input
+/** Holds a mixing input
  */
 class CTxDSIn : public CTxIn
 {
@@ -169,7 +169,7 @@ public:
     }
 };
 
-// A clients transaction in the mixing pool
+// A client's transaction in the mixing pool
 class CPrivateSendEntry
 {
 public:
@@ -188,10 +188,10 @@ public:
     }
 
     CPrivateSendEntry(const std::vector<CTxDSIn>& vecTxDSIn, const std::vector<CTxOut>& vecTxOut, const CTransaction& txCollateral) :
-        vecTxDSIn(vecTxDSIn),
-        vecTxOut(vecTxOut),
-        txCollateral(MakeTransactionRef(txCollateral)),
-        addr(CService())
+            vecTxDSIn(vecTxDSIn),
+            vecTxOut(vecTxOut),
+            txCollateral(MakeTransactionRef(txCollateral)),
+            addr(CService())
     {
     }
 
@@ -375,7 +375,7 @@ protected:
     bool IsValidInOuts(const std::vector<CTxIn>& vin, const std::vector<CTxOut>& vout, PoolMessage& nMessageIDRet, bool* fConsumeCollateralRet) const;
 
 public:
-    int nSessionDenom; //Users must submit a denom matching this
+    int nSessionDenom; // Users must submit a denom matching this
 
     CPrivateSendBaseSession() :
         vecEntries(),
@@ -436,21 +436,22 @@ public:
     static std::vector<CAmount> GetStandardDenominations() { return vecStandardDenominations; }
     static CAmount GetSmallestDenomination() { return vecStandardDenominations.back(); }
 
-    /// Get the denominations for a specific amount of dash.
-    static int GetDenominationsByAmounts(const std::vector<CAmount>& vecAmount);
-
     static bool IsDenominatedAmount(CAmount nInputAmount);
+    static bool IsValidDenomination(int nDenom);
 
-    /// Get the denominations for a list of outputs (returns a bitshifted integer)
-    static int GetDenominations(const std::vector<CTxOut>& vecTxOut, bool fSingleRandomDenom = false);
-    static std::string GetDenominationsToString(int nDenom);
-    static bool GetDenominationsBits(int nDenom, std::vector<int>& vecBitsRet);
+    static int AmountToDenomination(CAmount nInputAmount);
+    static CAmount DenominationToAmount(int nDenom);
+    static std::string DenominationToString(int nDenom);
 
     static std::string GetMessageByID(PoolMessage nMessageID);
 
     /// Get the minimum/maximum number of participants for the pool
-    static int GetMinPoolParticipants() { return Params().PoolMinParticipants(); }
-    static int GetMaxPoolParticipants() { return Params().PoolMaxParticipants(); }
+    static int GetMinPoolParticipants() { return sporkManager.IsSporkActive(SPORK_22_PS_MORE_PARTICIPANTS) ?
+                                                 Params().PoolNewMinParticipants() :
+                                                 Params().PoolMinParticipants(); }
+    static int GetMaxPoolParticipants() { return sporkManager.IsSporkActive(SPORK_22_PS_MORE_PARTICIPANTS) ?
+                                                 Params().PoolNewMaxParticipants() :
+                                                 Params().PoolMaxParticipants(); }
 
     static CAmount GetMaxPoolAmount() { return vecStandardDenominations.empty() ? 0 : PRIVATESEND_ENTRY_MAX_SIZE * vecStandardDenominations.front(); }
 

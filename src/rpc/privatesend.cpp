@@ -2,22 +2,22 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "validation.h"
+#include <validation.h>
 #ifdef ENABLE_WALLET
-#include "privatesend/privatesend-client.h"
+#include <privatesend/privatesend-client.h>
 #endif // ENABLE_WALLET
-#include "privatesend/privatesend-server.h"
-#include "rpc/server.h"
-#include "rpc/protocol.h"
-#include "wallet/rpcwallet.h"
+#include <privatesend/privatesend-server.h>
+#include <rpc/server.h>
+#include <rpc/safemode.h>
 
 #include <univalue.h>
 
 #ifdef ENABLE_WALLET
 UniValue privatesend(const JSONRPCRequest& request)
 {
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
+    CWallet* const pwallet = GetWalletForJSONRPCRequest(request);
+    if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
+        return NullUniValue;
 
     if (request.fHelp || request.params.size() != 1)
         throw std::runtime_error(
@@ -30,19 +30,18 @@ UniValue privatesend(const JSONRPCRequest& request)
             "  reset       - Reset mixing\n"
         );
 
+    ObserveSafeMode();
+
     if (fMasternodeMode)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Client-side mixing is not supported on masternodes");
 
     if (!privateSendClient.fEnablePrivateSend) {
-        if (fLiteMode) {
-            // mixing is disabled by default in lite mode
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Mixing is disabled in lite mode, use -enableprivatesend command line option to enable mixing again");
-        } else if (!gArgs.GetBoolArg("-enableprivatesend", true)) {
+        if (!gArgs.GetBoolArg("-enableprivatesend", true)) {
             // otherwise it's on by default, unless cmd line option says otherwise
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Mixing is disabled via -enableprivatesend=0 command line option, remove it to enable mixing again");
         } else {
-            // neither litemode nor enableprivatesend=false casee,
-            // most likely smth bad happened and we disabled it while running the wallet
+            // not enableprivatesend=false case,
+            // most likely something bad happened and we disabled it while running the wallet
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Mixing is disabled due to some internal error");
         }
     }
@@ -50,7 +49,7 @@ UniValue privatesend(const JSONRPCRequest& request)
     if (request.params[0].get_str() == "start") {
         {
             LOCK(pwallet->cs_wallet);
-            if (pwallet->IsLocked())
+            if (pwallet->IsLocked(true))
                 throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please unlock wallet for mixing with walletpassphrase first.");
         }
 
@@ -95,7 +94,8 @@ UniValue getprivatesendinfo(const JSONRPCRequest& request)
                 "  \"max_sessions\": xxx,               (numeric) How many parallel mixing sessions can there be at once\n"
                 "  \"max_rounds\": xxx,                 (numeric) How many rounds to mix\n"
                 "  \"max_amount\": xxx,                 (numeric) Target PrivateSend balance in " + CURRENCY_UNIT + "\n"
-                "  \"max_denoms\": xxx,                 (numeric) How many inputs of each denominated amount to create\n"
+                "  \"denoms_goal\": xxx,                (numeric) How many inputs of each denominated amount to target\n"
+                "  \"denoms_hardcap\": xxx,             (numeric) Maximum limit of how many inputs of each denominated amount to create\n"
                 "  \"queue_size\": xxx,                 (numeric) How many queues there are currently on the network\n"
                 "  \"sessions\":                        (array of json objects)\n"
                 "    [\n"
@@ -119,6 +119,9 @@ UniValue getprivatesendinfo(const JSONRPCRequest& request)
                 "  \"state\": \"...\",                    (string) Current state of the mixing session\n"
                 "  \"entries_count\": xxx,              (numeric) The number of entries in the mixing session\n"
                 "}\n"
+                "\nExamples:\n"
+                + HelpExampleCli("getprivatesendinfo", "")
+                + HelpExampleRpc("getprivatesendinfo", "")
         );
     }
 
@@ -133,27 +136,26 @@ UniValue getprivatesendinfo(const JSONRPCRequest& request)
 #ifdef ENABLE_WALLET
     privateSendClient.GetJsonInfo(obj);
 
-    std::shared_ptr<CWallet> const wallet = GetWalletForJSONRPCRequest(request);
-    CWallet* const pwallet = wallet.get();
+    CWallet* const pwallet = GetWalletForJSONRPCRequest(request);
     if (!pwallet) {
         return obj;
     }
 
-    obj.pushKV("keys_left",     pwallet->nKeysLeftSinceAutoBackup);
-    obj.pushKV("warnings",      pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING
-                                ? "WARNING: keypool is almost depleted!" : "");
+    obj.push_back(Pair("keys_left",     pwallet->nKeysLeftSinceAutoBackup));
+    obj.push_back(Pair("warnings",      pwallet->nKeysLeftSinceAutoBackup < PRIVATESEND_KEYS_THRESHOLD_WARNING
+                                        ? "WARNING: keypool is almost depleted!" : ""));
 #endif // ENABLE_WALLET
 
     return obj;
 }
 
 static const CRPCCommand commands[] =
-    { //  category              name                      actor (function)         okSafe argNames
-        //  --------------------- ------------------------  -----------------------  ------ ----------
-        { "zentoshi",               "getpoolinfo",            &getpoolinfo,            {} },
-        { "zentoshi",               "getprivatesendinfo",     &getprivatesendinfo,     {} },
+    { //  category              name                      actor (function)         argNames
+        //  --------------------- ------------------------  ---------------------------------
+        { "zenx",               "getpoolinfo",            &getpoolinfo,            {} },
+        { "zenx",               "getprivatesendinfo",     &getprivatesendinfo,     {} },
 #ifdef ENABLE_WALLET
-        { "zentoshi",               "privatesend",            &privatesend,            {} },
+        { "zenx",               "privatesend",            &privatesend,            {} },
 #endif // ENABLE_WALLET
 };
 

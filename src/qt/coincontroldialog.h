@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,7 +16,6 @@
 #include <QString>
 #include <QTreeWidgetItem>
 
-class PlatformStyle;
 class WalletModel;
 
 class CCoinControl;
@@ -43,7 +42,7 @@ class CoinControlDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit CoinControlDialog(const PlatformStyle *platformStyle, QWidget *parent = nullptr);
+    explicit CoinControlDialog(QWidget* parent = 0);
     ~CoinControlDialog();
 
     void setModel(WalletModel *model);
@@ -54,6 +53,7 @@ public:
     static QList<CAmount> payAmounts;
     static CCoinControl *coinControl();
     static bool fSubtractFeeFromAmount;
+    static void usePrivateSend(bool fUsePrivateSend);
 
 private:
     Ui::CoinControlDialog *ui;
@@ -67,7 +67,7 @@ private:
     QAction *lockAction;
     QAction *unlockAction;
 
-    const PlatformStyle *platformStyle;
+    bool fHideAdditional{true};
 
     void sortView(int, Qt::SortOrder);
     void updateView();
@@ -81,8 +81,6 @@ private:
         COLUMN_PRIVATESEND_ROUNDS,
         COLUMN_DATE,
         COLUMN_CONFIRMATIONS,
-        COLUMN_TXHASH,
-        COLUMN_VOUT_INDEX,
     };
 
     enum
@@ -92,6 +90,13 @@ private:
     };
 
     friend class CCoinControlWidgetItem;
+
+    enum class Mode {
+        NORMAL,
+        PRIVATESEND,
+    };
+
+    static CoinControlDialog::Mode mode;
 
 private Q_SLOTS:
     void showMenu(const QPoint &);
@@ -114,7 +119,9 @@ private Q_SLOTS:
     void headerSectionClicked(int);
     void buttonBoxClicked(QAbstractButton*);
     void buttonSelectAllClicked();
+    void buttonToggleLockClicked();
     void updateLabelLocked();
+    void on_hideButton_clicked();
 };
 
 #endif // BITCOIN_QT_COINCONTROLDIALOG_H

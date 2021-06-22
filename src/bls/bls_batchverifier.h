@@ -2,10 +2,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CRYPTO_BLS_BATCHVERIFIER_H
-#define DASH_CRYPTO_BLS_BATCHVERIFIER_H
+#ifndef ZENX_CRYPTO_BLS_BATCHVERIFIER_H
+#define ZENX_CRYPTO_BLS_BATCHVERIFIER_H
 
-#include "bls.h"
+#include <bls/bls.h>
 
 #include <map>
 #include <vector>
@@ -61,6 +61,11 @@ public:
     {
         messages.clear();
         messagesBySource.clear();
+    }
+
+    size_t GetUniqueSourceCount() const
+    {
+        return messagesBySource.size();
     }
 
     void Verify()
@@ -232,4 +237,4 @@ private:
     }
 };
 
-#endif //DASH_CRYPTO_BLS_BATCHVERIFIER_H
+#endif //ZENX_CRYPTO_BLS_BATCHVERIFIER_H

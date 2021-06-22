@@ -1,12 +1,12 @@
-// Copyright (c) 2018 The Dash Core developers
+// Copyright (c) 2018-2019 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "bls_worker.h"
-#include "hash.h"
-#include "serialize.h"
+#include <bls/bls_worker.h>
+#include <hash.h>
+#include <serialize.h>
 
-#include "util/system.h"
+#include <util.h>
 
 template <typename T>
 bool VerifyVectorHelper(const std::vector<T>& vec, size_t start, size_t count)
@@ -63,7 +63,7 @@ void CBLSWorker::Start()
     int workerCount = std::thread::hardware_concurrency() / 2;
     workerCount = std::max(std::min(1, workerCount), 4);
     workerPool.resize(workerCount);
-    RenameThreadPool(workerPool, "zentoshi-bls-worker");
+    RenameThreadPool(workerPool, "zenx-bls-worker");
 }
 
 void CBLSWorker::Stop()

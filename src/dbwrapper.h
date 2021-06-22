@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 The Bitcoin Core developers
+// Copyright (c) 2012-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,13 +9,11 @@
 #include <fs.h>
 #include <serialize.h>
 #include <streams.h>
-#include <util/system.h>
-#include <util/strencodings.h>
+#include <util.h>
+#include <utilstrencodings.h>
 #include <version.h>
 
 #include <typeindex>
-
-#include <boost/filesystem/path.hpp>
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
@@ -26,7 +24,7 @@ static const size_t DBWRAPPER_PREALLOC_VALUE_SIZE = 1024;
 class dbwrapper_error : public std::runtime_error
 {
 public:
-    dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
+    explicit dbwrapper_error(const std::string& msg) : std::runtime_error(msg) {}
 };
 
 class CDBWrapper;
@@ -63,7 +61,7 @@ private:
 
 public:
     /**
-     * @param[in] _parent   CDBWrapper that this batch is to be submitted to
+     * @param[in] parent    CDBWrapper that this batch is to be submitted to
      */
     explicit CDBBatch(const CDBWrapper &_parent) : parent(_parent), ssKey(SER_DISK, CLIENT_VERSION), ssValue(SER_DISK, CLIENT_VERSION), size_estimate(0) { };
 
@@ -99,7 +97,6 @@ public:
         // - byte[]: value
         // The formula below assumes the key and value are both less than 16k.
         size_estimate += 3 + (slKey.size() > 127) + slKey.size() + (slValue.size() > 127) + slValue.size();
-        ssKey.clear();
         ssValue.clear();
     }
 
@@ -116,13 +113,11 @@ public:
         leveldb::Slice slKey(_ssKey.data(), _ssKey.size());
 
         batch.Delete(slKey);
-        // LevelDB serializes erases as:
         // - byte: header
         // - varint: key length
         // - byte[]: key
         // The formula below assumes the key is less than 16kB.
         size_estimate += 2 + (slKey.size() > 127) + slKey.size();
-        ssKey.clear();
     }
 
     size_t SizeEstimate() const { return size_estimate; }
@@ -203,7 +198,7 @@ class CDBWrapper
 {
     friend const std::vector<unsigned char>& dbwrapper_private::GetObfuscateKey(const CDBWrapper &w);
 private:
-    //! custom environment this database is using (may be NULL in case of default environment)
+    //! custom environment this database is using (may be nullptr in case of default environment)
     leveldb::Env* penv;
 
     //! database options used
@@ -223,9 +218,6 @@ private:
 
     //! the database itself
     leveldb::DB* pdb;
-
-    //! the name of this database
-    std::string m_name;
 
     //! a key used for optional XOR-obfuscation of the database
     std::vector<unsigned char> obfuscate_key;
@@ -247,7 +239,7 @@ public:
      * @param[in] obfuscate   If true, store data obfuscated via simple XOR. If false, XOR
      *                        with a zero'd byte array.
      */
-    CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
+    CDBWrapper(const fs::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
     ~CDBWrapper();
 
     template <typename K>
@@ -344,9 +336,6 @@ public:
 
     bool WriteBatch(CDBBatch& batch, bool fSync = false);
 
-    // Get an estimate of LevelDB memory usage (in bytes).
-    size_t DynamicMemoryUsage() const;
-
     // not available for LevelDB; provide for compatibility with BDB
     bool Flush()
     {
@@ -426,7 +415,7 @@ private:
     bool curIsParent{false};
 
 public:
-    CDBTransactionIterator(CDBTransaction& _transaction) :
+    explicit CDBTransactionIterator(CDBTransaction& _transaction) :
             transaction(_transaction),
             parentKey(SER_DISK, CLIENT_VERSION)
     {
@@ -623,7 +612,7 @@ public:
 
     template <typename V>
     void Write(const CDataStream& ssKey, const V& v) {
-        auto valueMemoryUsage = ::GetSerializeSize(v, CLIENT_VERSION);
+        auto valueMemoryUsage = ::GetSerializeSize(v, SER_DISK, CLIENT_VERSION);
 
         if (deletes.erase(ssKey)) {
             memoryUsage -= ssKey.size();
@@ -732,51 +721,6 @@ public:
     }
     std::unique_ptr<CDBTransactionIterator<CDBTransaction>> NewIteratorUniquePtr() {
         return std::make_unique<CDBTransactionIterator<CDBTransaction>>(*this);
-    }
-};
-
-template<typename Parent, typename CommitTarget>
-class CScopedDBTransaction {
-public:
-    typedef CDBTransaction<Parent, CommitTarget> Transaction;
-
-private:
-    Transaction &dbTransaction;
-    std::function<void ()> commitHandler;
-    std::function<void ()> rollbackHandler;
-    bool didCommitOrRollback{};
-
-public:
-    CScopedDBTransaction(Transaction &dbTx) : dbTransaction(dbTx) {}
-    ~CScopedDBTransaction() {
-        if (!didCommitOrRollback)
-            Rollback();
-    }
-    void Commit() {
-        assert(!didCommitOrRollback);
-        didCommitOrRollback = true;
-        dbTransaction.Commit();
-        if (commitHandler)
-            commitHandler();
-    }
-    void Rollback() {
-        assert(!didCommitOrRollback);
-        didCommitOrRollback = true;
-        dbTransaction.Clear();
-        if (rollbackHandler)
-            rollbackHandler();
-    }
-
-    static std::unique_ptr<CScopedDBTransaction<Parent, CommitTarget>> Begin(Transaction &dbTx) {
-        assert(dbTx.IsClean());
-        return std::make_unique<CScopedDBTransaction<Parent, CommitTarget>>(dbTx);
-    }
-
-    void SetCommitHandler(const std::function<void ()> &h) {
-        commitHandler = h;
-    }
-    void SetRollbackHandler(const std::function<void ()> &h) {
-        rollbackHandler = h;
     }
 };
 

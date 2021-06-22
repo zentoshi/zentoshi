@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <iostream>
+#include <vector>
 
 #include <bench/bench.h>
 #include <crypto/poly1305.h>
@@ -36,6 +37,7 @@ static void POLY1305_1MB(benchmark::State& state)
     POLY1305(state, BUFFER_SIZE_LARGE);
 }
 
-BENCHMARK(POLY1305_64BYTES, 500000);
-BENCHMARK(POLY1305_256BYTES, 250000);
-BENCHMARK(POLY1305_1MB, 340);
+//TODO add back below once benchmarking backports are done
+BENCHMARK(POLY1305_64BYTES/*, 500000*/);
+BENCHMARK(POLY1305_256BYTES/*, 250000*/);
+BENCHMARK(POLY1305_1MB/*, 340*/);

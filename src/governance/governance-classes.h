@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 The Dash Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef GOVERNANCE_CLASSES_H
@@ -7,9 +7,8 @@
 #include <base58.h>
 #include <governance/governance.h>
 #include <key.h>
-#include <key_io.h>
 #include <script/standard.h>
-#include <util/system.h>
+#include <util.h>
 
 class CSuperblock;
 class CGovernanceTriggerManager;
@@ -89,22 +88,22 @@ public:
     {
     }
 
-    CGovernancePayment(CTxDestination addrIn, CAmount nAmountIn) :
+    CGovernancePayment(CTxDestination destIn, CAmount nAmountIn) :
         fValid(false),
         script(),
         nAmount(0)
     {
         try {
-            CTxDestination dest = addrIn;
+            CTxDestination dest = destIn;
             script = GetScriptForDestination(dest);
             nAmount = nAmountIn;
             fValid = true;
         } catch (std::exception& e) {
-            LogPrint(BCLog::GOVERNANCE, "CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d, what = %s\n",
-                EncodeDestination(addrIn), nAmountIn, e.what());
+            LogPrintf("CGovernancePayment Payment not valid: destIn = %s, nAmountIn = %d, what = %s\n",
+                EncodeDestination(destIn), nAmountIn, e.what());
         } catch (...) {
-            LogPrint(BCLog::GOVERNANCE, "CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d\n",
-                EncodeDestination(addrIn), nAmountIn);
+            LogPrintf("CGovernancePayment Payment not valid: destIn = %s, nAmountIn = %d\n",
+                EncodeDestination(destIn), nAmountIn);
         }
     }
 
@@ -142,7 +141,7 @@ private:
 
 public:
     CSuperblock();
-    CSuperblock(uint256& nHash);
+    explicit CSuperblock(uint256& nHash);
 
     static bool IsValidBlockHeight(int nBlockHeight);
     static void GetNearestSuperblocksHeights(int nBlockHeight, int& nLastSuperblockRet, int& nNextSuperblockRet);
@@ -151,8 +150,6 @@ public:
     int GetStatus() { return nStatus; }
     void SetStatus(int nStatusIn) { nStatus = nStatusIn; }
 
-    // IS THIS TRIGGER ALREADY EXECUTED?
-    bool IsExecuted() { return nStatus == SEEN_OBJECT_EXECUTED; }
     // TELL THE ENGINE WE EXECUTED THIS EVENT
     void SetExecuted() { nStatus = SEEN_OBJECT_EXECUTED; }
 
@@ -173,7 +170,7 @@ public:
     CAmount GetPaymentsTotalAmount();
 
     bool IsValid(const CTransaction& txNew, int nBlockHeight, CAmount blockReward);
-    bool IsExpired();
+    bool IsExpired() const;
 };
 
 #endif

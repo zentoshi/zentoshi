@@ -2,21 +2,20 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "cbtx.h"
-#include "core_io.h"
-#include "deterministicmns.h"
-#include "key_io.h"
-#include "llmq/quorums.h"
-#include "llmq/quorums_blockprocessor.h"
-#include "llmq/quorums_commitment.h"
-#include "simplifiedmns.h"
-#include "specialtx.h"
+#include <evo/cbtx.h>
+#include <core_io.h>
+#include <evo/deterministicmns.h>
+#include <llmq/quorums.h>
+#include <llmq/quorums_blockprocessor.h>
+#include <llmq/quorums_commitment.h>
+#include <evo/simplifiedmns.h>
+#include <evo/specialtx.h>
 
-#include "base58.h"
-#include "chainparams.h"
-#include "consensus/merkle.h"
-#include "univalue.h"
-#include "validation.h"
+#include <base58.h>
+#include <chainparams.h>
+#include <consensus/merkle.h>
+#include <univalue.h>
+#include <validation.h>
 
 CSimplifiedMNListEntry::CSimplifiedMNListEntry(const CDeterministicMN& dmn) :
     proRegTxHash(dmn.proTxHash),
@@ -38,19 +37,19 @@ uint256 CSimplifiedMNListEntry::CalcHash() const
 std::string CSimplifiedMNListEntry::ToString() const
 {
     return strprintf("CSimplifiedMNListEntry(proRegTxHash=%s, confirmedHash=%s, service=%s, pubKeyOperator=%s, votingAddress=%s, isValid=%d)",
-        proRegTxHash.ToString(), confirmedHash.ToString(), service.ToString(), pubKeyOperator.Get().ToString(), EncodeDestination(PKHash(keyIDVoting)), isValid);
+        proRegTxHash.ToString(), confirmedHash.ToString(), service.ToString(false), pubKeyOperator.Get().ToString(), EncodeDestination(keyIDVoting), isValid);
 }
 
 void CSimplifiedMNListEntry::ToJson(UniValue& obj) const
 {
     obj.clear();
     obj.setObject();
-    obj.pushKV("proRegTxHash", proRegTxHash.ToString());
-    obj.pushKV("confirmedHash", confirmedHash.ToString());
-    obj.pushKV("service", service.ToString(false));
-    obj.pushKV("pubKeyOperator", pubKeyOperator.Get().ToString());
-    obj.pushKV("votingAddress", EncodeDestination(PKHash(keyIDVoting)));
-    obj.pushKV("isValid", isValid);
+    obj.push_back(Pair("proRegTxHash", proRegTxHash.ToString()));
+    obj.push_back(Pair("confirmedHash", confirmedHash.ToString()));
+    obj.push_back(Pair("service", service.ToString(false)));
+    obj.push_back(Pair("pubKeyOperator", pubKeyOperator.Get().ToString()));
+    obj.push_back(Pair("votingAddress", EncodeDestination(keyIDVoting)));
+    obj.push_back(Pair("isValid", isValid));
 }
 
 CSimplifiedMNList::CSimplifiedMNList(const std::vector<CSimplifiedMNListEntry>& smlEntries)
@@ -137,20 +136,20 @@ void CSimplifiedMNListDiff::ToJson(UniValue& obj) const
 {
     obj.setObject();
 
-    obj.pushKV("baseBlockHash", baseBlockHash.ToString());
-    obj.pushKV("blockHash", blockHash.ToString());
+    obj.push_back(Pair("baseBlockHash", baseBlockHash.ToString()));
+    obj.push_back(Pair("blockHash", blockHash.ToString()));
 
     CDataStream ssCbTxMerkleTree(SER_NETWORK, PROTOCOL_VERSION);
     ssCbTxMerkleTree << cbTxMerkleTree;
-    obj.pushKV("cbTxMerkleTree", HexStr(ssCbTxMerkleTree.begin(), ssCbTxMerkleTree.end()));
+    obj.push_back(Pair("cbTxMerkleTree", HexStr(ssCbTxMerkleTree.begin(), ssCbTxMerkleTree.end())));
 
-    obj.pushKV("cbTx", EncodeHexTx(*cbTx));
+    obj.push_back(Pair("cbTx", EncodeHexTx(*cbTx)));
 
     UniValue deletedMNsArr(UniValue::VARR);
     for (const auto& h : deletedMNs) {
         deletedMNsArr.push_back(h.ToString());
     }
-    obj.pushKV("deletedMNs", deletedMNsArr);
+    obj.push_back(Pair("deletedMNs", deletedMNsArr));
 
     UniValue mnListArr(UniValue::VARR);
     for (const auto& e : mnList) {
@@ -158,16 +157,16 @@ void CSimplifiedMNListDiff::ToJson(UniValue& obj) const
         e.ToJson(eObj);
         mnListArr.push_back(eObj);
     }
-    obj.pushKV("mnList", mnListArr);
+    obj.push_back(Pair("mnList", mnListArr));
 
     UniValue deletedQuorumsArr(UniValue::VARR);
     for (const auto& e : deletedQuorums) {
         UniValue eObj(UniValue::VOBJ);
-        eObj.pushKV("llmqType", e.first);
-        eObj.pushKV("quorumHash", e.second.ToString());
+        eObj.push_back(Pair("llmqType", e.first));
+        eObj.push_back(Pair("quorumHash", e.second.ToString()));
         deletedQuorumsArr.push_back(eObj);
     }
-    obj.pushKV("deletedQuorums", deletedQuorumsArr);
+    obj.push_back(Pair("deletedQuorums", deletedQuorumsArr));
 
     UniValue newQuorumsArr(UniValue::VARR);
     for (const auto& e : newQuorums) {
@@ -175,13 +174,13 @@ void CSimplifiedMNListDiff::ToJson(UniValue& obj) const
         e.ToJson(eObj);
         newQuorumsArr.push_back(eObj);
     }
-    obj.pushKV("newQuorums", newQuorumsArr);
+    obj.push_back(Pair("newQuorums", newQuorumsArr));
 
     CCbTx cbTxPayload;
     if (GetTxPayload(*cbTx, cbTxPayload)) {
-        obj.pushKV("merkleRootMNList", cbTxPayload.merkleRootMNList.ToString());
+        obj.push_back(Pair("merkleRootMNList", cbTxPayload.merkleRootMNList.ToString()));
         if (cbTxPayload.nVersion >= 2) {
-            obj.pushKV("merkleRootQuorums", cbTxPayload.merkleRootQuorums.ToString());
+            obj.push_back(Pair("merkleRootQuorums", cbTxPayload.merkleRootQuorums.ToString()));
         }
     }
 }
@@ -191,23 +190,23 @@ bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& bloc
     AssertLockHeld(cs_main);
     mnListDiffRet = CSimplifiedMNListDiff();
 
-    const CBlockIndex* baseBlockIndex = ::ChainActive().Genesis();
+    const CBlockIndex* baseBlockIndex = chainActive.Genesis();
     if (!baseBlockHash.IsNull()) {
-        auto it = ::BlockIndex().find(baseBlockHash);
-        if (it == ::BlockIndex().end()) {
+        auto it = mapBlockIndex.find(baseBlockHash);
+        if (it == mapBlockIndex.end()) {
             errorRet = strprintf("block %s not found", baseBlockHash.ToString());
             return false;
         }
         baseBlockIndex = it->second;
     }
-    auto blockIt = ::BlockIndex().find(blockHash);
-    if (blockIt == ::BlockIndex().end()) {
+    auto blockIt = mapBlockIndex.find(blockHash);
+    if (blockIt == mapBlockIndex.end()) {
         errorRet = strprintf("block %s not found", blockHash.ToString());
         return false;
     }
     const CBlockIndex* blockIndex = blockIt->second;
 
-    if (!::ChainActive().Contains(baseBlockIndex) || !::ChainActive().Contains(blockIndex)) {
+    if (!chainActive.Contains(baseBlockIndex) || !chainActive.Contains(blockIndex)) {
         errorRet = strprintf("block %s and %s are not in the same chain", baseBlockHash.ToString(), blockHash.ToString());
         return false;
     }
@@ -239,9 +238,7 @@ bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& bloc
         return false;
     }
 
-    bool isProofOfStake = !block.IsProofOfWork();
-    const auto& coinbaseTransaction = block.vtx[isProofOfStake];
-    mnListDiffRet.cbTx = block.vtx[isProofOfStake];
+    mnListDiffRet.cbTx = block.vtx[0];
 
     std::vector<uint256> vHashes;
     std::vector<bool> vMatch(block.vtx.size(), false);

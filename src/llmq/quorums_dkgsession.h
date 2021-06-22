@@ -1,12 +1,13 @@
-// Copyright (c) 2018-2019 The Dash Core developers
+// Copyright (c) 2018-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_QUORUMS_DKGSESSION_H
-#define DASH_QUORUMS_DKGSESSION_H
+#ifndef ZENX_QUORUMS_DKGSESSION_H
+#define ZENX_QUORUMS_DKGSESSION_H
 
 #include <consensus/params.h>
 #include <net.h>
+#include <batchedlogger.h>
 
 #include <bls/bls_ies.h>
 #include <bls/bls_worker.h>
@@ -24,6 +25,13 @@ class CFinalCommitment;
 class CDKGSession;
 class CDKGSessionManager;
 class CDKGPendingMessages;
+
+class CDKGLogger : public CBatchedLogger
+{
+public:
+    CDKGLogger(const CDKGSession& _quorumDkg, const std::string& _func);
+    CDKGLogger(const std::string& _llmqTypeName, const uint256& _quorumHash, int _height, bool _areWeMember, const std::string& _func);
+};
 
 class CDKGContribution
 {
@@ -89,7 +97,7 @@ public:
 
 public:
     CDKGComplaint() {}
-    CDKGComplaint(const Consensus::LLMQParams& params);
+    explicit CDKGComplaint(const Consensus::LLMQParams& params);
 
     ADD_SERIALIZE_METHODS
 
@@ -162,7 +170,7 @@ public:
 
 public:
     CDKGPrematureCommitment() {}
-    CDKGPrematureCommitment(const Consensus::LLMQParams& params);
+    explicit CDKGPrematureCommitment(const Consensus::LLMQParams& params);
 
     int CountValidMembers() const
     {
@@ -209,6 +217,7 @@ public:
     std::set<uint256> complaintsFromOthers;
 
     bool bad{false};
+    bool badConnection{false};
     bool weComplain{false};
     bool someoneComplain{false};
 };
@@ -231,6 +240,7 @@ class CDKGSession
 {
     friend class CDKGSessionHandler;
     friend class CDKGSessionManager;
+    friend class CDKGLogger;
 
 private:
     const Consensus::LLMQParams& params;
@@ -244,6 +254,7 @@ private:
 private:
     std::vector<std::unique_ptr<CDKGMember>> members;
     std::map<uint256, size_t> membersMap;
+    std::set<uint256> relayMembers;
     BLSVerificationVectorPtr vvecContribution;
     BLSSecretKeyVector skContributions;
 
@@ -265,8 +276,8 @@ private:
     std::map<uint256, CDKGComplaint> complaints;
     std::map<uint256, CDKGJustification> justifications;
     std::map<uint256, CDKGPrematureCommitment> prematureCommitments;
-    std::set<CInv> invSet;
 
+    mutable CCriticalSection cs_pending;
     std::vector<size_t> pendingContributionVerifications;
 
     // filled by ReceivePrematureCommitment and used by FinalizeCommitments
@@ -302,6 +313,7 @@ public:
 
     // Phase 2: complaint
     void VerifyAndComplain(CDKGPendingMessages& pendingMessages);
+    void VerifyConnectionAndMinProtoVersions();
     void SendComplaint(CDKGPendingMessages& pendingMessages);
     bool PreVerifyMessage(const uint256& hash, const CDKGComplaint& qc, bool& retBan) const;
     void ReceiveMessage(const uint256& hash, const CDKGComplaint& qc, bool& retBan);
@@ -332,6 +344,6 @@ public:
 
 void SetSimulatedDKGErrorRate(const std::string& type, double rate);
 
-}
+} // namespace llmq
 
-#endif //DASH_QUORUMS_DKGSESSION_H
+#endif //ZENX_QUORUMS_DKGSESSION_H

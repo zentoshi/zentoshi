@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 The Bitcoin Core developers
+// Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,14 +10,12 @@
 #include <stdlib.h>
 
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 
-#include <boost/foreach.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 
 namespace memusage
 {
@@ -154,18 +152,6 @@ struct unordered_node : private X
 private:
     void* ptr;
 };
-
-template<typename X, typename Y>
-static inline size_t DynamicUsage(const boost::unordered_set<X, Y>& s)
-{
-    return MallocUsage(sizeof(unordered_node<X>)) * s.size() + MallocUsage(sizeof(void*) * s.bucket_count());
-}
-
-template<typename X, typename Y, typename Z>
-static inline size_t DynamicUsage(const boost::unordered_map<X, Y, Z>& m)
-{
-    return MallocUsage(sizeof(unordered_node<std::pair<const X, Y> >)) * m.size() + MallocUsage(sizeof(void*) * m.bucket_count());
-}
 
 template<typename X, typename Y>
 static inline size_t DynamicUsage(const std::unordered_set<X, Y>& s)

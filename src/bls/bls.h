@@ -1,14 +1,14 @@
-// Copyright (c) 2018 The Dash Core developers
+// Copyright (c) 2018-2019 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CRYPTO_BLS_H
-#define DASH_CRYPTO_BLS_H
+#ifndef ZENX_CRYPTO_BLS_H
+#define ZENX_CRYPTO_BLS_H
 
-#include "hash.h"
-#include "serialize.h"
-#include "uint256.h"
-#include "util/strencodings.h"
+#include <hash.h>
+#include <serialize.h>
+#include <uint256.h>
+#include <utilstrencodings.h>
 
 #undef ERROR // chia BLS uses relic, which defines ERROR, which in turn causes win32/win64 builds to print many warnings
 #include <chiabls/bls.hpp>
@@ -475,4 +475,4 @@ typedef std::shared_ptr<BLSSignatureVector> BLSSignatureVectorPtr;
 
 bool BLSInit();
 
-#endif // DASH_CRYPTO_BLS_H
+#endif // ZENX_CRYPTO_BLS_H

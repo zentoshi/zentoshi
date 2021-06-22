@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,8 +7,6 @@
 #define BITCOIN_CHAIN_H
 
 #include <arith_uint256.h>
-#include <consensus/params.h>
-#include <flatfile.h>
 #include <primitives/block.h>
 #include <pow.h>
 #include <tinyformat.h>
@@ -20,8 +18,7 @@
  * Maximum amount of time that a block timestamp is allowed to exceed the
  * current network-adjusted time before the block will be accepted.
  */
-static constexpr int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
-static constexpr int64_t MAX_FUTURE_STAKE_TIME = 3 * 60;
+static const int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
 
 /**
  * Timestamp window used as a grace period by code that compares external
@@ -29,15 +26,7 @@ static constexpr int64_t MAX_FUTURE_STAKE_TIME = 3 * 60;
  * to block timestamps. This should be set at least as high as
  * MAX_FUTURE_BLOCK_TIME.
  */
-static constexpr int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME;
-
-/**
- * Maximum gap between node time and block time used
- * for the "Catching up..." mode in GUI.
- *
- * Ref: https://github.com/bitcoin/bitcoin/pull/1026
- */
-static constexpr int64_t MAX_BLOCK_TIME_GAP = 90 * 60;
+static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME;
 
 class CBlockFileInfo
 {
@@ -93,12 +82,52 @@ public:
      }
 };
 
+struct CDiskBlockPos
+{
+    int nFile;
+    unsigned int nPos;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(VARINT(nFile));
+        READWRITE(VARINT(nPos));
+    }
+
+    CDiskBlockPos() {
+        SetNull();
+    }
+
+    CDiskBlockPos(int nFileIn, unsigned int nPosIn) {
+        nFile = nFileIn;
+        nPos = nPosIn;
+    }
+
+    friend bool operator==(const CDiskBlockPos &a, const CDiskBlockPos &b) {
+        return (a.nFile == b.nFile && a.nPos == b.nPos);
+    }
+
+    friend bool operator!=(const CDiskBlockPos &a, const CDiskBlockPos &b) {
+        return !(a == b);
+    }
+
+    void SetNull() { nFile = -1; nPos = 0; }
+    bool IsNull() const { return (nFile == -1); }
+
+    std::string ToString() const
+    {
+        return strprintf("CBlockDiskPos(nFile=%i, nPos=%i)", nFile, nPos);
+    }
+
+};
+
 enum BlockStatus: uint32_t {
     //! Unused.
     BLOCK_VALID_UNKNOWN      =    0,
 
-    //! Reserved (was BLOCK_VALID_HEADER).
-    BLOCK_VALID_RESERVED     =    1,
+    //! Parsed, version ok, hash satisfies claimed PoW, 1 <= vtx count <= max, timestamp not in future
+    BLOCK_VALID_HEADER       =    1,
 
     //! All parent headers found, difficulty matches, timestamp >= median previous, checkpoint. Implies all parents
     //! are also at least TREE.
@@ -119,7 +148,7 @@ enum BlockStatus: uint32_t {
     BLOCK_VALID_SCRIPTS      =    5,
 
     //! All validity bits.
-    BLOCK_VALID_MASK         =   BLOCK_VALID_RESERVED | BLOCK_VALID_TREE | BLOCK_VALID_TRANSACTIONS |
+    BLOCK_VALID_MASK         =   BLOCK_VALID_HEADER | BLOCK_VALID_TREE | BLOCK_VALID_TRANSACTIONS |
                                  BLOCK_VALID_CHAIN | BLOCK_VALID_SCRIPTS,
 
     BLOCK_HAVE_DATA          =    8, //!< full block available in blk*.dat
@@ -130,8 +159,7 @@ enum BlockStatus: uint32_t {
     BLOCK_FAILED_CHILD       =   64, //!< descends from failed block
     BLOCK_FAILED_MASK        =   BLOCK_FAILED_VALID | BLOCK_FAILED_CHILD,
 
-    BLOCK_OPT_WITNESS        =   128, //!< block data in blk*.data was received with a witness-enforcing client
-    BLOCK_CONFLICT_CHAINLOCK =   256, //!< conflicts with chainlock system
+    BLOCK_CONFLICT_CHAINLOCK =   128, //!< conflicts with chainlock system
 };
 
 /** The block chain is a tree shaped structure starting with the
@@ -150,9 +178,6 @@ public:
 
     //! pointer to the index of some further predecessor of this block
     CBlockIndex* pskip;
-
-    //ppcoin: trust score of block chain
-    uint256 bnChainTrust;
 
     //! height of the entry in the chain. The genesis block has height 0
     int nHeight;
@@ -180,23 +205,6 @@ public:
 
     //! Verification status of this block. See enum BlockStatus
     uint32_t nStatus;
-
-    unsigned int nFlags; // ppcoin: block index flags
-    enum {
-        BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
-        BLOCK_STAKE_ENTROPY = (1 << 1),  // entropy bit for stake modifier
-        BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
-    };
-
-    // proof-of-stake specific fields
-    arith_uint256 GetBlockTrust() const;
-    uint64_t nStakeModifier;             // hash modifier for proof-of-stake
-    unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
-    COutPoint prevoutStake;
-    unsigned int nStakeTime;
-    uint256 hashProofOfStake;
-    int64_t nMint;
-    int64_t nMoneySupply;
 
     //! block header
     int32_t nVersion;
@@ -227,15 +235,6 @@ public:
         nSequenceId = 0;
         nTimeMax = 0;
 
-        nMint = 0;
-        nMoneySupply = 0;
-        nFlags = 0;
-        nStakeModifier = 0;
-        nStakeModifierChecksum = 0;
-        hashProofOfStake = uint256();
-        prevoutStake.SetNull();
-        nStakeTime = 0;
-
         nVersion       = 0;
         hashMerkleRoot = uint256();
         nTime          = 0;
@@ -248,7 +247,7 @@ public:
         SetNull();
     }
 
-    explicit CBlockIndex(const CBlock& block)
+    explicit CBlockIndex(const CBlockHeader& block)
     {
         SetNull();
 
@@ -257,28 +256,10 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
-
-        //Proof of Stake
-        bnChainTrust = uint256();
-        nMint = 0;
-        nMoneySupply = 0;
-        nFlags = 0;
-        nStakeModifier = 0;
-        nStakeModifierChecksum = 0;
-        hashProofOfStake = uint256();
-
-        if (block.IsProofOfStake()) {
-            SetProofOfStake();
-            prevoutStake = block.vtx[1]->vin[0].prevout;
-            nStakeTime = block.nTime;
-        } else {
-            prevoutStake.SetNull();
-            nStakeTime = 0;
-        }
     }
 
-    FlatFilePos GetBlockPos() const {
-        FlatFilePos ret;
+    CDiskBlockPos GetBlockPos() const {
+        CDiskBlockPos ret;
         if (nStatus & BLOCK_HAVE_DATA) {
             ret.nFile = nFile;
             ret.nPos  = nDataPos;
@@ -286,8 +267,8 @@ public:
         return ret;
     }
 
-    FlatFilePos GetUndoPos() const {
-        FlatFilePos ret;
+    CDiskBlockPos GetUndoPos() const {
+        CDiskBlockPos ret;
         if (nStatus & BLOCK_HAVE_UNDO) {
             ret.nFile = nFile;
             ret.nPos  = nUndoPos;
@@ -313,20 +294,6 @@ public:
         return *phashBlock;
     }
 
-    uint256 GetBlockPoWHash() const
-    {
-        return GetBlockHeader().GetPoWHash();
-    }
-
-    /**
-     * Check whether this block's and all previous blocks' transactions have been
-     * downloaded (and stored to disk) at some point.
-     *
-     * Does not imply the transactions are consensus-valid (ConnectTip might fail)
-     * Does not imply the transactions are still stored on disk. (IsBlockPruned might return true)
-     */
-    bool HaveTxsDownloaded() const { return nChainTx != 0; }
-
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
@@ -337,7 +304,7 @@ public:
         return (int64_t)nTimeMax;
     }
 
-    static constexpr int nMedianTimeSpan = 11;
+    static constexpr int nMedianTimeSpan = 1;
 
     int64_t GetMedianTimePast() const
     {
@@ -352,38 +319,6 @@ public:
         std::sort(pbegin, pend);
         return pbegin[(pend - pbegin)/2];
     }
-
-    bool IsProofOfWork() const
-    {
-        return !(nFlags & BLOCK_PROOF_OF_STAKE);
-    }
-
-    bool IsProofOfStake() const
-    {
-        return (nFlags & BLOCK_PROOF_OF_STAKE);
-    }
-
-    void SetProofOfStake()
-    {
-        nFlags |= BLOCK_PROOF_OF_STAKE;
-    }
-
-    unsigned int GetStakeEntropyBit() const;
-
-    bool SetStakeEntropyBit(unsigned int nEntropyBit)
-    {
-        if (nEntropyBit > 1)
-            return false;
-        nFlags |= (nEntropyBit ? BLOCK_STAKE_ENTROPY : 0);
-        return true;
-    }
-
-    bool GeneratedStakeModifier() const
-    {
-        return (nFlags & BLOCK_STAKE_MODIFIER);
-    }
-
-    void SetStakeModifier(uint64_t nModifier, bool fGeneratedStakeModifier);
 
     std::string ToString() const
     {
@@ -454,31 +389,17 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         int _nVersion = s.GetVersion();
         if (!(s.GetType() & SER_GETHASH))
-            READWRITE(VARINT(_nVersion, VarIntMode::NONNEGATIVE_SIGNED));
+            READWRITE(VARINT(_nVersion));
 
-        READWRITE(VARINT(nHeight, VarIntMode::NONNEGATIVE_SIGNED));
+        READWRITE(VARINT(nHeight));
         READWRITE(VARINT(nStatus));
         READWRITE(VARINT(nTx));
         if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
-            READWRITE(VARINT(nFile, VarIntMode::NONNEGATIVE_SIGNED));
+            READWRITE(VARINT(nFile));
         if (nStatus & BLOCK_HAVE_DATA)
             READWRITE(VARINT(nDataPos));
         if (nStatus & BLOCK_HAVE_UNDO)
             READWRITE(VARINT(nUndoPos));
-
-        READWRITE(nMint);
-        READWRITE(nMoneySupply);
-        READWRITE(nFlags);
-        READWRITE(nStakeModifier);
-        if (IsProofOfStake()) {
-            READWRITE(prevoutStake);
-            READWRITE(nStakeTime);
-            READWRITE(hashProofOfStake);
-        } else {
-            const_cast<CDiskBlockIndex*>(this)->prevoutStake.SetNull();
-            const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
-            const_cast<CDiskBlockIndex*>(this)->hashProofOfStake = uint256();
-        }
 
         // block hash
         READWRITE(hash);
@@ -493,8 +414,8 @@ public:
 
     uint256 GetBlockHash() const
     {
-        if(hash != uint256())
-           return hash;
+        if(hash != uint256()) return hash;
+        // should never really get here, keeping this as a fallback
         CBlockHeader block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
@@ -573,8 +494,8 @@ public:
     /** Find the last common block between this chain and a block index entry. */
     const CBlockIndex *FindFork(const CBlockIndex *pindex) const;
 
-    /** Find the earliest block with timestamp equal or greater than the given time and height equal or greater than the given height. */
-    CBlockIndex* FindEarliestAtLeast(int64_t nTime, int height) const;
+    /** Find the earliest block with timestamp equal or greater than the given. */
+    CBlockIndex* FindEarliestAtLeast(int64_t nTime) const;
 };
 
 #endif // BITCOIN_CHAIN_H

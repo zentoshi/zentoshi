@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 The Bitcoin Core developers
+// Copyright (c) 2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,11 +10,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <type_traits>
-#include <utility>
+
+#include <compat.h>
 
 #pragma pack(push, 1)
 /** Implements a drop-in replacement for std::vector<T> which stores up to N
@@ -148,14 +148,14 @@ public:
     };
 
 private:
-    size_type _size = 0;
+    size_type _size;
     union direct_or_indirect {
         char direct[sizeof(T) * N];
         struct {
             size_type capacity;
             char* indirect;
         };
-    } _union = {};
+    } _union;
 
     T* direct_ptr(difference_type pos) { return reinterpret_cast<T*>(_union.direct) + pos; }
     const T* direct_ptr(difference_type pos) const { return reinterpret_cast<const T*>(_union.direct) + pos; }
@@ -197,8 +197,23 @@ private:
     T* item_ptr(difference_type pos) { return is_direct() ? direct_ptr(pos) : indirect_ptr(pos); }
     const T* item_ptr(difference_type pos) const { return is_direct() ? direct_ptr(pos) : indirect_ptr(pos); }
 
-    void fill(T* dst, ptrdiff_t count, const T& value = T{}) {
-        std::fill_n(dst, count, value);
+    void fill(T* dst, ptrdiff_t count) {
+        if (IS_TRIVIALLY_CONSTRUCTIBLE<T>::value) {
+            // The most common use of prevector is where T=unsigned char. For
+            // trivially constructible types, we can use memset() to avoid
+            // looping.
+            ::memset(dst, 0, count * sizeof(T));
+        } else {
+            for (auto i = 0; i < count; ++i) {
+                new(static_cast<void*>(dst + i)) T();
+            }
+        }
+    }
+
+    void fill(T* dst, ptrdiff_t count, const T& value) {
+        for (auto i = 0; i < count; ++i) {
+            new(static_cast<void*>(dst + i)) T(value);
+        }
     }
 
     template<typename InputIterator>
@@ -207,6 +222,23 @@ private:
             new(static_cast<void*>(dst)) T(*first);
             ++dst;
             ++first;
+        }
+    }
+
+    void fill(T* dst, const_iterator first, const_iterator last) {
+        ptrdiff_t count = last - first;
+        fill(dst, &*first, count);
+    }
+
+    void fill(T* dst, const T* src, ptrdiff_t count) {
+        if (IS_TRIVIALLY_CONSTRUCTIBLE<T>::value) {
+            ::memmove(dst, src, count * sizeof(T));
+        } else {
+            for (ptrdiff_t i = 0; i < count; i++) {
+                new(static_cast<void*>(dst)) T(*src);
+                ++dst;
+                ++src;
+            }
         }
     }
 
@@ -231,34 +263,34 @@ public:
         fill(item_ptr(0), first, last);
     }
 
-    prevector() {}
+    prevector() : _size(0), _union{{}} {}
 
-    explicit prevector(size_type n) {
+    explicit prevector(size_type n) : _size(0) {
         resize(n);
     }
 
-    explicit prevector(size_type n, const T& val) {
+    explicit prevector(size_type n, const T& val = T()) : _size(0) {
         change_capacity(n);
         _size += n;
         fill(item_ptr(0), n, val);
     }
 
     template<typename InputIterator>
-    prevector(InputIterator first, InputIterator last) {
+    prevector(InputIterator first, InputIterator last) : _size(0) {
         size_type n = last - first;
         change_capacity(n);
         _size += n;
         fill(item_ptr(0), first, last);
     }
 
-    prevector(const prevector<N, T, Size, Diff>& other) {
+    prevector(const prevector<N, T, Size, Diff>& other) : _size(0) {
         size_type n = other.size();
         change_capacity(n);
         _size += n;
         fill(item_ptr(0), other.begin(),  other.end());
     }
 
-    prevector(prevector<N, T, Size, Diff>&& other) {
+    prevector(prevector<N, T, Size, Diff>&& other) : _size(0) {
         swap(other);
     }
 
@@ -523,7 +555,23 @@ public:
     const value_type* data() const {
         return item_ptr(0);
     }
+
+    template<typename V>
+    static void assign_to(const_iterator b, const_iterator e, V& v) {
+        // We know that internally the iterators are pointing to continues memory, so we can directly use the pointers here
+        // This avoids internal use of std::copy and operator++ on the iterators and instead allows efficient memcpy/memmove
+        if (IS_TRIVIALLY_CONSTRUCTIBLE<T>::value) {
+            auto s = e - b;
+            if (v.size() != s) {
+                v.resize(s);
+            }
+            ::memmove(v.data(), &*b, s);
+        } else {
+            v.assign(&*b, &*e);
+        }
+    }
 };
+
 #pragma pack(pop)
 
 #endif // BITCOIN_PREVECTOR_H

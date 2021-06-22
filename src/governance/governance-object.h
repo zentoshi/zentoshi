@@ -12,8 +12,8 @@
 #include <key.h>
 #include <net.h>
 #include <sync.h>
-#include <util/system.h>
-#include <util/strencodings.h>
+#include <util.h>
+#include <utilstrencodings.h>
 #include <bls/bls.h>
 
 #include <univalue.h>
@@ -44,7 +44,6 @@ static const int64_t GOVERNANCE_ORPHAN_EXPIRATION_TIME = 10 * 60;
 // FOR SEEN MAP ARRAYS - GOVERNANCE OBJECTS AND VOTES
 static const int SEEN_OBJECT_IS_VALID = 0;
 static const int SEEN_OBJECT_ERROR_INVALID = 1;
-static const int SEEN_OBJECT_ERROR_IMMATURE = 2;
 static const int SEEN_OBJECT_EXECUTED = 3; //used for triggers
 static const int SEEN_OBJECT_UNKNOWN = 4;  // the default
 
@@ -107,10 +106,6 @@ struct vote_rec_t {
 
 class CGovernanceObject
 {
-    friend class CGovernanceManager;
-    friend class CGovernanceTriggerManager;
-    friend class CSuperblock;
-
 public: // Types
     typedef std::map<COutPoint, vote_rec_t> vote_m_t;
 
@@ -179,9 +174,6 @@ private:
     bool fUnparsable;
 
     vote_m_t mapCurrentMNVotes;
-
-    /// Limited map of votes orphaned by MN
-    vote_cmm_t cmmapOrphanVotes;
 
     CGovernanceObjectVoteFile fileVotes;
 
@@ -265,7 +257,6 @@ public:
     bool Sign(const CBLSSecretKey& key);
     bool CheckSignature(const CBLSPublicKey& pubKey) const;
 
-    std::string GetSignatureMessage() const;
     uint256 GetSignatureHash() const;
 
     // CORE OBJECT FUNCTIONS
@@ -311,8 +302,6 @@ public:
 
     // FUNCTIONS FOR DEALING WITH DATA STRING
 
-    std::string GetDataAsHex() const;
-    std::string GetDataAsString() const;
     std::string GetDataAsHexString() const;
     std::string GetDataAsPlainString() const;
 
@@ -347,7 +336,6 @@ public:
         // AFTER DESERIALIZATION OCCURS, CACHED VARIABLES MUST BE CALCULATED MANUALLY
     }
 
-private:
     // FUNCTIONS FOR DEALING WITH DATA STRING
     void LoadData();
     void GetData(UniValue& objResult);
@@ -365,8 +353,6 @@ private:
     // also for MNs that were removed from the list completely.
     // Returns deleted vote hashes.
     std::set<uint256> RemoveInvalidVotes(const COutPoint& mnOutpoint);
-
-    void CheckOrphanVotes(CConnman& connman);
 };
 
 

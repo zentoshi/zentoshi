@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -111,7 +112,6 @@ public:
 class uint160 : public base_blob<160> {
 public:
     uint160() {}
-    uint160(const base_blob<160>& b) : base_blob<160>(b) {}
     explicit uint160(const std::vector<unsigned char>& vch) : base_blob<160>(vch) {}
 };
 
@@ -123,7 +123,6 @@ public:
 class uint256 : public base_blob<256> {
 public:
     uint256() {}
-    uint256(const base_blob<256>& b) : base_blob<256>(b) {}
     explicit uint256(const std::vector<unsigned char>& vch) : base_blob<256>(vch) {}
 
     /** A cheap hash function that just returns 64 bits from the result, it can be
@@ -131,13 +130,6 @@ public:
      * when the value can easily be influenced from outside as e.g. a network adversary could
      * provide values to trigger worst-case behavior.
      */
-    int GetNibble(int index) const
-    {
-        index = 63 - index;
-        if (index % 2 == 1)
-            return(data[index / 2] >> 4);
-        return(data[index / 2] & 0x0F);
-    }
     uint64_t GetCheapHash() const
     {
         return ReadLE64(data);

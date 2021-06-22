@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 The Bitcoin Core developers
+// Copyright (c) 2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,13 +21,7 @@ class ModalOverlay : public QWidget
     Q_OBJECT
 
 public:
-    enum OverlayType
-    {
-        Sync = 0,
-        Backup = 1
-    };
-
-    explicit ModalOverlay(QWidget *parent, OverlayType _type = OverlayType::Sync);
+    explicit ModalOverlay(QWidget *parent);
     ~ModalOverlay();
 
 public Q_SLOTS:
@@ -52,8 +46,6 @@ private:
     QVector<QPair<qint64, double> > blockProcessTime;
     bool layerIsVisible;
     bool userClosed;
-    void UpdateHeaderSyncLabel();
-    OverlayType type;
     bool foreverHidden;
 };
 

@@ -1,9 +1,9 @@
-// Copyright (c) 2018-2019 The Dash Core developers
+// Copyright (c) 2018-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_QUORUMS_SIGNING_H
-#define DASH_QUORUMS_SIGNING_H
+#ifndef ZENX_QUORUMS_SIGNING_H
+#define ZENX_QUORUMS_SIGNING_H
 
 #include <llmq/quorums.h>
 
@@ -72,7 +72,7 @@ private:
     unordered_lru_cache<uint256, bool, StaticSaltedHasher, 30000> hasSigForHashCache;
 
 public:
-    CRecoveredSigsDb(CDBWrapper& _db);
+    explicit CRecoveredSigsDb(CDBWrapper& _db);
 
     void ConvertInvalidTimeKeys();
     void AddVoteTimeKeys();
@@ -126,7 +126,7 @@ private:
 
     // Incoming and not verified yet
     std::unordered_map<NodeId, std::list<CRecoveredSig>> pendingRecoveredSigs;
-    std::list<std::pair<CRecoveredSig, CQuorumCPtr>> pendingReconstructedRecoveredSigs;
+    std::unordered_map<uint256, std::pair<CRecoveredSig, CQuorumCPtr>, StaticSaltedHasher> pendingReconstructedRecoveredSigs;
 
     // must be protected by cs
     FastRandomContext rnd;
@@ -149,6 +149,8 @@ public:
 
     // This is called when a recovered signature can be safely removed from the DB. This is only safe when some other
     // mechanism prevents possible conflicts. As an example, ChainLocks prevent conflicts in confirmed TXs InstantSend votes
+    // This won't completely remove all traces of the recovered sig but instead leave the hash entry in the DB. This
+    // allows AlreadyHave to keep returning true. Cleanup will later remove the remains
     void TruncateRecoveredSig(Consensus::LLMQType llmqType, const uint256& id);
 
 private:
@@ -168,7 +170,7 @@ public:
     void RegisterRecoveredSigsListener(CRecoveredSigsListener* l);
     void UnregisterRecoveredSigsListener(CRecoveredSigsListener* l);
 
-    bool AsyncSignIfMember(Consensus::LLMQType llmqType, const uint256& id, const uint256& msgHash);
+    bool AsyncSignIfMember(Consensus::LLMQType llmqType, const uint256& id, const uint256& msgHash, bool allowReSign = false);
     bool HasRecoveredSig(Consensus::LLMQType llmqType, const uint256& id, const uint256& msgHash);
     bool HasRecoveredSigForId(Consensus::LLMQType llmqType, const uint256& id);
     bool HasRecoveredSigForSession(const uint256& signHash);
@@ -179,7 +181,7 @@ public:
     bool GetVoteForId(Consensus::LLMQType llmqType, const uint256& id, uint256& msgHashRet);
 
     std::vector<CQuorumCPtr> GetActiveQuorumSet(Consensus::LLMQType llmqType, int signHeight);
-    CQuorumCPtr SelectQuorumForSigning(Consensus::LLMQType llmqType, int signHeight, const uint256& selectionHash);
+    CQuorumCPtr SelectQuorumForSigning(Consensus::LLMQType llmqType, const uint256& selectionHash, int signHeight = -1 /*chain tip*/, int signOffset = SIGN_HEIGHT_OFFSET);
 
     // Verifies a recovered sig that was signed while the chain tip was at signedAtTip
     bool VerifyRecoveredSig(Consensus::LLMQType llmqType, int signedAtHeight, const uint256& id, const uint256& msgHash, const CBLSSignature& sig);
@@ -187,6 +189,6 @@ public:
 
 extern CSigningManager* quorumSigningManager;
 
-}
+} // namespace llmq
 
-#endif //DASH_QUORUMS_SIGNING_H
+#endif //ZENX_QUORUMS_SIGNING_H

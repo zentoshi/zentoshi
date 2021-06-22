@@ -7,7 +7,7 @@
 #include <masternode/masternode-sync.h>
 #include <messagesigner.h>
 #include <spork.h>
-#include <util/system.h>
+#include <util.h>
 
 #include <evo/deterministicmns.h>
 
@@ -21,7 +21,7 @@ std::string CGovernanceVoting::ConvertOutcomeToString(vote_outcome_enum_t nOutco
 
     const auto& it = mapOutcomeString.find(nOutcome);
     if (it == mapOutcomeString.end()) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown outcome %d\n", __func__, nOutcome);
+        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown outcome %d\n", __func__, nOutcome);
         return "error";
     }
     return it->second;
@@ -37,7 +37,7 @@ std::string CGovernanceVoting::ConvertSignalToString(vote_signal_enum_t nSignal)
 
     const auto& it = mapSignalsString.find(nSignal);
     if (it == mapSignalsString.end()) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown signal %d\n", __func__, nSignal);
+        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown signal %d\n", __func__, nSignal);
         return "none";
     }
     return it->second;
@@ -54,7 +54,7 @@ vote_outcome_enum_t CGovernanceVoting::ConvertVoteOutcome(const std::string& str
 
     const auto& it = mapStringOutcome.find(strVoteOutcome);
     if (it == mapStringOutcome.end()) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown outcome %s\n", __func__, strVoteOutcome);
+        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown outcome %s\n", __func__, strVoteOutcome);
         return VOTE_OUTCOME_NONE;
     }
     return it->second;
@@ -71,7 +71,7 @@ vote_signal_enum_t CGovernanceVoting::ConvertVoteSignal(const std::string& strVo
 
     const auto& it = mapStrVoteSignals.find(strVoteSignal);
     if (it == mapStrVoteSignals.end()) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVoting::%s -- ERROR: Unknown signal %s\n", __func__, strVoteSignal);
+        LogPrintf("CGovernanceVoting::%s -- ERROR: Unknown signal %s\n", __func__, strVoteSignal);
         return VOTE_SIGNAL_NONE;
     }
     return it->second;
@@ -164,16 +164,17 @@ bool CGovernanceVote::Sign(const CKey& key, const CKeyID& keyID)
 {
     std::string strError;
 
-    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+    // Harden Spork6 so that it is active on testnet and no other networks
+    if (Params().NetworkIDString() == CBaseChainParams::TESTNET) {
         uint256 hash = GetSignatureHash();
 
         if (!CHashSigner::SignHash(hash, key, vchSig)) {
-            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- SignHash() failed\n");
+            LogPrintf("CGovernanceVote::Sign -- SignHash() failed\n");
             return false;
         }
 
         if (!CHashSigner::VerifyHash(hash, keyID, vchSig, strError)) {
-            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- VerifyHash() failed, error: %s\n", strError);
+            LogPrintf("CGovernanceVote::Sign -- VerifyHash() failed, error: %s\n", strError);
             return false;
         }
     } else {
@@ -181,12 +182,12 @@ bool CGovernanceVote::Sign(const CKey& key, const CKeyID& keyID)
                                  std::to_string(nVoteSignal) + "|" + std::to_string(nVoteOutcome) + "|" + std::to_string(nTime);
 
         if (!CMessageSigner::SignMessage(strMessage, vchSig, key)) {
-            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- SignMessage() failed\n");
+            LogPrintf("CGovernanceVote::Sign -- SignMessage() failed\n");
             return false;
         }
 
         if (!CMessageSigner::VerifyMessage(keyID, vchSig, strMessage, strError)) {
-            LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
+            LogPrintf("CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
             return false;
         }
     }
@@ -198,21 +199,13 @@ bool CGovernanceVote::CheckSignature(const CKeyID& keyID) const
 {
     std::string strError;
 
-    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+    // Harden Spork6 so that it is active on testnet and no other networks
+    if (Params().NetworkIDString() == CBaseChainParams::TESTNET) {
         uint256 hash = GetSignatureHash();
 
         if (!CHashSigner::VerifyHash(hash, keyID, vchSig, strError)) {
-            // could be a signature in old format
-            std::string strMessage = masternodeOutpoint.ToStringShort() + "|" + nParentHash.ToString() + "|" +
-                                     std::to_string(nVoteSignal) + "|" +
-                                     std::to_string(nVoteOutcome) + "|" +
-                                     std::to_string(nTime);
-
-            if (!CMessageSigner::VerifyMessage(keyID, vchSig, strMessage, strError)) {
-                // nope, not in old format either
-                LogPrint(BCLog::GOBJECT, "CGovernanceVote::IsValid -- VerifyMessage() failed, error: %s\n", strError);
-                return false;
-            }
+            LogPrint(BCLog::GOBJECT, "CGovernanceVote::IsValid -- VerifyHash() failed, error: %s\n", strError);
+            return false;
         }
     } else {
         std::string strMessage = masternodeOutpoint.ToStringShort() + "|" + nParentHash.ToString() + "|" +
@@ -224,32 +217,6 @@ bool CGovernanceVote::CheckSignature(const CKeyID& keyID) const
             LogPrint(BCLog::GOBJECT, "CGovernanceVote::IsValid -- VerifyMessage() failed, error: %s\n", strError);
             return false;
         }
-    }
-
-    return true;
-}
-
-bool CGovernanceVote::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
-{
-    // Choose coins to use
-    CPubKey pubKeyCollateralAddress;
-    CKey keyCollateralAddress;
-
-    std::string strError;
-    std::string strMessage = masternodeOutpoint.ToStringShort() + "|" + nParentHash.ToString() + "|" +
-                                     std::to_string(nVoteSignal) + "|" +
-                                     std::to_string(nVoteOutcome) + "|" +
-                                     std::to_string(nTime);
-
-
-    if(!CMessageSigner::SignMessage(strMessage, vchSig, keyMasternode)) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- SignMessage() failed\n");
-        return false;
-    }
-
-    if(!CMessageSigner::VerifyMessage(pubKeyMasternode.GetID(), vchSig, strMessage, strError)) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::Sign -- VerifyMessage() failed, error: %s\n", strError);
-        return false;
     }
 
     return true;
@@ -272,7 +239,7 @@ bool CGovernanceVote::CheckSignature(const CBLSPublicKey& pubKey) const
     CBLSSignature sig;
     sig.SetBuf(vchSig);
     if (!sig.VerifyInsecure(pubKey, hash)) {
-        LogPrint(BCLog::GOVERNANCE, "CGovernanceVote::CheckSignature -- VerifyInsecure() failed\n");
+        LogPrintf("CGovernanceVote::CheckSignature -- VerifyInsecure() failed\n");
         return false;
     }
     return true;

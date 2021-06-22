@@ -1,80 +1,38 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include <config/zentoshi-config.h>
+#include <config/zenx-config.h>
 #endif
 
 #include <qt/addressbookpage.h>
 #include <qt/forms/ui_addressbookpage.h>
 
 #include <qt/addresstablemodel.h>
+#include <qt/bitcoingui.h>
 #include <qt/csvmodelwriter.h>
 #include <qt/editaddressdialog.h>
 #include <qt/guiutil.h>
-#include <qt/platformstyle.h>
+#include <qt/optionsmodel.h>
+#include <qt/qrdialog.h>
 
 #include <QIcon>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
 
-class AddressBookSortFilterProxyModel final : public QSortFilterProxyModel
-{
-    const QString m_type;
-
-public:
-    AddressBookSortFilterProxyModel(const QString& type, QObject* parent)
-        : QSortFilterProxyModel(parent)
-        , m_type(type)
-    {
-        setDynamicSortFilter(true);
-        setFilterCaseSensitivity(Qt::CaseInsensitive);
-        setSortCaseSensitivity(Qt::CaseInsensitive);
-    }
-
-protected:
-    bool filterAcceptsRow(int row, const QModelIndex& parent) const
-    {
-        auto model = sourceModel();
-        auto label = model->index(row, AddressTableModel::Label, parent);
-
-        if (model->data(label, AddressTableModel::TypeRole).toString() != m_type) {
-            return false;
-        }
-
-        auto address = model->index(row, AddressTableModel::Address, parent);
-
-        if (filterRegExp().indexIn(model->data(address).toString()) < 0 &&
-            filterRegExp().indexIn(model->data(label).toString()) < 0) {
-            return false;
-        }
-
-        return true;
-    }
-};
-
-AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
+AddressBookPage::AddressBookPage(Mode _mode, Tabs _tab, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AddressBookPage),
-    model(nullptr),
+    model(0),
     mode(_mode),
     tab(_tab)
 {
     ui->setupUi(this);
 
-    if (!platformStyle->getImagesOnButtons()) {
-        ui->newAddress->setIcon(QIcon());
-        ui->copyAddress->setIcon(QIcon());
-        ui->deleteAddress->setIcon(QIcon());
-        ui->exportButton->setIcon(QIcon());
-    } else {
-        ui->newAddress->setIcon(platformStyle->SingleColorIcon(":/icons/add"));
-        ui->copyAddress->setIcon(platformStyle->SingleColorIcon(":/icons/editcopy"));
-        ui->deleteAddress->setIcon(platformStyle->SingleColorIcon(":/icons/remove"));
-        ui->exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
-    }
+    ui->showAddressQRCode->setIcon(QIcon());
 
     switch(mode)
     {
@@ -84,7 +42,7 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         case SendingTab: setWindowTitle(tr("Choose the address to send coins to")); break;
         case ReceivingTab: setWindowTitle(tr("Choose the address to receive coins with")); break;
         }
-        connect(ui->tableView, &QTableView::doubleClicked, this, &QDialog::accept);
+        connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(accept()));
         ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ui->tableView->setFocus();
         ui->closeButton->setText(tr("C&hoose"));
@@ -101,11 +59,11 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
     switch(tab)
     {
     case SendingTab:
-        ui->labelExplanation->setText(tr("These are your Zentoshi addresses for sending payments. Always check the amount and the receiving address before sending coins."));
+        ui->labelExplanation->setText(tr("These are your ZenX addresses for sending payments. Always check the amount and the receiving address before sending coins."));
         ui->deleteAddress->setVisible(true);
         break;
     case ReceivingTab:
-        ui->labelExplanation->setText(tr("These are your Zentoshi addresses for receiving payments. It is recommended to use a new receiving address for each transaction."));
+        ui->labelExplanation->setText(tr("These are your ZenX addresses for receiving payments. It is recommended to use a new receiving address for each transaction."));
         ui->deleteAddress->setVisible(false);
         break;
     }
@@ -114,6 +72,7 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
     QAction *copyAddressAction = new QAction(tr("&Copy Address"), this);
     QAction *copyLabelAction = new QAction(tr("Copy &Label"), this);
     QAction *editAction = new QAction(tr("&Edit"), this);
+    QAction *showAddressQRCodeAction = new QAction(tr("&Show address QR code"), this);
     deleteAction = new QAction(ui->deleteAddress->text(), this);
 
     // Build context menu
@@ -124,16 +83,22 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
     if(tab == SendingTab)
         contextMenu->addAction(deleteAction);
     contextMenu->addSeparator();
+    contextMenu->addAction(showAddressQRCodeAction);
 
     // Connect signals for context menu actions
-    connect(copyAddressAction, &QAction::triggered, this, &AddressBookPage::on_copyAddress_clicked);
-    connect(copyLabelAction, &QAction::triggered, this, &AddressBookPage::onCopyLabelAction);
-    connect(editAction, &QAction::triggered, this, &AddressBookPage::onEditAction);
-    connect(deleteAction, &QAction::triggered, this, &AddressBookPage::on_deleteAddress_clicked);
+    connect(copyAddressAction, SIGNAL(triggered()), this, SLOT(on_copyAddress_clicked()));
+    connect(copyLabelAction, SIGNAL(triggered()), this, SLOT(onCopyLabelAction()));
+    connect(editAction, SIGNAL(triggered()), this, SLOT(onEditAction()));
+    connect(deleteAction, SIGNAL(triggered()), this, SLOT(on_deleteAddress_clicked()));
+    connect(showAddressQRCodeAction, SIGNAL(triggered()), this, SLOT(on_showAddressQRCode_clicked()));
 
-    connect(ui->tableView, &QWidget::customContextMenuRequested, this, &AddressBookPage::contextualMenu);
+    connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextualMenu(QPoint)));
 
-    connect(ui->closeButton, &QPushButton::clicked, this, &QDialog::accept);
+    connect(ui->closeButton, SIGNAL(clicked()), this, SLOT(accept()));
+
+    GUIUtil::updateFonts();
+
+    GUIUtil::disableMacFocusRect(this);
 }
 
 AddressBookPage::~AddressBookPage()
@@ -147,24 +112,41 @@ void AddressBookPage::setModel(AddressTableModel *_model)
     if(!_model)
         return;
 
-    auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    proxyModel = new QSortFilterProxyModel(this);
     proxyModel->setSourceModel(_model);
-
-    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
-
+    proxyModel->setDynamicSortFilter(true);
+    proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+    proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+    switch(tab)
+    {
+    case ReceivingTab:
+        // Receive filter
+        proxyModel->setFilterRole(AddressTableModel::TypeRole);
+        proxyModel->setFilterFixedString(AddressTableModel::Receive);
+        break;
+    case SendingTab:
+        // Send filter
+        proxyModel->setFilterRole(AddressTableModel::TypeRole);
+        proxyModel->setFilterFixedString(AddressTableModel::Send);
+        break;
+    }
     ui->tableView->setModel(proxyModel);
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
     // Set column widths
+#if QT_VERSION < 0x050000
+    ui->tableView->horizontalHeader()->setResizeMode(AddressTableModel::Label, QHeaderView::Stretch);
+    ui->tableView->horizontalHeader()->setResizeMode(AddressTableModel::Address, QHeaderView::ResizeToContents);
+#else
     ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Label, QHeaderView::Stretch);
     ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Address, QHeaderView::ResizeToContents);
+#endif
 
-    connect(ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
-        this, &AddressBookPage::selectionChanged);
+    connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
+        this, SLOT(selectionChanged()));
 
     // Select row for newly created address
-    connect(_model, &AddressTableModel::rowsInserted, this, &AddressBookPage::selectNewAddress);
+    connect(_model, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(selectNewAddress(QModelIndex,int,int)));
 
     selectionChanged();
 }
@@ -229,6 +211,23 @@ void AddressBookPage::on_deleteAddress_clicked()
     }
 }
 
+void AddressBookPage::on_showAddressQRCode_clicked()
+{
+    QList<QModelIndex> entries = GUIUtil::getEntryData(ui->tableView, AddressTableModel::Address);
+    if (entries.empty()) {
+        return;
+    }
+
+    QString strAddress = entries.at(0).data(Qt::EditRole).toString();
+    QRDialog* dialog = new QRDialog(this);
+    OptionsModel *model = new OptionsModel(nullptr, false);
+
+    dialog->setModel(model);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setInfo(tr("QR code"), "zenx:"+strAddress, "", strAddress);
+    dialog->show();
+}
+
 void AddressBookPage::selectionChanged()
 {
     // Set button states based on selected tab and selection
@@ -254,11 +253,13 @@ void AddressBookPage::selectionChanged()
             break;
         }
         ui->copyAddress->setEnabled(true);
+        ui->showAddressQRCode->setEnabled(true);
     }
     else
     {
         ui->deleteAddress->setEnabled(false);
         ui->copyAddress->setEnabled(false);
+        ui->showAddressQRCode->setEnabled(false);
     }
 }
 

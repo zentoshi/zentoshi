@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 The Dash Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,6 +10,7 @@
 #include <fs.h>
 #include <hash.h>
 #include <streams.h>
+#include <util.h>
 
 /** 
 *   Generic Dumping and Loading
@@ -44,7 +45,7 @@ private:
         // serialize, checksum data up to that point, then append checksum
         CDataStream ssObj(SER_DISK, CLIENT_VERSION);
         ssObj << strMagicMessage; // specific magic message for this type of object
-        ssObj << Params().MessageStart(); // network specific magic number
+        ssObj << FLATDATA(Params().MessageStart()); // network specific magic number
         ssObj << objToSave;
         uint256 hash = Hash(ssObj.begin(), ssObj.end());
         ssObj << hash;
@@ -96,7 +97,7 @@ private:
 
         // read data and checksum from file
         try {
-            filein.read((char *)&vchData[0], dataSize);
+            filein.read((char *)vchData.data(), dataSize);
             filein >> hashIn;
         }
         catch (std::exception &e) {
@@ -131,7 +132,7 @@ private:
 
 
             // de-serialize file header (network specific magic number) and ..
-            ssObj >> pchMsgTmp;
+            ssObj >> FLATDATA(pchMsgTmp);
 
             // ... verify the network matches ours
             if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))

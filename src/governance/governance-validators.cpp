@@ -1,14 +1,13 @@
-// Copyright (c) 2014-2018 The Dash Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <governance/governance-validators.h>
 
 #include <base58.h>
-#include <key_io.h>
 #include <timedata.h>
 #include <tinyformat.h>
-#include <util/strencodings.h>
+#include <utilstrencodings.h>
 
 #include <algorithm>
 
@@ -153,13 +152,14 @@ bool CProposalValidator::ValidatePaymentAddress()
         return false;
     }
 
-    const CTxDestination &address = DecodeDestination(strPaymentAddress);
-    if (!IsValidDestination(address)) {
+    CTxDestination dest = DecodeDestination(strPaymentAddress);
+    if (!IsValidDestination(dest)) {
         strErrorMessages += "payment_address is invalid;";
         return false;
     }
 
-    if (boost::get<ScriptHash>(&address) || boost::get<WitnessV0ScriptHash>(&address)) {
+    const CScriptID *scriptID = boost::get<CScriptID>(&dest);
+    if (scriptID) {
         strErrorMessages += "script addresses are not supported;";
         return false;
     }

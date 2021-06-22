@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,7 +27,6 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    int32_t nFlags;
 
     CBlockHeader()
     {
@@ -54,7 +53,6 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        nFlags = 0;
     }
 
     bool IsNull() const
@@ -63,8 +61,6 @@ public:
     }
 
     uint256 GetHash() const;
-
-    uint256 GetPoWHash() const;
 
     int64_t GetBlockTime() const
     {
@@ -78,11 +74,8 @@ class CBlock : public CBlockHeader
 public:
     // network and disk
     std::vector<CTransactionRef> vtx;
-    std::vector<unsigned char> vchBlockSig;
 
     // memory only
-    mutable CTxOut txoutMasternode;
-    mutable std::vector<CTxOut> voutSuperblock;
     mutable bool fChecked;
 
     CBlock()
@@ -93,7 +86,7 @@ public:
     CBlock(const CBlockHeader &header)
     {
         SetNull();
-        *(static_cast<CBlockHeader*>(this)) = header;
+        *((CBlockHeader*)this) = header;
     }
 
     ADD_SERIALIZE_METHODS;
@@ -102,8 +95,6 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
-        if (vtx.size() > 1 && vtx[1]->IsCoinStake())
-            READWRITE(vchBlockSig);
     }
 
     void SetNull()
@@ -111,7 +102,6 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         fChecked = false;
-        vchBlockSig.clear();
     }
 
     CBlockHeader GetBlockHeader() const
@@ -123,15 +113,12 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
-        block.nFlags         = nFlags;
         return block;
     }
 
-    bool IsProofOfStake() const;
-    bool IsProofOfWork() const;
-
     std::string ToString() const;
 };
+
 
 /** Describes a place in the block chain to another node such that if the
  * other node doesn't have the same branch, it can find a recent common trunk.

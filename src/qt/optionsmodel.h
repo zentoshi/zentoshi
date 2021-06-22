@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,10 +8,6 @@
 #include <amount.h>
 
 #include <QAbstractListModel>
-
-namespace interfaces {
-class Node;
-}
 
 QT_BEGIN_NAMESPACE
 class QNetworkProxy;
@@ -31,7 +27,7 @@ class OptionsModel : public QAbstractListModel
     Q_OBJECT
 
 public:
-    explicit OptionsModel(interfaces::Node& node, QObject *parent = nullptr, bool resetSettings = false);
+    explicit OptionsModel(QObject *parent = 0, bool resetSettings = false);
 
     enum OptionID {
         StartAtStartup,         // bool
@@ -48,14 +44,18 @@ public:
         DisplayUnit,            // BitcoinUnits::Unit
         ThirdPartyTxUrls,       // QString
         Digits,                 // QString
+        Theme,                  // QString
+        FontFamily,             // int
+        FontScale,              // int
+        FontWeightNormal,       // int
+        FontWeightBold,         // int
         Language,               // QString
         CoinControlFeatures,    // bool
         ThreadsScriptVerif,     // int
-        Prune,                  // bool
-        PruneSize,              // int
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         ShowMasternodesTab,     // bool
+        PrivateSendEnabled,     // bool
         ShowAdvancedPSUI,       // bool
         ShowPrivateSendPopups,  // bool
         LowKeysWarning,         // bool
@@ -83,19 +83,16 @@ public:
     QString getThirdPartyTxUrls() const { return strThirdPartyTxUrls; }
     bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() const { return fCoinControlFeatures; }
+    bool getShowAdvancedPSUI() { return fShowAdvancedPSUI; }
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
-
-    /* Explicit setters */
-    void SetPrune(bool prune, bool force = false);
+    void emitPrivateSendEnabledChanged();
 
     /* Restart flag helper */
     void setRestartRequired(bool fRequired);
     bool isRestartRequired() const;
-
-    interfaces::Node& node() const { return m_node; }
+    bool resetSettingsOnShutdown{false};
 
 private:
-    interfaces::Node& m_node;
     /* Qt-only settings */
     bool fHideTrayIcon;
     bool fMinimizeToTray;
@@ -115,6 +112,7 @@ private:
     void checkAndMigrate();
 Q_SIGNALS:
     void displayUnitChanged(int unit);
+    void privateSendEnabledChanged();
     void privateSendRoundsChanged();
     void privateSentAmountChanged();
     void advancedPSUIChanged(bool);

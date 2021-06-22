@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,34 +8,30 @@
 
 #include <memory>
 #include <string>
-#include <util/system.h>
 
-namespace interfaces {
-class Chain;
-class ChainClient;
-} // namespace interfaces
+class CScheduler;
+class CWallet;
 
-//! Pointers to interfaces used during init and destroyed on shutdown.
-struct InitInterfaces
-{
-    std::unique_ptr<interfaces::Chain> chain;
-    std::vector<std::unique_ptr<interfaces::ChainClient>> chain_clients;
-};
+class WalletInitInterface;
+extern WalletInitInterface* const g_wallet_init_interface;
 
 namespace boost
 {
 class thread_group;
 } // namespace boost
 
+void StartShutdown();
+void StartRestart();
+bool ShutdownRequested();
 /** Interrupt threads */
 void Interrupt();
-void Shutdown(InitInterfaces& interfaces);
+void Shutdown();
 //!Initialize the logging infrastructure
 void InitLogging();
 //!Parameter interaction: change current parameters depending on various rules
 void InitParameterInteraction();
 
-/** Initialize bitcoin core: Basic context setup.
+/** Initialize Zentoshi Core: Basic context setup.
  *  @note This can be done before daemonization. Do not call Shutdown() if this function fails.
  *  @pre Parameters should be parsed and config file should be read.
  */
@@ -53,23 +49,27 @@ bool AppInitParameterInteraction();
  */
 bool AppInitSanityChecks();
 /**
- * Lock bitcoin core data directory.
+ * Lock Zentoshi Core data directory.
  * @note This should only be done after daemonization. Do not call Shutdown() if this function fails.
  * @pre Parameters should be parsed and config file should be read, AppInitSanityChecks should have been called.
  */
 bool AppInitLockDataDirectory();
 /**
- * Bitcoin core main initialization.
+ * Zentoshi Core main initialization.
  * @note This should only be done after daemonization. Call Shutdown() if this function fails.
  * @pre Parameters should be parsed and config file should be read, AppInitLockDataDirectory should have been called.
  */
-bool AppInitMain(InitInterfaces& interfaces);
+bool AppInitMain();
+void PrepareShutdown();
 
-/**
- * Setup the arguments for gArgs
- */
-void SetupServerArgs();
+/** The help message mode determines what help message to show */
+enum HelpMessageMode {
+    HMM_BITCOIND,
+    HMM_BITCOIN_QT
+};
 
+/** Help for options shared between UI and daemon (for -help) */
+std::string HelpMessage(HelpMessageMode mode);
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 

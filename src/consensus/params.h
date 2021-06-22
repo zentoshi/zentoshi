@@ -1,14 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_CONSENSUS_PARAMS_H
 #define BITCOIN_CONSENSUS_PARAMS_H
 
-#include <amount.h>
 #include <uint256.h>
-#include <limits>
 #include <map>
 #include <string>
 
@@ -19,9 +17,10 @@ enum DeploymentPos
     DEPLOYMENT_TESTDUMMY,
     DEPLOYMENT_CSV, // Deployment of BIP68, BIP112, and BIP113.
     DEPLOYMENT_DIP0001, // Deployment of DIP0001 and lower transaction fees.
+    DEPLOYMENT_BIP147, // Deployment of BIP147 (NULLDUMMY)
     DEPLOYMENT_DIP0003, // Deployment of DIP0002 and DIP0003 (txv3 and deterministic MN lists)
     DEPLOYMENT_DIP0008, // Deployment of ChainLock enforcement
-    DEPLOYMENT_SEGWIT, // Deployment of BIP141, BIP143, and BIP147.
+    DEPLOYMENT_REALLOC, // Deployment of Block Reward Reallocation
     // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
     MAX_VERSION_BITS_DEPLOYMENTS
 };
@@ -37,16 +36,13 @@ struct BIP9Deployment {
     /** Timeout/expiry MedianTime for the deployment attempt. */
     int64_t nTimeout;
     /** The number of past blocks (including the block under consideration) to be taken into account for locking in a fork. */
-    int64_t nWindowSize;
-    /** A number of blocks, in the range of 1..nWindowSize, which must signal for a fork in order to lock it in. */
-    int64_t nThreshold;
-    /** Constant for nTimeout very far in the future. */
-    static constexpr int64_t NO_TIMEOUT = std::numeric_limits<int64_t>::max();
-    /** Special value for nStartTime indicating that the deployment is always active.
-     *  This is useful for testing, as it means tests don't need to deal with the activation
-     *  process (which takes at least 3 BIP9 intervals). Only tests that specifically test the
-     *  behaviour during activation cannot use this. */
-    static constexpr int64_t ALWAYS_ACTIVE = -1;
+    int64_t nWindowSize{0};
+    /** A starting number of blocks, in the range of 1..nWindowSize, which must signal for a fork in order to lock it in. */
+    int64_t nThresholdStart{0};
+    /** A minimum number of blocks, in the range of 1..nWindowSize, which must signal for a fork in order to lock it in. */
+    int64_t nThresholdMin{0};
+    /** A coefficient which adjusts the speed a required number of signaling blocks is decreasing from nThresholdStart to nThresholdMin at with each period. */
+    int64_t nFalloffCoeff{0};
 };
 
 enum LLMQType : uint8_t
@@ -58,7 +54,10 @@ enum LLMQType : uint8_t
     LLMQ_400_85 = 3, // 400 members, 340 (85%) threshold, one every 24 hours
 
     // for testing only
-    LLMQ_5_60 = 100, // 5 members, 3 (60%) threshold, one per hour
+    LLMQ_TEST = 100, // 3 members, 2 (66%) threshold, one per hour. Params might differ when -llmqtestparams is used
+
+    // for devnets only
+    LLMQ_DEVNET = 101, // 10 members, 6 (60%) threshold, one per hour. Params might differ when -llmqdevnetparams is used
 };
 
 // Configures a LLMQ and its DKG
@@ -120,6 +119,9 @@ struct LLMQParams {
     // Used for inter-quorum communication. This is the number of quorums for which we should keep old connections. This
     // should be at least one more then the active quorums set.
     int keepOldConnections;
+
+    // How many members should we try to send all sigShares to before we give up.
+    int recoveryMembers;
 };
 
 /**
@@ -127,26 +129,22 @@ struct LLMQParams {
  */
 struct Params {
     uint256 hashGenesisBlock;
+    uint256 hashDevnetGenesisBlock;
+    int nSubsidyHalvingInterval;
     int nMasternodePaymentsStartBlock;
     int nMasternodePaymentsIncreaseBlock;
     int nMasternodePaymentsIncreasePeriod; // in blocks
     int nInstantSendConfirmationsRequired; // in blocks
     int nInstantSendKeepLock; // in blocks
-    int nInstantSendSigsRequired;
-    int nInstantSendSigsTotal;
     int nBudgetPaymentsStartBlock;
     int nBudgetPaymentsCycleBlocks;
     int nBudgetPaymentsWindowBlocks;
-    int nBudgetProposalEstablishingTime;
     int nSuperblockStartBlock;
     uint256 nSuperblockStartHash;
     int nSuperblockCycle; // in blocks
     int nGovernanceMinQuorum; // Min absolute vote count to trigger an action
     int nGovernanceFilterElements;
     int nMasternodeMinimumConfirmations;
-    CAmount nMasternodeCollateral;
-    /* Block hash that is excepted from BIP16 enforcement */
-    uint256 BIP16Exception;
     /** Block height and hash at which BIP34 becomes active */
     int BIP34Height;
     uint256 BIP34Hash;
@@ -161,23 +159,14 @@ struct Params {
     /** Block height at which DIP0003 becomes enforced */
     int DIP0003EnforcementHeight;
     uint256 DIP0003EnforcementHash;
-    /** Block height at which DIP0008 becomes active */
-    int DIP0008Height;
-    /** Block height at which CSV (BIP68, BIP112 and BIP113) becomes active */
-    int CSVHeight;
-    /** Block height at which Segwit (BIP141, BIP143 and BIP147) becomes active.
-     * Note that segwit v0 script rules are enforced on all blocks except the
-     * BIP 16 exception blocks. */
-    int SegwitHeight;
-    /** Don't warn about unknown BIP 9 activations below this height.
-     * This prevents us from warning about the CSV and segwit activations. */
-    int MinBIP9WarningHeight;
     /**
-     * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
+     * Minimum blocks including miner confirmation of the total of nMinerConfirmationWindow blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
+     * Default BIP9Deployment::nThresholdStart value for deployments where it's not specified and for unknown deployments.
      * Examples: 1916 for 95%, 1512 for testchains.
      */
     uint32_t nRuleChangeActivationThreshold;
+    // Default BIP9Deployment::nWindowSize value for deployments where it's not specified and for unknown deployments.
     uint32_t nMinerConfirmationWindow;
     BIP9Deployment vDeployments[MAX_VERSION_BITS_DEPLOYMENTS];
     /** Proof of work parameters */
@@ -186,26 +175,18 @@ struct Params {
     bool fPowNoRetargeting;
     int64_t nPowTargetSpacing;
     int64_t nPowTargetTimespan;
-    /** Proof of stake parameters */
-    uint256 posLimit;
-    int64_t nPosTargetSpacing;
-    int64_t nPosTargetTimespan;
-    int nFirstPoSBlock;
-	int nLastPoSBlock;
+    int nPowKGWHeight;
+    int nPowDGWHeight;
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespan / nPowTargetSpacing; }
-    CAmount MasternodeCollateral() const { return nMasternodeCollateral; }
     uint256 nMinimumChainWork;
     uint256 defaultAssumeValid;
-    int nStakeMinAge;
-    int nStakeMaxAge;
-    int64_t nModifierInterval;
-    int nCoinbaseMaturity;
+
+    /** these parameters are only used on devnet and can be configured from the outside */
+    int nMinimumDifficultyBlocks{0};
+    int nHighSubsidyBlocks{0};
+    int nHighSubsidyFactor{1};
+
     std::map<LLMQType, LLMQParams> llmqs;
-    bool fLLMQAllowDummyCommitments;
-    CAmount nMinStakeAmount;
-    int nMinStakeHistory;
-    CAmount MinStakeAmount() const { return nMinStakeAmount; }
-    int MinStakeHistory() const { return nMinStakeHistory; }
     LLMQType llmqTypeChainLocks;
     LLMQType llmqTypeInstantSend{LLMQ_NONE};
 };

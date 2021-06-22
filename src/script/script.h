@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,7 +8,6 @@
 
 #include <crypto/common.h>
 #include <prevector.h>
-#include <pubkey.h>
 #include <serialize.h>
 
 #include <assert.h>
@@ -38,12 +37,6 @@ static const int MAX_STACK_SIZE = 1000;
 // Threshold for nLockTime: below this value it is interpreted as block number,
 // otherwise as UNIX timestamp.
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
-
-// Maximum nLockTime. Since a lock time indicates the last invalid timestamp, a
-// transaction with this lock time will never be valid unless lock time
-// checking is disabled (by setting all input sequence numbers to
-// SEQUENCE_FINAL).
-static const uint32_t LOCKTIME_MAX = 0xFFFFFFFFU;
 
 template <typename T>
 std::vector<unsigned char> ToByteVector(const T& in)
@@ -187,6 +180,7 @@ enum opcodetype
     OP_NOP8 = 0xb7,
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
+
 
     // template matching params
     OP_SMALLINTEGER = 0xfa,
@@ -391,8 +385,6 @@ private:
  */
 typedef prevector<28, unsigned char> CScriptBase;
 
-bool GetScriptOp(CScriptBase::const_iterator& pc, CScriptBase::const_iterator end, opcodetype& opcodeRet, std::vector<unsigned char>* pvchRet);
-
 /** Serialized script, used inside transaction inputs and outputs */
 class CScript : public CScriptBase
 {
@@ -423,7 +415,7 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITEAS(CScriptBase, *this);
+        READWRITE(static_cast<CScriptBase&>(*this));
     }
 
     CScript& operator+=(const CScript& b)
@@ -444,9 +436,7 @@ public:
 
     explicit CScript(opcodetype b)     { operator<<(b); }
     explicit CScript(const CScriptNum& b) { operator<<(b); }
-    // delete non-existent constructor to defend against future introduction
-    // e.g. via prevector
-    explicit CScript(const std::vector<unsigned char>& b) = delete;
+    explicit CScript(const std::vector<unsigned char>& b) { operator<<(b); }
 
 
     CScript& operator<<(int64_t b) { return push_int64(b); }
@@ -502,22 +492,85 @@ public:
         return *this;
     }
 
-    CScript& operator<<(const CPubKey& key)
+
+    bool GetOp(iterator& pc, opcodetype& opcodeRet, std::vector<unsigned char>& vchRet)
     {
-        std::vector<unsigned char> vchKey = key.Raw();
-        return (*this) << vchKey;
+         // Wrapper so it can be called with either iterator or const_iterator
+         const_iterator pc2 = pc;
+         bool fRet = GetOp2(pc2, opcodeRet, &vchRet);
+         pc = begin() + (pc2 - begin());
+         return fRet;
+    }
+
+    bool GetOp(iterator& pc, opcodetype& opcodeRet)
+    {
+         const_iterator pc2 = pc;
+         bool fRet = GetOp2(pc2, opcodeRet, nullptr);
+         pc = begin() + (pc2 - begin());
+         return fRet;
     }
 
     bool GetOp(const_iterator& pc, opcodetype& opcodeRet, std::vector<unsigned char>& vchRet) const
     {
-        return GetScriptOp(pc, end(), opcodeRet, &vchRet);
+        return GetOp2(pc, opcodeRet, &vchRet);
     }
 
     bool GetOp(const_iterator& pc, opcodetype& opcodeRet) const
     {
-        return GetScriptOp(pc, end(), opcodeRet, nullptr);
+        return GetOp2(pc, opcodeRet, nullptr);
     }
 
+    bool GetOp2(const_iterator& pc, opcodetype& opcodeRet, std::vector<unsigned char>* pvchRet) const
+    {
+        opcodeRet = OP_INVALIDOPCODE;
+        if (pvchRet)
+            pvchRet->clear();
+        if (pc >= end())
+            return false;
+
+        // Read instruction
+        if (end() - pc < 1)
+            return false;
+        unsigned int opcode = *pc++;
+
+        // Immediate operand
+        if (opcode <= OP_PUSHDATA4)
+        {
+            unsigned int nSize = 0;
+            if (opcode < OP_PUSHDATA1)
+            {
+                nSize = opcode;
+            }
+            else if (opcode == OP_PUSHDATA1)
+            {
+                if (end() - pc < 1)
+                    return false;
+                nSize = *pc++;
+            }
+            else if (opcode == OP_PUSHDATA2)
+            {
+                if (end() - pc < 2)
+                    return false;
+                nSize = ReadLE16(&pc[0]);
+                pc += 2;
+            }
+            else if (opcode == OP_PUSHDATA4)
+            {
+                if (end() - pc < 4)
+                    return false;
+                nSize = ReadLE32(&pc[0]);
+                pc += 4;
+            }
+            if (end() - pc < 0 || (unsigned int)(end() - pc) < nSize)
+                return false;
+            if (pvchRet)
+                assign_to(pc, pc + nSize, *pvchRet);
+            pc += nSize;
+        }
+
+        opcodeRet = (opcodetype)opcode;
+        return true;
+    }
 
     /** Encode/decode small integers: */
     static int DecodeOP_N(opcodetype opcode)
@@ -535,6 +588,43 @@ public:
         return (opcodetype)(OP_1+n-1);
     }
 
+    int FindAndDelete(const CScript& b)
+    {
+        int nFound = 0;
+        if (b.empty())
+            return nFound;
+        CScript result;
+        iterator pc = begin(), pc2 = begin();
+        opcodetype opcode;
+        do
+        {
+            result.insert(result.end(), pc2, pc);
+            while (static_cast<size_t>(end() - pc) >= b.size() && std::equal(b.begin(), b.end(), pc))
+            {
+                pc = pc + b.size();
+                ++nFound;
+            }
+            pc2 = pc;
+        }
+        while (GetOp(pc, opcode));
+
+        if (nFound > 0) {
+            result.insert(result.end(), pc2, end());
+            *this = result;
+        }
+
+        return nFound;
+    }
+    int Find(opcodetype op) const
+    {
+        int nFound = 0;
+        opcodetype opcode;
+        for (const_iterator pc = begin(); pc != end() && GetOp(pc, opcode);)
+            if (opcode == op)
+                ++nFound;
+        return nFound;
+    }
+
     /**
      * Pre-version-0.6, Bitcoin always counted CHECKMULTISIGs
      * as 20 sigops. With pay-to-script-hash, that changed:
@@ -550,17 +640,16 @@ public:
      */
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
-    bool IsPayToScriptHash() const;
     bool IsPayToPublicKeyHash() const;
-    bool IsPayToWitnessScriptHash() const;
-    bool IsWitnessProgram(int& version, std::vector<unsigned char>& program) const;
+
+    bool IsPayToScriptHash() const;
+
+    /** Used for obsolete pay-to-pubkey addresses indexing. */
+    bool IsPayToPublicKey() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly(const_iterator pc) const;
     bool IsPushOnly() const;
-
-    /** Check if the script contains valid OP_CODES */
-    bool HasValidOps() const;
 
     /**
      * Returns whether the script is guaranteed to fail at execution,
@@ -580,20 +669,13 @@ public:
     }
 };
 
-struct CScriptWitness
+class CReserveScript
 {
-    // Note that this encodes the data elements being pushed, rather than
-    // encoding them as a CScript that pushes them.
-    std::vector<std::vector<unsigned char> > stack;
-
-    // Some compilers complain without a default constructor
-    CScriptWitness() { }
-
-    bool IsNull() const { return stack.empty(); }
-
-    void SetNull() { stack.clear(); stack.shrink_to_fit(); }
-
-    std::string ToString() const;
+public:
+    CScript reserveScript;
+    virtual void KeepScript() {}
+    CReserveScript() {}
+    virtual ~CReserveScript() {}
 };
 
 #endif // BITCOIN_SCRIPT_SCRIPT_H

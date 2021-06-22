@@ -1,8 +1,8 @@
-// Copyright (c) 2013-2019 The Bitcoin Core developers
+// Copyright (c) 2013-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <consensus/tx_check.h>
+#include <consensus/tx_verify.h>
 #include <consensus/validation.h>
 #include <test/data/sighash.json.h>
 #include <hash.h>
@@ -10,9 +10,9 @@
 #include <script/script.h>
 #include <serialize.h>
 #include <streams.h>
-#include <test/setup_common.h>
-#include <util/system.h>
-#include <util/strencodings.h>
+#include <test/test_zenx.h>
+#include <util.h>
+#include <utilstrencodings.h>
 #include <version.h>
 
 #include <iostream>
@@ -35,7 +35,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
 
     // In case concatenating two scripts ends up with two codeseparators,
     // or an extra one at the end, this prevents all those possible incompatibilities.
-    FindAndDelete(scriptCode, CScript(OP_CODESEPARATOR));
+    scriptCode.FindAndDelete(CScript(OP_CODESEPARATOR));
 
     // Blank out other inputs' signatures
     for (unsigned int i = 0; i < txTmp.vin.size(); i++)
@@ -79,7 +79,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     }
 
     // Serialize and hash
-    CHashWriter ss(SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
+    CHashWriter ss(SER_GETHASH, 0);
     ss << txTmp << nHashType;
     return ss.GetHash();
 }
@@ -93,7 +93,7 @@ void static RandomScript(CScript &script) {
 }
 
 void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
-    tx.nVersion = InsecureRand32();
+    tx.nVersion = InsecureRandRange(2) + 1;
     tx.vin.clear();
     tx.vout.clear();
     tx.nLockTime = (InsecureRandBool()) ? InsecureRand32() : 0;
@@ -105,7 +105,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         txin.prevout.hash = InsecureRand256();
         txin.prevout.n = InsecureRandBits(2);
         RandomScript(txin.scriptSig);
-        txin.nSequence = (InsecureRandBool()) ? InsecureRand32() : std::numeric_limits<uint32_t>::max();
+        txin.nSequence = (InsecureRandBool()) ? InsecureRand32() : (unsigned int)-1;
     }
     for (int out = 0; out < outs; out++) {
         tx.vout.push_back(CTxOut());
@@ -137,8 +137,8 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         int nIn = InsecureRandRange(txTo.vin.size());
 
         uint256 sh, sho;
-        sho = SignatureHashOld(scriptCode, CTransaction(txTo), nIn, nHashType);
-        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, SigVersion::BASE);
+        sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
+        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, SIGVERSION_BASE);
         #if defined(PRINT_SIGHASH_JSON)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << txTo;
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           continue;
         }
 
-        sh = SignatureHash(scriptCode, *tx, nIn, nHashType, 0, SigVersion::BASE);
+        sh = SignatureHash(scriptCode, *tx, nIn, nHashType, 0, SIGVERSION_BASE);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }
 }

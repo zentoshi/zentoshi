@@ -2,8 +2,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_QUORUMS_H
-#define DASH_QUORUMS_H
+#ifndef ZENX_QUORUMS_H
+#define ZENX_QUORUMS_H
 
 #include <evo/evodb.h>
 #include <evo/deterministicmns.h>
@@ -98,7 +98,6 @@ public:
 
     // all these methods will lock cs_main for a short period of time
     CQuorumCPtr GetQuorum(Consensus::LLMQType llmqType, const uint256& quorumHash);
-    CQuorumCPtr GetNewestQuorum(Consensus::LLMQType llmqType);
     std::vector<CQuorumCPtr> ScanQuorums(Consensus::LLMQType llmqType, size_t maxCount);
 
     // this one is cs_main-free
@@ -116,6 +115,6 @@ private:
 
 extern CQuorumManager* quorumManager;
 
-}
+} // namespace llmq
 
-#endif //DASH_QUORUMS_H
+#endif //ZENX_QUORUMS_H

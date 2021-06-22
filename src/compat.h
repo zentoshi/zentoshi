@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,10 +7,24 @@
 #define BITCOIN_COMPAT_H
 
 #if defined(HAVE_CONFIG_H)
-#include <config/zentoshi-config.h>
+#include <config/zenx-config.h>
+#endif
+
+#include <type_traits>
+
+// GCC 4.8 is missing some C++11 type_traits,
+// https://www.gnu.org/software/gcc/gcc-5/changes.html
+#if defined(__GNUC__) && __GNUC__ < 5
+#define IS_TRIVIALLY_CONSTRUCTIBLE std::is_trivial
+#else
+#define IS_TRIVIALLY_CONSTRUCTIBLE std::is_trivially_constructible
 #endif
 
 #ifdef WIN32
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#define _WIN32_WINNT 0x0501
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -58,17 +72,7 @@ typedef unsigned int SOCKET;
 #define WSAENOTSOCK         EBADF
 #define INVALID_SOCKET      (SOCKET)(~0)
 #define SOCKET_ERROR        -1
-#endif
-
-#ifndef WIN32
-// PRIO_MAX is not defined on Solaris
-#ifndef PRIO_MAX
-#define PRIO_MAX 20
-#endif
-#define THREAD_PRIORITY_LOWEST          PRIO_MAX
-#define THREAD_PRIORITY_BELOW_NORMAL    2
-#define THREAD_PRIORITY_NORMAL          0
-#define THREAD_PRIORITY_ABOVE_NORMAL    (-2)
+#define SD_SEND             SHUT_WR
 #endif
 
 #ifdef WIN32
@@ -104,6 +108,10 @@ typedef char* sockopt_arg_type;
 // __APPLE__ poll is broke https://github.com/bitcoin/bitcoin/pull/14336#issuecomment-437384408
 #if defined(__linux__)
 #define USE_POLL
+#endif
+
+#if defined(__linux__)
+#define USE_EPOLL
 #endif
 
 bool static inline IsSelectableSocket(const SOCKET& s) {

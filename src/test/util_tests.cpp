@@ -1,21 +1,17 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <util/system.h>
+#include <util.h>
 
 #include <clientversion.h>
+#include <primitives/transaction.h>
 #include <sync.h>
-#include <test/setup_common.h>
-#include <test/util.h>
-#include <util/moneystr.h>
-#include <util/strencodings.h>
-#include <util/string.h>
-#include <util/time.h>
+#include <utilstrencodings.h>
+#include <utilmoneystr.h>
+#include <test/test_zenx.h>
 
 #include <stdint.h>
-#include <thread>
-#include <utility>
 #include <vector>
 #ifndef WIN32
 #include <signal.h>
@@ -24,11 +20,6 @@
 #endif
 
 #include <boost/test/unit_test.hpp>
-
-/* defined in logging.cpp */
-namespace BCLog {
-    std::string LogEscapeMessage(const std::string& str);
-}
 
 BOOST_FIXTURE_TEST_SUITE(util_tests, BasicTestingSetup)
 
@@ -45,10 +36,8 @@ BOOST_AUTO_TEST_CASE(util_criticalsection)
 
     do {
         TRY_LOCK(cs, lockTest);
-        if (lockTest) {
-            BOOST_CHECK(true); // Needed to suppress "Test case [...] did not check any assertions"
+        if (lockTest)
             break;
-        }
 
         BOOST_ERROR("break was swallowed!");
     } while(0);
@@ -89,73 +78,28 @@ BOOST_AUTO_TEST_CASE(util_HexStr)
         "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
 
     BOOST_CHECK_EQUAL(
-        HexStr(ParseHex_expected + sizeof(ParseHex_expected),
-               ParseHex_expected + sizeof(ParseHex_expected)),
-        "");
+        HexStr(ParseHex_expected, ParseHex_expected + 5, true),
+        "04 67 8a fd b0");
 
     BOOST_CHECK_EQUAL(
-        HexStr(ParseHex_expected, ParseHex_expected),
+        HexStr(ParseHex_expected, ParseHex_expected, true),
         "");
 
     std::vector<unsigned char> ParseHex_vec(ParseHex_expected, ParseHex_expected + 5);
 
     BOOST_CHECK_EQUAL(
-        HexStr(ParseHex_vec.rbegin(), ParseHex_vec.rend()),
-        "b0fd8a6704"
-    );
-
-    BOOST_CHECK_EQUAL(
-        HexStr(std::reverse_iterator<const uint8_t *>(ParseHex_expected),
-               std::reverse_iterator<const uint8_t *>(ParseHex_expected)),
-        ""
-    );
-
-    BOOST_CHECK_EQUAL(
-        HexStr(std::reverse_iterator<const uint8_t *>(ParseHex_expected + 1),
-               std::reverse_iterator<const uint8_t *>(ParseHex_expected)),
-        "04"
-    );
-
-    BOOST_CHECK_EQUAL(
-        HexStr(std::reverse_iterator<const uint8_t *>(ParseHex_expected + 5),
-               std::reverse_iterator<const uint8_t *>(ParseHex_expected)),
-        "b0fd8a6704"
-    );
-
-    BOOST_CHECK_EQUAL(
-        HexStr(std::reverse_iterator<const uint8_t *>(ParseHex_expected + 65),
-               std::reverse_iterator<const uint8_t *>(ParseHex_expected)),
-        "5f1df16b2b704c8a578d0bbaf74d385cde12c11ee50455f3c438ef4c3fbcf649b6de611feae06279a60939e028a8d65c10b73071a6f16719274855feb0fd8a6704"
-    );
+        HexStr(ParseHex_vec, true),
+        "04 67 8a fd b0");
 }
 
-BOOST_AUTO_TEST_CASE(util_Join)
-{
-    // Normal version
-    BOOST_CHECK_EQUAL(Join({}, ", "), "");
-    BOOST_CHECK_EQUAL(Join({"foo"}, ", "), "foo");
-    BOOST_CHECK_EQUAL(Join({"foo", "bar"}, ", "), "foo, bar");
 
-    // Version with unary operator
-    const auto op_upper = [](const std::string& s) { return ToUpper(s); };
-    BOOST_CHECK_EQUAL(Join<std::string>({}, ", ", op_upper), "");
-    BOOST_CHECK_EQUAL(Join<std::string>({"foo"}, ", ", op_upper), "FOO");
-    BOOST_CHECK_EQUAL(Join<std::string>({"foo", "bar"}, ", ", op_upper), "FOO, BAR");
-}
-
-BOOST_AUTO_TEST_CASE(util_FormatISO8601DateTime)
+BOOST_AUTO_TEST_CASE(util_DateTimeStrFormat)
 {
-    BOOST_CHECK_EQUAL(FormatISO8601DateTime(1317425777), "2011-09-30T23:36:17Z");
-}
-
-BOOST_AUTO_TEST_CASE(util_FormatISO8601Date)
-{
-    BOOST_CHECK_EQUAL(FormatISO8601Date(1317425777), "2011-09-30");
-}
-
-BOOST_AUTO_TEST_CASE(util_FormatISO8601Time)
-{
-    BOOST_CHECK_EQUAL(FormatISO8601Time(1317425777), "23:36:17Z");
+    BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 0), "1970-01-01 00:00:00");
+    BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 0x7FFFFFFF), "2038-01-19 03:14:07");
+    BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M:%S", 1317425777), "2011-09-30 23:36:17");
+    BOOST_CHECK_EQUAL(DateTimeStrFormat("%Y-%m-%d %H:%M", 1317425777), "2011-09-30 23:36");
+    BOOST_CHECK_EQUAL(DateTimeStrFormat("%a, %d %b %Y %H:%M:%S +0000", 1317425777), "Fri, 30 Sep 2011 23:36:17 +0000");
 }
 
 struct TestArgsManager : public ArgsManager
@@ -169,46 +113,28 @@ struct TestArgsManager : public ArgsManager
         {
             LOCK(cs_args);
             m_config_args.clear();
-            m_config_sections.clear();
         }
-        std::string error;
-        BOOST_REQUIRE(ReadConfigStream(streamConfig, "", error));
+        ReadConfigStream(streamConfig);
     }
     void SetNetworkOnlyArg(const std::string arg)
     {
         LOCK(cs_args);
         m_network_only_args.insert(arg);
     }
-    void SetupArgs(const std::vector<std::pair<std::string, unsigned int>>& args)
-    {
-        for (const auto& arg : args) {
-            AddArg(arg.first, "", arg.second, OptionsCategory::OPTIONS);
-        }
-    }
-    using ArgsManager::ReadConfigStream;
-    using ArgsManager::cs_args;
-    using ArgsManager::m_network;
 };
 
 BOOST_AUTO_TEST_CASE(util_ParseParameters)
 {
     TestArgsManager testArgs;
-    const auto a = std::make_pair("-a", ArgsManager::ALLOW_ANY);
-    const auto b = std::make_pair("-b", ArgsManager::ALLOW_ANY);
-    const auto ccc = std::make_pair("-ccc", ArgsManager::ALLOW_ANY);
-    const auto d = std::make_pair("-d", ArgsManager::ALLOW_ANY);
-
     const char *argv_test[] = {"-ignored", "-a", "-b", "-ccc=argument", "-ccc=multiple", "f", "-d=e"};
 
-    std::string error;
-    testArgs.SetupArgs({a, b, ccc, d});
-    BOOST_CHECK(testArgs.ParseParameters(0, (char**)argv_test, error));
+    testArgs.ParseParameters(0, (char**)argv_test);
     BOOST_CHECK(testArgs.GetOverrideArgs().empty() && testArgs.GetConfigArgs().empty());
 
-    BOOST_CHECK(testArgs.ParseParameters(1, (char**)argv_test, error));
+    testArgs.ParseParameters(1, (char**)argv_test);
     BOOST_CHECK(testArgs.GetOverrideArgs().empty() && testArgs.GetConfigArgs().empty());
 
-    BOOST_CHECK(testArgs.ParseParameters(7, (char**)argv_test, error));
+    testArgs.ParseParameters(7, (char**)argv_test);
     // expectation: -ignored is ignored (program name argument),
     // -a, -b and -ccc end up in map, -d ignored because it is after
     // a non-option argument (non-GNU option parsing)
@@ -229,21 +155,12 @@ BOOST_AUTO_TEST_CASE(util_ParseParameters)
 BOOST_AUTO_TEST_CASE(util_GetBoolArg)
 {
     TestArgsManager testArgs;
-    const auto a = std::make_pair("-a", ArgsManager::ALLOW_BOOL);
-    const auto b = std::make_pair("-b", ArgsManager::ALLOW_BOOL);
-    const auto c = std::make_pair("-c", ArgsManager::ALLOW_BOOL);
-    const auto d = std::make_pair("-d", ArgsManager::ALLOW_BOOL);
-    const auto e = std::make_pair("-e", ArgsManager::ALLOW_BOOL);
-    const auto f = std::make_pair("-f", ArgsManager::ALLOW_BOOL);
-
     const char *argv_test[] = {
         "ignored", "-a", "-nob", "-c=0", "-d=1", "-e=false", "-f=true"};
-    std::string error;
-    testArgs.SetupArgs({a, b, c, d, e, f});
-    BOOST_CHECK(testArgs.ParseParameters(7, (char**)argv_test, error));
+    testArgs.ParseParameters(7, (char**)argv_test);
 
     // Each letter should be set.
-    for (const char opt : "abcdef")
+    for (char opt : "abcdef")
         BOOST_CHECK(testArgs.IsArgSet({'-', opt}) || !opt);
 
     // Nothing else should be in the map
@@ -272,12 +189,8 @@ BOOST_AUTO_TEST_CASE(util_GetBoolArgEdgeCases)
     TestArgsManager testArgs;
 
     // Params test
-    const auto foo = std::make_pair("-foo", ArgsManager::ALLOW_BOOL);
-    const auto bar = std::make_pair("-bar", ArgsManager::ALLOW_BOOL);
     const char *argv_test[] = {"ignored", "-nofoo", "-foo", "-nobar=0"};
-    testArgs.SetupArgs({foo, bar});
-    std::string error;
-    BOOST_CHECK(testArgs.ParseParameters(4, (char**)argv_test, error));
+    testArgs.ParseParameters(4, (char**)argv_test);
 
     // This was passed twice, second one overrides the negative setting.
     BOOST_CHECK(!testArgs.IsArgNegated("-foo"));
@@ -289,7 +202,7 @@ BOOST_AUTO_TEST_CASE(util_GetBoolArgEdgeCases)
 
     // Config test
     const char *conf_test = "nofoo=1\nfoo=1\nnobar=0\n";
-    BOOST_CHECK(testArgs.ParseParameters(1, (char**)argv_test, error));
+    testArgs.ParseParameters(1, (char**)argv_test);
     testArgs.ReadConfigString(conf_test);
 
     // This was passed twice, second one overrides the negative setting,
@@ -304,7 +217,7 @@ BOOST_AUTO_TEST_CASE(util_GetBoolArgEdgeCases)
     // Combined test
     const char *combo_test_args[] = {"ignored", "-nofoo", "-bar"};
     const char *combo_test_conf = "foo=1\nnobar=1\n";
-    BOOST_CHECK(testArgs.ParseParameters(3, (char**)combo_test_args, error));
+    testArgs.ParseParameters(3, (char**)combo_test_args);
     testArgs.ReadConfigString(combo_test_conf);
 
     // Command line overrides, but doesn't erase old setting
@@ -344,17 +257,6 @@ BOOST_AUTO_TEST_CASE(util_ReadConfigStream)
        "iii=2\n";
 
     TestArgsManager test_args;
-    const auto a = std::make_pair("-a", ArgsManager::ALLOW_BOOL);
-    const auto b = std::make_pair("-b", ArgsManager::ALLOW_BOOL);
-    const auto ccc = std::make_pair("-ccc", ArgsManager::ALLOW_STRING);
-    const auto d = std::make_pair("-d", ArgsManager::ALLOW_STRING);
-    const auto e = std::make_pair("-e", ArgsManager::ALLOW_ANY);
-    const auto fff = std::make_pair("-fff", ArgsManager::ALLOW_BOOL);
-    const auto ggg = std::make_pair("-ggg", ArgsManager::ALLOW_BOOL);
-    const auto h = std::make_pair("-h", ArgsManager::ALLOW_BOOL);
-    const auto i = std::make_pair("-i", ArgsManager::ALLOW_BOOL);
-    const auto iii = std::make_pair("-iii", ArgsManager::ALLOW_INT);
-    test_args.SetupArgs({a, b, ccc, d, e, fff, ggg, h, i, iii});
 
     test_args.ReadConfigString(str_config);
     // expectation: a, b, ccc, d, fff, ggg, h, i end up in map
@@ -402,7 +304,7 @@ BOOST_AUTO_TEST_CASE(util_ReadConfigStream)
                 && test_args.GetArg("-iii", "xxx") == "xxx"
                );
 
-    for (const bool def : {false, true}) {
+    for (bool def : {false, true}) {
         BOOST_CHECK(test_args.GetBoolArg("-a", def)
                      && test_args.GetBoolArg("-b", def)
                      && !test_args.GetBoolArg("-ccc", def)
@@ -552,9 +454,6 @@ BOOST_AUTO_TEST_CASE(util_GetArg)
 BOOST_AUTO_TEST_CASE(util_GetChainName)
 {
     TestArgsManager test_args;
-    const auto testnet = std::make_pair("-testnet", ArgsManager::ALLOW_BOOL);
-    const auto regtest = std::make_pair("-regtest", ArgsManager::ALLOW_BOOL);
-    test_args.SetupArgs({testnet, regtest});
 
     const char* argv_testnet[] = {"cmd", "-testnet"};
     const char* argv_regtest[] = {"cmd", "-regtest"};
@@ -564,366 +463,65 @@ BOOST_AUTO_TEST_CASE(util_GetChainName)
     // equivalent to "-testnet"
     // regtest in testnet section is ignored
     const char* testnetconf = "testnet=1\nregtest=0\n[test]\nregtest=1";
-    std::string error;
 
-    BOOST_CHECK(test_args.ParseParameters(0, (char**)argv_testnet, error));
+    test_args.ParseParameters(0, (char**)argv_testnet);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "main");
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_testnet, error));
+    test_args.ParseParameters(2, (char**)argv_testnet);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_regtest, error));
+    test_args.ParseParameters(2, (char**)argv_regtest);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "regtest");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_test_no_reg, error));
+    test_args.ParseParameters(3, (char**)argv_test_no_reg);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both, error));
+    test_args.ParseParameters(3, (char**)argv_both);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
-    BOOST_CHECK(test_args.ParseParameters(0, (char**)argv_testnet, error));
+    test_args.ParseParameters(0, (char**)argv_testnet);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_testnet, error));
+    test_args.ParseParameters(2, (char**)argv_testnet);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_regtest, error));
+    test_args.ParseParameters(2, (char**)argv_regtest);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_test_no_reg, error));
+    test_args.ParseParameters(3, (char**)argv_test_no_reg);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both, error));
+    test_args.ParseParameters(3, (char**)argv_both);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
     // check setting the network to test (and thus making
-    // [test] regtest=1 potentially relevant) doesn't break things
+    // [test] regtest=1 potentially relevent) doesn't break things
     test_args.SelectConfigNetwork("test");
 
-    BOOST_CHECK(test_args.ParseParameters(0, (char**)argv_testnet, error));
+    test_args.ParseParameters(0, (char**)argv_testnet);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_testnet, error));
+    test_args.ParseParameters(2, (char**)argv_testnet);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_regtest, error));
+    test_args.ParseParameters(2, (char**)argv_regtest);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
 
-    BOOST_CHECK(test_args.ParseParameters(2, (char**)argv_test_no_reg, error));
+    test_args.ParseParameters(2, (char**)argv_test_no_reg);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_EQUAL(test_args.GetChainName(), "test");
 
-    BOOST_CHECK(test_args.ParseParameters(3, (char**)argv_both, error));
+    test_args.ParseParameters(3, (char**)argv_both);
     test_args.ReadConfigString(testnetconf);
     BOOST_CHECK_THROW(test_args.GetChainName(), std::runtime_error);
-}
-
-// Test different ways settings can be merged, and verify results. This test can
-// be used to confirm that updates to settings code don't change behavior
-// unintentionally.
-//
-// The test covers:
-//
-// - Combining different setting actions. Possible actions are: configuring a
-//   setting, negating a setting (adding "-no" prefix), and configuring/negating
-//   settings in a network section (adding "main." or "test." prefixes).
-//
-// - Combining settings from command line arguments and a config file.
-//
-// - Combining SoftSet and ForceSet calls.
-//
-// - Testing "main" and "test" network values to make sure settings from network
-//   sections are applied and to check for mainnet-specific behaviors like
-//   inheriting settings from the default section.
-//
-// - Testing network-specific settings like "-wallet", that may be ignored
-//   outside a network section, and non-network specific settings like "-server"
-//   that aren't sensitive to the network.
-//
-struct ArgsMergeTestingSetup : public BasicTestingSetup {
-    //! Max number of actions to sequence together. Can decrease this when
-    //! debugging to make test results easier to understand.
-    static constexpr int MAX_ACTIONS = 3;
-
-    enum Action { NONE, SET, NEGATE, SECTION_SET, SECTION_NEGATE };
-    using ActionList = Action[MAX_ACTIONS];
-
-    //! Enumerate all possible test configurations.
-    template <typename Fn>
-    void ForEachMergeSetup(Fn&& fn)
-    {
-        ActionList arg_actions = {};
-        ForEachNoDup(arg_actions, SET, SECTION_NEGATE, [&] {
-            ActionList conf_actions = {};
-            ForEachNoDup(conf_actions, SET, SECTION_NEGATE, [&] {
-                for (bool soft_set : {false, true}) {
-                    for (bool force_set : {false, true}) {
-                        for (const std::string& section : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET}) {
-                            for (const std::string& network : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET}) {
-                                for (bool net_specific : {false, true}) {
-                                    fn(arg_actions, conf_actions, soft_set, force_set, section, network, net_specific);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        });
-    }
-
-    //! Translate actions into a list of <key>=<value> setting strings.
-    std::vector<std::string> GetValues(const ActionList& actions,
-        const std::string& section,
-        const std::string& name,
-        const std::string& value_prefix)
-    {
-        std::vector<std::string> values;
-        int suffix = 0;
-        for (Action action : actions) {
-            if (action == NONE) break;
-            std::string prefix;
-            if (action == SECTION_SET || action == SECTION_NEGATE) prefix = section + ".";
-            if (action == SET || action == SECTION_SET) {
-                for (int i = 0; i < 2; ++i) {
-                    values.push_back(prefix + name + "=" + value_prefix + std::to_string(++suffix));
-                }
-            }
-            if (action == NEGATE || action == SECTION_NEGATE) {
-                values.push_back(prefix + "no" + name + "=1");
-            }
-        }
-        return values;
-    }
-};
-
-// Regression test covering different ways config settings can be merged. The
-// test parses and merges settings, representing the results as strings that get
-// compared against an expected hash. To debug, the result strings can be dumped
-// to a file (see comments below).
-BOOST_FIXTURE_TEST_CASE(util_ArgsMerge, ArgsMergeTestingSetup)
-{
-    CHash256 out_sha;
-    FILE* out_file = nullptr;
-    if (const char* out_path = getenv("ARGS_MERGE_TEST_OUT")) {
-        out_file = fsbridge::fopen(out_path, "w");
-        if (!out_file) throw std::system_error(errno, std::generic_category(), "fopen failed");
-    }
-
-    ForEachMergeSetup([&](const ActionList& arg_actions, const ActionList& conf_actions, bool soft_set, bool force_set,
-                          const std::string& section, const std::string& network, bool net_specific) {
-        TestArgsManager parser;
-        LOCK(parser.cs_args);
-
-        std::string desc = "net=";
-        desc += network;
-        parser.m_network = network;
-
-        const std::string& name = net_specific ? "wallet" : "server";
-        const std::string key = "-" + name;
-        parser.AddArg(key, name, ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-        if (net_specific) parser.SetNetworkOnlyArg(key);
-
-        auto args = GetValues(arg_actions, section, name, "a");
-        std::vector<const char*> argv = {"ignored"};
-        for (auto& arg : args) {
-            arg.insert(0, "-");
-            desc += " ";
-            desc += arg;
-            argv.push_back(arg.c_str());
-        }
-        std::string error;
-        BOOST_CHECK(parser.ParseParameters(argv.size(), argv.data(), error));
-        BOOST_CHECK_EQUAL(error, "");
-
-        std::string conf;
-        for (auto& conf_val : GetValues(conf_actions, section, name, "c")) {
-            desc += " ";
-            desc += conf_val;
-            conf += conf_val;
-            conf += "\n";
-        }
-        std::istringstream conf_stream(conf);
-        BOOST_CHECK(parser.ReadConfigStream(conf_stream, "filepath", error));
-        BOOST_CHECK_EQUAL(error, "");
-
-        if (soft_set) {
-            desc += " soft";
-            parser.SoftSetArg(key, "soft1");
-            parser.SoftSetArg(key, "soft2");
-        }
-
-        if (force_set) {
-            desc += " force";
-            parser.ForceSetArg(key, "force1");
-            parser.ForceSetArg(key, "force2");
-        }
-
-        desc += " || ";
-
-        if (!parser.IsArgSet(key)) {
-            desc += "unset";
-            BOOST_CHECK(!parser.IsArgNegated(key));
-            BOOST_CHECK_EQUAL(parser.GetArg(key, "default"), "default");
-            BOOST_CHECK(parser.GetArgs(key).empty());
-        } else if (parser.IsArgNegated(key)) {
-            desc += "negated";
-            BOOST_CHECK_EQUAL(parser.GetArg(key, "default"), "0");
-            BOOST_CHECK(parser.GetArgs(key).empty());
-        } else {
-            desc += parser.GetArg(key, "default");
-            desc += " |";
-            for (const auto& arg : parser.GetArgs(key)) {
-                desc += " ";
-                desc += arg;
-            }
-        }
-
-        std::set<std::string> ignored = parser.GetUnsuitableSectionOnlyArgs();
-        if (!ignored.empty()) {
-            desc += " | ignored";
-            for (const auto& arg : ignored) {
-                desc += " ";
-                desc += arg;
-            }
-        }
-
-        desc += "\n";
-
-        out_sha.Write((const unsigned char*)desc.data(), desc.size());
-        if (out_file) {
-            BOOST_REQUIRE(fwrite(desc.data(), 1, desc.size(), out_file) == desc.size());
-        }
-    });
-
-    if (out_file) {
-        if (fclose(out_file)) throw std::system_error(errno, std::generic_category(), "fclose failed");
-        out_file = nullptr;
-    }
-
-    unsigned char out_sha_bytes[CSHA256::OUTPUT_SIZE];
-    out_sha.Finalize(out_sha_bytes);
-    std::string out_sha_hex = HexStr(std::begin(out_sha_bytes), std::end(out_sha_bytes));
-
-    // If check below fails, should manually dump the results with:
-    //
-    //   ARGS_MERGE_TEST_OUT=results.txt ./test_bitcoin --run_test=util_tests/util_ArgsMerge
-    //
-    // And verify diff against previous results to make sure the changes are expected.
-    //
-    // Results file is formatted like:
-    //
-    //   <input> || <IsArgSet/IsArgNegated/GetArg output> | <GetArgs output> | <GetUnsuitable output>
-    BOOST_CHECK_EQUAL(out_sha_hex, "b835eef5977d69114eb039a976201f8c7121f34fe2b7ea2b73cafb516e5c9dc8");
-}
-
-// Similar test as above, but for ArgsManager::GetChainName function.
-struct ChainMergeTestingSetup : public BasicTestingSetup {
-    static constexpr int MAX_ACTIONS = 2;
-
-    enum Action { NONE, ENABLE_TEST, DISABLE_TEST, NEGATE_TEST, ENABLE_REG, DISABLE_REG, NEGATE_REG };
-    using ActionList = Action[MAX_ACTIONS];
-
-    //! Enumerate all possible test configurations.
-    template <typename Fn>
-    void ForEachMergeSetup(Fn&& fn)
-    {
-        ActionList arg_actions = {};
-        ForEachNoDup(arg_actions, ENABLE_TEST, NEGATE_REG, [&] {
-            ActionList conf_actions = {};
-            ForEachNoDup(conf_actions, ENABLE_TEST, NEGATE_REG, [&] { fn(arg_actions, conf_actions); });
-        });
-    }
-};
-
-BOOST_FIXTURE_TEST_CASE(util_ChainMerge, ChainMergeTestingSetup)
-{
-    CHash256 out_sha;
-    FILE* out_file = nullptr;
-    if (const char* out_path = getenv("CHAIN_MERGE_TEST_OUT")) {
-        out_file = fsbridge::fopen(out_path, "w");
-        if (!out_file) throw std::system_error(errno, std::generic_category(), "fopen failed");
-    }
-
-    ForEachMergeSetup([&](const ActionList& arg_actions, const ActionList& conf_actions) {
-        TestArgsManager parser;
-        LOCK(parser.cs_args);
-        parser.AddArg("-regtest", "regtest", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-        parser.AddArg("-testnet", "testnet", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-
-        auto arg = [](Action action) { return action == ENABLE_TEST  ? "-testnet=1"   :
-                                              action == DISABLE_TEST ? "-testnet=0"   :
-                                              action == NEGATE_TEST  ? "-notestnet=1" :
-                                              action == ENABLE_REG   ? "-regtest=1"   :
-                                              action == DISABLE_REG  ? "-regtest=0"   :
-                                              action == NEGATE_REG   ? "-noregtest=1" : nullptr; };
-
-        std::string desc;
-        std::vector<const char*> argv = {"ignored"};
-        for (Action action : arg_actions) {
-            const char* argstr = arg(action);
-            if (!argstr) break;
-            argv.push_back(argstr);
-            desc += " ";
-            desc += argv.back();
-        }
-        std::string error;
-        BOOST_CHECK(parser.ParseParameters(argv.size(), argv.data(), error));
-        BOOST_CHECK_EQUAL(error, "");
-
-        std::string conf;
-        for (Action action : conf_actions) {
-            const char* argstr = arg(action);
-            if (!argstr) break;
-            desc += " ";
-            desc += argstr + 1;
-            conf += argstr + 1;
-        }
-        std::istringstream conf_stream(conf);
-        BOOST_CHECK(parser.ReadConfigStream(conf_stream, "filepath", error));
-        BOOST_CHECK_EQUAL(error, "");
-
-        desc += " || ";
-        try {
-            desc += parser.GetChainName();
-        } catch (const std::runtime_error& e) {
-            desc += "error: ";
-            desc += e.what();
-        }
-        desc += "\n";
-
-        out_sha.Write((const unsigned char*)desc.data(), desc.size());
-        if (out_file) {
-            BOOST_REQUIRE(fwrite(desc.data(), 1, desc.size(), out_file) == desc.size());
-        }
-    });
-
-    if (out_file) {
-        if (fclose(out_file)) throw std::system_error(errno, std::generic_category(), "fclose failed");
-        out_file = nullptr;
-    }
-
-    unsigned char out_sha_bytes[CSHA256::OUTPUT_SIZE];
-    out_sha.Finalize(out_sha_bytes);
-    std::string out_sha_hex = HexStr(std::begin(out_sha_bytes), std::end(out_sha_bytes));
-
-    // If check below fails, should manually dump the results with:
-    //
-    //   CHAIN_MERGE_TEST_OUT=results.txt ./test_bitcoin --run_test=util_tests/util_ChainMerge
-    //
-    // And verify diff against previous results to make sure the changes are expected.
-    //
-    // Results file is formatted like:
-    //
-    //   <input> || <output>
-    BOOST_CHECK_EQUAL(out_sha_hex, "94b4ad55c8ac639a56b93e36f7e32e4c611fd7d7dd7b2be6a71707b1eadcaec7");
 }
 
 BOOST_AUTO_TEST_CASE(util_FormatMoney)
@@ -1134,21 +732,6 @@ BOOST_AUTO_TEST_CASE(util_time_GetTime)
     MilliSleep(1);
     BOOST_CHECK(ms_0 < GetTime<std::chrono::milliseconds>());
     BOOST_CHECK(us_0 < GetTime<std::chrono::microseconds>());
-}
-
-BOOST_AUTO_TEST_CASE(test_IsDigit)
-{
-    BOOST_CHECK_EQUAL(IsDigit('0'), true);
-    BOOST_CHECK_EQUAL(IsDigit('1'), true);
-    BOOST_CHECK_EQUAL(IsDigit('8'), true);
-    BOOST_CHECK_EQUAL(IsDigit('9'), true);
-
-    BOOST_CHECK_EQUAL(IsDigit('0' - 1), false);
-    BOOST_CHECK_EQUAL(IsDigit('9' + 1), false);
-    BOOST_CHECK_EQUAL(IsDigit(0), false);
-    BOOST_CHECK_EQUAL(IsDigit(1), false);
-    BOOST_CHECK_EQUAL(IsDigit(8), false);
-    BOOST_CHECK_EQUAL(IsDigit(9), false);
 }
 
 BOOST_AUTO_TEST_CASE(test_ParseInt32)
@@ -1405,6 +988,21 @@ BOOST_AUTO_TEST_CASE(test_ParseFixedPoint)
     BOOST_CHECK(!ParseFixedPoint("1.", 8, &amount));
 }
 
+BOOST_AUTO_TEST_CASE(version_info_helper)
+{
+    BOOST_CHECK(StringVersionToInt("1.1.1") == 0x010101);
+    BOOST_CHECK(IntVersionToString(0x010101) == "1.1.1");
+
+    BOOST_CHECK_THROW(StringVersionToInt("1.1.hgdghfgf"), std::bad_cast);
+    BOOST_CHECK_THROW(StringVersionToInt("1.1"), std::bad_cast);
+    BOOST_CHECK_THROW(StringVersionToInt("1.1.1f"), std::bad_cast);
+    BOOST_CHECK_THROW(StringVersionToInt("1.1.1000"), std::bad_cast);
+    BOOST_CHECK_THROW(StringVersionToInt("10"), std::bad_cast);
+    BOOST_CHECK_THROW(StringVersionToInt("1.1.1.1"), std::bad_cast);
+    BOOST_CHECK_THROW(IntVersionToString(0x01010101), std::bad_cast);
+    BOOST_CHECK_THROW(IntVersionToString(0), std::bad_cast);
+}
+
 static void TestOtherThread(fs::path dirname, std::string lockname, bool *result)
 {
     *result = LockDirectory(dirname, lockname);
@@ -1418,8 +1016,9 @@ static constexpr char ExitCommand = 'X';
 static void TestOtherProcess(fs::path dirname, std::string lockname, int fd)
 {
     char ch;
+    int rv;
     while (true) {
-        int rv = read(fd, &ch, 1); // Wait for command
+        rv = read(fd, &ch, 1); // Wait for command
         assert(rv == 1);
         switch(ch) {
         case LockCommand:
@@ -1431,7 +1030,6 @@ static void TestOtherProcess(fs::path dirname, std::string lockname, int fd)
             ReleaseDirectoryLocks();
             ch = true; // Always succeeds
             rv = write(fd, &ch, 1);
-            assert(rv == 1);
             break;
         case ExitCommand:
             close(fd);
@@ -1445,7 +1043,7 @@ static void TestOtherProcess(fs::path dirname, std::string lockname, int fd)
 
 BOOST_AUTO_TEST_CASE(test_LockDirectory)
 {
-    fs::path dirname = GetDataDir() / "lock_dir";
+    fs::path dirname = fs::temp_directory_path() / fs::unique_path();
     const std::string lockname = ".lock";
 #ifndef WIN32
     // Revert SIGCHLD to default, otherwise boost.test will catch and fail on
@@ -1485,7 +1083,7 @@ BOOST_AUTO_TEST_CASE(test_LockDirectory)
     thr.join();
     BOOST_CHECK_EQUAL(threadresult, true);
 #ifndef WIN32
-    // Try to acquire lock in child process while we're holding it, this should fail.
+    // Try to aquire lock in child process while we're holding it, this should fail.
     char ch;
     BOOST_CHECK_EQUAL(write(fd[1], &LockCommand, 1), 1);
     BOOST_CHECK_EQUAL(read(fd[1], &ch, 1), 1);
@@ -1496,7 +1094,7 @@ BOOST_AUTO_TEST_CASE(test_LockDirectory)
     // Probing lock from our side now should succeed, but not hold on to the lock.
     BOOST_CHECK_EQUAL(LockDirectory(dirname, lockname, true), true);
 
-    // Try to acquire the lock in the child process, this should be successful.
+    // Try to acquire the lock in the child process, this should be succesful.
     BOOST_CHECK_EQUAL(write(fd[1], &LockCommand, 1), 1);
     BOOST_CHECK_EQUAL(read(fd[1], &ch, 1), 1);
     BOOST_CHECK_EQUAL((bool)ch, true);
@@ -1529,70 +1127,6 @@ BOOST_AUTO_TEST_CASE(test_LockDirectory)
     // Clean up
     ReleaseDirectoryLocks();
     fs::remove_all(dirname);
-}
-
-BOOST_AUTO_TEST_CASE(test_DirIsWritable)
-{
-    // Should be able to write to the data dir.
-    fs::path tmpdirname = GetDataDir();
-    BOOST_CHECK_EQUAL(DirIsWritable(tmpdirname), true);
-
-    // Should not be able to write to a non-existent dir.
-    tmpdirname = tmpdirname / fs::unique_path();
-    BOOST_CHECK_EQUAL(DirIsWritable(tmpdirname), false);
-
-    fs::create_directory(tmpdirname);
-    // Should be able to write to it now.
-    BOOST_CHECK_EQUAL(DirIsWritable(tmpdirname), true);
-    fs::remove(tmpdirname);
-}
-
-BOOST_AUTO_TEST_CASE(test_ToLower)
-{
-    BOOST_CHECK_EQUAL(ToLower('@'), '@');
-    BOOST_CHECK_EQUAL(ToLower('A'), 'a');
-    BOOST_CHECK_EQUAL(ToLower('Z'), 'z');
-    BOOST_CHECK_EQUAL(ToLower('['), '[');
-    BOOST_CHECK_EQUAL(ToLower(0), 0);
-    BOOST_CHECK_EQUAL(ToLower('\xff'), '\xff');
-
-    BOOST_CHECK_EQUAL(ToLower(""), "");
-    BOOST_CHECK_EQUAL(ToLower("#HODL"), "#hodl");
-    BOOST_CHECK_EQUAL(ToLower("\x00\xfe\xff"), "\x00\xfe\xff");
-}
-
-BOOST_AUTO_TEST_CASE(test_ToUpper)
-{
-    BOOST_CHECK_EQUAL(ToUpper('`'), '`');
-    BOOST_CHECK_EQUAL(ToUpper('a'), 'A');
-    BOOST_CHECK_EQUAL(ToUpper('z'), 'Z');
-    BOOST_CHECK_EQUAL(ToUpper('{'), '{');
-    BOOST_CHECK_EQUAL(ToUpper(0), 0);
-    BOOST_CHECK_EQUAL(ToUpper('\xff'), '\xff');
-
-    BOOST_CHECK_EQUAL(ToUpper(""), "");
-    BOOST_CHECK_EQUAL(ToUpper("#hodl"), "#HODL");
-    BOOST_CHECK_EQUAL(ToUpper("\x00\xfe\xff"), "\x00\xfe\xff");
-}
-
-BOOST_AUTO_TEST_CASE(test_Capitalize)
-{
-    BOOST_CHECK_EQUAL(Capitalize(""), "");
-    BOOST_CHECK_EQUAL(Capitalize("bitcoin"), "Bitcoin");
-    BOOST_CHECK_EQUAL(Capitalize("\x00\xfe\xff"), "\x00\xfe\xff");
-}
-
-BOOST_AUTO_TEST_CASE(test_LogEscapeMessage)
-{
-    // ASCII and UTF-8 must pass through unaltered.
-    BOOST_CHECK_EQUAL(BCLog::LogEscapeMessage("Valid log message貓"), "Valid log message貓");
-    // Newlines must pass through unaltered.
-    BOOST_CHECK_EQUAL(BCLog::LogEscapeMessage("Message\n with newlines\n"), "Message\n with newlines\n");
-    // Other control characters are escaped in C syntax.
-    BOOST_CHECK_EQUAL(BCLog::LogEscapeMessage("\x01\x7f Corrupted log message\x0d"), R"(\x01\x7f Corrupted log message\x0d)");
-    // Embedded NULL characters are escaped too.
-    const std::string NUL("O\x00O", 3);
-    BOOST_CHECK_EQUAL(BCLog::LogEscapeMessage(NUL), R"(O\x00O)");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

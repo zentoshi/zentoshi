@@ -25,27 +25,29 @@ CDKGSessionManager::CDKGSessionManager(CDBWrapper& _llmqDb, CBLSWorker& _blsWork
     llmqDb(_llmqDb),
     blsWorker(_blsWorker)
 {
+    for (const auto& qt : Params().GetConsensus().llmqs) {
+        dkgSessionHandlers.emplace(std::piecewise_construct,
+                std::forward_as_tuple(qt.first),
+                std::forward_as_tuple(qt.second, blsWorker, *this));
+    }
 }
 
 CDKGSessionManager::~CDKGSessionManager()
 {
 }
 
-void CDKGSessionManager::StartMessageHandlerPool()
+void CDKGSessionManager::StartThreads()
 {
-    for (const auto& qt : Params().GetConsensus().llmqs) {
-        dkgSessionHandlers.emplace(std::piecewise_construct,
-                std::forward_as_tuple(qt.first),
-                std::forward_as_tuple(qt.second, messageHandlerPool, blsWorker, *this));
+    for (auto& it : dkgSessionHandlers) {
+        it.second.StartThread();
     }
-
-    messageHandlerPool.resize(2);
-    RenameThreadPool(messageHandlerPool, "zentoshi-q-msg");
 }
 
-void CDKGSessionManager::StopMessageHandlerPool()
+void CDKGSessionManager::StopThreads()
 {
-    messageHandlerPool.stop(true);
+    for (auto& it : dkgSessionHandlers) {
+        it.second.StopThread();
+    }
 }
 
 void CDKGSessionManager::UpdatedBlockTip(const CBlockIndex* pindexNew, bool fInitialDownload)
@@ -200,12 +202,12 @@ bool CDKGSessionManager::GetPrematureCommitment(const uint256& hash, CDKGPrematu
 
 void CDKGSessionManager::WriteVerifiedVvecContribution(Consensus::LLMQType llmqType, const CBlockIndex* pindexQuorum, const uint256& proTxHash, const BLSVerificationVectorPtr& vvec)
 {
-    llmqDb.Write(std::make_tuple(DB_VVEC, (Consensus::LLMQType) llmqType, pindexQuorum->GetBlockHash(), proTxHash), *vvec);
+    llmqDb.Write(std::make_tuple(DB_VVEC, llmqType, pindexQuorum->GetBlockHash(), proTxHash), *vvec);
 }
 
 void CDKGSessionManager::WriteVerifiedSkContribution(Consensus::LLMQType llmqType, const CBlockIndex* pindexQuorum, const uint256& proTxHash, const CBLSSecretKey& skContribution)
 {
-    llmqDb.Write(std::make_tuple(DB_SKCONTRIB, (Consensus::LLMQType) llmqType, pindexQuorum->GetBlockHash(), proTxHash), skContribution);
+    llmqDb.Write(std::make_tuple(DB_SKCONTRIB, llmqType, pindexQuorum->GetBlockHash(), proTxHash), skContribution);
 }
 
 bool CDKGSessionManager::GetVerifiedContributions(Consensus::LLMQType llmqType, const CBlockIndex* pindexQuorum, const std::vector<bool>& validMembers, std::vector<uint16_t>& memberIndexesRet, std::vector<BLSVerificationVectorPtr>& vvecsRet, BLSSecretKeyVector& skContributionsRet)
@@ -248,10 +250,10 @@ bool CDKGSessionManager::GetVerifiedContribution(Consensus::LLMQType llmqType, c
     BLSVerificationVector vvec;
     BLSVerificationVectorPtr vvecPtr;
     CBLSSecretKey skContribution;
-    if (llmqDb.Read(std::make_tuple(DB_VVEC, (Consensus::LLMQType) llmqType, pindexQuorum->GetBlockHash(), proTxHash), vvec)) {
+    if (llmqDb.Read(std::make_tuple(DB_VVEC, llmqType, pindexQuorum->GetBlockHash(), proTxHash), vvec)) {
         vvecPtr = std::make_shared<BLSVerificationVector>(std::move(vvec));
     }
-    llmqDb.Read(std::make_tuple(DB_SKCONTRIB, (Consensus::LLMQType) llmqType, pindexQuorum->GetBlockHash(), proTxHash), skContribution);
+    llmqDb.Read(std::make_tuple(DB_SKCONTRIB, llmqType, pindexQuorum->GetBlockHash(), proTxHash), skContribution);
 
     it = contributionsCache.emplace(cacheKey, ContributionsCacheEntry{GetTimeMillis(), vvecPtr, skContribution}).first;
 
@@ -274,4 +276,4 @@ void CDKGSessionManager::CleanupCache()
     }
 }
 
-}
+} // namespace llmq
