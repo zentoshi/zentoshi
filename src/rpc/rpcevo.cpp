@@ -1297,11 +1297,81 @@ UniValue _bls(const JSONRPCRequest& request)
     }
 }
 
+UniValue _bls_sign(const JSONRPCRequest& request) {
+    if (request.fHelp || request.params.size() != 2) {
+        throw std::runtime_error(
+            "blssign \"privateKey\" \"message\"\n"
+            "To get help on individual commands, use \"help blssign command\".\n"
+            "\nArguments:\n"
+            "1. \"privateKey\"        (string, required) Private key to sign message\n"
+            "2. \"message\"           (string, requried) message to be signed\n"
+            );
+
+    }
+    std::string privateKey;
+    std::string message;
+    std::vector<unsigned char> vchSig;
+
+    privateKey = request.params[0].get_str();
+    message = request.params[1].get_str();
+    uint256 messageHash = Hash(message.begin(), message.end());
+
+    CBLSSecretKey sk;
+    if (!sk.SetHexStr(privateKey)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Secret key must be a valid hex string of length %d", sk.SerSize*2));
+    }
+
+    CBLSSignature sig = sk.Sign(messageHash);
+    if (!sig.IsValid()) {
+        throw JSONRPCError(RPC_VERIFY_ERROR, strprintf("Signature is invalid!"));
+    }
+    sig.GetBuf(vchSig);
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("signature", sig.ToString()));
+    return ret;
+}
+
+UniValue _bls_verify(const JSONRPCRequest& request) {
+    if (request.fHelp || request.params.size() != 3) {
+        throw std::runtime_error(
+            "blssign \"privateKey\" \"message\"\n"
+            "To get help on individual commands, use \"help blssign command\".\n"
+            "\nArguments:\n"
+            "1. \"pubKey\"            (string, required) pubKey that signed the message\n"
+            "2. \"message\"           (string, requried) message that has been signed\n"
+            "3. \"signature\"         (string, requried) signature of the message\n"
+            );
+    }
+
+    std::string pubKeyStr = request.params[0].get_str();
+    std::string messageStr = request.params[1].get_str();
+    std::string signatureStr = request.params[2].get_str();
+
+    uint256 signatureHash = Hash(messageStr.begin(), messageStr.end());
+
+    CBLSSignature sig;
+    sig.SetHexStr(signatureStr);
+
+    CBLSPublicKey pubKey;
+    pubKey.SetHexStr(pubKeyStr);
+
+    if (!sig.VerifyInsecure(pubKey, signatureHash)) {
+        throw JSONRPCError(RPC_VERIFY_ERROR, strprintf("Signature is invalid!"));
+    }
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("Signature", "Valid"));
+    return ret;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)
   //  --------------------- ------------------------  -----------------------
     { "evo",                "bls",                    &_bls,                   {}  },
     { "evo",                "protx",                  &protx,                  {}  },
+    { "evo",                "blssign",                &_bls_sign,              {}  },
+    { "evo",                "blsverify",              &_bls_verify,              {}  },
 };
 
 void RegisterEvoRPCCommands(CRPCTable &tableRPC)
