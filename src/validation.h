@@ -143,6 +143,12 @@ static const bool DEFAULT_PEERBLOOMFILTERS = true;
 /** Default for -stopatheight */
 static const int DEFAULT_STOPATHEIGHT = 0;
 
+struct signedMessageFormat {
+    uint8_t rec;
+    uint256 firstPart;
+    uint256 secondPart;
+};
+
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
@@ -366,6 +372,20 @@ bool TestLockPointValidity(const LockPoints* lp);
  * See consensus/consensus.h for flag definitions.
  */
 bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp = nullptr, bool useExistingLockPoints = false);
+
+
+/** 
+ * Sign a message from a address using the default wallet
+ * returns a structure for the signature.
+ */
+
+bool signMessageToFormat(std::string address, std::string message, signedMessageFormat& signedMessage);
+
+/** 
+ * Decode the signed message from the struct format
+ */
+
+bool decodeSignedMessageFromFormat(std::string address, std::string message, signedMessageFormat& signedMessage, std::vector<unsigned char> &signature);
 
 /**
  * Closure representing one script verification
