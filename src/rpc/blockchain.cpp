@@ -107,7 +107,14 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", blockindex->nVersion));
-    result.push_back(Pair("signature", blockindex->nSignature.GetHex()));
+    // This is a workaround!
+    // Some undefined reference error when using blockindex->nSignature.GetHex() was making me insane
+    // So I embeded directly to the blockheader function... :confused:
+    uint8_t data[96];
+    std::memcpy(&data, &blockindex->nSignature, sizeof(data));
+    std::string nSignatureHex = HexStr(std::reverse_iterator<const uint8_t*>(data + sizeof(data)), std::reverse_iterator<const uint8_t*>(data));
+
+    result.push_back(Pair("signature", nSignatureHex));
     result.push_back(Pair("versionHex", strprintf("%08x", blockindex->nVersion)));
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
     result.push_back(Pair("time", (int64_t)blockindex->nTime));
@@ -144,6 +151,14 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("versionHex", strprintf("%08x", block.nVersion)));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+    // This is a workaround!
+    // Some undefined reference error when using blockindex->nSignature.GetHex() was making me insane
+    // So I embeded directly to the blockheader function... :confused:
+    uint8_t data[96];
+    std::memcpy(&data, &block.nSignature, sizeof(data));
+    std::string nSignatureHex = HexStr(std::reverse_iterator<const uint8_t*>(data + sizeof(data)), std::reverse_iterator<const uint8_t*>(data));
+
+    result.push_back(Pair("signature", nSignatureHex));
     bool chainLock = llmq::chainLocksHandler->HasChainLock(blockindex->nHeight, blockindex->GetBlockHash());
     UniValue txs(UniValue::VARR);
     for(const auto& tx : block.vtx)
