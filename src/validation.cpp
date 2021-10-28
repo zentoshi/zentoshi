@@ -439,9 +439,6 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp, bool 
 }
 
 bool signMessageBLS(std::string &privKey, std::string &message, std::vector<unsigned char>& signedMessage) {
-    std::string privateKey;
-    std::string message;
-
     uint256 messageHash = Hash(message.begin(), message.end());
 
     CBLSSecretKey sk;

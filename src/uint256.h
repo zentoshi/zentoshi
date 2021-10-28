@@ -172,6 +172,22 @@ public:
     }
 };
 
+/** 384-bit unsigned big integer. */
+class uint384 : public base_blob<384> {
+public:
+    uint384() {}
+    uint384(const base_blob<384>& b) : base_blob<384>(b) {}
+    explicit uint384(const std::vector<unsigned char>& vch) : base_blob<384>(vch) {}
+
+    uint256 trim256() const
+    {
+        uint256 result;
+        memcpy((void*)&result, (void*)data, 32);
+        return result;
+    }
+};
+
+
 namespace std {
     template <>
     struct hash<uint256>
