@@ -15,6 +15,7 @@
 #include <consensus/validation.h>
 #include <validation.h>
 #include <core_io.h>
+#include <uint256.h>
 // #include <rpc/index/txindex.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
@@ -106,6 +107,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", blockindex->nVersion));
+    result.push_back(Pair("signature", blockindex->nSignature.GetHex()));
     result.push_back(Pair("versionHex", strprintf("%08x", blockindex->nVersion)));
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
     result.push_back(Pair("time", (int64_t)blockindex->nTime));

@@ -27,6 +27,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
+    uint384 nSignature;
 
     CBlockHeader()
     {
@@ -43,6 +44,9 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        if (this->nTime > 1924122000) {
+            READWRITE(nSignature);
+        }
     }
 
     void SetNull()
@@ -53,6 +57,7 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
+        nSignature.SetNull();
     }
 
     bool IsNull() const
@@ -113,6 +118,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nSignature     = nSignature;
         return block;
     }
 

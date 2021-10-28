@@ -212,6 +212,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
+    uint384 nSignature;
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     int32_t nSequenceId;
@@ -240,6 +241,7 @@ public:
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
+        nSignature     = uint384();
     }
 
     CBlockIndex()
@@ -256,6 +258,7 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+        nSignature     = block.nSignature;
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -286,6 +289,7 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+        block.nSignature     = nSignature;
         return block;
     }
 
@@ -410,6 +414,9 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        if (nTime > 1924122000) {
+            READWRITE(nSignature);
+        }
     }
 
     uint256 GetBlockHash() const
