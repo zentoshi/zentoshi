@@ -375,17 +375,19 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp = null
 
 
 /** 
- * Sign a message from a address using the default wallet
- * returns a structure for the signature.
+ * Sign a message from a address using a given BLS private key.
+ * returns unsigned char vector containing the signature on reference signedMessage
+ * returns true if private key/signature is valid, otherwise logs on debug.log
  */
 
-bool signMessageToFormat(std::string address, std::string message, signedMessageFormat& signedMessage);
+bool signMessageBLS(std::string &privKey, std::string &message, std::vector<unsigned char>& signedMessage);
 
 /** 
- * Decode the signed message from the struct format
+ * Verify the signature from a BLS pubkey, message and signature
+ * Returns true if value, otherwise logs on debug.log
  */
 
-bool decodeSignedMessageFromFormat(std::string address, std::string message, signedMessageFormat& signedMessage, std::vector<unsigned char> &signature);
+bool decodeSignedBLS(std::string address, std::string message, signedMessageFormat& signedMessage, std::vector<unsigned char> &signature);
 
 /**
  * Closure representing one script verification

@@ -1300,7 +1300,7 @@ UniValue _bls(const JSONRPCRequest& request)
 UniValue _bls_sign(const JSONRPCRequest& request) {
     if (request.fHelp || request.params.size() != 2) {
         throw std::runtime_error(
-            "blssign \"privateKey\" \"message\"\n"
+            "blsverify \"privateKey\" \"message\"\n"
             "To get help on individual commands, use \"help blssign command\".\n"
             "\nArguments:\n"
             "1. \"privateKey\"        (string, required) Private key to sign message\n"

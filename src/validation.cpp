@@ -41,6 +41,7 @@
 #include <validationinterface.h>
 #include <warnings.h>
 #include <wallet/wallet.h>
+#include <bls/bls.h>
 
 #include <masternode/masternode-payments.h>
 
@@ -437,90 +438,39 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp, bool 
     return EvaluateSequenceLocks(index, lockPair);
 }
 
-bool signMessageToFormat(std::string address, std::string message, signedMessageFormat& signedMessage) {
-    auto pwallet = GetWallet(""); // Get the default wallet
-    if (!pwallet) { return error("No wallet available"); };
+bool signMessageBLS(std::string &privKey, std::string &message, std::vector<unsigned char>& signedMessage) {
+    std::string privateKey;
+    std::string message;
 
-    LOCK2(cs_main, pwallet->cs_wallet);
+    uint256 messageHash = Hash(message.begin(), message.end());
 
-    if (pwallet->IsLocked()) { return error("Wallet not unlocked"); }
-
-    CTxDestination dest = DecodeDestination(address);
-    if (!IsValidDestination(dest)) { return error("Invalid Address"); }
-
-    const CKeyID *keyID = boost::get<CKeyID>(&dest);
-    if (!keyID) { return error("Address does not refer to key"); }
-
-    CKey key;
-    if (!pwallet->GetKey(*keyID, key)) { return error("Private key not found"); }
-
-    CHashWriter ss(SER_GETHASH, 0);
-    ss << strMessageMagic;
-    ss << message;
-
-    std::vector<unsigned char> vchSig;
-
-    if (!key.SignCompact(ss.GetHash(), vchSig)) { return error("Sign failed"); }
-
-    std::cout << "Size: " << vchSig.size() << std::endl;
-    uint8_t rec = vchSig[0];
-    unsigned char firstPart[32];
-    unsigned char secondPart[32];
-
-    for (int i = 1; i < 33; i++) {
-        firstPart[i-1] = vchSig[i];
+    CBLSSecretKey sk;
+    if (!sk.SetHexStr(privKey)) {
+        return error("BLS Sign: Secret key must be a valid hex string of lenght %d", sk.SerSize*2);
     }
 
-    for (int i = 33; i < vchSig.size(); ++i) {
-        secondPart[i-33] = vchSig[i];
+    CBLSSignature sig = sk.Sign(messageHash);
+    if (!sig.IsValid()) {
+        return error("BLS Sign: Signature is invalid!");
     }
-
-    uint256 firstPartU;
-    uint256 secondPartU;
-    std::memcpy(&firstPartU, &firstPart, 32);
-    std::memcpy(&secondPartU, &secondPart, 32);
-
-    signedMessage.firstPart = firstPartU;
-    signedMessage.secondPart = secondPartU;
-    signedMessage.rec = rec;
+    sig.GetBuf(signedMessage);
 
     return true;
 }
 
-bool decodeSignedMessageFromFormat(std::string address, std::string message, signedMessageFormat& signedMessage, std::vector<unsigned char> &signature) {
-
-    CHashWriter ssr(SER_GETHASH, 0);
-    ssr << strMessageMagic;
-    ssr << message;
-
-    signature.push_back(signedMessage.rec);
+bool decodeSignedBLS(CBLSPublicKey &pubKey, std::string &message, std::string &signature) {
     
-    unsigned char recFirstPart[32];
-    unsigned char recSecondPart[32];
-    std::memcpy(&recFirstPart, &signedMessage.firstPart, 32);
-    std::memcpy(&recSecondPart, &signedMessage.secondPart, 32);
+    uint256 signatureHash = Hash(message.begin(), message.end());
 
-    for (int i = 0; i < 32; ++i) {
-        signature.push_back(recFirstPart[i]);
+    CBLSSignature sig;
+    sig.SetHexStr(message);
+
+
+    if (!sig.VerifyInsecure(pubKey, signatureHash)) {
+        return error("BLS Decode: Signature is invalid!");
     }
 
-    for (int i = 0; i < 32; ++i) {
-        signature.push_back(recSecondPart[i]);
-    }
-
-    CTxDestination dest = DecodeDestination(address);
-    if (!IsValidDestination(dest)) { return error("Invalid Address"); }
-
-    const CKeyID *keyID = boost::get<CKeyID>(&dest);
-    if (!keyID) { return error("Address does not refer to key"); }
-
-    CPubKey pubkey;
-    if (!pubkey.RecoverCompact(ssr.GetHash(), signature)) { return error("Failed to recover"); } 
-
-
-    if (pubkey.GetID() == *keyID) { return true; } 
-
-    return error("Signature and address doesn't match"); 
+    return true;
 }
 
 bool GetUTXOCoin(const COutPoint& outpoint, Coin& coin)
