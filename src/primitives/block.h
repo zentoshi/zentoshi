@@ -27,7 +27,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    uint384 nSignature;
+    uint768 nSignature;
 
     CBlockHeader()
     {
@@ -44,7 +44,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (this->nTime > 1924122000) {
+        if (this->nTime > 1635459550) {
             READWRITE(nSignature);
         }
     }

@@ -173,11 +173,11 @@ public:
 };
 
 /** 384-bit unsigned big integer. */
-class uint384 : public base_blob<384> {
+class uint768 : public base_blob<768> {
 public:
-    uint384() {}
-    uint384(const base_blob<384>& b) : base_blob<384>(b) {}
-    explicit uint384(const std::vector<unsigned char>& vch) : base_blob<384>(vch) {}
+    uint768() {}
+    uint768(const base_blob<768>& b) : base_blob<768>(b) {}
+    explicit uint768(const std::vector<unsigned char>& vch) : base_blob<768>(vch) {}
 
     uint256 trim256() const
     {
@@ -187,6 +187,12 @@ public:
     }
 };
 
+inline uint768 uint768S(const std::string& str)
+{
+    uint768 rv;
+    rv.SetHex(str);
+    return rv;
+}
 
 namespace std {
     template <>

@@ -380,14 +380,14 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp = null
  * returns true if private key/signature is valid, otherwise logs on debug.log
  */
 
-bool signMessageBLS(std::string &privKey, std::string &message, std::vector<unsigned char>& signedMessage);
+bool signMessageBLS(std::string &privKey, std::string &message, std::string &signedMessage);
 
 /** 
  * Verify the signature from a BLS pubkey, message and signature
  * Returns true if value, otherwise logs on debug.log
  */
 
-bool decodeSignedBLS(std::string address, std::string message, signedMessageFormat& signedMessage, std::vector<unsigned char> &signature);
+bool decodeSignedBLS(std::string address, std::string message, std::string &signature);
 
 /**
  * Closure representing one script verification

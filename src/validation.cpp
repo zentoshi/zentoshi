@@ -438,7 +438,7 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp, bool 
     return EvaluateSequenceLocks(index, lockPair);
 }
 
-bool signMessageBLS(std::string &privKey, std::string &message, std::vector<unsigned char>& signedMessage) {
+bool signMessageBLS(std::string &privKey, std::string &message, std::string &signedMessage) {
     uint256 messageHash = Hash(message.begin(), message.end());
 
     CBLSSecretKey sk;
@@ -450,7 +450,7 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::vector<unsi
     if (!sig.IsValid()) {
         return error("BLS Sign: Signature is invalid!");
     }
-    sig.GetBuf(signedMessage);
+    signedMessage = sig.ToString();
 
     return true;
 }

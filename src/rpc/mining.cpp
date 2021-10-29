@@ -39,6 +39,8 @@
 #include <memory>
 #include <stdint.h>
 
+#include <boost/lexical_cast.hpp>
+
 unsigned int ParseConfirmTarget(const UniValue& value)
 {
     int target = value.get_int();
@@ -113,12 +115,11 @@ UniValue getnetworkhashps(const JSONRPCRequest& request)
     return GetNetworkHashPS(!request.params[0].isNull() ? request.params[0].get_int() : 120, !request.params[1].isNull() ? request.params[1].get_int() : -1);
 }
 
-#if ENABLE_MINER
 UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript)
 {
     static const int nInnerLoopCount = 0x10000;
-    int nHeightEnd = 0;
-    int nHeight = 0;
+    unsigned int nHeightEnd = 0;
+    unsigned int nHeight = 0;
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
@@ -133,6 +134,16 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
+        std::string privKey = "1a884eacead8ed9885497da88e818c76fe7cc13a029b4b5f0ff03ff3953eb02f";
+        // PubKey 8ce879c5dace5cb9da8a5a7a6f63946d81d592f900b2e5d6af333822f25d4efa873a55616d2a080520b8226c401bdf09
+        std::string nHeightStr = uint256S(boost::lexical_cast<std::string>(nHeight)).GetHex();
+        std::cout << "Message: " << nHeightStr << std::endl;
+        std::cout << nHeightStr << std::endl;
+        std::string signatureStr;
+        signMessageBLS(privKey, nHeightStr, signatureStr);
+        uint768 signature;
+        std::cout << std::endl;
+        pblock->nSignature = uint768S(signatureStr);
         {
             LOCK(cs_main);
             IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
@@ -195,7 +206,6 @@ UniValue generatetoaddress(const JSONRPCRequest& request)
 
     return generateBlocks(coinbaseScript, nGenerate, nMaxTries, false);
 }
-#endif // ENABLE_MINER
 
 UniValue getmininginfo(const JSONRPCRequest& request)
 {

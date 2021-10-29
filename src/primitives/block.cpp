@@ -14,11 +14,11 @@
 
 uint256 CBlockHeader::GetHash() const
 {
-    if (this->nTime < 1924122000) {
+    if (this->nTime < 1635459550) {
         std::vector<unsigned char> vch(80);
         CVectorWriter ss(SER_NETWORK, PROTOCOL_VERSION, vch, 0);
         ss << *this;
-	    if (this->nTime < 1624122000) {
+	    if (this->nTime < 1935459550) { // OLD: 1624122000
 	    	return HashX11((const char *)vch.data(), (const char *)vch.data() + vch.size());
 	    } else {
 	    	uint256 thash;
