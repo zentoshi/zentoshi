@@ -414,7 +414,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (nTime > 1635459550) {
+        if (nTime > 1643042620) {
             READWRITE(nSignature);
         }
     }

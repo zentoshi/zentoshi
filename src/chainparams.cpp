@@ -394,12 +394,12 @@ public:
         nDefaultPort = 13476;
         nPruneAfterHeight = 1;
 
-        genesis = CreateGenesisBlock(1635459544, 451796, 0x1e0ffff0, 1, 0 * COIN);
+        genesis = CreateGenesisBlock(1619334000, 655772, 0x1e0ffff0, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         //printf("Merkle hash mainnet: %s\n", genesis.hashMerkleRoot.ToString().c_str());
         //printf("Genesis hash mainnet: %s\n", consensus.hashGenesisBlock.ToString().c_str());
         assert(genesis.hashMerkleRoot == uint256S("0xc54b432a10f01d5085395cfaf713fb4a512d4de58ef005180de44046d917fc88"));
-        assert(consensus.hashGenesisBlock == uint256S("0x00000ef1049a0b711326efd12871a55cfb44d814b800c59da131276b64f71286"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000df39444f013a2c22a9d25f74952dfc9c148dec9254a45d93ad093dad799"));
 
         // Note that of those which support the service bits prefix, most only support a subset of
         // possible options.

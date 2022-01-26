@@ -137,3 +137,5 @@ make
 # CLion
 .idea
 cmake-build-debug
+.vscode/c_cpp_properties.json
+.vscode/settings.json
