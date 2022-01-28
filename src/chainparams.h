@@ -11,6 +11,8 @@
 #include <primitives/block.h>
 #include <protocol.h>
 
+#include <bls/bls.h>
+
 #include <memory>
 #include <vector>
 
@@ -94,6 +96,7 @@ public:
     int PoolNewMaxParticipants() const { return nPoolNewMaxParticipants; }
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
     const std::vector<std::string>& SporkAddresses() const { return vSporkAddresses; }
+    const CBLSPublicKey BLSMasterPubKey() const { return vBLSMasterPubKey; }
     int MinSporkKeys() const { return nMinSporkKeys; }
     bool BIP9CheckMasternodesUpgraded() const { return fBIP9CheckMasternodesUpgraded; }
 protected:
@@ -125,6 +128,7 @@ protected:
     int nPoolNewMaxParticipants;
     int nFulfilledRequestExpireTime;
     std::vector<std::string> vSporkAddresses;
+    CBLSPublicKey vBLSMasterPubKey;
     int nMinSporkKeys;
     bool fBIP9CheckMasternodesUpgraded;
 };

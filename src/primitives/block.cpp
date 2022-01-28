@@ -11,33 +11,13 @@
 #include <utilstrencodings.h>
 #include <crypto/common.h>
 #include <crypto/balloon.h>
-#include <primitives/fastsync.h>
 
 uint256 CBlockHeader::GetHash() const
 {
-    if (this->nTime < 1643211906) {
-        if (this->nTime < 1643042620) {
-            if (this->hashMerkleRoot == uint256S("c54b432a10f01d5085395cfaf713fb4a512d4de58ef005180de44046d917fc88")) {
-                return uint256S("00000df39444f013a2c22a9d25f74952dfc9c148dec9254a45d93ad093dad799");
-            }
-            return blockHashFromData(this->hashPrevBlock);
-        }
-        std::vector<unsigned char> vch(80);
-        CVectorWriter ss(SER_NETWORK, PROTOCOL_VERSION, vch, 0);
-        ss << *this;
-	    if (this->nTime < 1624122000) { // OLD: 1624122000
-	    	return HashX11((const char *)vch.data(), (const char *)vch.data() + vch.size());
-	    } else {
-	    	uint256 thash;
-	    	alx_balloon((char*)vch.data(), &thash);
-	    	return thash;
-	    }
-    } else {
-        std::vector<unsigned char> vch(176);
-        CVectorWriter ss(SER_NETWORK, PROTOCOL_VERSION, vch, 0);
-        ss << *this;
-        return HashX11((const char *)vch.data(), (const char *)vch.data() + vch.size());
-    }
+    std::vector<unsigned char> vch(176);
+    CVectorWriter ss(SER_NETWORK, PROTOCOL_VERSION, vch, 0);
+    ss << *this;
+    return HashX11((const char *)vch.data(), (const char *)vch.data() + vch.size());
 }
 
 std::string CBlock::ToString() const

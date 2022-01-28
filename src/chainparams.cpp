@@ -37,8 +37,9 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
 
-    arith_uint256 hashTarget = arith_uint256().SetCompact(std::min(genesis.nBits, (unsigned)0x1f00ffff));
-    /*while (true) {
+    /*
+    arith_uint256 hashTarget = arith_uint256().SetCompact(genesis.nBits);
+    while (true) {
         arith_uint256 hash = UintToArith256(genesis.GetHash());
         if (hash <= hashTarget) {
             // Found a solution
@@ -48,9 +49,10 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
         genesis.nNonce += 1;
         if ((genesis.nNonce & 0x1ffff) == 0)
             printf("testing nonce: %u\n", genesis.nNonce);
-    }*/
+    }
     uint256 hash = genesis.GetHash();
     assert(UintToArith256(hash) <= hashTarget);
+    */
 
     return genesis;
 }
@@ -394,17 +396,17 @@ public:
         nDefaultPort = 13476;
         nPruneAfterHeight = 1;
 
-        genesis = CreateGenesisBlock(1619334000, 655772, 0x1e0ffff0, 1, 0 * COIN);
+        genesis = CreateGenesisBlock(1643390000, 1275111, 0x1e0ffff0, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         //printf("Merkle hash mainnet: %s\n", genesis.hashMerkleRoot.ToString().c_str());
         //printf("Genesis hash mainnet: %s\n", consensus.hashGenesisBlock.ToString().c_str());
         assert(genesis.hashMerkleRoot == uint256S("0xc54b432a10f01d5085395cfaf713fb4a512d4de58ef005180de44046d917fc88"));
-        assert(consensus.hashGenesisBlock == uint256S("0x00000df39444f013a2c22a9d25f74952dfc9c148dec9254a45d93ad093dad799"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000001fd4df98166ea6b55763cc42d02978726f086eccfeb45f3e65fb0c639fc"));
 
         // Note that of those which support the service bits prefix, most only support a subset of
         // possible options.
         // This is fine at runtime as we'll fall back to using them as a oneshot if they dont support the
-        // service bits we want, but we should get them updated to support all service bits wanted by any
+        // service bits we want, but we should get them upda}ted to support all service bits wanted by any
         // release ASAP to avoid it where possible.
         vSeeds.emplace_back("69.195.156.246");
         vSeeds.emplace_back("45.32.239.65");
@@ -451,6 +453,7 @@ public:
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
 
         vSporkAddresses = {"ZopjfnzhsN7wRjux3BWGwATMiQPoATpqxb"};
+        vBLSMasterPubKey.SetHexStr("94dfee32b10910e136782ddc01e8050b1a860cb62be0372c25818c7be63f6d3fc9c6205b6ef4f0f9a26a7722348bf74e");
         nMinSporkKeys = 1;
         fBIP9CheckMasternodesUpgraded = true;
 
@@ -567,12 +570,12 @@ public:
         nDefaultPort = 14476;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1619334000, 655772, 0x1e0ffff0, 1, 0 * COIN);
+        genesis = CreateGenesisBlock(1643391000, 2372178, 0x1e0ffff0, 1, 0 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         //printf("Merkle hash testnet: %s\n", genesis.hashMerkleRoot.ToString().c_str());
         //printf("Genesis hash testnet: %s\n", consensus.hashGenesisBlock.ToString().c_str());
         assert(genesis.hashMerkleRoot == uint256S("0xc54b432a10f01d5085395cfaf713fb4a512d4de58ef005180de44046d917fc88"));
-        assert(consensus.hashGenesisBlock == uint256S("0x00000df39444f013a2c22a9d25f74952dfc9c148dec9254a45d93ad093dad799"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000ef615d2808937f2bd39635e1536d1ea7c2fb4f9f2fbd0be821a5e6b7b48"));
 
         vFixedSeeds.clear();
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));

@@ -44,9 +44,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (this->nTime > 1635459550) {
-            READWRITE(nSignature);
-        }
+        READWRITE(nSignature);
     }
 
     void SetNull()

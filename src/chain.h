@@ -414,9 +414,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (nTime > 1643042620) {
-            READWRITE(nSignature);
-        }
+        READWRITE(nSignature);
     }
 
     uint256 GetBlockHash() const
