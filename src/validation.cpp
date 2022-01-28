@@ -470,6 +470,12 @@ bool decodeSignedBLS(CBLSPublicKey &pubKey, std::string &message, std::string &s
     return true;
 }
 
+// TODO: FIX UNDEFINED REFERENCE HERE!
+// undefined reference to `decodeSignedBLS(CBLSPublicKey const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+bool isBlockCreatorValid(const CBlock &block, const CBLSPublicKey &pubKey, int &nHeight) {
+    return decodeSignedBLS(pubKey, boost::lexical_cast<std::string>(nHeight), block.nSignature.ToString());
+}
+
 bool GetUTXOCoin(const COutPoint& outpoint, Coin& coin)
 {
     LOCK(cs_main);
@@ -2299,6 +2305,16 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         return state.DoS(0, error("ConnectBlock(ZENX): couldn't find masternode or superblock payments"),
                                 REJECT_INVALID, "bad-cb-payee");
     }
+    
+    CBLSPublicKey emptyKey = GetDMNBlockCreator(pindex->nHeight);
+    CBLSPublicKey dmnKey;
+    if (dmnKey != emptyKey) {
+        if (!isBlockCreatorValid(block, dmnKey, pindex->nHeight)) {
+            return state.DoS(0, error("ConnectBlock(ZENX): Block signer not valid."),
+                                    REJECT_INVALID, "bad-cb-payee");
+        }
+    }
+
 
     int64_t nTime5_4 = GetTimeMicros(); nTimePayeeValid += nTime5_4 - nTime5_3;
     LogPrint(BCLog::BENCHMARK, "      - IsBlockPayeeValid: %.2fms [%.2fs (%.2fms/blk)]\n", MICRO * (nTime5_4 - nTime5_3), nTimePayeeValid * MICRO, nTimePayeeValid * MILLI / nBlocksTotal);

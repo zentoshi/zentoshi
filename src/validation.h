@@ -20,6 +20,9 @@
 #include <sync.h>
 #include <versionbits.h>
 #include <spentindex.h>
+#include <bls/bls.h>
+// God bless lexical_cast
+#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 #include <exception>
@@ -387,12 +390,19 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::string &sig
  * Returns true if value, otherwise logs on debug.log
  */
 
-bool decodeSignedBLS(std::string address, std::string message, std::string &signature);
+bool decodeSignedBLS(const CBLSPublicKey &pubKey, std::string message, const std::string &signature);
+
+/**
+ * Verify the block against the dmnList operator signature
+ */
+
+bool isBlockCreatorValid(const CBlock &block, const CBLSPublicKey &pubKey, int &nHeight);
 
 /**
  * Closure representing one script verification
  * Note that this stores references to the spending transaction 
  */
+
 class CScriptCheck
 {
 private:

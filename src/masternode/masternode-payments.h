@@ -11,6 +11,8 @@
 #include <net_processing.h>
 #include <utilstrencodings.h>
 
+#include <bls/bls.h>
+
 #include <evo/deterministicmns.h>
 
 class CMasternodePayments;
@@ -18,6 +20,7 @@ class CMasternodePayments;
 /// TODO: all 4 functions do not belong here really, they should be refactored/moved somewhere (main.cpp ?)
 bool IsBlockValueValid(const CBlock& block, int nBlockHeight, CAmount blockReward, std::string& strErrorRet);
 bool IsBlockPayeeValid(const CTransaction& txNew, int nBlockHeight, CAmount blockReward);
+CBLSPublicKey GetDMNBlockCreator(int nBlockHeight);
 void FillBlockPayments(CMutableTransaction& txNew, int nBlockHeight, CAmount blockReward, std::vector<CTxOut>& voutMasternodePaymentsRet, std::vector<CTxOut>& voutSuperblockPaymentsRet);
 std::map<int, std::string> GetRequiredPaymentsStrings(int nStartHeight, int nEndHeight);
 
@@ -33,7 +36,6 @@ class CMasternodePayments
 public:
     bool GetBlockTxOuts(int nBlockHeight, CAmount blockReward, std::vector<CTxOut>& voutMasternodePaymentsRet) const;
     bool IsTransactionValid(const CTransaction& txNew, int nBlockHeight, CAmount blockReward) const;
-
     bool GetMasternodeTxOuts(int nBlockHeight, CAmount blockReward, std::vector<CTxOut>& voutMasternodePaymentsRet) const;
 };
 

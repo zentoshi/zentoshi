@@ -17,6 +17,8 @@
 
 #include <evo/deterministicmns.h>
 
+#include <boost/lexical_cast.hpp>
+
 #include <string>
 
 CMasternodePayments mnpayments;
@@ -388,4 +390,31 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
         }
     }
     return true;
+}
+
+CBLSPublicKey GetDMNBlockCreator(int nBlockHeight) {
+    if (!deterministicMNManager->IsDIP3Enforced(nBlockHeight)) {
+        // can't verify historical blocks here
+        LogPrint(BCLog::MNPAYMENTS, "%s -- WARNING: DIP3 Not enforced, skipping checks for block: %i\n", __func__, nBlockHeight);
+        CBLSPublicKey emptyKey;
+        emptyKey;
+        return emptyKey;
+    }
+
+    const CBlockIndex* pindex;
+    int nReallocActivationHeight{std::numeric_limits<int>::max()};
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+
+    {
+        LOCK(cs_main);
+        pindex = chainActive[nBlockHeight - 1];
+
+        if (VersionBitsState(pindex, consensusParams, Consensus::DEPLOYMENT_REALLOC, versionbitscache) == THRESHOLD_ACTIVE) {
+            nReallocActivationHeight = VersionBitsStateSinceHeight(pindex, consensusParams, Consensus::DEPLOYMENT_REALLOC, versionbitscache);
+        }
+    }
+
+    // Get who should be the signer for this block.
+    auto dmnSigner = deterministicMNManager->GetListForBlock(pindex).GetMNPayee()->pdmnState->pubKeyOperator.Get();
+    return dmnSigner;
 }
