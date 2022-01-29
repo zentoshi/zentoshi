@@ -390,13 +390,13 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::string &sig
  * Returns true if value, otherwise logs on debug.log
  */
 
-bool decodeSignedBLS(const CBLSPublicKey &pubKey, std::string message, const std::string &signature);
+bool decodeSignedBLS(const CBLSPublicKey &pubKey, const std::string &message, const std::string &signature);
 
 /**
  * Verify the block against the dmnList operator signature
  */
 
-bool isBlockCreatorValid(const CBlock &block, const CBLSPublicKey &pubKey, int &nHeight);
+bool isBlockCreatorValid(CBlock block, CBLSPublicKey pubKey, int &nHeight);
 
 /**
  * Closure representing one script verification

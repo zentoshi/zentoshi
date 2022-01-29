@@ -392,13 +392,16 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
     return true;
 }
 
-CBLSPublicKey GetDMNBlockCreator(int nBlockHeight) {
+bool isBlockCreatorValid(const CBlock& block, const int & nBlockHeight) {
     if (!deterministicMNManager->IsDIP3Enforced(nBlockHeight)) {
         // can't verify historical blocks here
         LogPrint(BCLog::MNPAYMENTS, "%s -- WARNING: DIP3 Not enforced, skipping checks for block: %i\n", __func__, nBlockHeight);
-        CBLSPublicKey emptyKey;
-        emptyKey;
-        return emptyKey;
+        return true;
+    }
+
+    if (block.GetHash() == Params().GenesisBlock().GetHash()) {
+        // Genesis
+        return true;
     }
 
     const CBlockIndex* pindex;
@@ -416,5 +419,18 @@ CBLSPublicKey GetDMNBlockCreator(int nBlockHeight) {
 
     // Get who should be the signer for this block.
     auto dmnSigner = deterministicMNManager->GetListForBlock(pindex).GetMNPayee()->pdmnState->pubKeyOperator.Get();
-    return dmnSigner;
+
+    if (decodeSignedBLS(Params().BLSMasterPubKey(), boost::lexical_cast<std::string>(nBlockHeight), block.nSignature.ToString())) {
+        // Block created by the master BLS Public Key, accept it
+        LogPrint(BCLog::MNPAYMENTS, "%s -- WARNING: Block %i created by MasterPubKey\n", __func__, nBlockHeight);
+        return true;
+    }
+    
+    if (decodeSignedBLS(dmnSigner, boost::lexical_cast<std::string>(nBlockHeight), block.nSignature.ToString())) {
+        // Block normally accepted
+        return true;
+    }
+
+    LogPrint(BCLog::MNPAYMENTS, "%s -- ERROR: BLOCK %i SIGNATURE WAS REJECTED\n", __func__, nBlockHeight);
+    return false;
 }

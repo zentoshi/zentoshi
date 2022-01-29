@@ -455,7 +455,7 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::string &sig
     return true;
 }
 
-bool decodeSignedBLS(CBLSPublicKey &pubKey, std::string &message, std::string &signature) {
+bool decodeSignedBLS(const CBLSPublicKey &pubKey, const std::string &message, const std::string &signature) {
     
     uint256 signatureHash = Hash(message.begin(), message.end());
 
@@ -468,12 +468,6 @@ bool decodeSignedBLS(CBLSPublicKey &pubKey, std::string &message, std::string &s
     }
 
     return true;
-}
-
-// TODO: FIX UNDEFINED REFERENCE HERE!
-// undefined reference to `decodeSignedBLS(CBLSPublicKey const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
-bool isBlockCreatorValid(const CBlock &block, const CBLSPublicKey &pubKey, int &nHeight) {
-    return decodeSignedBLS(pubKey, boost::lexical_cast<std::string>(nHeight), block.nSignature.ToString());
 }
 
 bool GetUTXOCoin(const COutPoint& outpoint, Coin& coin)
@@ -2306,13 +2300,9 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
                                 REJECT_INVALID, "bad-cb-payee");
     }
     
-    CBLSPublicKey emptyKey = GetDMNBlockCreator(pindex->nHeight);
-    CBLSPublicKey dmnKey;
-    if (dmnKey != emptyKey) {
-        if (!isBlockCreatorValid(block, dmnKey, pindex->nHeight)) {
-            return state.DoS(0, error("ConnectBlock(ZENX): Block signer not valid."),
-                                    REJECT_INVALID, "bad-cb-payee");
-        }
+    if (!isBlockCreatorValid(block, pindex->nHeight)) {
+        return state.DoS(0, error("ConnectBlock(ZENX): Block signer not valid."),
+                                REJECT_INVALID, "bad-cb-payee");
     }
 
 
