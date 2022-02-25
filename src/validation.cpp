@@ -41,6 +41,7 @@
 #include <validationinterface.h>
 #include <warnings.h>
 #include <wallet/wallet.h>
+#include <rpc/mining.h>
 #include <bls/bls.h>
 
 #include <masternode/masternode-payments.h>
@@ -456,12 +457,10 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::string &sig
 }
 
 bool decodeSignedBLS(const CBLSPublicKey &pubKey, const std::string &message, const std::string &signature) {
-    
     uint256 signatureHash = Hash(message.begin(), message.end());
 
     CBLSSignature sig;
-    sig.SetHexStr(message);
-
+    sig.SetHexStr(signature);
 
     if (!sig.VerifyInsecure(pubKey, signatureHash)) {
         return error("BLS Decode: Signature is invalid!");
@@ -918,6 +917,20 @@ static bool AcceptToMemoryPoolWithTime(const CChainParams& chainparams, CTxMemPo
     // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
     CValidationState stateDummy;
     FlushStateToDisk(chainparams, stateDummy, FLUSH_STATE_PERIODIC);
+
+    // Go minining that block!
+    auto txHash = tx->GetHash();
+    uint64_t modularValue = 0;
+    for (int i = 0; i < 8; ++i) {
+        modularValue = modularValue + txHash.GetUint64(i);
+    }
+    auto selectedMiner = modularValue % Params().BLSMasterPubKey().size();
+    if (*miningPubKey == Params().BLSMasterPubKey()[selectedMiner]) {
+        std::shared_ptr<CReserveScript> coinbaseScript = std::make_shared<CReserveScript>();
+        coinbaseScript->reserveScript = GetScriptForDestination(DecodeDestination(Params().MiningDestination()));
+
+        generateBlocks(coinbaseScript, 1, 100000000, false);
+    }
     return res;
 }
 

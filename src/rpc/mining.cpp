@@ -41,6 +41,9 @@
 
 #include <boost/lexical_cast.hpp>
 
+std::unique_ptr<std::string> miningPrivKey;
+std::unique_ptr<CBLSPublicKey> miningPubKey;
+
 unsigned int ParseConfirmTarget(const UniValue& value)
 {
     int target = value.get_int();
@@ -123,6 +126,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
+        chainActive.Height();
         nHeight = chainActive.Height();
         nHeightEnd = nHeight+nGenerate;
     }
@@ -130,20 +134,13 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
     UniValue blockHashes(UniValue::VARR);
     while (nHeight < nHeightEnd)
     {
-        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript));
+        std::string nHeightStr = uint256S(boost::lexical_cast<std::string>(nHeight+1)).GetHex();
+        std::string signatureStr;
+        signMessageBLS(*miningPrivKey, nHeightStr, signatureStr);
+        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript, signatureStr));
+        CBlock *pblock = &pblocktemplate->block;
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
-        CBlock *pblock = &pblocktemplate->block;
-        std::string privKey = "1a884eacead8ed9885497da88e818c76fe7cc13a029b4b5f0ff03ff3953eb02f";
-        // PubKey 8ce879c5dace5cb9da8a5a7a6f63946d81d592f900b2e5d6af333822f25d4efa873a55616d2a080520b8226c401bdf09
-        std::string nHeightStr = uint256S(boost::lexical_cast<std::string>(nHeight)).GetHex();
-        std::cout << "Message: " << nHeightStr << std::endl;
-        std::cout << nHeightStr << std::endl;
-        std::string signatureStr;
-        signMessageBLS(privKey, nHeightStr, signatureStr);
-        uint768 signature;
-        std::cout << std::endl;
-        pblock->nSignature = uint768S(signatureStr);
         {
             LOCK(cs_main);
             IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);

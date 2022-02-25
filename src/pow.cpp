@@ -240,6 +240,9 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, uint32_t nTime, const Co
     bool fOverflow;
     arith_uint256 bnTarget;
 
+    // It doesn't need to check anything on the hash itself...
+    return true;
+
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
     if (nTime < params.BallonStartTime)
@@ -248,6 +251,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, uint32_t nTime, const Co
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powBalloonLimit))
 	return false;
 
+    // It doesn't need to check...
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget)
         return false;

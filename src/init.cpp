@@ -34,6 +34,7 @@
 #include <rpc/register.h>
 #include <rpc/safemode.h>
 #include <rpc/blockchain.h>
+#include <rpc/mining.h>
 #include <script/standard.h>
 #include <script/sigcache.h>
 #include <scheduler.h>
@@ -622,6 +623,7 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += HelpMessageGroup(_("Masternode options:"));
     strUsage += HelpMessageOpt("-masternodeblsprivkey=<hex>", _("Set the masternode BLS private key and enable the client to act as a masternode"));
+    strUsage += HelpMessageOpt("-deterministicMiningKey=<hex>" , _("Set the BLS private key for mining"));
 
     strUsage += HelpMessageGroup(_("InstantSend options:"));
     strUsage += HelpMessageOpt("-instantsendnotify=<cmd>", _("Execute command when a wallet InstantSend transaction is successfully locked (%s in cmd is replaced by TxID)"));
@@ -1504,7 +1506,7 @@ bool AppInitParameterInteraction()
         InitWarning(_("-masternode option is deprecated and ignored, specifying -masternodeblsprivkey is enough to start this node as a masternode."));
     }
 
-    if (gArgs.IsArgSet("-masternodeblsprivkey")) {
+    if (gArgs.IsArgSet("-masternodeblsprivkey") || gArgs.IsArgSet("-deterministicMiningKey")) {
         if (!gArgs.GetBoolArg("-listen", DEFAULT_LISTEN) && Params().RequireRoutableExternalIP()) {
             return InitError("Masternode must accept connections from outside, set -listen=1");
         }
@@ -2101,6 +2103,21 @@ bool AppInitMain()
         activeMasternodeInfo.blsPubKeyOperator = std::make_unique<CBLSPublicKey>(activeMasternodeInfo.blsKeyOperator->GetPublicKey());
         LogPrintf("MASTERNODE:\n");
         LogPrintf("  blsPubKeyOperator: %s\n", keyOperator.GetPublicKey().ToString());
+    }
+
+    // ********************************************************* Step 10b: Prepare Deterministic Mining related stuff
+
+    std::string strMiningPrivKey = gArgs.GetArg("-deterministicMiningKey", "");
+
+    if (!strMiningPrivKey.empty()) {
+        auto binKey = ParseHex(strMiningPrivKey);
+        CBLSSecretKey miningKey;
+        miningKey.SetBuf(binKey);
+        if (!miningKey.IsValid()) {
+            return InitError(_("Invalid deterministicMiningKey."));
+        }
+        miningPubKey = std::make_unique<CBLSPublicKey>(miningKey.GetPublicKey());
+        miningPrivKey = std::make_unique<std::string>(strMiningPrivKey);
     }
 
     if(fMasternodeMode) {
