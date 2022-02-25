@@ -27,6 +27,7 @@
 #include <utilstrencodings.h>
 #include <validationinterface.h>
 #include <warnings.h>
+#include <timedata.h>
 
 #include <governance/governance-classes.h>
 #include <masternode/masternode-payments.h>
@@ -40,6 +41,7 @@
 #include <stdint.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
 
 std::unique_ptr<std::string> miningPrivKey;
 std::unique_ptr<CBLSPublicKey> miningPubKey;
@@ -168,6 +170,79 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
         }
     }
     return blockHashes;
+}
+// TODO: move this to miner.cpp?
+
+void deterministicMiningThread(std::string privKey, CBLSPublicKey pubKey) {
+    unsigned int nHeight = 0;
+    unsigned int lastBlockTime = 0;
+    uint256 lastBlockHash;
+    while (true) {
+        {   // Don't keep cs_main locked
+            LOCK(cs_main);
+            chainActive.Height();
+            nHeight = chainActive.Height();
+            lastBlockTime = chainActive.Tip()->nTime;
+            lastBlockHash = chainActive.Tip()->GetBlockHash();
+        }
+        // Every 5 seconds == new block.
+        if (lastBlockTime + 5 >= GetAdjustedTime()) {
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(250));
+            continue;
+        }
+        // Check if this miner was choosen.
+        uint32_t mod;
+        for (auto i = 0; i < 8; ++i) {
+            mod = mod + lastBlockHash.GetUint64(i);
+        }
+        mod = mod % Params().BLSMasterPubKey().size();
+        if (!(pubKey == Params().BLSMasterPubKey()[mod])) {
+            // We are not the miner for this block... sad :(
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(250));
+            continue;
+        }
+
+        std::shared_ptr<CReserveScript> coinbaseScript = std::make_shared<CReserveScript>();
+        coinbaseScript->reserveScript = GetScriptForDestination(DecodeDestination(Params().MiningDestination()));
+
+        generateBlocks(coinbaseScript, 1, 1000000, false);
+    }
+}
+
+UniValue deterministicMine(const JSONRPCRequest& request) {
+
+        if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            "startdeterministicmining\n"
+            "\nStarts deterministic Mining on this node."
+        );
+
+        // Check if mining key was found in this wallet.
+        bool keyFound;
+        for (auto key : Params().BLSMasterPubKey()) {
+            if (key == *miningPubKey) {
+                keyFound = true;
+                break;
+            }
+        }
+
+        if (!keyFound) {
+            throw std::runtime_error(
+                "startdeterministicmining\n"
+                "Key not found."
+            );
+        }
+        // Take values out of pointers to use in our thread.
+        std::string privKey = *miningPrivKey;
+        CBLSPublicKey pubKey = *miningPubKey;
+        
+        // Start thread...
+        boost::thread minerThread(&deterministicMiningThread, privKey, pubKey);
+        minerThread.detach();
+
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("Started",           (bool)true));
+        return obj;
 }
 
 UniValue generatetoaddress(const JSONRPCRequest& request)
@@ -1006,22 +1081,23 @@ UniValue estimaterawfee(const JSONRPCRequest& request)
 }
 
 static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         argNames
-  //  --------------------- ------------------------  -----------------------  ----------
-    { "mining",             "getnetworkhashps",       &getnetworkhashps,       {"nblocks","height"} },
-    { "mining",             "getmininginfo",          &getmininginfo,          {} },
-    { "mining",             "prioritisetransaction",  &prioritisetransaction,  {"txid","fee_delta"} },
-    { "mining",             "getblocktemplate",       &getblocktemplate,       {"template_request"} },
-    { "mining",             "submitblock",            &submitblock,            {"hexdata","dummy"} },
+{ //  category              name                        actor (function)         argNames
+  //  --------------------- ------------------------    -----------------------  ----------
+    { "mining",             "getnetworkhashps",         &getnetworkhashps,       {"nblocks","height"} },
+    { "mining",             "getmininginfo",            &getmininginfo,          {} },
+    { "mining",             "prioritisetransaction",    &prioritisetransaction,  {"txid","fee_delta"} },
+    { "mining",             "getblocktemplate",         &getblocktemplate,       {"template_request"} },
+    { "mining",             "submitblock",              &submitblock,            {"hexdata","dummy"} },
 
 #if ENABLE_MINER
-    { "generating",         "generatetoaddress",      &generatetoaddress,      {"nblocks","address","maxtries"} },
+    { "generating",         "generatetoaddress",        &generatetoaddress,      {"nblocks","address","maxtries"} },
+    { "generating",         "startdeterministicmining", &deterministicMine,      {} },
 #endif // ENABLE_MINER
 
-    { "util",               "estimatefee",            &estimatefee,            {"nblocks"} },
-    { "util",               "estimatesmartfee",       &estimatesmartfee,       {"conf_target", "estimate_mode"} },
-
-    { "hidden",             "estimaterawfee",         &estimaterawfee,         {"conf_target", "threshold"} },
+    { "util",               "estimatefee",              &estimatefee,            {"nblocks"} },
+    { "util",               "estimatesmartfee",         &estimatesmartfee,       {"conf_target", "estimate_mode"} },
+ 
+    { "hidden",             "estimaterawfee",           &estimaterawfee,         {"conf_target", "threshold"} },
 };
 
 void RegisterMiningRPCCommands(CRPCTable &t)
