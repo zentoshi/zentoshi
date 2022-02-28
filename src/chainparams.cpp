@@ -394,7 +394,7 @@ public:
         pchMessageStart[1] = 0xcc;
         pchMessageStart[2] = 0xab;
         pchMessageStart[3] = 0xbd;
-        nDefaultPort = 13476;
+        nDefaultPort = 15462;
         nPruneAfterHeight = 1;
 
         genesis = CreateGenesisBlock(1643390000, 1275111, 0x1e0ffff0, 1, 0 * COIN);
@@ -409,7 +409,7 @@ public:
         // This is fine at runtime as we'll fall back to using them as a oneshot if they dont support the
         // service bits we want, but we should get them upda}ted to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-        vSeeds.emplace_back("69.195.156.246");
+        vSeeds.emplace_back("66.85.72.85");
         vSeeds.emplace_back("45.32.239.65");
         vSeeds.emplace_back("66.42.91.38");
         vSeeds.emplace_back("149.28.197.118");

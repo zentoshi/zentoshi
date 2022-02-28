@@ -444,12 +444,14 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::string &sig
 
     CBLSSecretKey sk;
     if (!sk.SetHexStr(privKey)) {
-        return error("BLS Sign: Secret key must be a valid hex string of lenght %d", sk.SerSize*2);
+        LogPrintf("BLS Sign: Secret key must be a valid hex string of lenght %d", sk.SerSize*2);
+        return false;
     }
 
     CBLSSignature sig = sk.Sign(messageHash);
     if (!sig.IsValid()) {
-        return error("BLS Sign: Signature is invalid!");
+        LogPrintf("BLS Sign: Signature is invalid!");
+        return false;
     }
     signedMessage = sig.ToString();
 
@@ -463,7 +465,9 @@ bool decodeSignedBLS(const CBLSPublicKey &pubKey, const std::string &message, co
     sig.SetHexStr(signature);
 
     if (!sig.VerifyInsecure(pubKey, signatureHash)) {
-        return error("BLS Decode: Signature is invalid!");
+        std::string signatureInformation = std::string("BLS Decode: Signature is invalid! ") + "pubKey: " + std::string(pubKey.ToString()) + " Message: " + message + " Signature: " + signature;
+        LogPrintf(signatureInformation.c_str());
+        return false;
     }
 
     return true;

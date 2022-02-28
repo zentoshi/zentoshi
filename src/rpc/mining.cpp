@@ -120,6 +120,24 @@ UniValue getnetworkhashps(const JSONRPCRequest& request)
     return GetNetworkHashPS(!request.params[0].isNull() ? request.params[0].get_int() : 120, !request.params[1].isNull() ? request.params[1].get_int() : -1);
 }
 
+class submitblock_StateCatcher : public CValidationInterface
+{
+public:
+    uint256 hash;
+    bool found;
+    CValidationState state;
+
+    explicit submitblock_StateCatcher(const uint256 &hashIn) : hash(hashIn), found(false), state() {}
+
+protected:
+    void BlockChecked(const CBlock& block, const CValidationState& stateIn) override {
+        if (block.GetHash() != hash)
+            return;
+        found = true;
+        state = stateIn;
+    }
+};
+
 UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript)
 {
     static const int nInnerLoopCount = 0x10000;
@@ -158,8 +176,14 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
             continue;
         }
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
-        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr))
+        
+        submitblock_StateCatcher sc(pblock->GetHash());
+        RegisterValidationInterface(&sc);
+        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr)) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+            UnregisterValidationInterface(&sc);
+        }
+        UnregisterValidationInterface(&sc);
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
 
@@ -797,24 +821,6 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
     return result;
 }
-
-class submitblock_StateCatcher : public CValidationInterface
-{
-public:
-    uint256 hash;
-    bool found;
-    CValidationState state;
-
-    explicit submitblock_StateCatcher(const uint256 &hashIn) : hash(hashIn), found(false), state() {}
-
-protected:
-    void BlockChecked(const CBlock& block, const CValidationState& stateIn) override {
-        if (block.GetHash() != hash)
-            return;
-        found = true;
-        state = stateIn;
-    }
-};
 
 UniValue submitblock(const JSONRPCRequest& request)
 {
