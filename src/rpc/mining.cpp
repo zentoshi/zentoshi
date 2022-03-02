@@ -43,8 +43,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 
-std::unique_ptr<std::string> miningPrivKey;
-std::unique_ptr<CBLSPublicKey> miningPubKey;
+std::unique_ptr<CBitcoinSecret> miningPrivKey;
+std::unique_ptr<std::string> miningPubKey;
 
 unsigned int ParseConfirmTarget(const UniValue& value)
 {
@@ -155,9 +155,12 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
     while (nHeight < nHeightEnd)
     {
         std::string nHeightStr = uint256S(boost::lexical_cast<std::string>(nHeight+1)).GetHex();
-        std::string signatureStr;
-        signMessageBLS(*miningPrivKey, nHeightStr, signatureStr);
-        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript, signatureStr));
+        uint520 signature;
+        signMessageFromPrivateKey(*miningPrivKey, nHeightStr, signature);
+
+        std::cout << nHeightStr << std::endl;
+        std::cout << signature.ToString() << std::endl;
+        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript, signature));
         CBlock *pblock = &pblocktemplate->block;
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
@@ -197,7 +200,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
 }
 // TODO: move this to miner.cpp?
 
-void deterministicMiningThread(std::string privKey, CBLSPublicKey pubKey) {
+void deterministicMiningThread(CBitcoinSecret privKey, std::string pubKey) {
     unsigned int nHeight = 0;
     unsigned int lastBlockTime = 0;
     uint256 lastBlockHash;
@@ -219,8 +222,8 @@ void deterministicMiningThread(std::string privKey, CBLSPublicKey pubKey) {
         for (auto i = 0; i < 8; ++i) {
             mod = mod + lastBlockHash.GetUint64(i);
         }
-        mod = mod % Params().BLSMasterPubKey().size();
-        if (!(pubKey == Params().BLSMasterPubKey()[mod])) {
+        mod = mod % Params().masterMiningKeys().size();
+        if (!(pubKey == Params().masterMiningKeys()[mod])) {
             // We are not the miner for this block... sad :(
             boost::this_thread::sleep_for(boost::chrono::milliseconds(250));
             continue;
@@ -243,7 +246,7 @@ UniValue deterministicMine(const JSONRPCRequest& request) {
 
         // Check if mining key was found in this wallet.
         bool keyFound;
-        for (auto key : Params().BLSMasterPubKey()) {
+        for (auto key : Params().masterMiningKeys()) {
             if (key == *miningPubKey) {
                 keyFound = true;
                 break;
@@ -257,8 +260,8 @@ UniValue deterministicMine(const JSONRPCRequest& request) {
             );
         }
         // Take values out of pointers to use in our thread.
-        std::string privKey = *miningPrivKey;
-        CBLSPublicKey pubKey = *miningPubKey;
+        CBitcoinSecret privKey = *miningPrivKey;
+        std::string pubKey = *miningPubKey;
         
         // Start thread...
         boost::thread minerThread(&deterministicMiningThread, privKey, pubKey);

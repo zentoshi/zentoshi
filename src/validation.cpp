@@ -257,7 +257,7 @@ static void CheckBlockIndex(const Consensus::Params& consensusParams);
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const std::string strMessageMagic = "DarkCoin Signed Message:\n";
+const std::string strMessageMagic = "Zentoshi Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -473,6 +473,56 @@ bool decodeSignedBLS(const CBLSPublicKey &pubKey, const std::string &message, co
     return true;
 }
 
+bool signMessageFromPrivateKey(CBitcoinSecret &vchSecret, std::string &message, uint520 &signature) {
+    
+    CKey key = vchSecret.GetKey();
+    if (!key.IsValid()) {
+        LogPrintf("ERROR: Invalid key while signing!");
+        return false;
+    }
+
+    CHashWriter ss(SER_GETHASH, 0);
+    ss << strMessageMagic;
+    ss << message;
+
+    std::vector<unsigned char> vchSig;
+    if (!key.SignCompact(ss.GetHash(), vchSig)) {
+        LogPrintf("ERROR: Sign Failed!");
+        return false;
+    }
+    
+    uint520 newSignature(vchSig);
+    signature = newSignature;
+
+    return true;
+}
+
+bool decodeSignedMessage(const std::string address, std::string message, uint520 signature) {
+    CTxDestination destination = DecodeDestination(address);
+    if (!IsValidDestination(destination)) {
+        LogPrintf("ERROR: Invalid destination!");
+        return false;
+    }
+
+    const CKeyID *keyID = boost::get<CKeyID>(&destination);
+    if (!keyID) {
+        LogPrintf("ERROR: Address does not refer to key");
+        return false;
+    }
+
+    std::vector<unsigned char> vchSig;
+    vchSig = signature.ToVector();
+
+    CHashWriter ss(SER_GETHASH, 0);
+    ss << strMessageMagic;
+    ss << message;
+
+    CPubKey pubkey;
+    if (!pubkey.RecoverCompact(ss.GetHash(), vchSig))
+        return false;
+
+    return (pubkey.GetID() == *keyID);
+}
 bool GetUTXOCoin(const COutPoint& outpoint, Coin& coin)
 {
     LOCK(cs_main);
@@ -921,20 +971,7 @@ static bool AcceptToMemoryPoolWithTime(const CChainParams& chainparams, CTxMemPo
     // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
     CValidationState stateDummy;
     FlushStateToDisk(chainparams, stateDummy, FLUSH_STATE_PERIODIC);
-
-    // Go minining that block!
-    auto txHash = tx->GetHash();
-    uint64_t modularValue = 0;
-    for (int i = 0; i < 8; ++i) {
-        modularValue = modularValue + txHash.GetUint64(i);
-    }
-    auto selectedMiner = modularValue % Params().BLSMasterPubKey().size();
-    if (*miningPubKey == Params().BLSMasterPubKey()[selectedMiner]) {
-        std::shared_ptr<CReserveScript> coinbaseScript = std::make_shared<CReserveScript>();
-        coinbaseScript->reserveScript = GetScriptForDestination(DecodeDestination(Params().MiningDestination()));
-
-        generateBlocks(coinbaseScript, 1, 100000000, false);
-    }
+    
     return res;
 }
 
@@ -2313,11 +2350,13 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
     LogPrint(BCLog::BENCHMARK, "      - IsBlockValueValid: %.2fms [%.2fs (%.2fms/blk)]\n", MICRO * (nTime5_3 - nTime5_2), nTimeValueValid * MICRO, nTimeValueValid * MILLI / nBlocksTotal);
 
     if (!IsBlockPayeeValid(*block.vtx[0], pindex->nHeight, blockReward)) {
+        std::cout << "Here lol" << std::endl;
         return state.DoS(0, error("ConnectBlock(ZENX): couldn't find masternode or superblock payments"),
                                 REJECT_INVALID, "bad-cb-payee");
     }
     
     if (!isBlockCreatorValid(block, pindex->nHeight)) {
+        std::cout << "Dumb" << std::endl;
         return state.DoS(0, error("ConnectBlock(ZENX): Block signer not valid."),
                                 REJECT_INVALID, "bad-cb-payee");
     }

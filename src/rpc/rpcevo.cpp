@@ -1327,6 +1327,7 @@ UniValue _bls_sign(const JSONRPCRequest& request) {
     }
     sig.GetBuf(vchSig);
 
+    std::cout << vchSig.size() << std::endl;
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("signature", sig.ToString()));
     return ret;

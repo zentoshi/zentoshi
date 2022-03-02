@@ -53,6 +53,7 @@ public:
     void SetHex(const char* psz);
     void SetHex(const std::string& str);
     std::string ToString() const;
+    std::vector<unsigned char> ToVector();
 
     unsigned char* begin()
     {
@@ -172,7 +173,7 @@ public:
     }
 };
 
-/** 384-bit unsigned big integer. */
+/** 768-bit unsigned big integer. */
 class uint768 : public base_blob<768> {
 public:
     uint768() {}
@@ -190,6 +191,28 @@ public:
 inline uint768 uint768S(const std::string& str)
 {
     uint768 rv;
+    rv.SetHex(str);
+    return rv;
+}
+
+/** 520-bit unsigned big integer. */
+class uint520 : public base_blob<520> {
+public:
+    uint520() {}
+    uint520(const base_blob<520>& b) : base_blob<520>(b) {}
+    explicit uint520(const std::vector<unsigned char>& vch) : base_blob<520>(vch) {}
+
+    uint256 trim256() const
+    {
+        uint256 result;
+        memcpy((void*)&result, (void*)data, 32);
+        return result;
+    }
+};
+
+inline uint520 uint520S(const std::string& str)
+{
+    uint520 rv;
     rv.SetHex(str);
     return rv;
 }

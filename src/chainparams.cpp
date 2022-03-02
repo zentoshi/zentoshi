@@ -454,17 +454,16 @@ public:
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
 
         vSporkAddresses = {"ZopjfnzhsN7wRjux3BWGwATMiQPoATpqxb"};
-        std::vector<std::string> publicKeysList = {
-            "010fee1ee6c97380f565d2dffc2178ebba116e2bd8e7a9af94edf96f701c210ebf45a4036c1e1f2fbcb6050fbb76c187",
-            "131bcc96b025a8a5984f897fb601aadd0208ce20291dcf5ccdf26842f5529849732b0c00258adfa9eec1b6e3742b1f82",
-            "91c21f5ecc03c1e4d76447f363c1e418d9082110e8369c9aeba1b73579693164dd1efeed89a5df5a7ab8918dc114b160",
-            "0709e68a56f2fddfda5eb9bcc4c576b5aa882ccdfb1557068562495a89b202fcdb43e6e2eae58f92e6b9304682e8aeac",
-            "8a4f523e6ab5f6a64c4120b9c66365b69db5a2e09bd8f578b109d950493786c486f3a68e08051026e3fde1ad4e00a3f7"
+        std::vector<std::string> vTempMasterKeys = {
+            "ZgQCeVoMNES5ptdNJMEWqCLuNnMHMed2CE",
+            "ZhFopmir23pd9PrAnwbDytdB2sPiRy7Adq",
+            "Zv2pNE3RhnAHS89zVsMxinz6vpwzpmgo6Z",
+            "Zii7VLDL3FgU34QDUiG53AJPp7PqJjSEWF",
+            "ZqJ2DSVWvMg1J54zH2rBn1XESizHVH4868"
         };
-        for (auto pubkey : publicKeysList) {
-            CBLSPublicKey masterKey;
-            masterKey.SetHexStr(pubkey);
-            vBLSMasterPubKey.push_back(masterKey);
+
+        for (auto address : vTempMasterKeys) {
+            vMasterMiningKeys.push_back(address);
         }
         deterministicMiningTarget = "ZfR7D86xEUJJcpUFvNGWES8vRKzgKjSiFZ";
         nMinSporkKeys = 1;

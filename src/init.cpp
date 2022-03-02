@@ -46,6 +46,7 @@
 #include <util.h>
 #include <utilmoneystr.h>
 #include <validationinterface.h>
+#include <base58.h>
 
 #include <masternode/activemasternode.h>
 #include <dsnotificationinterface.h>
@@ -2110,14 +2111,13 @@ bool AppInitMain()
     std::string strMiningPrivKey = gArgs.GetArg("-deterministicMiningKey", "");
 
     if (!strMiningPrivKey.empty()) {
-        auto binKey = ParseHex(strMiningPrivKey);
-        CBLSSecretKey miningKey;
-        miningKey.SetBuf(binKey);
-        if (!miningKey.IsValid()) {
-            return InitError(_("Invalid deterministicMiningKey."));
-        }
-        miningPubKey = std::make_unique<CBLSPublicKey>(miningKey.GetPublicKey());
-        miningPrivKey = std::make_unique<std::string>(strMiningPrivKey);
+        CBitcoinSecret miningKey;
+        miningKey.SetString(strMiningPrivKey);
+        CKeyID pubKeyID = miningKey.GetKey().GetPubKey().GetID();
+
+        std::string pubKey = EncodeDestination(pubKeyID);
+        miningPubKey = std::make_unique<std::string>(pubKey);
+        miningPrivKey = std::make_unique<CBitcoinSecret>(miningKey);
     }
 
     if(fMasternodeMode) {

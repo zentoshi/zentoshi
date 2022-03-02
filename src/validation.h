@@ -21,6 +21,7 @@
 #include <versionbits.h>
 #include <spentindex.h>
 #include <bls/bls.h>
+#include <base58.h>
 // God bless lexical_cast
 #include <boost/lexical_cast.hpp>
 
@@ -392,6 +393,21 @@ bool signMessageBLS(std::string &privKey, std::string &message, std::string &sig
 
 bool decodeSignedBLS(const CBLSPublicKey &pubKey, const std::string &message, const std::string &signature);
 
+
+/**
+ * Signs a message using simple private keys.
+ * return signed uint520 of message on reference.
+ */
+
+bool signMessageFromPrivateKey(CBitcoinSecret &vchSecret, std::string &message, uint520 &signature);
+
+
+/** 
+ * Check the signature comparing it againsn't a given address
+ * returns true if valid
+ */
+
+bool decodeSignedMessage(const std::string address, std::string message, uint520 signature);
 /**
  * Verify the block against the dmnList operator signature
  */

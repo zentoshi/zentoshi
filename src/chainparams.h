@@ -96,7 +96,7 @@ public:
     int PoolNewMaxParticipants() const { return nPoolNewMaxParticipants; }
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
     const std::vector<std::string>& SporkAddresses() const { return vSporkAddresses; }
-    const std::vector<CBLSPublicKey> BLSMasterPubKey() const { return vBLSMasterPubKey; }
+    const std::vector<std::string> masterMiningKeys() const { return vMasterMiningKeys; }
     const std::string MiningDestination() const { return deterministicMiningTarget; }
     int MinSporkKeys() const { return nMinSporkKeys; }
     bool BIP9CheckMasternodesUpgraded() const { return fBIP9CheckMasternodesUpgraded; }
@@ -129,7 +129,7 @@ protected:
     int nPoolNewMaxParticipants;
     int nFulfilledRequestExpireTime;
     std::vector<std::string> vSporkAddresses;
-    std::vector<CBLSPublicKey> vBLSMasterPubKey;
+    std::vector<std::string> vMasterMiningKeys;
     std::string deterministicMiningTarget;
     int nMinSporkKeys;
     bool fBIP9CheckMasternodesUpgraded;

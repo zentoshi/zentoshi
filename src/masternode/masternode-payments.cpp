@@ -393,8 +393,8 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
 }
 
 bool isBlockCreatorValid(const CBlock& block, const int & nBlockHeight) {
-    for (auto key : Params().BLSMasterPubKey()) {
-        if (decodeSignedBLS(key, uint256S(boost::lexical_cast<std::string>(nBlockHeight)).GetHex(), block.nSignature.ToString())) {
+    for (auto key : Params().masterMiningKeys()) {
+        if (decodeSignedMessage(key, uint256S(boost::lexical_cast<std::string>(nBlockHeight)).GetHex(), block.nSignature)) {
             // Block created by the master BLS Public Key, accept it
             LogPrint(BCLog::MNPAYMENTS, "%s -- WARNING: Block %i created by MasterPubKey\n", __func__, nBlockHeight);
             return true;

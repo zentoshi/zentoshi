@@ -27,7 +27,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    uint768 nSignature;
+    uint520 nSignature;
 
     CBlockHeader()
     {

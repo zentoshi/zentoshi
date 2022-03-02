@@ -455,6 +455,62 @@ UniValue verifymessage(const JSONRPCRequest& request)
     return (pubkey.GetID() == *keyID);
 }
 
+UniValue verifyhexmessage(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 3)
+        throw std::runtime_error(
+            "verifymessage \"address\" \"signature\" \"message\"\n"
+            "\nVerify a signed message\n"
+            "\nArguments:\n"
+            "1. \"address\"         (string, required) The zenx address to use for the signature.\n"
+            "2. \"signature\"       (string, required) The signature provided by the signer in base 64 encoding (see signmessage).\n"
+            "3. \"message\"         (string, required) The message that was signed.\n"
+            "\nResult:\n"
+            "true|false   (boolean) If the signature is verified or not.\n"
+            "\nExamples:\n"
+            "\nUnlock the wallet for 30 seconds\n"
+            + HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
+            "\nCreate the signature\n"
+            + HelpExampleCli("signmessage", "\"XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwG\" \"my message\"") +
+            "\nVerify the signature\n"
+            + HelpExampleCli("verifyhexmessage", "\"XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwG\" \"signature\" \"my message\"") +
+            "\nAs json rpc\n"
+            + HelpExampleRpc("verifyhexmessage", "\"XwnLY9Tf7Zsef8gMGL2fhWA9ZmMjt4KPwG\", \"signature\", \"my message\"")
+        );
+
+    LOCK(cs_main);
+
+    std::string strAddress  = request.params[0].get_str();
+    std::string strSign     = request.params[1].get_str();
+    std::string strMessage  = request.params[2].get_str();
+
+    CTxDestination destination = DecodeDestination(strAddress);
+    if (!IsValidDestination(destination)) {
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
+    }
+
+    const CKeyID *keyID = boost::get<CKeyID>(&destination);
+    if (!keyID) {
+        throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
+    }
+
+    bool fInvalid = false;
+    uint520 signature;
+    signature.SetHex(strSign);
+    std::vector<unsigned char> vchSig;
+
+    vchSig = signature.ToVector();
+    CHashWriter ss(SER_GETHASH, 0);
+    ss << strMessageMagic;
+    ss << strMessage;
+
+    CPubKey pubkey;
+    if (!pubkey.RecoverCompact(ss.GetHash(), vchSig))
+        return false;
+
+    return (pubkey.GetID() == *keyID);
+}
+
 UniValue signmessagewithprivkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 2)
@@ -493,7 +549,10 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
     std::vector<unsigned char> vchSig;
     if (!key.SignCompact(ss.GetHash(), vchSig))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
-
+    
+    uint520 signature(vchSig);
+    std::cout << signature.ToString() << std::endl;
+    std::cout << vchSig.size() << std::endl;
     return EncodeBase64(vchSig.data(), vchSig.size());
 }
 
@@ -1207,6 +1266,7 @@ static const CRPCCommand commands[] =
     { "util",               "validateaddress",        &validateaddress,        {"address"} }, /* uses wallet if enabled */
     { "util",               "createmultisig",         &createmultisig,         {"nrequired","keys"} },
     { "util",               "verifymessage",          &verifymessage,          {"address","signature","message"} },
+    { "util",               "verifyhexmessage",       &verifyhexmessage,       {"address", "signature", "message" }},
     { "util",               "signmessagewithprivkey", &signmessagewithprivkey, {"privkey","message"} },
     { "blockchain",         "getspentinfo",           &getspentinfo,           {"json"} },
 

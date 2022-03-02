@@ -10,8 +10,8 @@
 #include <univalue.h>
 #include <bls/bls.h>
 
-extern std::unique_ptr<std::string> miningPrivKey;
-extern std::unique_ptr<CBLSPublicKey> miningPubKey;
+extern std::unique_ptr<CBitcoinSecret> miningPrivKey;
+extern std::unique_ptr<std::string> miningPubKey;
 /** Generate blocks (mine) */
 UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript);
 

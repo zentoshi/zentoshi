@@ -64,12 +64,22 @@ std::string base_blob<BITS>::ToString() const
     return (GetHex());
 }
 
+template <unsigned int BITS>
+std::vector<unsigned char> base_blob<BITS>::ToVector()
+{
+    std::vector<unsigned char> vch;
+    for (int i = 0; i < WIDTH; i++)
+        vch.push_back(data[i]);
+    return vch;
+}
+
 // Explicit instantiations for base_blob<160>
 template base_blob<160>::base_blob(const std::vector<unsigned char>&);
 template std::string base_blob<160>::GetHex() const;
 template std::string base_blob<160>::ToString() const;
 template void base_blob<160>::SetHex(const char*);
 template void base_blob<160>::SetHex(const std::string&);
+template std::vector<unsigned char> base_blob<160>::ToVector();
 
 // Explicit instantiations for base_blob<256>
 template base_blob<256>::base_blob(const std::vector<unsigned char>&);
@@ -77,6 +87,7 @@ template std::string base_blob<256>::GetHex() const;
 template std::string base_blob<256>::ToString() const;
 template void base_blob<256>::SetHex(const char*);
 template void base_blob<256>::SetHex(const std::string&);
+template std::vector<unsigned char> base_blob<256>::ToVector();
 
 
 // Explicit instantiations for base_blob<768>
@@ -85,3 +96,12 @@ template std::string base_blob<768>::GetHex() const;
 template std::string base_blob<768>::ToString() const;
 template void base_blob<768>::SetHex(const char*);
 template void base_blob<768>::SetHex(const std::string&);
+template std::vector<unsigned char> base_blob<768>::ToVector();
+
+// Explicit instantiations for base_blob<520>
+template base_blob<520>::base_blob(const std::vector<unsigned char>&);
+template std::string base_blob<520>::GetHex() const;
+template std::string base_blob<520>::ToString() const;
+template void base_blob<520>::SetHex(const char*);
+template void base_blob<520>::SetHex(const std::string&);
+template std::vector<unsigned char> base_blob<520>::ToVector();
